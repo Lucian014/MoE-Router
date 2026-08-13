@@ -1,0 +1,17 @@
+*secret*.yaml
+# Mediul virtual Python
+venv/
+.venv/
+
+# Cache-ul Python 
+__pycache__/
+*.pyc
+*.pyo
+
+# Fisiere de configurare locale si loguri
+.env
+*.log
+
+# IDE / Editor settings
+*.idea/
+*.vscode/

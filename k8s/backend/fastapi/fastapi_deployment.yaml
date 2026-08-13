@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-gateway
+  namespace: backend-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastapi-gateway
+  template:
+    metadata:
+      labels:
+        app: fastapi-gateway
+    spec:
+      containers:
+      - name: fastapi-gateway
+        image: fastapi-gateway:v1
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        env:
+        - name: RABBITMQ_HOST
+          value: "rabbitmq.backend-namespace.svc.cluster.local"
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: rabbit-secret
+              key: RABBITMQ_DEFAULT_USER
+        - name: RABBITMQ_PASS
+          valueFrom:
+            secretKeyRef:
+              name: rabbit-secret
+              key: RABBITMQ_DEFAULT_PASS
