@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: container-registry
+  namespace: platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: container-registry
+  template:
+    metadata:
+      labels:
+        app: container-registry
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-infra
+      containers:
+      - name: registry
+        image: registry:2
+        ports:
+        - containerPort: 5000
+          name: registry-port
+        volumeMounts:
+        - name: registry-storage
+          mountPath: /var/lib/registry
+      volumes:
+      - name: registry-storage
+        hostPath:
+          path: /var/local-registry
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: container-registry
+  namespace: platform
+spec:
+  type: NodePort
+  ports:
+    - port: 5000
+      targetPort: 5000
+      nodePort: 30500
+      name: registry-port
+  selector:
+    app: container-registry

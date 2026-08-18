@@ -1,0 +1,17 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: moe-router
+build:
+  insecureRegistries:
+    - 192.168.56.102:30500
+  artifacts:
+    - image: 192.168.56.102:30500/fastapi-gateway
+      context: src/gateway
+      custom:
+        buildCommand: podman build -t $IMAGE $BUILD_CONTEXT && podman push --tls-verify=false $IMAGE
+manifests:
+  rawYaml:
+    - k8s/namespaces.yaml
+    - k8s/backend/rabbitmq/*.yaml
+    - k8s/backend/fastapi/*.yaml

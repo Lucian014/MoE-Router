@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: fastapi-gateway
-  namespace: backend-namespace
+  namespace: gateway
 spec:
   type: ClusterIP
   ports:

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fastapi-gateway
-  namespace: backend-namespace
+  namespace: gateway
 spec:
   replicas: 1
   selector:
@@ -13,15 +13,17 @@ spec:
       labels:
         app: fastapi-gateway
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-compute
       containers:
       - name: fastapi-gateway
-        image: fastapi-gateway:v1
-        imagePullPolicy: Never
+        image: 192.168.56.102:30500/fastapi-gateway
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
         env:
         - name: RABBITMQ_HOST
-          value: "rabbitmq.backend-namespace.svc.cluster.local"
+          value: "rabbitmq.platform.svc.cluster.local"
         - name: RABBITMQ_USER
           valueFrom:
             secretKeyRef:

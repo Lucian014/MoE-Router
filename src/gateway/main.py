@@ -5,7 +5,7 @@ import aio_pika
 
 app = FastAPI(title="RabbitMQ K8s Test")
 
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq.backend-namespace.svc.cluster.local")
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq.platform.svc.cluster.local")
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "admin")
 RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "admin123")
 QUEUE_NAME = "test_queue"
@@ -20,7 +20,6 @@ async def get_rabbitmq_channel():
         port=5672
     )
     channel = await connection.channel()
-    # Declarăm coada (dacă nu există deja, o creează)
     await channel.declare_queue(QUEUE_NAME, durable=True)
     return connection, channel
 
@@ -45,15 +44,13 @@ async def push_to_queue(message_text: str = "Test mesaj din FastAPI"):
         raise HTTPException(status_code=500, detail=f"Eroare conexiune K8s RabbitMQ: {str(e)}")
 
 
-@app.get("/pop-test")
+@app.get("/pop-ultra-test")
 async def pop_from_queue():
     """Scoate și returnează un mesaj din coadă."""
     try:
         connection, channel = await get_rabbitmq_channel()
         async with connection:
             queue = await channel.get_queue(QUEUE_NAME)
-
-            # Încercăm să citim un mesaj fără să blocăm procesul (timeout/no-wait)
             message = await queue.get(no_ack=False, fail=False)
 
             if message is None:

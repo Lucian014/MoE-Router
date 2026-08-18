@@ -1,15 +1,14 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: backend-namespace
-  labels:
-    app.kubernetes.io/part-of: slm-platform
-    environment: development
+  name: platform
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: deployments-namespace
-  labels:
-    app.kubernetes.io/part-of: slm-platform
-    environment: development
+  name: gateway
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: processing
