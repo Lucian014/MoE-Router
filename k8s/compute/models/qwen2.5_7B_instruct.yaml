@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-deployment
+  namespace: processing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-compute
+
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - containerPort: 11434
+          name: http
+
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "2"
+          limits:
+            memory: "24Gi"
+            cpu: "12"
+
+        volumeMounts:
+        - name: ollama-storage
+          mountPath: /root/.ollama
+
+      volumes:
+      - name: ollama-storage
+        hostPath:
+          path: /var/models/ollama
+          type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-service
+  namespace: processing
+spec:
+  type: ClusterIP
+  selector:
+    app: ollama
+  ports:
+  - port: 11434
+    targetPort: 11434
+    protocol: TCP

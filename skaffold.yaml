@@ -10,8 +10,13 @@ build:
       context: src/gateway
       custom:
         buildCommand: podman build -t $IMAGE $BUILD_CONTEXT && podman push --tls-verify=false $IMAGE
+    - image: 192.168.56.102:30500/moe-worker
+      context: src/worker
+      custom:
+        buildCommand: podman build -t $IMAGE $BUILD_CONTEXT && podman push --tls-verify=false $IMAGE
 manifests:
   rawYaml:
-    - k8s/namespaces.yaml
-    - k8s/backend/rabbitmq/*.yaml
+    - k8s/infra/rabbitmq/*.yaml
     - k8s/backend/fastapi/*.yaml
+    - k8s/compute/models/*.yaml
+    - k8s/compute/worker_deployment.yaml

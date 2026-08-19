@@ -14,14 +14,28 @@ spec:
         app: fastapi-gateway
     spec:
       nodeSelector:
-        kubernetes.io/hostname: k8s-compute
+        kubernetes.io/hostname: k8s-route
       containers:
       - name: fastapi-gateway
-        image: 192.168.56.102:30500/fastapi-gateway
+        image: 192.168.56.102:30500/fastapi-gateway:0024eca-dirty@sha256:1c0171091908fe4060fb884dfecd0e77741f4e831e92df9be84b53508dd934f3
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
         env:
+        - name: OLLAMA_HOST
+          value: "http://ollama-service.processing.svc.cluster.local:11434"
         - name: RABBITMQ_HOST
           value: "rabbitmq.platform.svc.cluster.local"
         - name: RABBITMQ_USER

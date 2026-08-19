@@ -1,63 +1,187 @@
+import sys
 import os
 import json
-from fastapi import FastAPI, HTTPException
+import uuid
+import asyncio
+
+from fastapi import FastAPI, HTTPException, Body
 import aio_pika
 
-app = FastAPI(title="RabbitMQ K8s Test")
 
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq.platform.svc.cluster.local")
-RABBITMQ_USER = os.getenv("RABBITMQ_USER", "admin")
-RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "admin123")
-QUEUE_NAME = "test_queue"
+app = FastAPI(title="MoE-Router Gateway")
 
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
+RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
 
-async def get_rabbitmq_channel():
-    """Creează conexiunea asincronă către RabbitMQ din K8s."""
-    connection = await aio_pika.connect_robust(
-        host=RABBITMQ_HOST,
-        login=RABBITMQ_USER,
-        password=RABBITMQ_PASS,
-        port=5672
-    )
-    channel = await connection.channel()
-    await channel.declare_queue(QUEUE_NAME, durable=True)
-    return connection, channel
+REQUEST_QUEUE = "task_queue"
 
 
-@app.post("/push-test")
-async def push_to_queue(message_text: str = "Test mesaj din FastAPI"):
-    """Trimite un mesaj în coadă."""
-    try:
-        connection, channel = await get_rabbitmq_channel()
-        async with connection:
-            payload = {"status": "ok", "content": message_text}
+class RabbitMQClient:
+    def __init__(self):
+        self.connection = None
+        self.channel = None
+        self.request_queue = None
+        self.callback_queue = None
+        self.exchange = None
+        self.futures = {}
 
-            await channel.default_exchange.publish(
+    async def connect(self):
+        max_retries = 10
+
+        for attempt in range(max_retries):
+            try:
+                print(
+                    f"[*] API Gateway - Încercare conectare RabbitMQ "
+                    f"({attempt + 1}/{max_retries})..."
+                )
+
+                self.connection = await aio_pika.connect_robust(
+                    host=RABBITMQ_HOST,
+                    login=RABBITMQ_USER,
+                    password=RABBITMQ_PASS,
+                )
+
+                print("[*] API Gateway - Conexiune RabbitMQ stabilită cu succes!")
+                break
+
+            except Exception as e:
+                print(
+                    f"[!] Conexiune eșuată: {e}. "
+                    f"Reîncerc în 5 secunde..."
+                )
+                await asyncio.sleep(5)
+
+        if not self.connection:
+            raise Exception(
+                "Nu m-am putut conecta la RabbitMQ după mai multe încercări."
+            )
+
+        # Canal
+        self.channel = await self.connection.channel()
+
+        self.request_queue = await self.channel.declare_queue(
+            REQUEST_QUEUE,
+            durable=True,
+        )
+        self.exchange = self.channel.default_exchange
+
+        self.callback_queue = await self.channel.declare_queue(
+            exclusive=True,
+            auto_delete=True,
+        )
+
+        await self.callback_queue.consume(
+            self.on_response,
+            no_ack=True,
+        )
+
+        print(
+            f"[*] Callback queue: {self.callback_queue.name}"
+        )
+
+        return self
+
+    async def on_response(self, message: aio_pika.IncomingMessage):
+        correlation_id = message.correlation_id
+
+        if not correlation_id:
+            print("[!] Am primit un mesaj fără correlation_id")
+            return
+
+        future = self.futures.pop(correlation_id, None)
+
+        if future is None:
+            print(
+                f"[!] Nu există future pentru correlation_id={correlation_id}"
+            )
+            return
+
+        try:
+            response = json.loads(message.body.decode())
+            future.set_result(response)
+
+        except Exception as e:
+            future.set_exception(e)
+
+    async def call(self, payload: dict):
+        if not self.channel:
+            raise RuntimeError("RabbitMQ channel nu este conectat.")
+
+        if not self.exchange:
+            raise RuntimeError("RabbitMQ exchange nu este configurat.")
+
+        correlation_id = str(uuid.uuid4())
+
+        loop = asyncio.get_running_loop()
+        future = loop.create_future()
+
+        self.futures[correlation_id] = future
+
+        try:
+            await self.exchange.publish(
                 aio_pika.Message(
                     body=json.dumps(payload).encode(),
-                    delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+                    correlation_id=correlation_id,
+                    reply_to=self.callback_queue.name,
+                    content_type="application/json",
                 ),
-                routing_key=QUEUE_NAME
+                routing_key=REQUEST_QUEUE,
             )
-        return {"success": True, "pushed_message": payload}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Eroare conexiune K8s RabbitMQ: {str(e)}")
+
+            print(
+                f"[*] Request trimis către {REQUEST_QUEUE}, "
+                f"correlation_id={correlation_id}"
+            )
+
+            return await future
+
+        except Exception:
+            self.futures.pop(correlation_id, None)
+            raise
 
 
-@app.get("/pop-ultra-test")
-async def pop_from_queue():
-    """Scoate și returnează un mesaj din coadă."""
+rabbitmq_client = RabbitMQClient()
+
+
+@app.on_event("startup")
+async def startup():
+    sys.stdout.reconfigure(line_buffering=True)
+    await rabbitmq_client.connect()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    if rabbitmq_client.connection:
+        await rabbitmq_client.connection.close()
+
+
+@app.post("/generate")
+async def generate(prompt: str = Body(..., embed=True)):
+    """Forward request to worker and wait for model response."""
+
     try:
-        connection, channel = await get_rabbitmq_channel()
-        async with connection:
-            queue = await channel.get_queue(QUEUE_NAME)
-            message = await queue.get(no_ack=False, fail=False)
+        response = await rabbitmq_client.call(
+            {
+                "prompt": prompt,
+            }
+        )
 
-            if message is None:
-                return {"success": False, "message": "Coada este goală!"}
+        return response
 
-            async with message.process():
-                data = json.loads(message.body.decode())
-                return {"success": True, "received_message": data}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Eroare la citirea din coadă: {str(e)}")
+        import traceback
+
+        traceback.print_exc()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing request: {str(e)}",
+        )
+
+@app.get("/health")
+async def health():
+    return {
+        "status": "ok",
+        "rabbitmq": bool(rabbitmq_client.connection),
+    }
