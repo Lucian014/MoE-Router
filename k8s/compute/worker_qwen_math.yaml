@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-qwen-math
+  namespace: processing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+      model: qwen-math
+  template:
+    metadata:
+      labels:
+        app: worker
+        model: qwen-math
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-compute
+      containers:
+      - name: worker
+        image: 192.168.56.102:30500/moe-worker:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: MODEL_NAME
+          value: "mightykatun/qwen2.5-math:7b"
+        - name: QUEUE_NAME
+          value: "queue_mightykatun_qwen2_5-math_7b"
+        - name: OLLAMA_HOST
+          value: "http://ollama-service.processing.svc.cluster.local:11434"
+        - name: RABBITMQ_HOST
+          value: "rabbitmq.platform.svc.cluster.local"
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: rabbit-secret
+              key: RABBITMQ_DEFAULT_USER
+        - name: RABBITMQ_PASS
+          valueFrom:
+            secretKeyRef:
+              name: rabbit-secret
+              key: RABBITMQ_DEFAULT_PASS

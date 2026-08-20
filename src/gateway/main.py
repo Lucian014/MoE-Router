@@ -14,14 +14,13 @@ RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
 RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
 
-REQUEST_QUEUE = "task_queue"
+REQUEST_QUEUE_DEFAULT = "task_queue"
 
 
 class RabbitMQClient:
     def __init__(self):
         self.connection = None
         self.channel = None
-        self.request_queue = None
         self.callback_queue = None
         self.exchange = None
         self.futures = {}
@@ -59,11 +58,6 @@ class RabbitMQClient:
 
         # Canal
         self.channel = await self.connection.channel()
-
-        self.request_queue = await self.channel.declare_queue(
-            REQUEST_QUEUE,
-            durable=True,
-        )
         self.exchange = self.channel.default_exchange
 
         self.callback_queue = await self.channel.declare_queue(
@@ -104,7 +98,7 @@ class RabbitMQClient:
         except Exception as e:
             future.set_exception(e)
 
-    async def call(self, payload: dict):
+    async def call(self, payload: dict, routing_key: str):
         if not self.channel:
             raise RuntimeError("RabbitMQ channel nu este conectat.")
 
@@ -126,11 +120,11 @@ class RabbitMQClient:
                     reply_to=self.callback_queue.name,
                     content_type="application/json",
                 ),
-                routing_key=REQUEST_QUEUE,
+                routing_key=routing_key,
             )
 
             print(
-                f"[*] Request trimis către {REQUEST_QUEUE}, "
+                f"[*] Request trimis către {routing_key}, "
                 f"correlation_id={correlation_id}"
             )
 
@@ -157,16 +151,23 @@ async def shutdown():
 
 
 @app.post("/generate")
-async def generate(prompt: str = Body(..., embed=True)):
+async def generate(
+    prompt: str = Body(..., embed=True),
+    model: str = Body("qwen2.5:7b", embed=True)
+):
     """Forward request to worker and wait for model response."""
-
     try:
+        # Determine routing key based on model name
+        safe_model_name = model.replace(':', '_').replace('.', '_').replace('/', '_')
+        routing_key = f"queue_{safe_model_name}"
+
         response = await rabbitmq_client.call(
             {
                 "prompt": prompt,
-            }
+                "model": model
+            },
+            routing_key=routing_key
         )
-
         return response
 
     except Exception as e:

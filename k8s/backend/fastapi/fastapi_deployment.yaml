@@ -17,8 +17,8 @@ spec:
         kubernetes.io/hostname: k8s-route
       containers:
       - name: fastapi-gateway
-        image: 192.168.56.102:30500/fastapi-gateway:0024eca-dirty@sha256:1c0171091908fe4060fb884dfecd0e77741f4e831e92df9be84b53508dd934f3
-        imagePullPolicy: IfNotPresent
+        image: 192.168.56.102:30500/fastapi-gateway:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         readinessProbe:

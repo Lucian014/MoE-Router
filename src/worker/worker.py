@@ -9,7 +9,10 @@ RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
 RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
 
-REQUEST_QUEUE = "task_queue"
+MODEL_NAME = os.getenv("MODEL_NAME", "qwen2.5:7b")
+safe_model_name = MODEL_NAME.replace(':', '_').replace('.', '_').replace('/', '_')
+REQUEST_QUEUE = os.getenv("QUEUE_NAME", f"queue_{safe_model_name}")
+
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 
@@ -18,11 +21,13 @@ async def call_ollama(prompt: str):
         response = await client.post(
             f"{OLLAMA_HOST}/api/generate",
             json={
-                "model": "qwen2.5:7b",
+                "model": MODEL_NAME,
                 "prompt": prompt,
                 "stream": False,
             },
         )
+        if response.status_code != 200:
+            print(f"[!] Eroare de la Ollama: {response.text}")
         response.raise_for_status()
         return response.json()
 
@@ -33,14 +38,14 @@ async def process_message(message: aio_pika.IncomingMessage, channel):
             body = json.loads(message.body.decode())
             prompt = body.get("prompt", "")
 
-            print(f" [x] Processing prompt: {prompt[:50]}...")
+            print(f" [x] Processing prompt for model {MODEL_NAME}: {prompt[:50]}...")
 
             result = await call_ollama(prompt)
 
             response_payload = {
                 "task_id": message.correlation_id,
                 "response": result.get("response", ""),
-                "model": result.get("model", "qwen2.5:7b"),
+                "model": MODEL_NAME,
             }
 
             if message.reply_to:

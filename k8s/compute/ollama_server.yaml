@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ollama-deployment
+  name: ollama-server
   namespace: processing
 spec:
   replicas: 1
