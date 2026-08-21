@@ -7,13 +7,21 @@ build:
     - 192.168.56.102:30500
   artifacts:
     - image: 192.168.56.102:30500/fastapi-gateway
-      context: src/gateway
+      context: .
       custom:
-        buildCommand: podman build -t $IMAGE $BUILD_CONTEXT && podman push --tls-verify=false $IMAGE
+        buildCommand: podman build -t $IMAGE . -f src/gateway/Dockerfile && podman push --tls-verify=false $IMAGE
+        dependencies:
+          paths:
+            - src/gateway/**/*
+            - src/shared/**/*
     - image: 192.168.56.102:30500/moe-worker
-      context: src/worker
+      context: .
       custom:
-        buildCommand: podman build -t $IMAGE $BUILD_CONTEXT && podman push --tls-verify=false $IMAGE
+        buildCommand: podman build -t $IMAGE . -f src/worker/Dockerfile && podman push --tls-verify=false $IMAGE
+        dependencies:
+          paths:
+            - src/worker/**/*
+            - src/shared/**/*
 manifests:
   rawYaml:
     - k8s/infra/rabbitmq/*.yaml
