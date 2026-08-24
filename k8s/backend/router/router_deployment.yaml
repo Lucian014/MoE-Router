@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moe-router
+  namespace: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: moe-router
+  template:
+    metadata:
+      labels:
+        app: moe-router
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-route
+      containers:
+      - name: router
+        image: 192.168.56.102:30500/moe-router:latest
+        imagePullPolicy: Always
+        env:
+        - name: MIDDLEWARE_QUEUE
+          value: "router.requests"
+        - name: DEFAULT_MODEL
+          value: "qwen2.5:7b"
+        - name: SUPPORTED_MODELS
+          value: "qwen2.5:7b,llama3.1:8b,mightykatun/qwen2.5-math:7b"
+        - name: RABBITMQ_HOST
+          value: "rabbitmq.platform.svc.cluster.local"
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: rabbit-secret
+              key: RABBITMQ_DEFAULT_USER
+        - name: RABBITMQ_PASS
+          valueFrom:
+            secretKeyRef:
+              name: rabbit-secret
+              key: RABBITMQ_DEFAULT_PASS

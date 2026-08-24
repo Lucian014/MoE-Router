@@ -22,10 +22,19 @@ build:
           paths:
             - src/worker/**/*
             - src/shared/**/*
+    - image: 192.168.56.102:30500/moe-router
+      context: .
+      custom:
+        buildCommand: podman build -t $IMAGE . -f src/router/Dockerfile && podman push --tls-verify=false $IMAGE
+        dependencies:
+          paths:
+            - src/router/**/*
+            - src/shared/**/*
 manifests:
   rawYaml:
     - k8s/infra/rabbitmq/*.yaml
     - k8s/backend/fastapi/*.yaml
+    - k8s/backend/router/*.yaml
     - k8s/compute/ollama_server.yaml
     - k8s/compute/worker_qwen.yaml
     - k8s/compute/worker_qwen_math.yaml

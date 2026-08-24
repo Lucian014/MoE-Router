@@ -100,6 +100,48 @@ class RabbitMQClient:
 
         await queue.consume(_wrapper)
 
+    async def forward(self, message: aio_pika.IncomingMessage, routing_key: str, payload: dict | None = None):
+        """
+        Forward an incoming RabbitMQ message to another queue.
+
+        IMPORTANT:
+        correlation_id and reply_to are intentionally preserved.
+
+        This is used by the Middleware:
+
+            Gateway -> Middleware -> Worker
+
+        The Worker can therefore reply directly to the Gateway.
+        """
+
+        body = message.body
+
+        if payload is not None:
+            body = json.dumps(payload).encode()
+
+        forwarded_message = aio_pika.Message(
+            body=body,
+
+            # Preserve the original RPC correlation ID.
+            correlation_id=message.correlation_id,
+
+            # Preserve the Gateway's private callback queue.
+            reply_to=message.reply_to,
+
+            # Preserve useful AMQP metadata.
+            content_type=message.content_type,
+            content_encoding=message.content_encoding,
+            headers=message.headers,
+
+            # Make the forwarded request persistent.
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+        )
+
+        await self.channel.default_exchange.publish(
+            forwarded_message,
+            routing_key=routing_key,
+        )
+
     async def publish(self, payload: dict, routing_key: str):
         """Publishes a message without waiting for a response (Fire-and-forget)."""
         await self.channel.default_exchange.publish(

@@ -24,8 +24,6 @@ spec:
         env:
         - name: MODEL_NAME
           value: "llama3.1:8b"
-        - name: QUEUE_NAME
-          value: "queue_llama3_1_8b"
         - name: OLLAMA_HOST
           value: "http://ollama-service.processing.svc.cluster.local:11434"
         - name: RABBITMQ_HOST

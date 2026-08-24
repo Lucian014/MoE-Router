@@ -3,9 +3,10 @@ import os
 import asyncio
 import httpx
 from shared.rabbitmq import RabbitMQClient
+from shared.utils import model_to_queue
 
 MODEL_NAME = os.getenv("MODEL_NAME", "qwen2.5:7b")
-QUEUE_NAME = os.getenv("QUEUE_NAME", f"queue_{MODEL_NAME.replace(':', '_').replace('.', '_').replace('/', '_')}")
+QUEUE_NAME = model_to_queue(MODEL_NAME)
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 mq_client = RabbitMQClient(

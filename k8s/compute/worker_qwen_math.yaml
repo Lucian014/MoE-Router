@@ -24,8 +24,6 @@ spec:
         env:
         - name: MODEL_NAME
           value: "mightykatun/qwen2.5-math:7b"
-        - name: QUEUE_NAME
-          value: "queue_mightykatun_qwen2_5-math_7b"
         - name: OLLAMA_HOST
           value: "http://ollama-service.processing.svc.cluster.local:11434"
         - name: RABBITMQ_HOST
