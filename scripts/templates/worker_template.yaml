@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker-qwen
+  name: worker-model-name-placeholder
   namespace: processing
 spec:
-  replicas: 1
+  replicas: REPLICAS_PLACEHOLDER
   selector:
     matchLabels:
       app: worker
-      model: qwen
+      model: model-name-placeholder
   template:
     metadata:
       labels:
         app: worker
-        model: qwen
+        model: model-name-placeholder
     spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-compute
@@ -23,9 +23,11 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: MODEL_NAME
-          value: "qwen2.5:7b"
-        - name: OLLAMA_HOST
-          value: "http://ollama-service.processing.svc.cluster.local:11434"
+          value: "MODEL_NAME_PLACEHOLDER"
+        - name: ENGINE_TYPE
+          value: "ENGINE_TYPE_PLACEHOLDER"
+        - name: INFERENCE_HOST
+          value: "INFERENCE_HOST_PLACEHOLDER"
         - name: RABBITMQ_HOST
           value: "rabbitmq.platform.svc.cluster.local"
         - name: RABBITMQ_USER

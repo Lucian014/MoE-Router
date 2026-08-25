@@ -36,7 +36,5 @@ manifests:
     - k8s/backend/fastapi/*.yaml
     - k8s/backend/router/*.yaml
     - k8s/compute/ollama_server.yaml
-    - k8s/compute/worker_qwen.yaml
-    - k8s/compute/worker_qwen_math.yaml
-    - k8s/compute/worker_llama3_1.yaml
+    - k8s/compute/worker_*.yaml
 

@@ -1,0 +1,39 @@
+# =============================================================================
+# CENTRAL MODEL CATALOG — Single Source of Truth
+# =============================================================================
+# Mirrors the existing workers in k8s/compute/:
+#   worker_llama3_1.yaml   -> llama3.1
+#   worker_qwen.yaml       -> qwen (general)
+#   worker_qwen_math.yaml  -> qwen math variant
+#
+# ASSUMPTIONS — verify these against your actual worker_*.yaml files and
+# correct if they differ, since only filenames were visible, not content:
+#   - exact Ollama tags (e.g. "8b" vs "8b-instruct" vs a different size)
+#   - replica counts (defaulted to 1 for all three)
+#
+# `engine: ollama` matches your ollama_server.yaml serving all three.
+# =============================================================================
+
+models:
+  - model_id: "llama3.1:8b"
+    engine: "ollama"
+    description: >
+      General-purpose conversational assistant. Best for everyday chat,
+      summarization, translation, and broad Q&A that doesn't require deep
+      domain expertise.
+    replicas: 1
+
+  - model_id: "qwen2.5:7b"
+    engine: "ollama"
+    description: >
+      General-purpose assistant with strong multilingual and instruction-
+      following ability. Best for everyday chat, writing help, and broad
+      Q&A.
+    replicas: 1
+
+  - model_id: "mightykatun/qwen2.5-math:7b"
+    engine: "ollama"
+    description: >
+      Specialist in mathematics. Best for arithmetic, algebra, calculus,
+      word problems, proofs, and step-by-step quantitative reasoning.
+    replicas: 1

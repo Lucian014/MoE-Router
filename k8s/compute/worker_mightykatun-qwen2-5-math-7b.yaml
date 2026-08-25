@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker-llama3-1
+  name: worker-mightykatun-qwen2-5-math-7b
   namespace: processing
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: worker
-      model: llama3-1
+      model: mightykatun-qwen2-5-math-7b
   template:
     metadata:
       labels:
         app: worker
-        model: llama3-1
+        model: mightykatun-qwen2-5-math-7b
     spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-compute
@@ -23,8 +23,10 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: MODEL_NAME
-          value: "llama3.1:8b"
-        - name: OLLAMA_HOST
+          value: "mightykatun/qwen2.5-math:7b"
+        - name: ENGINE_TYPE
+          value: "ollama"
+        - name: INFERENCE_HOST
           value: "http://ollama-service.processing.svc.cluster.local:11434"
         - name: RABBITMQ_HOST
           value: "rabbitmq.platform.svc.cluster.local"

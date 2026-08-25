@@ -1,0 +1,14 @@
+[
+  {
+    "name": "llama3.1:8b",
+    "description": "General-purpose conversational assistant. Best for everyday chat, summarization, translation, and broad Q&A that doesn't require deep domain expertise."
+  },
+  {
+    "name": "qwen2.5:7b",
+    "description": "General-purpose assistant with strong multilingual and instruction- following ability. Best for everyday chat, writing help, and broad Q&A."
+  },
+  {
+    "name": "mightykatun/qwen2.5-math:7b",
+    "description": "Specialist in mathematics. Best for arithmetic, algebra, calculus, word problems, proofs, and step-by-step quantitative reasoning."
+  }
+]

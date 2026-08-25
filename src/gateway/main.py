@@ -10,8 +10,8 @@ mq_client = RabbitMQClient(
     user=os.getenv("RABBITMQ_USER", "guest"),
     password=os.getenv("RABBITMQ_PASS", "guest")
 )
-
 MIDDLEWARE_QUEUE = os.getenv("MIDDLEWARE_QUEUE", "router.requests")
+
 
 @app.on_event("startup")
 async def startup():
@@ -19,17 +19,20 @@ async def startup():
     await mq_client.connect(service_name="API Gateway")
     await mq_client.setup_rpc_client()
 
+
 @app.on_event("shutdown")
 async def shutdown():
     await mq_client.close()
+
 
 @app.get("/health")
 async def health():
     return {"status": "ok"}
 
+
 @app.post("/generate")
-async def generate(prompt: str = Body(..., embed=True), model: str = Body("qwen2.5:7b", embed=True)):
+async def generate(prompt: str = Body(..., embed=True)):
     try:
-        return await mq_client.call({"prompt": prompt, "model": model}, routing_key=MIDDLEWARE_QUEUE)
+        return await mq_client.call({"prompt": prompt}, routing_key=MIDDLEWARE_QUEUE)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
