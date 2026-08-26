@@ -11,9 +11,6 @@ def sanitize_k8s_name(model_id: str) -> str:
         'qwen2.5:7b'                         -> 'qwen2-5-7b'
         'deepseek-coder:6.7b'                -> 'deepseek-coder-6-7b'
         'meta-llama/Llama-3.1-8B-Instruct'    -> 'meta-llama-llama-3-1-8b-instruct'
-
-    This function is deliberately engine-agnostic — it knows nothing about
-    Ollama or vLLM, only about what Kubernetes will accept.
     """
     return (
         model_id.strip()

@@ -22,10 +22,6 @@ spec:
         env:
         - name: MIDDLEWARE_QUEUE
           value: "router.requests"
-        - name: DEFAULT_MODEL
-          value: "qwen2.5:7b"
-        - name: SUPPORTED_MODELS
-          value: "qwen2.5:7b,llama3.1:8b,mightykatun/qwen2.5-math:7b"
         - name: RABBITMQ_HOST
           value: "rabbitmq.platform.svc.cluster.local"
         - name: RABBITMQ_USER

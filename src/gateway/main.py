@@ -29,7 +29,6 @@ async def shutdown():
 async def health():
     return {"status": "ok"}
 
-
 @app.post("/generate")
 async def generate(prompt: str = Body(..., embed=True)):
     try:

@@ -97,15 +97,25 @@ def load_catalog() -> list[dict]:
 
 
 def build_router_projection(models: list[dict]) -> None:
-    """Generate router/models.json — only what the semantic router needs."""
+    """Generate router/models.json with model descriptions and examples."""
     projection = [
-        {"name": m["model_id"], "description": " ".join(m["description"].split())}
+        {
+            "name": m["model_id"],
+            "description": " ".join(m["description"].split()),
+            "examples": m.get("examples", []),
+        }
         for m in models
     ]
+
     ROUTER_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+
     with open(ROUTER_OUTPUT_PATH, "w") as f:
-        json.dump(projection, f, indent=2)
-    print(f"[OK] Wrote {ROUTER_OUTPUT_PATH.relative_to(ROOT)} ({len(projection)} models)")
+        json.dump(projection, f, indent=2, ensure_ascii=False)
+
+    print(
+        f"[OK] Wrote {ROUTER_OUTPUT_PATH.relative_to(ROOT)} "
+        f"({len(projection)} models)"
+    )
 
 
 def build_worker_manifests(models: list[dict]) -> None:

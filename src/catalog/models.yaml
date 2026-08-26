@@ -18,22 +18,41 @@ models:
   - model_id: "llama3.1:8b"
     engine: "ollama"
     description: >
-      General-purpose conversational assistant. Best for everyday chat,
-      summarization, translation, and broad Q&A that doesn't require deep
-      domain expertise.
+      General-purpose conversational model optimized for natural dialogue,
+      everyday questions, summarization, rewriting, translation, brainstorming,
+      and general knowledge tasks. Best suited for broad requests that do not
+      require specialized mathematical or programming expertise.
+    examples:
+      - "Summarize this article into five key points."
+      - "Translate this paragraph from English to Romanian."
+      - "Help me brainstorm ideas for a birthday party."
     replicas: 1
 
   - model_id: "qwen2.5:7b"
     engine: "ollama"
     description: >
-      General-purpose assistant with strong multilingual and instruction-
-      following ability. Best for everyday chat, writing help, and broad
-      Q&A.
+      General-purpose instruction-following model with strong multilingual
+      capabilities and reliable performance across writing, reasoning,
+      explanation, and broad question-answering tasks. Best suited for
+      structured responses, writing assistance, multilingual requests, and
+      general-purpose problem solving that does not require a highly
+      specialized model.
+    examples:
+      - "Rewrite this email to sound more professional and concise."
+      - "Explain how Kubernetes deployments work in simple terms."
+      - "Compare these two approaches and recommend the better one."
     replicas: 1
 
   - model_id: "mightykatun/qwen2.5-math:7b"
     engine: "ollama"
     description: >
-      Specialist in mathematics. Best for arithmetic, algebra, calculus,
-      word problems, proofs, and step-by-step quantitative reasoning.
+      Specialized mathematical reasoning model designed for quantitative
+      problem solving, arithmetic, algebra, calculus, probability, geometry,
+      and multi-step mathematical reasoning. Best suited for problems that
+      require explicit calculations, symbolic manipulation, equations, or
+      rigorous step-by-step mathematical solutions.
+    examples:
+      - "Solve the equation 2x² - 5x - 3 = 0 and show the steps."
+      - "Calculate the derivative of f(x) = x² sin(x)."
+      - "A fair coin is flipped 10 times. What is the probability of getting exactly 6 heads?"
     replicas: 1

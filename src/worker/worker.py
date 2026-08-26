@@ -20,12 +20,7 @@ mq_client = RabbitMQClient(
 
 
 async def handle_request(payload: dict) -> dict:
-    """
-    Business logic for the worker. Notice this no longer knows anything
-    about Ollama's request/response shape — that's entirely inside the
-    engine adapter selected by ENGINE_TYPE. Swapping this worker to vLLM
-    is a Deployment env-var change, not a code change.
-    """
+
     prompt = payload.get("prompt", "")
     requested_model = payload.get("model", MODEL_NAME)
 
@@ -36,6 +31,7 @@ async def handle_request(payload: dict) -> dict:
     return {
         "response": text,
         "model": requested_model,
+        "routing_score": payload.get("routing_score"),
     }
 
 
