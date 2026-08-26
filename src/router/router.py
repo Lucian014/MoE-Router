@@ -149,7 +149,7 @@ def select_model(prompt: str) -> tuple[str, float]:
       - closest example similarity:   60%
 
     Returns:
-        (selected_model, confidence_score)
+        (selected_model, routing_score)
     """
     if (
         _EMBEDDER is None
@@ -191,23 +191,32 @@ def select_model(prompt: str) -> tuple[str, float]:
         )
 
     routing_score = (
-        0.4 * description_similarities
-        + 0.6 * closest_example_similarities
+        0.5 * description_similarities
+        + 0.5 * closest_example_similarities
     )
+
+    # Print scores for every model for debugging.
+    for idx, model_name in enumerate(_MODEL_NAMES):
+        print(
+            f"    {model_name}: "
+            f"score={routing_score[idx]:.4f}, "
+            f"description={description_similarities[idx]:.4f}, "
+            f"example={closest_example_similarities[idx]:.4f}"
+        )
 
     best_idx = int(np.argmax(routing_score))
 
     selected_model = _MODEL_NAMES[best_idx]
-    routing_score = float(routing_score[best_idx])
+    selected_score = float(routing_score[best_idx])
 
     print(
         f"[*] Semantic match: '{selected_model}' "
-        f"(score={routing_score:.4f}, "
+        f"(score={selected_score:.4f}, "
         f"description={description_similarities[best_idx]:.4f}, "
         f"example={closest_example_similarities[best_idx]:.4f})"
     )
 
-    return selected_model, routing_score
+    return selected_model, selected_score
 
 
 async def route_message(message) -> None:

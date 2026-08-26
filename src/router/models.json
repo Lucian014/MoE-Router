@@ -13,8 +13,9 @@
     "description": "General-purpose instruction-following model with strong multilingual capabilities and reliable performance across writing, reasoning, explanation, and broad question-answering tasks. Best suited for structured responses, writing assistance, multilingual requests, and general-purpose problem solving that does not require a highly specialized model.",
     "examples": [
       "Rewrite this email to sound more professional and concise.",
-      "Explain how Kubernetes deployments work in simple terms.",
-      "Compare these two approaches and recommend the better one."
+      "Rewrite an email to my manager about a delayed Kubernetes deployment.",
+      "Make this message to my manager more formal and professional.",
+      "Rewrite this status update for a manager in a professional tone."
     ]
   },
   {
@@ -24,6 +25,17 @@
       "Solve the equation 2x² - 5x - 3 = 0 and show the steps.",
       "Calculate the derivative of f(x) = x² sin(x).",
       "A fair coin is flipped 10 times. What is the probability of getting exactly 6 heads?"
+    ]
+  },
+  {
+    "name": "qwen2.5-coder:7b",
+    "description": "Specialized coding model for code generation, debugging, code explanation, refactoring, bug fixing, software engineering, and working with source code across common programming languages.",
+    "examples": [
+      "Write a Python function that parses a JSON file and validates its fields.",
+      "Find and fix the bug in this Python code.",
+      "Refactor this function to make it cleaner and easier to maintain.",
+      "Write a FastAPI endpoint that accepts a JSON request.",
+      "Debug this Kubernetes YAML and fix the configuration errors."
     ]
   }
 ]
