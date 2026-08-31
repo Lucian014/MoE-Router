@@ -2,71 +2,60 @@
 """
 build_manifests.py
 
-Reads catalog/models.yaml (the single source of truth) and generates:
+Reads the model catalog from PostgreSQL (via ModelRepository) — the single
+source of truth — and generates:
 
-  1. router/models.json          {name, description} projection consumed
-                                  by the semantic router's embedding cache.
-  2. compute/worker_<name>.yaml  One Kubernetes Deployment per model,
+  1. compute/worker_<name>.yaml  One Kubernetes Deployment per model,
                                   rendered from compute/worker_template.yaml.
 
-Run this any time catalog/models.yaml changes:
+Run this any time the `models` table changes:
 
     python scripts/build_manifests.py
 
 Nothing else in the system should ever hand-edit the generated files —
 they will be silently overwritten on the next run.
+
 """
-import json
+import asyncio
 import sys
 from pathlib import Path
-
-import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = ROOT / "src"
 K8S_DIR = ROOT / "k8s"
 
-sys.path.insert(0, str(SRC_DIR))  # allow `from shared.utils import ...`
+sys.path.insert(0, str(SRC_DIR))
 
+from database import get_session, ModelRepository  # noqa: E402
 from shared.utils import sanitize_k8s_name  # noqa: E402
 
-CATALOG_PATH = SRC_DIR / "catalog" / "models.yaml"
-ROUTER_OUTPUT_PATH = SRC_DIR / "router" / "models.json"
 TEMPLATE_PATH = ROOT / "scripts" / "templates" / "worker_template.yaml"
 COMPUTE_DIR = K8S_DIR / "compute"
 
-REQUIRED_FIELDS = {"model_id", "engine", "description", "replicas"}
-
-# In-cluster host injected into each worker's INFERENCE_HOST env var,
-# keyed by engine. This is the ONE place that knows how to reach each
-# backend by default — add an entry here when a new engine type is
-# onboarded. Per-model overrides (e.g. a dedicated vLLM Service for one
-# specific model) can be added as an optional `inference_host` field on
-# the catalog entry later without changing this structure.
 ENGINE_HOST_DEFAULTS = {
     "ollama": "http://ollama-service.processing.svc.cluster.local:11434",
     "vllm": "http://vllm-service.processing.svc.cluster.local:8000",
 }
 
 
-def load_catalog() -> list[dict]:
-    if not CATALOG_PATH.exists():
-        raise FileNotFoundError(f"Catalog not found at {CATALOG_PATH}")
+async def load_catalog() -> list[dict]:
+    """
+    Load the catalog from the `models` table. Returns the same shape the
+    rest of this script already expects — ModelRegistryEntry.to_dict()
+    was built to match the old YAML/JSON entry shape, so callers below
+    don't need to change.
+    """
+    async with get_session() as session:
+        repo = ModelRepository(session)
+        entries = await repo.list_all()
 
-    with open(CATALOG_PATH, "r") as f:
-        data = yaml.safe_load(f) or {}
+    if not entries:
+        raise ValueError("The `models` table is empty — nothing to build manifests for.")
 
-    models = data.get("models", [])
-    if not models:
-        raise ValueError("catalog/models.yaml contains no models under the 'models' key.")
+    models = [entry.to_dict() for entry in entries]
 
-    seen_names = set()
-    seen_k8s_names = {}
+    seen_k8s_names: dict[str, str] = {}
     for entry in models:
-        missing = REQUIRED_FIELDS - entry.keys()
-        if missing:
-            raise ValueError(f"Model entry {entry} is missing required fields: {missing}")
-
         name = entry["model_id"]
         engine = entry["engine"]
 
@@ -78,13 +67,6 @@ def load_catalog() -> list[dict]:
                 f"a matching adapter in engines/ before using it.)"
             )
 
-        if name in seen_names:
-            raise ValueError(f"Duplicate model_id in catalog: {name}")
-        seen_names.add(name)
-
-        # Two different model_ids could theoretically sanitize to the same
-        # k8s name (e.g. 'foo:1.0' and 'foo:1-0') — catch that early rather
-        # than silently overwriting a generated manifest.
         k8s_name = sanitize_k8s_name(name)
         if k8s_name in seen_k8s_names:
             raise ValueError(
@@ -94,28 +76,6 @@ def load_catalog() -> list[dict]:
         seen_k8s_names[k8s_name] = name
 
     return models
-
-
-def build_router_projection(models: list[dict]) -> None:
-    """Generate router/models.json with model descriptions and examples."""
-    projection = [
-        {
-            "name": m["model_id"],
-            "description": " ".join(m["description"].split()),
-            "examples": m.get("examples", []),
-        }
-        for m in models
-    ]
-
-    ROUTER_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(ROUTER_OUTPUT_PATH, "w") as f:
-        json.dump(projection, f, indent=2, ensure_ascii=False)
-
-    print(
-        f"[OK] Wrote {ROUTER_OUTPUT_PATH.relative_to(ROOT)} "
-        f"({len(projection)} models)"
-    )
 
 
 def build_worker_manifests(models: list[dict]) -> None:
@@ -130,7 +90,7 @@ def build_worker_manifests(models: list[dict]) -> None:
         engine = entry["engine"]
         k8s_name = sanitize_k8s_name(model_id)
         replicas = entry["replicas"]
-        inference_host = entry.get("inference_host", ENGINE_HOST_DEFAULTS[engine])
+        inference_host = entry.get("inference_host") or ENGINE_HOST_DEFAULTS[engine]
 
         rendered = (
             template
@@ -147,13 +107,12 @@ def build_worker_manifests(models: list[dict]) -> None:
         print(f"[OK] Wrote {out_path.relative_to(ROOT)} (replicas={replicas})")
 
 
-def main():
-    models = load_catalog()
-    print(f"[*] Loaded {len(models)} model(s) from catalog/models.yaml")
-    build_router_projection(models)
+async def main():
+    models = await load_catalog()
+    print(f"[*] Loaded {len(models)} model(s) from the `models` table")
     build_worker_manifests(models)
     print("[*] Build complete. Generated files are derived artifacts — do not hand-edit them.")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

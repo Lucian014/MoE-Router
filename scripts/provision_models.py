@@ -1,4 +1,4 @@
-
+import asyncio
 import json
 import os
 import sys
@@ -6,10 +6,11 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-import yaml
-
 ROOT = Path(__file__).resolve().parent.parent
-CATALOG_PATH = ROOT / "src" / "catalog" / "models.yaml"
+SRC_DIR = ROOT / "src"
+sys.path.insert(0, str(SRC_DIR))
+
+from database import get_session, ModelRepository
 
 OLLAMA_URL = os.getenv(
     "OLLAMA_URL",
@@ -19,28 +20,23 @@ OLLAMA_URL = os.getenv(
 HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "30"))
 
 
-def load_catalog() -> list[dict]:
-    if not CATALOG_PATH.exists():
-        raise FileNotFoundError(
-            f"Catalog not found: {CATALOG_PATH}"
-        )
+async def load_catalog() -> list[dict]:
+    """
+    Load the catalog from the `models` table.
+    """
+    async with get_session() as session:
+        repo = ModelRepository(session)
+        entries = await repo.list_enabled()
 
-    with open(CATALOG_PATH, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
+    if not entries:
+        raise ValueError("No enabled models found in the `models` table.")
 
-    models = data.get("models", [])
+    return [entry.to_dict() for entry in entries]
 
-    if not models:
-        raise ValueError(
-            "catalog/models.yaml contains no models."
-        )
-
-    return models
 
 def get_installed_ollama_models() -> set[str]:
     """
     Return the names of models currently available in Ollama.
-    Uses GET /api/tags.
     """
     url = f"{OLLAMA_URL.rstrip('/')}/api/tags"
 
@@ -74,12 +70,10 @@ def get_installed_ollama_models() -> set[str]:
         if model.get("name")
     }
 
+
 def pull_ollama_model(model_id: str) -> None:
     """
     Pull a model using Ollama POST /api/pull.
-
-    Ollama streams newline-delimited JSON status updates until
-    the pull completes.
     """
     url = f"{OLLAMA_URL.rstrip('/')}/api/pull"
 
@@ -161,15 +155,6 @@ def provision_ollama(models: list[dict]) -> None:
         pull_ollama_model(model_id)
 
 
-def main() -> None:
-    print(f"[*] Catalog: {CATALOG_PATH}")
-    print(f"[*] Ollama: {OLLAMA_URL}")
-
-    models = load_catalog()
-    provision_ollama(models)
-
-    print("[OK] Ollama model provisioning complete.")
-
 def delete_ollama_model(model_id: str) -> None:
     """
     Delete an Ollama model using POST/DELETE API endpoint.
@@ -213,9 +198,18 @@ def delete_ollama_model(model_id: str) -> None:
         ) from exc
 
 
+async def main() -> None:
+    print(f"[*] Ollama: {OLLAMA_URL}")
+
+    models = await load_catalog()
+    provision_ollama(models)
+
+    print("[OK] Ollama model provisioning complete.")
+
+
 if __name__ == "__main__":
     try:
-        main()
+        asyncio.run(main())
     except Exception as exc:
         print(f"[ERROR] {exc}", file=sys.stderr)
         sys.exit(1)

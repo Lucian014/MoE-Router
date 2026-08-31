@@ -34,3 +34,26 @@ spec:
             secretKeyRef:
               name: rabbit-secret
               key: RABBITMQ_DEFAULT_PASS
+        - name: POSTGRES_HOST
+          value: "postgres.platform.svc.cluster.local"
+
+        - name: POSTGRES_PORT
+          value: "5432"
+
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_DB
+
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD

@@ -7,11 +7,11 @@ from pathlib import Path
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
+from database import get_session, ModelRepository
 from shared.rabbitmq import RabbitMQClient
 from shared.utils import model_to_queue
 
 MIDDLEWARE_QUEUE = os.getenv("MIDDLEWARE_QUEUE", "router.requests")
-MODELS_JSON_PATH = Path(os.getenv("MODELS_JSON_PATH", "router/models.json"))
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2")
 
 mq_client = RabbitMQClient(
@@ -20,8 +20,6 @@ mq_client = RabbitMQClient(
     password=os.getenv("RABBITMQ_PASS", "guest"),
 )
 
-# Populated once at startup by load_router_catalog(), then read-only for
-# the life of the process -> safe to share across concurrent handlers.
 _EMBEDDER: SentenceTransformer | None = None
 _MODEL_NAMES: list[str] = []
 _MODEL_DESCRIPTION_EMBEDDINGS: np.ndarray | None = None
@@ -35,33 +33,26 @@ def _normalize(vectors: np.ndarray) -> np.ndarray:
     return vectors / norms
 
 
-def load_router_catalog() -> None:
+async def load_router_catalog() -> None:
     """
-    Load router/models.json and cache normalized embeddings for both
-    model descriptions and examples.
-
-    Description and examples are embedded separately so routing can
-    combine semantic similarity to the model's general capabilities
-    with similarity to concrete example prompts.
+    Load the model catalog from the `models` table and cache
+    normalized embeddings for both model descriptions and examples.
     """
     global _EMBEDDER
     global _MODEL_NAMES
     global _MODEL_DESCRIPTION_EMBEDDINGS
     global _MODEL_EXAMPLE_EMBEDDINGS
 
-    if not MODELS_JSON_PATH.exists():
-        raise FileNotFoundError(
-            f"{MODELS_JSON_PATH} not found. "
-            "Run `python scripts/build_manifests.py` first."
-        )
+    async with get_session() as session:
+        repo = ModelRepository(session)
+        entries = await repo.list_enabled()
 
-    with open(MODELS_JSON_PATH, "r", encoding="utf-8") as f:
-        catalog = json.load(f)
-
-    if not catalog:
+    if not entries:
         raise ValueError(
-            f"{MODELS_JSON_PATH} is empty — router has no models to choose from."
+            "No enabled models found in the `models` table — router has "
+            "no models to choose from."
         )
+    catalog = [entry.to_dict() for entry in entries]
 
     print(f"[*] Loading embedding model '{EMBEDDING_MODEL_NAME}' (CPU)...")
     _EMBEDDER = SentenceTransformer(
@@ -69,7 +60,7 @@ def load_router_catalog() -> None:
         device="cpu",
     )
 
-    _MODEL_NAMES = [entry["name"] for entry in catalog]
+    _MODEL_NAMES = [entry["model_id"] for entry in catalog]
 
     descriptions = [
         entry.get("description", "")
@@ -88,11 +79,6 @@ def load_router_catalog() -> None:
         .astype(np.float32)
     )
 
-    # Encode examples.
-    #
-    # We allow different numbers of examples per model. To keep the
-    # resulting matrix rectangular, models with fewer examples are
-    # padded with zero vectors.
     max_examples = max(
         len(entry.get("examples", []))
         for entry in catalog
@@ -251,7 +237,7 @@ async def route_message(message) -> None:
 async def main():
     sys.stdout.reconfigure(line_buffering=True)
 
-    load_router_catalog()
+    await load_router_catalog()
 
     await mq_client.connect(service_name="Semantic Router")
     print(f"[*] Router listening on {MIDDLEWARE_QUEUE}")

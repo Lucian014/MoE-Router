@@ -1,16 +1,26 @@
 #!/usr/bin/env bash
 #
-# migrate.sh — run Alembic migrations against the in-cluster Postgres,
-# without you having to manually open a port-forward and export env
+# dbctl.sh — control tool for the in-cluster Postgres: run Alembic
+# migrations, drop into psql, or run any other command that needs a DB
+# connection, without manually opening a port-forward and exporting env
 # vars every time.
 #
 # Usage:
-#   ./migrate.sh upgrade head            (apply all pending migrations)
-#   ./migrate.sh downgrade -1            (roll back one migration)
-#   ./migrate.sh current                 (show current migration)
-#   ./migrate.sh revision --autogenerate -m "add users table"
+#   ./dbctl.sh upgrade head            (apply all pending migrations)
+#   ./dbctl.sh downgrade -1            (roll back one migration)
+#   ./dbctl.sh current                 (show current migration)
+#   ./dbctl.sh revision --autogenerate -m "add users table"
 #
-# Anything you pass after the script name is forwarded as-is to `alembic`.
+#   ./dbctl.sh exec <command...>       (run any command with the tunnel +
+#                                        credentials already set up, e.g.:)
+#   ./dbctl.sh exec python scripts/seed_models.py --from-yaml src/catalog/models.yaml
+#   ./dbctl.sh exec python scripts/test_crud.py
+#   ./dbctl.sh exec psql
+#
+# Anything you pass after the script name is forwarded as-is to `alembic`
+# — UNLESS the first argument is `exec`, in which case everything after
+# `exec` is run directly as its own command instead (tunnel + credentials
+# are still set up the same way either way).
 #
 # Credentials (POSTGRES_DB/USER/PASSWORD) are pulled live from the
 # `postgres-secret` k8s Secret — the same one the pod itself consumes
@@ -33,7 +43,16 @@ REMOTE_PORT="5432"
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "${SCRIPT_DIR}"
+
+if [[ "${1:-}" != "exec" ]]; then
+    cd "${SCRIPT_DIR}"
+fi
+
+if [[ $# -eq 0 ]]; then
+    echo "Usage: $(basename "$0") <alembic-args...>" >&2
+    echo "       $(basename "$0") exec <command...>" >&2
+    exit 1
+fi
 
 echo "[*] Reading credentials from secret/${SECRET} in namespace ${NAMESPACE}..."
 export POSTGRES_DB="$(kubectl get secret -n "${NAMESPACE}" "${SECRET}" -o jsonpath='{.data.POSTGRES_DB}' | base64 -d)"
@@ -46,11 +65,14 @@ if [[ -z "${POSTGRES_USER}" || -z "${POSTGRES_PASSWORD}" || -z "${POSTGRES_DB}" 
     exit 1
 fi
 
-# These two are the only values actually overridden for the tunnel — the
-# app-side defaults in database/config.py point at the in-cluster DNS name,
-# this script points at localhost instead.
 export POSTGRES_HOST="localhost"
 export POSTGRES_PORT="${LOCAL_PORT}"
+
+export PGHOST="${POSTGRES_HOST}"
+export PGPORT="${POSTGRES_PORT}"
+export PGDATABASE="${POSTGRES_DB}"
+export PGUSER="${POSTGRES_USER}"
+export PGPASSWORD="${POSTGRES_PASSWORD}"
 
 PF_PID=""
 
@@ -61,7 +83,6 @@ cleanup() {
         wait "${PF_PID}" 2>/dev/null || true
     fi
 }
-# Runs no matter how the script exits: success, failure, or Ctrl+C.
 trap cleanup EXIT
 
 echo "[*] Starting port-forward to svc/${SERVICE} in namespace ${NAMESPACE}..."
@@ -69,8 +90,6 @@ kubectl port-forward -n "${NAMESPACE}" "svc/${SERVICE}" "${LOCAL_PORT}:${REMOTE_
     > /tmp/pf-postgres.log 2>&1 &
 PF_PID=$!
 
-# Give the tunnel a moment to actually come up before Alembic tries to
-# connect through it.
 echo "[*] Waiting for tunnel to be ready..."
 for _ in $(seq 1 20); do
     if (echo > "/dev/tcp/localhost/${LOCAL_PORT}") 2>/dev/null; then
@@ -85,7 +104,17 @@ if ! (echo > "/dev/tcp/localhost/${LOCAL_PORT}") 2>/dev/null; then
     exit 1
 fi
 
-echo "[*] Running: alembic $*"
-alembic "$@"
+if [[ "$1" == "exec" ]]; then
+    shift
+    if [[ $# -eq 0 ]]; then
+        echo "Usage: $(basename "$0") exec <command...>" >&2
+        exit 1
+    fi
+    echo "[*] Running: $*"
+    "$@"
+else
+    echo "[*] Running: alembic $*"
+    alembic "$@"
+fi
 
 echo "[OK] Done."
