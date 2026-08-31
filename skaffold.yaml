@@ -33,6 +33,7 @@ build:
 manifests:
   rawYaml:
     - k8s/infra/rabbitmq/*.yaml
+    - k8s/infra/postgresql/*.yaml
     - k8s/backend/fastapi/*.yaml
     - k8s/backend/router/*.yaml
     - k8s/compute/ollama_server.yaml

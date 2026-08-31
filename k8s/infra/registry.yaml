@@ -16,18 +16,18 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-infra
       containers:
-      - name: registry
+      - name: database
         image: registry:2
         ports:
         - containerPort: 5000
-          name: registry-port
+          name: database-port
         volumeMounts:
-        - name: registry-storage
-          mountPath: /var/lib/registry
+        - name: database-storage
+          mountPath: /var/lib/database
       volumes:
-      - name: registry-storage
+      - name: database-storage
         hostPath:
-          path: /var/local-registry
+          path: /var/local-database
           type: DirectoryOrCreate
 ---
 apiVersion: v1
@@ -41,6 +41,6 @@ spec:
     - port: 5000
       targetPort: 5000
       nodePort: 30500
-      name: registry-port
+      name: database-port
   selector:
     app: container-registry

@@ -1,0 +1,156 @@
+# Database layer (PostgreSQL + SQLAlchemy + Alembic)
+
+## Layout
+
+```
+database/
+├── __init__.py         # re-exports shared infra + every table's public API
+├── config.py            # env-var driven Postgres connection settings
+├── session.py            # async engine + get_session() — shared by ALL tables
+├── base.py               # the ONE shared declarative Base every schema.py uses
+├── alembic.ini
+├── requirements.txt
+├── migrations/
+│   ├── env.py             # wires Alembic to database.config + database.models
+│   ├── script.py.mako
+│   └── versions/
+│       └── 0001_create_models_table.py
+└── models/                 # one subfolder PER TABLE
+    ├── __init__.py           # imports every table's schema.py (see below)
+    └── model_registry/        # <- the "models" table
+        ├── __init__.py          # exposes this table's schema + repository
+        ├── schema.py             # ORM class: ModelRegistryEntry
+        └── repository.py         # ModelRepository: CRUD + queries
+```
+
+## What's shared vs. what's per-table
+
+**Shared once, for the whole project — never duplicated:**
+- `config.py` — connection settings
+- `session.py` — the engine and `get_session()`
+- `base.py` — the declarative `Base` class
+- `alembic.ini` + `migrations/env.py` + `migrations/script.py.mako` — the
+  migration mechanism itself
+
+**Added once per new table**, inside `models/<table_name>/`:
+- `schema.py` — the ORM class (columns, types, defaults)
+- `repository.py` — a `<Thing>Repository` class with the CRUD/query methods
+  for that table only
+- `__init__.py` — exposes the two above
+
+## Adding a new table
+
+1. Create the folder: `database/models/<table_name>/`
+2. Write `schema.py`:
+   ```python
+   from database.base import Base
+   from sqlalchemy.orm import Mapped, mapped_column
+   from sqlalchemy import Integer, String
+
+   class YourThing(Base):
+       __tablename__ = "your_things"
+       id: Mapped[int] = mapped_column(Integer, primary_key=True)
+       name: Mapped[str] = mapped_column(String(255), nullable=False)
+   ```
+3. Write `repository.py` following the pattern in
+   `model_registry/repository.py` (takes an `AsyncSession` in `__init__`,
+   exposes `get_by_id`, `list_all`, `create`, etc. — only `flush()`, never
+   `commit()`, since `get_session()` owns the transaction).
+4. Write `__init__.py` exporting the schema class + repository class.
+5. Register it so Alembic can see it — add one line to
+   `database/models/__init__.py`:
+   ```python
+   from database.models.your_table.schema import YourThing  # noqa: F401
+   ```
+6. Generate and review the migration:
+   ```bash
+   cd database
+   alembic revision --autogenerate -m "create your_things table"
+   alembic upgrade head
+   ```
+7. (Optional) Re-export from the root `database/__init__.py` if you want
+   `from database import YourThingRepository` to work.
+
+Step 5 is the one easy thing to forget — if a new schema module is never
+imported anywhere, it never registers onto `Base.metadata`, and
+`alembic revision --autogenerate` will not know it exists.
+
+## Schema: `model_registry` table (`models`)
+
+| column       | type          | notes                              |
+|--------------|---------------|-------------------------------------|
+| id           | serial, PK    | internal surrogate key              |
+| model_id     | varchar(255), unique | natural key, e.g. `"qwen2.5:7b"` |
+| engine       | varchar(64)   | e.g. `"ollama"`                     |
+| description  | text          | fed to the embedding model          |
+| examples     | text[]        | fed to the embedding model          |
+| replicas     | integer, default 1 |                                |
+| enabled      | boolean, default true | router should only load `enabled` |
+| created_at   | timestamptz    | server-generated                    |
+| updated_at   | timestamptz    | server-generated, updates on write  |
+
+## Environment variables
+
+Matches `k8s/infra/postgresql/{postgresql-statefulset,postgresql-service,
+postgresql-secret}.yaml` — Service `postgres` in namespace `platform`, and
+`postgres-secret` already exposes `POSTGRES_DB`/`POSTGRES_USER`/
+`POSTGRES_PASSWORD` with the right keys:
+
+- `POSTGRES_HOST` (default `postgres.platform.svc.cluster.local`; plain
+  `postgres` also resolves for pods already running in the `platform`
+  namespace)
+- `POSTGRES_PORT` (default `5432`)
+- `POSTGRES_DB` (default `model_registry`)
+- `POSTGRES_USER` (default `admin`)
+- `POSTGRES_PASSWORD` (default `admin123`)
+
+Or set `ASYNC_DATABASE_URL` / `SYNC_DATABASE_URL` directly to override
+everything above at once.
+
+**Wiring the Secret into a Deployment** (e.g. once the router is migrated):
+
+```yaml
+env:
+  - name: POSTGRES_DB
+    valueFrom:
+      secretKeyRef: { name: postgres-secret, key: POSTGRES_DB }
+  - name: POSTGRES_USER
+    valueFrom:
+      secretKeyRef: { name: postgres-secret, key: POSTGRES_USER }
+  - name: POSTGRES_PASSWORD
+    valueFrom:
+      secretKeyRef: { name: postgres-secret, key: POSTGRES_PASSWORD }
+  - name: POSTGRES_HOST
+    value: "postgres"  # same-namespace Service DNS name
+```
+
+## Running migrations
+
+From `database/`:
+
+```bash
+pip install -r requirements.txt
+alembic upgrade head
+```
+
+## Using a repository
+
+```python
+from database import get_session, ModelRepository
+
+async def example():
+    async with get_session() as session:
+        repo = ModelRepository(session)
+
+        await repo.create(
+            model_id="qwen2.5-coder:7b",
+            engine="ollama",
+            description="Specialized coding model...",
+            examples=["Write a Python function that parses a JSON file..."],
+            replicas=1,
+            enabled=True,
+        )
+
+        enabled_models = await repo.list_enabled()
+```
+
