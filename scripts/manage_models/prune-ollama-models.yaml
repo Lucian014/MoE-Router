@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: prune-ollama-models
+  namespace: processing
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: prune
+          image: 192.168.56.102:30500/manage-models:latest
+          command: ["python", "scripts/manage_models/manage_models.py", "--prune"]
+          env:
+            - name: OLLAMA_URL
+              value: "http://ollama-service:11434"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+  

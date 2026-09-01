@@ -103,7 +103,7 @@ class ModelRepository:
     ) -> ModelRegistryEntry:
         """Create the model if it doesn't exist, otherwise update it in
         place. Handy for seeding/import scripts run repeatedly (e.g. a
-        future `provision_models.py` step that syncs from k8s manifests)."""
+        future `manage_models.py` step that syncs from k8s manifests)."""
         entry = await self.get_by_id(model_id)
         if entry is None:
             return await self.create(

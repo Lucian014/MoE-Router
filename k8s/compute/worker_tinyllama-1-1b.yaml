@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker-qwen2-5-7b
+  name: worker-tinyllama-1-1b
   namespace: processing
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: worker
-      model: qwen2-5-7b
+      model: tinyllama-1-1b
   template:
     metadata:
       labels:
         app: worker
-        model: qwen2-5-7b
+        model: tinyllama-1-1b
     spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-compute
@@ -23,7 +23,7 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: MODEL_NAME
-          value: "qwen2.5:7b"
+          value: "tinyllama:1.1b"
         - name: ENGINE_TYPE
           value: "ollama"
         - name: INFERENCE_HOST

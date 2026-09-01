@@ -5,8 +5,9 @@ import sys
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+import argparse
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 SRC_DIR = ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
@@ -19,19 +20,24 @@ OLLAMA_URL = os.getenv(
 
 HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "30"))
 
+async def load_catalog_allow_empty() -> list[dict]:
+    async with get_session() as session:
+        repo = ModelRepository(session)
+        entries = await repo.list_enabled()
+    return [entry.to_dict() for entry in entries]
 
 async def load_catalog() -> list[dict]:
     """
     Load the catalog from the `models` table.
+    Raises if no enabled models exist — used by provision/router,
+    where an empty catalog is a fatal error (nothing to route to).
     """
-    async with get_session() as session:
-        repo = ModelRepository(session)
-        entries = await repo.list_enabled()
+    entries = await load_catalog_allow_empty()
 
     if not entries:
         raise ValueError("No enabled models found in the `models` table.")
 
-    return [entry.to_dict() for entry in entries]
+    return entries
 
 
 def get_installed_ollama_models() -> set[str]:
@@ -197,19 +203,88 @@ def delete_ollama_model(model_id: str) -> None:
             f"Cannot connect to Ollama at {OLLAMA_URL}: {exc.reason}"
         ) from exc
 
+def prune_ollama(models: list[dict]) -> None:
+    """
+    Delete any installed Ollama model that is no longer an enabled
+    'ollama' entry in the catalog.
+    """
+    installed = get_installed_ollama_models()
 
-async def main() -> None:
-    print(f"[*] Ollama: {OLLAMA_URL}")
+    catalog_ids = {
+        model["model_id"]
+        for model in models
+        if model.get("engine") == "ollama"
+    }
 
+    stale = installed - catalog_ids
+
+    if not stale:
+        print("[*] Nothing to prune — all installed models are in the catalog.")
+        return
+
+    print(f"[*] Pruning {len(stale)} model(s) not in catalog: {sorted(stale)}")
+
+    for model_id in stale:
+        delete_ollama_model(model_id)
+
+
+async def run_provision() -> None:
     models = await load_catalog()
     provision_ollama(models)
-
     print("[OK] Ollama model provisioning complete.")
+
+
+async def run_delete(model_id: str) -> None:
+    installed = get_installed_ollama_models()
+
+    if model_id not in installed:
+        print(f"[SKIP] '{model_id}' is not installed in Ollama.")
+        return
+
+    delete_ollama_model(model_id)
+
+
+async def run_prune() -> None:
+    models = await load_catalog_allow_empty()
+    prune_ollama(models)
+    print("[OK] Ollama pruning complete.")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument(
+        "--provision",
+        action="store_true",
+        help="Pull any catalog 'ollama' models not yet installed.",
+    )
+    mode.add_argument(
+        "--delete",
+        type=str,
+        metavar="MODEL_ID",
+        help="Delete a single model from Ollama storage by model_id.",
+    )
+    mode.add_argument(
+        "--prune",
+        action="store_true",
+        help="Delete any installed Ollama model no longer in the enabled catalog.",
+    )
+
+    args = parser.parse_args()
+
+    print(f"[*] Ollama: {OLLAMA_URL}")
+
+    if args.provision:
+        asyncio.run(run_provision())
+    elif args.delete:
+        asyncio.run(run_delete(args.delete))
+    elif args.prune:
+        asyncio.run(run_prune())
 
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        main()
     except Exception as exc:
         print(f"[ERROR] {exc}", file=sys.stderr)
         sys.exit(1)

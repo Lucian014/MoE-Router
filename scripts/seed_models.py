@@ -34,7 +34,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
-from database import get_session, ModelRepository  # noqa: E402
+from database import get_session, ModelRepository
 
 
 async def seed_from_yaml(yaml_path: Path) -> None:
