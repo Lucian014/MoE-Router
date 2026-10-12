@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker-codegemma-2b
+  name: worker-qwen2-5-coder-1-5b
   namespace: processing
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: worker
-      model: codegemma-2b
+      model: qwen2-5-coder-1-5b
   template:
     metadata:
       labels:
         app: worker
-        model: codegemma-2b
+        model: qwen2-5-coder-1-5b
     spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-compute
@@ -23,7 +23,7 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: MODEL_NAME
-          value: "codegemma:2b"
+          value: "qwen2.5-coder:1.5b"
         - name: ENGINE_TYPE
           value: "ollama"
         - name: INFERENCE_HOST

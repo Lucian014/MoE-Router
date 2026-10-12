@@ -10,7 +10,7 @@ class OllamaEngine(InferenceEngine):
         self.host = host
 
     async def generate(self, model: str, prompt: str) -> str:
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient(timeout=240.0) as client:
             response = await client.post(
                 f"{self.host}/api/generate",
                 json={"model": model, "prompt": prompt, "stream": False},

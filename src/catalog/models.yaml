@@ -1,142 +1,56 @@
-# =============================================================================
-# CENTRAL MODEL CATALOG — Single Source of Truth (routing test set, lightweight)
-# =============================================================================
-# All models are small (1B–4B params, Q4 quantization), pulled directly from
-# the Ollama library — no custom sources needed.
-# Sizes below are approximate on-disk (Q4_K_M).
-# =============================================================================
 models:
-  - model_id: "llama3.2:3b"
+  - model_id: "gemma3:1b"
     engine: "ollama"
-    description: >
-      General-purpose conversational model for everyday dialogue, broad
-      questions, brainstorming, and general knowledge. Best for open-ended
-      requests with no specialized domain.
-    examples:
-      - "What's the difference between weather and climate?"
-      - "Help me brainstorm names for a coffee shop."
-      - "Explain how vaccines work in simple terms."
-    replicas: 1
+    category: "open-qa"
+    complexity_tier: "low"
 
-  - model_id: "llama3.2:1b"
+  - model_id: "gemma3:4b"
     engine: "ollama"
-    description: >
-      Ultra-lightweight model for short, simple queries: quick answers,
-      small talk, basic customer-support style questions that don't need
-      deep reasoning or long context.
-    examples:
-      - "What time zone is Romania in?"
-      - "Hi, can you help me reset my password?"
-      - "What's 15% of 80?"
-    replicas: 1
+    category: "open-qa"
+    complexity_tier: "high"
+    is_default: true
 
-  - model_id: "qwen2.5:3b"
+  - model_id: "qwen2.5-coder:1.5b"
     engine: "ollama"
-    description: >
-      Instruction-following model with strong multilingual capabilities.
-      Best for structured responses, formal writing help, and general
-      problem solving across languages, without requiring a specialized model.
-    examples:
-      - "Rewrite this email to sound more professional."
-      - "Make this message to my manager more formal."
-      - "Draft a polite follow-up message for a delayed shipment."
-    replicas: 1
-
-  - model_id: "qwen2.5:1.5b"
-    engine: "ollama"
-    description: >
-      Lightweight multilingual model specialized for translation between
-      languages and cross-lingual question answering.
-    examples:
-      - "Translate this paragraph from English to Romanian."
-      - "Translate 'Where is the nearest pharmacy?' into French."
-      - "What does 'mulțumesc frumos' mean in English?"
-    replicas: 1
-
-  - model_id: "mightykatun/qwen2.5-math:1.5b"
-    engine: "ollama"
-    description: >
-      Specialized mathematical reasoning model for arithmetic, algebra,
-      calculus, probability, and step-by-step quantitative problem solving.
-    examples:
-      - "Solve the equation 2x² - 5x - 3 = 0 and show the steps."
-      - "Calculate the derivative of f(x) = x² sin(x)."
-      - "A fair coin is flipped 10 times. What is the probability of exactly 6 heads?"
-    replicas: 1
+    category: "coding"
+    complexity_tier: "low"
 
   - model_id: "qwen2.5-coder:3b"
     engine: "ollama"
-    description: >
-      Specialized coding model for code generation, debugging, refactoring,
-      and working with source code across common programming languages.
-    examples:
-      - "Write a Python function that parses a JSON file and validates fields."
-      - "Find and fix the bug in this Python code."
-      - "Write a FastAPI endpoint that accepts a JSON request."
-    replicas: 1
+    category: "coding"
+    complexity_tier: "high"
 
-  - model_id: "deepseek-coder:1.3b"
+  - model_id: "phi4-mini:3.8b"
     engine: "ollama"
-    description: >
-      Lightweight code-completion and debugging model, focused on quick
-      code fixes, small snippets, and inline suggestions.
-    examples:
-      - "Complete this function to sort a list of dictionaries by key."
-      - "Why does this loop never terminate?"
-      - "Add error handling to this function."
-    replicas: 1
+    category: "math"
+    complexity_tier: "low"
 
-  - model_id: "codegemma:2b"
+  - model_id: "qwen3:4b-instruct"
     engine: "ollama"
-    description: >
-      Specialized model for SQL query generation and database-related tasks,
-      including schema design questions and query optimization.
-    examples:
-      - "Write a SQL query to find the top 5 customers by total order value."
-      - "Optimize this SQL query, it's running slowly on a large table."
-      - "Design a database schema for a simple blog with posts and comments."
-    replicas: 1
+    category: "math"
+    complexity_tier: "high"
 
-  - model_id: "gemma2:2b"
+  - model_id: "gemma3:4b-it-qat"
     engine: "ollama"
-    description: >
-      Creative writing model for stories, poems, dialogue, and imaginative
-      content. Best for open-ended creative tasks rather than factual queries.
-    examples:
-      - "Write a short story about a robot who discovers music."
-      - "Write a poem about autumn in the style of free verse."
-      - "Continue this story: 'The door creaked open, revealing...'"
-    replicas: 1
+    category: "translation"
+    complexity_tier: "high"
 
-  - model_id: "smollm2:1.7b"
+  - model_id: "llama3.2:3b"
     engine: "ollama"
-    description: >
-      Lightweight summarization and rewriting model, optimized for
-      condensing long text into key points and simplifying complex passages.
-    examples:
-      - "Summarize this article into five key points."
-      - "Condense this report into a one-paragraph executive summary."
-      - "Simplify this technical explanation for a non-expert audience."
-    replicas: 1
+    category: "text-rewrite"
+    complexity_tier: "high"
 
-  - model_id: "phi3.5:3.8b"
+  - model_id: "qwen2.5:3b"
     engine: "ollama"
-    description: >
-      Reasoning-focused model for logic puzzles, multi-step deduction,
-      and analytical questions that require careful step-by-step thinking.
-    examples:
-      - "If all Bloops are Razzies and all Razzies are Lazzies, are all Bloops Lazzies?"
-      - "Three friends split a bill unevenly based on what they ordered — help me figure out who owes what."
-      - "Walk through the logic of why this argument is flawed."
-    replicas: 1
+    category: "summarization"
+    complexity_tier: "high"
 
-  - model_id: "tinyllama:1.1b"
+  - model_id: "gemma3n:e2b"
     engine: "ollama"
-    description: >
-      Extremely lightweight fallback model for casual chit-chat and very
-      simple factual questions, used when no specialized model is needed.
-    examples:
-      - "How are you today?"
-      - "Tell me a fun fact."
-      - "What's the capital of Italy?"
-    replicas: 1
+    category: "creative-writing"
+    complexity_tier: "high"
+
+  - model_id: "granite3.3:2b"
+    engine: "ollama"
+    category: "brainstorming"
+    complexity_tier: "high"

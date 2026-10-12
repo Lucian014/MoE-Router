@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker-phi3-5-3-8b
+  name: worker-gemma3-1b
   namespace: processing
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: worker
-      model: phi3-5-3-8b
+      model: gemma3-1b
   template:
     metadata:
       labels:
         app: worker
-        model: phi3-5-3-8b
+        model: gemma3-1b
     spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-compute
@@ -23,7 +23,7 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: MODEL_NAME
-          value: "phi3.5:3.8b"
+          value: "gemma3:1b"
         - name: ENGINE_TYPE
           value: "ollama"
         - name: INFERENCE_HOST

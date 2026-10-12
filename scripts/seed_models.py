@@ -1,30 +1,25 @@
 #!/usr/bin/env python3
 """
-seed_models.py — populate the `models` table.
+seed_models.py -- populate the `models` table.
 
-Two modes:
+1. Bulk load from a YAML catalog (the human-editable source of truth):
 
-1. Bulk load from a YAML file (e.g. keep using catalog/models.yaml as a
-   human-editable source of truth, and sync it into the DB):
+    python scripts/seed_models.py --from-yaml src/catalog/models.yaml
+    python scripts/seed_models.py --from-yaml src/catalog/models.yaml --check   # validate only
 
-    python scripts/seed_models.py --from-yaml catalog/models.yaml
+   The catalog is validated with the router's own rule (router/routing_rule.py) BEFORE touching
+   the DB: exactly one enabled default, one category per model (a domain label), complexity_tier
+   in {low, high}, at most one enabled model per category + tier. upsert() makes re-runs safe.
+   Models that are in the DB but no longer in the YAML are left untouched (disable them with
+   `enabled: false` instead of deleting the line).
 
-   Uses upsert(), so re-running this after editing the YAML is safe —
-   existing models are updated in place, new ones are created.
+2. Add / update a single model:
 
-2. Add a single model from the command line:
+    python scripts/seed_models.py --add --model-id "qwen2.5-coder:3b" --engine ollama \
+        --category coding --tier high
 
-    python scripts/seed_models.py --add \
-        --model-id "qwen2.5-coder:7b" \
-        --engine ollama \
-        --description "Specialized coding model..." \
-        --example "Write a Python function that parses a JSON file" \
-        --replicas 1
-
-Run from anywhere — sys.path is adjusted below to find the `database`
-package regardless of current working directory.
+Run from anywhere -- sys.path is adjusted below to find `database` and `router`.
 """
-
 import argparse
 import asyncio
 import sys
@@ -34,89 +29,98 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
-from database import get_session, ModelRepository
+from database import ModelRepository, get_session
+from router.domain_schema import LABELS as CATEGORIES  
+from router.routing_rule import catalog_from_rows, select_model, validate_catalog  # noqa: E402
 
 
-async def seed_from_yaml(yaml_path: Path) -> None:
+def check_catalog(models: list[dict], source: str) -> None:
+    try:
+        catalog = catalog_from_rows(models)
+    except ValueError as e:
+        raise SystemExit(f"[!] {source}: {e}")
+    errors, warnings = validate_catalog(catalog, CATEGORIES)
+    for w in warnings:
+        print(f"[warn] {w}")
+    if errors:
+        raise SystemExit(f"[!] {source} is not a valid catalog:\n  " + "\n  ".join(errors))
+    print(f"[OK] {source}: {len(models)} model(s)")
+    for c in CATEGORIES:
+        low, _ = select_model(catalog, c, "low")
+        high, _ = select_model(catalog, c, "high")
+        print(f"     {c:17s} low -> {low:32s} high -> {high}")
+
+
+async def seed_from_yaml(yaml_path: Path, check_only: bool) -> None:
     import yaml
 
-    if not yaml_path.exists():
-        raise FileNotFoundError(f"{yaml_path} not found")
-
-    with open(yaml_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-
-    models = data.get("models", [])
+    with open(yaml_path, encoding="utf-8") as f:
+        models = (yaml.safe_load(f) or {}).get("models", [])
     if not models:
-        raise ValueError(f"{yaml_path} has no models under the 'models' key.")
+        raise SystemExit(f"[!] {yaml_path} has no models under the 'models' key.")
+    for m in models:
+        m.setdefault("complexity_tier", "high")
+        m.setdefault("category", None)
+    check_catalog(models, str(yaml_path))
+    if check_only:
+        return
 
-    async with get_session() as session:
+    async with get_session() as session:      # one transaction: all or nothing
         repo = ModelRepository(session)
-
+        # 1. free every slot the YAML touches, so swapping two models' category / tier works
         for entry in models:
-            model_id = entry["model_id"]
+            if await repo.get_by_id(entry["model_id"]) is not None:
+                await repo.update(entry["model_id"], enabled=False)
+        # 2. write the YAML; the default last, so _clear_other_defaults() leaves exactly one
+        for entry in sorted(models, key=lambda e: e.get("is_default", False)):
             await repo.upsert(
-                model_id=model_id,
+                model_id=entry["model_id"],
                 engine=entry["engine"],
-                description=entry.get("description", ""),
-                examples=entry.get("examples", []),
-                replicas=entry.get("replicas", 1),
+                category=entry["category"],
+                complexity_tier=entry["complexity_tier"],
                 enabled=entry.get("enabled", True),
+                is_default=entry.get("is_default", False),
             )
-            print(f"[OK] Upserted '{model_id}'")
+            print(f"[OK] upserted {entry['model_id']}")
+    print(f"[OK] seeded {len(models)} model(s) from {yaml_path}")
 
-    print(f"[OK] Seeded {len(models)} model(s) from {yaml_path}")
 
-
-async def add_single(
-    model_id: str,
-    engine: str,
-    description: str,
-    examples: list[str],
-    replicas: int,
-    enabled: bool,
-) -> None:
+async def add_single(args) -> None:
     async with get_session() as session:
-        repo = ModelRepository(session)
-        entry = await repo.upsert(
-            model_id=model_id,
-            engine=engine,
-            description=description,
-            examples=examples,
-            replicas=replicas,
-            enabled=enabled,
+        entry = await ModelRepository(session).upsert(
+            model_id=args.model_id,
+            engine=args.engine,
+            category=args.category,
+            complexity_tier=args.tier,
+            enabled=not args.disabled,
+            is_default=args.default,
         )
-        print(f"[OK] Upserted: {entry!r}")
+        print(f"[OK] upserted: {entry!r}")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     mode = parser.add_mutually_exclusive_group(required=True)
-    mode.add_argument("--from-yaml", type=Path, help="Path to a models.yaml file to bulk-load")
-    mode.add_argument("--add", action="store_true", help="Add/update a single model from CLI args")
-
-    parser.add_argument("--model-id", type=str)
-    parser.add_argument("--engine", type=str)
-    parser.add_argument("--description", type=str, default="")
-    parser.add_argument("--example", action="append", dest="examples", default=[])
-    parser.add_argument("--replicas", type=int, default=1)
-    parser.add_argument("--disabled", action="store_true", help="Create the model as disabled")
-
+    mode.add_argument("--from-yaml", type=Path, help="models.yaml to bulk-load")
+    mode.add_argument("--add", action="store_true", help="add/update a single model from CLI args")
+    parser.add_argument("--check", action="store_true", help="with --from-yaml: validate only, no DB writes")
+    parser.add_argument("--model-id")
+    parser.add_argument("--engine")
+    parser.add_argument("--category", choices=CATEGORIES, default=None,
+                        help="the one category this model serves (omit only for a generalist default)")
+    parser.add_argument("--tier", choices=["low", "high"], default="high")
+    parser.add_argument("--disabled", action="store_true")
+    parser.add_argument("--default", action="store_true", help="make this the fallback model")
     args = parser.parse_args()
 
     if args.from_yaml:
-        asyncio.run(seed_from_yaml(args.from_yaml))
+        asyncio.run(seed_from_yaml(args.from_yaml, args.check))
     else:
         if not args.model_id or not args.engine:
             parser.error("--add requires --model-id and --engine")
-        asyncio.run(add_single(
-            model_id=args.model_id,
-            engine=args.engine,
-            description=args.description,
-            examples=args.examples,
-            replicas=args.replicas,
-            enabled=not args.disabled,
-        ))
+        if args.category is None and not args.default:
+            print("[warn] no --category and not --default: this model will never be selected")
+        asyncio.run(add_single(args))
 
 
 if __name__ == "__main__":

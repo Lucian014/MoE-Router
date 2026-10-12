@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker-deepseek-coder-1-3b
+  name: worker-phi4-mini-3-8b
   namespace: processing
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: worker
-      model: deepseek-coder-1-3b
+      model: phi4-mini-3-8b
   template:
     metadata:
       labels:
         app: worker
-        model: deepseek-coder-1-3b
+        model: phi4-mini-3-8b
     spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-compute
@@ -23,7 +23,7 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: MODEL_NAME
-          value: "deepseek-coder:1.3b"
+          value: "phi4-mini:3.8b"
         - name: ENGINE_TYPE
           value: "ollama"
         - name: INFERENCE_HOST

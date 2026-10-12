@@ -1,0 +1,165 @@
+# =============================================================================
+# CATEGORY CATALOG — Single Source of Truth for task routing
+# =============================================================================
+# Replaces the NVIDIA prompt-task-and-complexity-classifier's fixed 11-class
+# taxonomy with a project-owned set of categories. Each category is embedded
+# the exact same way a model is (description + examples), and prompt ->
+# category selection uses the same cosine-similarity scoring as
+# select_model() (40% description / 60% closest example, configurable).
+#
+# A model declares which categories it supports via its `task_types` field
+# in models.yaml — those values MUST match the `name` field of a category
+# defined here. There is no other coupling: rename/add a category here plus
+# update task_types on the relevant models, no code change required.
+#
+# Adding a new category:
+#   1. Add an entry below with a clear description + 5-6 representative
+#      examples (mix languages if your traffic is multilingual, as this
+#      catalog already does with RO/EN).
+#   2. Re-embed at router boot (automatic — categories.yaml is loaded at
+#      startup, same as models.yaml).
+#   3. Point at least one model's task_types at the new category name,
+#      otherwise prompts routed here will find zero candidates and fall
+#      back to the General Purpose model.
+#   4. Validate with evaluate_router_category.py against a labeled CSV
+#      before trusting it in production.
+# =============================================================================
+
+categories:
+  - name: "coding"
+    description: >
+      Writing, debugging, or refactoring code and queries across two
+      related domains: general-purpose programming languages (Python,
+      JavaScript, Java, C++, Bash, Rust, Go, etc.) — functions, scripts,
+      algorithms, in-memory data structures, runtime errors and crashes —
+      AND SQL/database work — queries, schema design, migrations,
+      triggers, and stored procedures. Both are grouped under one
+      category because the actual specialist (general code vs. SQL) is
+      chosen afterward, among candidates that both declare "coding".
+    examples:
+      - "Write a Python function that parses a JSON file and validates fields."
+      - "Why does this loop never terminate? for i in range(10): if i == 5: continue"
+      - "Build a simple WebSocket chat server in Node.js using the 'ws' library."
+      - "Repara aceasta functie JS care arunca TypeError cand user-ul e undefined."
+      - "Refactor this code to use list comprehensions instead of for-loops."
+      - "Scrie o functie in JavaScript care valideaza o adresa de email."
+      - "Implement a stack in Python using a plain list, with push, pop, and peek methods."
+      - "Write a binary search tree class in Java with insert and in-order traversal."
+      - "How do I properly open and close a database connection in Python using a context manager?"
+      - "Write a TypeScript interface for a generic paginated API response."
+      - "Write a SQL query to find the top 5 customers by total order value."
+      - "Design a database schema for a simple blog with posts and comments."
+      - "Scrie o interogare SQL care calculeaza media notelor pe fiecare student."
+      - "How do I write a PostgreSQL query that pivots monthly sales into columns?"
+      - "Creeaza un trigger in PostgreSQL care actualizeaza automat updated_at."
+      - "Write a SQL query to find duplicate rows based on email column."
+
+  - name: "text-rewrite"
+    description: >
+      Reformulating a message, email, or paragraph the user already wrote,
+      changing its tone or formality register — casual to professional,
+      harsh to diplomatic, vague to confident — while keeping the same
+      language, the same approximate length, and the same underlying
+      meaning. Distinct from translation (which changes the language, not
+      the tone) and from summarization (which shortens content rather
+      than adjusting its register).
+    examples:
+      - "Rewrite this email to sound more professional: hey delivery is gonna be late"
+      - "Reformuleaza acest mesaj catre client intr-un stil mai politicos si oficial."
+      - "Make this paragraph sound more confident and persuasive."
+      - "Tone down this frustrated complaint email so it sounds calmer and more measured."
+      - "Redacteaza un anunt oficial pentru angajati despre schimbarea politicilor."
+      - "Draft a polite follow-up email to a client who hasn't replied in two weeks."
+      - "Rework this blunt feedback message so it sounds constructive instead of harsh."
+      - "Adapteaza acest raspuns informal catre un coleg intr-un email oficial catre un client."
+
+  - name: "summarization"
+    description: >
+      Condensing longer text into shorter form: bullet points, one-sentence
+      summaries, key-point extraction, or simplifying dense/technical text
+      into plain language.
+    examples:
+      - "Summarize this passage in three bullet points."
+      - "Give me a concise one-sentence summary of this text."
+      - "Rezuma acest articol de presa intr-un singur paragraf scurt."
+      - "Condense this legal clause into plain, easy-to-understand language."
+      - "Extract the key action items and assignees from this transcript."
+      - "Simplifica aceasta explicatie medicala pentru un pacient."
+
+  - name: "translation"
+    description: >
+      Translating text between languages, or explaining what a foreign-
+      language word, idiom, or expression means.
+    examples:
+      - "Translate this paragraph from English to Romanian."
+      - "Traduce acest contract scurt din romana in engleza."
+      - "What does the Danish concept 'hygge' mean, and how would you explain it?"
+      - "Cum se spune 'I apologize for the delayed response' in spaniola si franceza?"
+      - "Translate this product description from German to English."
+      - "Ce inseamna expresia italiana 'in bocca al lupo'?"
+      - "Translate this thank-you note into French, keeping the same warm and friendly tone."
+      - "Traduce acest raspuns oficial din engleza in romana, pastrand un ton politicos si formal."
+      - "How do you correctly say 'to the best of my knowledge' in German in a formal legal document?"
+
+  - name: "creative-writing"
+    description: >
+      Original fiction, short stories, poetry, myths, dramatic scenes, or
+      any creative narrative content written from scratch (not rewriting
+      existing text).
+    examples:
+      - "Write a short story about an old clockmaker who discovers a magic pocket watch."
+      - "Scrie o poezie cu rima despre linistea mării în timpul nopții."
+      - "Continue this narrative prompt: 'The last beacon on the outpost flickered twice...'"
+      - "Write a dramatic scene where two rival detectives share a shelter in a blizzard."
+      - "Invent a brief myth explaining why thunder always follows lightning."
+      - "Write a story about a robot who discovers music."
+      - "Write a tense dialogue between two soldiers waiting for orders that never come."
+      - "Scrie un dialog scurt intre un detectiv si un suspect care refuza sa vorbeasca."
+
+  - name: "open-qa"
+    description: >
+      Direct factual, computational, or logical questions that have a
+      single correct answer — general knowledge across science, nature,
+      history, geography, everyday technology, health, and culture, AND
+      arithmetic, algebra, geometry, probability, or logic puzzles and
+      word problems, whether written with explicit numbers/equations or
+      narrated in plain language. Also covers casual greetings and small
+      talk. Distinct from brainstorming (many valid answers, not one) and
+      from text manipulation tasks (no answer, a transformation of given
+      text).
+    examples:
+      - "What's the difference between weather and climate?"
+      - "Explain how vaccines work in simple terms."
+      - "Care sunt principalele diferente dintre cafea si ceai in ceea ce priveste cofeina?"
+      - "What is the capital city of Australia and what is it most known for?"
+      - "Cum a aparut traditia de a impodobi bradul de Craciun?"
+      - "Hi there, how are you doing today?"
+      - "Why does the human body need sleep, biologically speaking?"
+      - "How does a rainbow form after it rains?"
+      - "Ce cauzeaza cutremurele si de ce sunt unele zone mai predispuse decat altele?"
+      - "What's the difference between a virus and a bacteria?"
+      - "How do airplanes stay in the air despite being so heavy?"
+      - "Cati oameni traiesc aproximativ in Uniunea Europeana?"
+      - "Solve the equation 2x² - 5x - 3 = 0 and show the steps."
+      - "A store offers a 20% discount then an additional 15% off. Final price of a $200 item?"
+      - "Five people sit in a row. Given these clues, figure out the seating order."
+      - "Rezolva sistemul de ecuatii: 2x + y = 10, x - y = 2."
+      - "If a car travels at 80 km/h for 2 hours, how long would it take to cover 300 km at the same speed?"
+      - "You have two ropes that each burn unevenly but take exactly one hour to burn fully. How do you measure exactly 45 minutes using them?"
+
+  - name: "brainstorming"
+    description: >
+      Open-ended idea generation, suggestions, options, or exploratory
+      planning where there's no single correct answer — the user wants a
+      range of possibilities, not a factual answer.
+    examples:
+      - "Give me a few creative ideas for team-building activities for a remote team."
+      - "Recomanda-mi cateva subiecte interesante pentru un podcast despre AI."
+      - "What are some effective ways to reduce daily screen time?"
+      - "Recomanda-mi cateva idei de activitati pentru un weekend ploios."
+      - "What's a good way to start learning about astronomy as a hobby?"
+      - "Ce sfat i-ai da cuiva care vrea sa se apuce de alergat dar nu are conditie fizica?"
+      - "What angles could I take for a short toast at my sister's wedding?"
+      - "Ce unghiuri as putea aborda intr-un discurs scurt de multumire la o gala?"
+
+  - name: "math"

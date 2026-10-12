@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker-llama3-2-1b
+  name: worker-granite3-3-2b
   namespace: processing
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: worker
-      model: llama3-2-1b
+      model: granite3-3-2b
   template:
     metadata:
       labels:
         app: worker
-        model: llama3-2-1b
+        model: granite3-3-2b
     spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-compute
@@ -23,7 +23,7 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: MODEL_NAME
-          value: "llama3.2:1b"
+          value: "granite3.3:2b"
         - name: ENGINE_TYPE
           value: "ollama"
         - name: INFERENCE_HOST

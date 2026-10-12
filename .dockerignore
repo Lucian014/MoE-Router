@@ -1,0 +1,7 @@
+src/router/checkpoints/
+scripts/laya/checkpoints/
+scripts/laya/data/
+**/__pycache__/
+**/*.pyc
+.git/
+.venv/

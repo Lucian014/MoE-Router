@@ -1,4 +1,4 @@
-SQLAlchemy>=2.0,<3.0
+sqlalchemy[asyncio]
 alembic>=1.13,<2.0
 asyncpg>=0.29,<1.0
 psycopg2-binary>=2.9,<3.0

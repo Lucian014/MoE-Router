@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker-tinyllama-1-1b
+  name: worker-gemma3n-e2b
   namespace: processing
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: worker
-      model: tinyllama-1-1b
+      model: gemma3n-e2b
   template:
     metadata:
       labels:
         app: worker
-        model: tinyllama-1-1b
+        model: gemma3n-e2b
     spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-compute
@@ -23,7 +23,7 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: MODEL_NAME
-          value: "tinyllama:1.1b"
+          value: "gemma3n:e2b"
         - name: ENGINE_TYPE
           value: "ollama"
         - name: INFERENCE_HOST

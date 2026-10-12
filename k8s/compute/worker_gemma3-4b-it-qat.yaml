@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker-qwen2-5-1-5b
+  name: worker-gemma3-4b-it-qat
   namespace: processing
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: worker
-      model: qwen2-5-1-5b
+      model: gemma3-4b-it-qat
   template:
     metadata:
       labels:
         app: worker
-        model: qwen2-5-1-5b
+        model: gemma3-4b-it-qat
     spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-compute
@@ -23,7 +23,7 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: MODEL_NAME
-          value: "qwen2.5:1.5b"
+          value: "gemma3:4b-it-qat"
         - name: ENGINE_TYPE
           value: "ollama"
         - name: INFERENCE_HOST

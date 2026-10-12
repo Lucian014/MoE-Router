@@ -12,11 +12,15 @@ Run this any time the `models` table changes:
 
     python scripts/build_manifests.py
 
+The `models` table no longer has a `replicas` column: workers are autoscaled by KEDA on their
+`worker.<model>` queue, so every Deployment starts with WORKER_REPLICAS pods (env, default 1).
+
 Nothing else in the system should ever hand-edit the generated files —
 they will be silently overwritten on the next run.
 
 """
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -31,6 +35,7 @@ from shared.utils import sanitize_k8s_name  # noqa: E402
 
 TEMPLATE_PATH = ROOT / "scripts" / "templates" / "worker_template.yaml"
 COMPUTE_DIR = K8S_DIR / "compute"
+WORKER_REPLICAS = int(os.getenv("WORKER_REPLICAS", "1"))
 
 ENGINE_HOST_DEFAULTS = {
     "ollama": "http://ollama-service.processing.svc.cluster.local:11434",
@@ -39,12 +44,7 @@ ENGINE_HOST_DEFAULTS = {
 
 
 async def load_catalog() -> list[dict]:
-    """
-    Load the catalog from the `models` table. Returns the same shape the
-    rest of this script already expects — ModelRegistryEntry.to_dict()
-    was built to match the old YAML/JSON entry shape, so callers below
-    don't need to change.
-    """
+    """Load the catalog from the `models` table (ModelRegistryEntry.to_dict() rows)."""
     async with get_session() as session:
         repo = ModelRepository(session)
         entries = await repo.list_all()
@@ -89,7 +89,6 @@ def build_worker_manifests(models: list[dict]) -> None:
         model_id = entry["model_id"]
         engine = entry["engine"]
         k8s_name = sanitize_k8s_name(model_id)
-        replicas = entry["replicas"]
         inference_host = entry.get("inference_host") or ENGINE_HOST_DEFAULTS[engine]
 
         rendered = (
@@ -99,12 +98,14 @@ def build_worker_manifests(models: list[dict]) -> None:
             .replace("MODEL_NAME_PLACEHOLDER", model_id)
             .replace("ENGINE_TYPE_PLACEHOLDER", engine)
             .replace("INFERENCE_HOST_PLACEHOLDER", inference_host)
-            .replace("REPLICAS_PLACEHOLDER", str(replicas))
+            .replace("REPLICAS_PLACEHOLDER", str(WORKER_REPLICAS))
         )
 
         out_path = COMPUTE_DIR / f"worker_{k8s_name}.yaml"
         out_path.write_text(rendered)
-        print(f"[OK] Wrote {out_path.relative_to(ROOT)} (replicas={replicas})")
+        print(f"[OK] Wrote {out_path.relative_to(ROOT)} "
+              f"(category={entry['category']}, tier={entry['complexity_tier']}, "
+              f"enabled={entry['enabled']})")
 
 
 async def main():

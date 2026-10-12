@@ -1,3 +1,11 @@
+# =============================================================================
+# Router Deployment -- the two Laya classifiers run INSIDE each router pod.
+#
+# Each pod = 1 container: RabbitMQ consumer + domain classifier + complexity classifier.
+# The checkpoints are downloaded from HF at image build time and baked into the image
+# (src/router/Dockerfile): no HF_TOKEN in the cluster. Scale classification capacity by scaling
+# this Deployment (replicas, or KEDA on the router.requests queue).
+# =============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,6 +23,7 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-route
+      terminationGracePeriodSeconds: 30
       containers:
       - name: router
         image: 192.168.56.102:30500/moe-router:latest
@@ -22,6 +31,15 @@ spec:
         env:
         - name: MIDDLEWARE_QUEUE
           value: "router.requests"
+        - name: CLASSIFIER_DEVICE
+          value: "cpu"
+        - name: COMPLEXITY_THRESHOLD
+          value: "0.5"
+        - name: CATALOG_REFRESH_SECONDS
+          value: "30"
+        - name: OMP_NUM_THREADS
+          value: "2"
+        # --- RabbitMQ ------------------------------------------------------------------------
         - name: RABBITMQ_HOST
           value: "rabbitmq.platform.svc.cluster.local"
         - name: RABBITMQ_USER
@@ -34,26 +52,30 @@ spec:
             secretKeyRef:
               name: rabbit-secret
               key: RABBITMQ_DEFAULT_PASS
+        # --- Postgres ------------------------------------------------------------------------
         - name: POSTGRES_HOST
           value: "postgres.platform.svc.cluster.local"
-
         - name: POSTGRES_PORT
           value: "5432"
-
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
               name: postgres-secret
               key: POSTGRES_DB
-
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
               name: postgres-secret
               key: POSTGRES_USER
-
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
               name: postgres-secret
               key: POSTGRES_PASSWORD
+        resources:
+          requests:
+            cpu: "1"
+            memory: "3Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"

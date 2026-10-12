@@ -1,39 +1,39 @@
 import datetime
 
-from sqlalchemy import ARRAY, Boolean, DateTime, Integer, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Index, Integer, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database.base import Base
 
+COMPLEXITY_TIERS = ("low", "high")
+
 
 class ModelRegistryEntry(Base):
-    """
-    A single routable model, replacing one entry of the old
-    router/models.json array.
-
-    `model_id` is the natural key (e.g. "qwen2.5-coder:7b") — it's what the
-    semantic router currently keeps in _MODEL_NAMES and what
-    shared.utils.model_to_queue() maps to a RabbitMQ routing key, so it must
-    stay unique and stable.
-    """
-
     __tablename__ = "models"
+    __table_args__ = (
+        CheckConstraint("complexity_tier IN ('low', 'high')", name="ck_models_complexity_tier"),
+        Index(
+            "ux_models_category_tier", "category", "complexity_tier", unique=True,
+            postgresql_where=text("enabled AND category IS NOT NULL"),
+        ),
+        Index(
+            "ux_models_single_default", "is_default", unique=True,
+            postgresql_where=text("is_default"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
     model_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     engine: Mapped[str] = mapped_column(String(64), nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
-    # Postgres ARRAY(Text) mirrors the `examples: list[str]` field in the old
-    # YAML/JSON catalog. If cross-database portability is ever needed (e.g.
-    # SQLite in tests), swap this for a JSON column instead.
-    examples: Mapped[list[str]] = mapped_column(
-        ARRAY(Text), nullable=False, default=list, server_default="{}"
+    category: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    complexity_tier: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="high", server_default="high"
     )
 
-    replicas: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -48,17 +48,16 @@ class ModelRegistryEntry(Base):
     def __repr__(self) -> str:
         return (
             f"<ModelRegistryEntry model_id={self.model_id!r} engine={self.engine!r} "
-            f"enabled={self.enabled} replicas={self.replicas}>"
+            f"category={self.category!r} tier={self.complexity_tier!r} enabled={self.enabled} "
+            f"is_default={self.is_default}>"
         )
 
     def to_dict(self) -> dict:
-        """Shape compatible with the old models.json entries, for an easy
-        drop-in once router.py is migrated to read from Postgres."""
         return {
             "model_id": self.model_id,
             "engine": self.engine,
-            "description": self.description,
-            "examples": list(self.examples or []),
-            "replicas": self.replicas,
+            "category": self.category,
+            "complexity_tier": self.complexity_tier,
             "enabled": self.enabled,
+            "is_default": self.is_default,
         }
