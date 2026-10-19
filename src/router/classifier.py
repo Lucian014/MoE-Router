@@ -9,16 +9,15 @@ The router talks to these functions, never to Laya directly (CLAUDE.md: classifi
 interchangeable). The question text lives in domain_schema.py / complexity_schema.py and must be
 byte-identical to the one used in training -- copy those files from scripts/laya/, never edit them here.
 
-Env:
+Settings (shared/config.py, ClassifierSettings), read when load_classifiers() runs:
   DOMAIN_CHECKPOINT      local folder or HF repo  (default: router/checkpoints/laya-domain-v4,
                                                     else Lucian04/laya-domain-v4)
   COMPLEXITY_CHECKPOINT  local folder or HF repo  (default: router/checkpoints/laya-complexity-v2,
                                                     else Lucian04/laya-complexity-v2)
   CLASSIFIER_DEVICE      cpu | cuda               (default: cpu)
   COMPLEXITY_THRESHOLD   "high" when P(high) >= this (default 0.5; 0.3-0.6 give the same routing)
-  HF_TOKEN               only when loading the private repos from the Hub
+  HF_TOKEN               only when loading the private repos from the Hub (read by huggingface_hub)
 """
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -28,6 +27,8 @@ except ImportError:                     # ... or from inside src/router/
     import complexity_schema
     import domain_schema
 
+from shared.config import get_classifier_settings
+
 _HERE = Path(__file__).resolve().parent
 
 
@@ -35,13 +36,6 @@ def _default_checkpoint(local_name: str, hub_repo: str) -> str:
     local = _HERE / "checkpoints" / local_name
     return str(local) if local.is_dir() else hub_repo
 
-
-DOMAIN_CHECKPOINT = os.getenv("DOMAIN_CHECKPOINT") or _default_checkpoint(
-    "laya-domain-v4", "Lucian04/laya-domain-v4")
-COMPLEXITY_CHECKPOINT = os.getenv("COMPLEXITY_CHECKPOINT") or _default_checkpoint(
-    "laya-complexity-v2", "Lucian04/laya-complexity-v2")
-CLASSIFIER_DEVICE = os.getenv("CLASSIFIER_DEVICE", "cpu")
-COMPLEXITY_THRESHOLD = float(os.getenv("COMPLEXITY_THRESHOLD", "0.5"))
 
 CATEGORIES = list(domain_schema.LABELS)
 LEVELS = list(complexity_schema.LABELS)
@@ -62,11 +56,11 @@ class ComplexityPrediction:
 
 
 class _LayaClassifier:
-    def __init__(self, checkpoint: str, schema):
+    def __init__(self, checkpoint: str, schema, device: str):
         import laya
         self.schema = schema
-        print(f"[*] Loading {schema.QID} classifier from '{checkpoint}' on {CLASSIFIER_DEVICE}...")
-        self.agent = laya.Agent(checkpoint, device=CLASSIFIER_DEVICE)
+        print(f"[*] Loading {schema.QID} classifier from '{checkpoint}' on {device}...")
+        self.agent = laya.Agent(checkpoint, device=device)
 
     def answer(self, prompt: str) -> dict:
         return self.agent.predict(prompt, self.schema.QUESTIONS)["answers"][self.schema.QID]
@@ -74,16 +68,23 @@ class _LayaClassifier:
 
 _DOMAIN: _LayaClassifier | None = None
 _COMPLEXITY: _LayaClassifier | None = None
+_COMPLEXITY_THRESHOLD = 0.5
 
 
 def load_classifiers() -> None:
-    global _DOMAIN, _COMPLEXITY
-    _DOMAIN = _LayaClassifier(DOMAIN_CHECKPOINT, domain_schema)
-    _COMPLEXITY = _LayaClassifier(COMPLEXITY_CHECKPOINT, complexity_schema)
+    global _DOMAIN, _COMPLEXITY, _COMPLEXITY_THRESHOLD
+    cfg = get_classifier_settings()
+    domain_checkpoint = cfg.domain_checkpoint or _default_checkpoint(
+        "laya-domain-v4", "Lucian04/laya-domain-v4")
+    complexity_checkpoint = cfg.complexity_checkpoint or _default_checkpoint(
+        "laya-complexity-v2", "Lucian04/laya-complexity-v2")
+    _COMPLEXITY_THRESHOLD = cfg.complexity_threshold
+    _DOMAIN = _LayaClassifier(domain_checkpoint, domain_schema, cfg.device)
+    _COMPLEXITY = _LayaClassifier(complexity_checkpoint, complexity_schema, cfg.device)
     predict_domain("warm-up")
     predict_complexity("warm-up")
     print(f"[OK] classifiers ready: domain {CATEGORIES} | complexity {LEVELS} "
-          f"(threshold {COMPLEXITY_THRESHOLD})")
+          f"(threshold {_COMPLEXITY_THRESHOLD})")
 
 
 def predict_domain(prompt: str) -> DomainPrediction:
@@ -100,4 +101,4 @@ def predict_complexity(prompt: str) -> ComplexityPrediction:
     a = _COMPLEXITY.answer(prompt)
     probs = {LEVELS[int(k)]: float(v) for k, v in a["probabilities"].items()}
     score = float(a["score"])
-    return ComplexityPrediction(LEVELS[int(score >= COMPLEXITY_THRESHOLD)], score, probs)
+    return ComplexityPrediction(LEVELS[int(score >= _COMPLEXITY_THRESHOLD)], score, probs)

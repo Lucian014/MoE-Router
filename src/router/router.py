@@ -15,30 +15,23 @@ enabling / disabling / adding a model in the DB takes effect without restarting 
 """
 import asyncio
 import json
-import os
 import sys
 import time
 
 from database import ModelRepository, get_session
+from shared.config import get_classifier_settings, get_rabbitmq_settings, get_router_settings
 from shared.rabbitmq import RabbitMQClient
 from shared.utils import model_to_queue
 
 try:
-    from router.classifier import (CATEGORIES, CLASSIFIER_DEVICE, load_classifiers,
-                                   predict_complexity, predict_domain)
+    from router.classifier import CATEGORIES, load_classifiers, predict_complexity, predict_domain
     from router.routing_rule import catalog_from_rows, default_model, select_model, validate_catalog
 except ImportError:
-    from classifier import CATEGORIES, CLASSIFIER_DEVICE, load_classifiers, predict_complexity, predict_domain
+    from classifier import CATEGORIES, load_classifiers, predict_complexity, predict_domain
     from routing_rule import catalog_from_rows, default_model, select_model, validate_catalog
 
-MIDDLEWARE_QUEUE = os.getenv("MIDDLEWARE_QUEUE", "router.requests")
-CATALOG_REFRESH_SECONDS = int(os.getenv("CATALOG_REFRESH_SECONDS", "30"))
-
-mq_client = RabbitMQClient(
-    host=os.getenv("RABBITMQ_HOST", "localhost"),
-    user=os.getenv("RABBITMQ_USER", "guest"),
-    password=os.getenv("RABBITMQ_PASS", "guest"),
-)
+# built in main() from shared.config, so importing this module needs no env
+mq_client: RabbitMQClient | None = None
 
 _CATALOG: list = []
 
@@ -82,7 +75,7 @@ async def load_router_catalog() -> bool:
 
 async def refresh_catalog_forever() -> None:
     while True:
-        await asyncio.sleep(CATALOG_REFRESH_SECONDS)
+        await asyncio.sleep(get_router_settings().catalog_refresh_seconds)
         try:
             if await load_router_catalog():
                 print("[*] catalog changed in the DB -> reloaded")
@@ -138,14 +131,19 @@ async def route_message(message) -> None:
 
 
 async def main():
+    global mq_client
     sys.stdout.reconfigure(line_buffering=True)
-    print(f"[*] classifiers on {CLASSIFIER_DEVICE}")
+    rabbit = get_rabbitmq_settings()
+    refresh_seconds = get_router_settings().catalog_refresh_seconds
+    mq_client = RabbitMQClient.from_settings(rabbit)
+
+    print(f"[*] classifiers on {get_classifier_settings().device}")
     load_classifiers()
     await load_router_catalog()
 
     await mq_client.connect(service_name="Router")
     await mq_client.channel.set_qos(prefetch_count=1)
-    queue = await mq_client.channel.declare_queue(MIDDLEWARE_QUEUE, durable=True)
+    queue = await mq_client.channel.declare_queue(rabbit.middleware_queue, durable=True)
 
     async def wrapper(message):
         async with message.process():
@@ -153,7 +151,7 @@ async def main():
 
     await queue.consume(wrapper)
     refresher = asyncio.create_task(refresh_catalog_forever())
-    print(f"[*] Router listening on {MIDDLEWARE_QUEUE} (catalog refresh every {CATALOG_REFRESH_SECONDS}s)")
+    print(f"[*] Router listening on {rabbit.middleware_queue} (catalog refresh every {refresh_seconds}s)")
 
     try:
         await asyncio.Future()
