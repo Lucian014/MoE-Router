@@ -1,0 +1,94 @@
+{{- /* Migrations -> catalog seed -> model pulls, once per install / upgrade.
+
+       A plain Job, not a Helm hook, on purpose: with `helm install --wait` Helm runs
+       post-install hooks only after every pod is ready, but the router only becomes ready
+       once this Job has seeded the catalog. The name carries the release revision, so every
+       upgrade starts a fresh Job (Job specs are immutable). */ -}}
+{{- $pull := and .Values.setup.pullModels .Values.ollama.enabled }}
+{{- $image := include "moe.image" (dict "root" . "image" .Values.tools.image) }}
+{{- $pullPolicy := include "moe.pullPolicy" (dict "root" . "image" .Values.tools.image) }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "moe.fullname" . }}-setup-{{ .Release.Revision }}
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: setup
+spec:
+  backoffLimit: {{ .Values.setup.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.setup.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "moe.labels" . | nindent 8 }}
+        app.kubernetes.io/component: setup
+    spec:
+      # a failed step (e.g. Postgres not up yet) is retried with backoff
+      restartPolicy: OnFailure
+      {{- include "moe.imagePullSecrets" . | nindent 6 }}
+      {{- with .Values.setup.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.setup.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # init containers run one after the other; the main container runs last
+      initContainers:
+        - name: migrate
+          image: {{ $image }}
+          imagePullPolicy: {{ $pullPolicy }}
+          workingDir: /app/src/database      # alembic.ini: script_location = migrations
+          command: ["alembic", "upgrade", "head"]
+          envFrom:
+            {{- include "moe.serviceEnvFrom" (dict "root" . "postgres" true) | nindent 12 }}
+          {{- with .Values.setup.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- if $pull }}
+        - name: seed
+          image: {{ $image }}
+          imagePullPolicy: {{ $pullPolicy }}
+          command: ["python", "scripts/seed_models.py", "--from-yaml", "/catalog/models.yaml", "--disable-missing"]
+          envFrom:
+            {{- include "moe.serviceEnvFrom" (dict "root" . "postgres" true) | nindent 12 }}
+          {{- with .Values.setup.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: catalog
+              mountPath: /catalog
+        {{- end }}
+      containers:
+        {{- if $pull }}
+        - name: pull-models
+          image: {{ $image }}
+          imagePullPolicy: {{ $pullPolicy }}
+          command: ["python", "scripts/manage_models/manage_models.py", "--provision"]
+          envFrom:
+            {{- include "moe.serviceEnvFrom" (dict "root" . "postgres" true) | nindent 12 }}
+          env:
+            - name: OLLAMA_URL
+              value: {{ include "moe.ollama.url" . | quote }}
+        {{- else }}
+        - name: seed
+          image: {{ $image }}
+          imagePullPolicy: {{ $pullPolicy }}
+          command: ["python", "scripts/seed_models.py", "--from-yaml", "/catalog/models.yaml", "--disable-missing"]
+          envFrom:
+            {{- include "moe.serviceEnvFrom" (dict "root" . "postgres" true) | nindent 12 }}
+          volumeMounts:
+            - name: catalog
+              mountPath: /catalog
+        {{- end }}
+          {{- with .Values.setup.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: catalog
+          configMap:
+            name: {{ include "moe.fullname" . }}-catalog

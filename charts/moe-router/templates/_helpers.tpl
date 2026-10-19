@@ -109,6 +109,34 @@ storageClassName: {{ $sc | quote }}
 {{- .Values.rabbitmq.auth.existingSecret | default (printf "%s-rabbitmq" (include "moe.fullname" .)) -}}
 {{- end -}}
 
+{{/* ---------------------------------------------------------------- models */}}
+
+{{/* A model_id as a Kubernetes name. MUST match shared/utils.py sanitize_k8s_name(), which
+     also names the worker's queue (worker.<name>): 'qwen2.5-coder:1.5b' -> 'qwen2-5-coder-1-5b'.
+     Usage: include "moe.k8sName" "qwen2.5-coder:1.5b" */}}
+{{- define "moe.k8sName" -}}
+{{- . | trim | lower | replace ":" "-" | replace "." "-" | replace "/" "-" -}}
+{{- end -}}
+
+{{- define "moe.ollama.url" -}}
+http://{{ include "moe.fullname" . }}-ollama:11434
+{{- end -}}
+
+{{/* Where a catalog model's worker sends its requests.
+     Usage: include "moe.inferenceHost" (dict "root" $ "model" .) */}}
+{{- define "moe.inferenceHost" -}}
+{{- if .model.inference_host -}}
+{{ .model.inference_host }}
+{{- else if eq .model.engine "ollama" -}}
+{{- if not .root.Values.ollama.enabled -}}
+{{- fail (printf "catalog model %s uses engine ollama, but ollama.enabled=false: set its inference_host" .model.model_id) -}}
+{{- end -}}
+{{ include "moe.ollama.url" .root }}
+{{- else -}}
+{{- fail (printf "catalog model %s (engine %s) needs an inference_host" .model.model_id .model.engine) -}}
+{{- end -}}
+{{- end -}}
+
 {{/* ---------------------------------------------------------------- secrets */}}
 
 {{/* A password: the explicit value if set; otherwise the one already stored in the Secret

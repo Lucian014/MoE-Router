@@ -1,0 +1,11 @@
+{{- /* The catalog from values, as the models.yaml the setup Job seeds the registry with. */ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "moe.fullname" . }}-catalog
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+data:
+  models.yaml: |
+    models:
+      {{- toYaml .Values.catalog.models | nindent 6 }}

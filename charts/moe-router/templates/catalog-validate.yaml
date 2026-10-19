@@ -1,0 +1,29 @@
+{{- /* Renders nothing: stops the install early on a catalog the router would refuse anyway
+       (same rules as validate_catalog() in src/router/routing_rule.py). */ -}}
+{{- $defaults := list }}
+{{- $ids := dict }}
+{{- $slots := dict }}
+{{- range .Values.catalog.models }}
+  {{- if not .model_id }}{{ fail "every catalog model needs a model_id" }}{{ end }}
+  {{- if hasKey $ids .model_id }}{{ fail (printf "catalog: duplicate model_id %s" .model_id) }}{{ end }}
+  {{- $_ := set $ids .model_id true }}
+  {{- if not (has .engine (list "ollama" "vllm")) }}
+    {{- fail (printf "catalog model %s: engine must be ollama or vllm, got %v" .model_id .engine) }}
+  {{- end }}
+  {{- if not (has .complexity_tier (list "low" "high")) }}
+    {{- fail (printf "catalog model %s: complexity_tier must be low or high, got %v" .model_id .complexity_tier) }}
+  {{- end }}
+  {{- if ne (toString .enabled) "false" }}
+    {{- if .is_default }}{{ $defaults = append $defaults .model_id }}{{ end }}
+    {{- if .category }}
+      {{- $slot := printf "%s/%s" .category .complexity_tier }}
+      {{- if hasKey $slots $slot }}
+        {{- fail (printf "catalog: %s and %s are both enabled for category %s, tier %s" (get $slots $slot) .model_id .category .complexity_tier) }}
+      {{- end }}
+      {{- $_ := set $slots $slot .model_id }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if ne (len $defaults) 1 }}
+  {{- fail (printf "catalog: exactly one enabled model needs is_default: true, found %d %v" (len $defaults) $defaults) }}
+{{- end }}

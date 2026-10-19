@@ -124,3 +124,91 @@ router:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+
+# --------------------------------------------------------------------------------- Catalog
+# The models the platform routes to. One worker Deployment per enabled model is rendered
+# from this list, and (from the seed Job) it fills the registry. Same fields as
+# src/catalog/models.yaml: exactly one enabled is_default model; at most one enabled model
+# per category + complexity_tier. Disable a model with `enabled: false` (don't delete it,
+# so the seed disables it in the registry too).
+#   engine: ollama -> served by the chart's Ollama
+#   engine: vllm   -> set inference_host to that model's vLLM server (http://...:8000)
+# Optional per model: replicas (default 1), prefetch (default worker.prefetch).
+catalog:
+  models:
+    - { model_id: "gemma3:1b",          engine: ollama, category: open-qa,          complexity_tier: low }
+    - { model_id: "gemma3:4b",          engine: ollama, category: open-qa,          complexity_tier: high, is_default: true }
+    - { model_id: "qwen2.5-coder:1.5b", engine: ollama, category: coding,           complexity_tier: low }
+    - { model_id: "qwen2.5-coder:3b",   engine: ollama, category: coding,           complexity_tier: high }
+    - { model_id: "phi4-mini:3.8b",     engine: ollama, category: math,             complexity_tier: low }
+    - { model_id: "qwen3:4b-instruct",  engine: ollama, category: math,             complexity_tier: high }
+    - { model_id: "gemma3:4b-it-qat",   engine: ollama, category: translation,      complexity_tier: high }
+    - { model_id: "llama3.2:3b",        engine: ollama, category: text-rewrite,     complexity_tier: high }
+    - { model_id: "qwen2.5:3b",         engine: ollama, category: summarization,    complexity_tier: high }
+    - { model_id: "gemma3n:e2b",        engine: ollama, category: creative-writing, complexity_tier: high }
+    - { model_id: "granite3.3:2b",      engine: ollama, category: brainstorming,    complexity_tier: high }
+
+# --------------------------------------------------------------------------------- Ollama
+# Serves every `engine: ollama` model of the catalog (loads a model on first use).
+ollama:
+  enabled: true
+  image:
+    repository: docker.io/ollama/ollama
+    tag: "0.32.15"
+    pullPolicy: IfNotPresent
+  # context window for every model (OLLAMA_CONTEXT_LENGTH); long prompts are cut beyond it
+  contextLength: 8192
+  # how long a model stays in memory after its last request
+  keepAlive: 5m
+  # NVIDIA GPUs (needs the GPU Operator / device plugin); 0 = CPU only
+  gpu: 0
+  persistence:
+    size: 50Gi
+    storageClass: ""
+    # single-node / dev only: use this folder on the node instead of a PVC
+    hostPath: ""
+  resources:
+    requests: { cpu: "2", memory: 8Gi }
+    limits: { memory: 24Gi }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# --------------------------------------------------------------------------------- Workers
+# One Deployment per enabled catalog model: consumes worker.<model>, calls its engine.
+worker:
+  image:
+    repository: moe-worker
+    tag: ""
+  # requests handled at once per pod (raise for vLLM, which batches)
+  prefetch: 1
+  # a generation can take minutes: on shutdown, wait this long for the in-flight one
+  shutdownGraceSeconds: 80
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { memory: 256Mi }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# --------------------------------------------------------------------------------- Setup Job
+# Runs on every install and upgrade (one Job per release revision), in order:
+#   1. alembic upgrade head        (database schema)
+#   2. seed the catalog above      (seed_models.py --disable-missing: the values are the
+#                                   whole catalog, removed models get disabled)
+#   3. ollama pull missing models  (manage_models.py --provision; can take long on a fresh install)
+# Workers become ready as their model arrives; the router once the catalog is seeded.
+tools:
+  image:
+    repository: moe-tools
+    tag: ""
+setup:
+  pullModels: true
+  backoffLimit: 6
+  # remove the finished Job after a day
+  ttlSecondsAfterFinished: 86400
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { memory: 512Mi }
+  nodeSelector: {}
+  tolerations: []

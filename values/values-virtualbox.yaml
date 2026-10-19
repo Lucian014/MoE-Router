@@ -21,3 +21,18 @@ router:
     existingSecret: hf-token
   nodeSelector:
     kubernetes.io/hostname: k8s-route
+
+ollama:
+  # reuse the models already pulled on k8s-compute (26 GB) instead of a new PVC
+  persistence:
+    hostPath: /var/models/ollama
+  # small request: models load on demand, and the old stack's Ollama shares this node
+  resources:
+    requests: { cpu: "1", memory: 2Gi }
+    limits: { memory: 20Gi }
+  nodeSelector:
+    kubernetes.io/hostname: k8s-compute
+
+worker:
+  nodeSelector:
+    kubernetes.io/hostname: k8s-compute

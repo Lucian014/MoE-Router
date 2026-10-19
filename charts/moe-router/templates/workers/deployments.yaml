@@ -1,0 +1,73 @@
+{{- /* One worker Deployment per enabled catalog model (replaces scripts/build_manifests.py).
+       The worker listens on worker.<k8sName>, which is exactly where the router sends that
+       model's requests (shared/utils.py model_to_queue). */ -}}
+{{- range .Values.catalog.models }}
+{{- if ne (toString .enabled) "false" }}
+{{- $name := include "moe.k8sName" .model_id }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "moe.fullname" $ }}-worker-{{ $name }}
+  labels:
+    {{- include "moe.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: worker
+    moe-router/model: {{ $name | trunc 63 | trimSuffix "-" }}
+spec:
+  replicas: {{ .replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "moe.selectorLabels" (dict "root" $ "component" "worker") | nindent 6 }}
+      moe-router/model: {{ $name | trunc 63 | trimSuffix "-" }}
+  template:
+    metadata:
+      labels:
+        {{- include "moe.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: worker
+        moe-router/model: {{ $name | trunc 63 | trimSuffix "-" }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+    spec:
+      {{- include "moe.imagePullSecrets" $ | nindent 6 }}
+      {{- with $.Values.worker.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.worker.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.worker.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ add (int $.Values.worker.shutdownGraceSeconds) 10 }}
+      containers:
+        - name: worker
+          image: {{ include "moe.image" (dict "root" $ "image" $.Values.worker.image) }}
+          imagePullPolicy: {{ include "moe.pullPolicy" (dict "root" $ "image" $.Values.worker.image) }}
+          envFrom:
+            {{- include "moe.serviceEnvFrom" (dict "root" $) | nindent 12 }}
+          env:
+            - name: MODEL_NAME
+              value: {{ .model_id | quote }}
+            - name: ENGINE_TYPE
+              value: {{ .engine | quote }}
+            - name: INFERENCE_HOST
+              value: {{ include "moe.inferenceHost" (dict "root" $ "model" .) | quote }}
+            - name: WORKER_PREFETCH
+              value: {{ .prefetch | default $.Values.worker.prefetch | quote }}
+            - name: SHUTDOWN_GRACE_SECONDS
+              value: {{ $.Values.worker.shutdownGraceSeconds | quote }}
+          # /tmp/ready exists while the engine serves this model and the worker consumes
+          readinessProbe:
+            exec:
+              command: ["test", "-f", "/tmp/ready"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- with $.Values.worker.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}
+{{- end }}
