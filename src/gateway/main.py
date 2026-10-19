@@ -1,5 +1,7 @@
 import sys
-from fastapi import FastAPI, HTTPException, Body
+
+from fastapi import Body, FastAPI, HTTPException
+
 from shared.config import get_gateway_settings, get_rabbitmq_settings
 from shared.rabbitmq import RabbitMQClient, RpcError, RpcTimeout
 

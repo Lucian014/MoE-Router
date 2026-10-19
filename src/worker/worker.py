@@ -2,10 +2,10 @@ import asyncio
 import sys
 import time
 
+from engine import get_engine
 from shared.config import get_rabbitmq_settings, get_worker_settings
 from shared.rabbitmq import RabbitMQClient
 from shared.utils import model_to_queue
-from engine import get_engine
 
 # Campurile pe care workerul le consuma; restul payload-ului e metadata de
 # rutare pusa de router (domeniu, nivel, probabilitati, confidence...) si se

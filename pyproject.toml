@@ -1,0 +1,22 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# the services import each other as top-level packages (shared, database, router, ...)
+pythonpath = ["src"]
+markers = [
+    "rabbitmq: needs a running RabbitMQ (set RABBITMQ_TEST_PORT, see tests/test_rabbitmq.py)",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["scripts/laya", "scripts/resources", "src/database/migrations/versions"]
+
+[tool.ruff.lint]
+select = ["F", "E", "I"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/**" = ["E402", "E741", "I001"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["shared", "database", "router", "engine"]
