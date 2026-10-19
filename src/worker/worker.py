@@ -18,7 +18,7 @@ _CONSUMED_FIELDS = {"prompt", "model"}
 ENGINE_CHECK_SECONDS = 15
 
 # Construite in main() din shared.config. Fara MODEL_NAME, WorkerSettings
-# arunca o eroare de validare la pornire (build_manifests.py il seteaza mereu;
+# arunca o eroare de validare la pornire (chart-ul Helm il seteaza mereu;
 # lipsa lui e o eroare de deployment).
 MODEL_NAME: str = ""
 ENGINE_TYPE: str = ""

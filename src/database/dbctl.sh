@@ -23,9 +23,9 @@
 # are still set up the same way either way).
 #
 # Credentials (POSTGRES_DB/USER/PASSWORD) are pulled live from the
-# `postgres-secret` k8s Secret — the same one the pod itself consumes
-# (see k8s/infra/postgresql/postgresql-secret.yaml) — instead of being
-# duplicated here. This is the single source of truth; if the secret
+# `<release>-postgres` k8s Secret that the Helm chart generates — the same one
+# the pod itself consumes (charts/moe-router/templates/postgres/secret.yaml) —
+# instead of being duplicated here. This is the single source of truth; if the secret
 # rotates, this script picks it up automatically with no edits needed.
 #
 # Only HOST/PORT are overridden here, because from outside the cluster
@@ -34,10 +34,11 @@
 
 set -euo pipefail
 
-# -- config: adjust here if your namespace/service/secret values change ----
-NAMESPACE="platform"
-SERVICE="postgres"
-SECRET="postgres-secret"
+# -- config: the Helm release (override with MOE_NAMESPACE / MOE_RELEASE) ----
+NAMESPACE="${MOE_NAMESPACE:-moe-router}"
+RELEASE="${MOE_RELEASE:-moe}"
+SERVICE="${RELEASE}-postgres"
+SECRET="${RELEASE}-postgres"
 LOCAL_PORT="5432"
 REMOTE_PORT="5432"
 # ---------------------------------------------------------------------------
