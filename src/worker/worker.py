@@ -68,7 +68,8 @@ async def main():
 
     await mq_client.connect(service_name=f"Worker ({MODEL_NAME})")
     print(f" [*] Worker listening on {queue_name} (model={MODEL_NAME}, engine={ENGINE_TYPE}).")
-    await mq_client.consume_rpc(queue_name=queue_name, handler_func=handle_request)
+    await mq_client.consume_rpc(queue_name=queue_name, handler_func=handle_request,
+                                prefetch_count=cfg.prefetch)
     try:
         await asyncio.Future()
     finally:

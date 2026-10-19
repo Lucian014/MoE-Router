@@ -20,7 +20,7 @@ import time
 
 from database import ModelRepository, get_session
 from shared.config import get_classifier_settings, get_rabbitmq_settings, get_router_settings
-from shared.rabbitmq import RabbitMQClient
+from shared.rabbitmq import RabbitMQClient, remaining_seconds
 from shared.utils import model_to_queue
 
 try:
@@ -119,8 +119,9 @@ async def route_message(message) -> None:
               + f") complexity={complexity.level} (P(high)={complexity.score:.3f}) "
               f"-> {selected_model} [{reason}] -> {worker_queue}  ({classify_ms:.0f} ms)")
 
-        # forward() preserves correlation_id + reply_to
-        await mq_client.forward(message=message, routing_key=worker_queue, payload=payload)
+        # forward() preserves correlation_id + reply_to (+ the deadline)
+        if not await mq_client.forward(message=message, routing_key=worker_queue, payload=payload):
+            print(f"[!] {message.correlation_id}: deadline passed during routing, dropped")
 
     except json.JSONDecodeError:
         print("[!] Received invalid JSON")
@@ -147,7 +148,17 @@ async def main():
 
     async def wrapper(message):
         async with message.process():
-            await route_message(message)
+            left = remaining_seconds(message)
+            if left is not None and left <= 0:
+                print(f"[!] {message.correlation_id}: deadline passed, dropping (caller gave up)")
+                return
+            try:
+                await route_message(message)
+            except Exception as e:
+                # Answer the Gateway right away instead of letting it wait for its timeout.
+                # The message is still acked: a request that can't be routed would fail
+                # the same way on every redelivery.
+                await mq_client.reply_error(message, f"routing failed: {e}")
 
     await queue.consume(wrapper)
     refresher = asyncio.create_task(refresh_catalog_forever())
