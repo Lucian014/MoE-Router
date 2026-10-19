@@ -12,14 +12,19 @@ For each request:
 
 The catalog is read from Postgres at start-up and re-read every CATALOG_REFRESH_SECONDS, so
 enabling / disabling / adding a model in the DB takes effect without restarting the router.
+
+Lifecycle (shared/lifecycle.py): start-up waits (with backoff) for a valid catalog and for
+RabbitMQ; the readiness file exists while the router is consuming; on SIGTERM it stops
+consuming, finishes the in-flight message (SHUTDOWN_GRACE_SECONDS) and closes.
 """
 import asyncio
 import json
 import sys
 import time
 
-from database import ModelRepository, get_session
-from shared.config import get_classifier_settings, get_rabbitmq_settings, get_router_settings
+from database import ModelRepository, dispose_engine, get_session
+from shared.config import get_classifier_settings, get_lifecycle_settings, get_rabbitmq_settings, get_router_settings
+from shared.lifecycle import Stopped, install_stop_signals, retry, set_ready
 from shared.rabbitmq import RabbitMQClient, remaining_seconds
 from shared.utils import model_to_queue
 
@@ -56,8 +61,8 @@ def _print_catalog(catalog, warnings):
 async def load_router_catalog() -> bool:
     """Read the `models` table, validate it and swap it in. Returns True if it changed.
     Raises on an invalid catalog (no / several default models, two models on the same
-    category + tier): at start-up the router refuses to run, during a refresh the previous
-    catalog is kept."""
+    category + tier): at start-up the router retries until the catalog is valid (and stays
+    not ready meanwhile), during a refresh the previous catalog is kept."""
     global _CATALOG
     async with get_session() as session:
         entries = await ModelRepository(session).list_all()
@@ -135,16 +140,22 @@ async def main():
     global mq_client
     sys.stdout.reconfigure(line_buffering=True)
     rabbit = get_rabbitmq_settings()
+    lifecycle = get_lifecycle_settings()
     refresh_seconds = get_router_settings().catalog_refresh_seconds
     mq_client = RabbitMQClient.from_settings(rabbit)
+    stop = install_stop_signals()
+    set_ready(lifecycle.ready_file, False)
 
     print(f"[*] classifiers on {get_classifier_settings().device}")
     load_classifiers()
-    await load_router_catalog()
-
-    await mq_client.connect(service_name="Router")
-    await mq_client.channel.set_qos(prefetch_count=1)
-    queue = await mq_client.channel.declare_queue(rabbit.middleware_queue, durable=True)
+    try:
+        # Postgres may not be up yet, or the migrations / seed may not have run yet:
+        # wait for a valid catalog instead of crash-looping.
+        await retry(load_router_catalog, "loading the model catalog", stop_event=stop)
+        await mq_client.connect(service_name="Router", stop_event=stop)
+    except Stopped:
+        print("[*] stopped before start-up finished")
+        return
 
     async def wrapper(message):
         async with message.process():
@@ -160,15 +171,19 @@ async def main():
                 # the same way on every redelivery.
                 await mq_client.reply_error(message, f"routing failed: {e}")
 
-    await queue.consume(wrapper)
+    await mq_client.consume_messages(rabbit.middleware_queue, wrapper, prefetch_count=1)
     refresher = asyncio.create_task(refresh_catalog_forever())
+    set_ready(lifecycle.ready_file, True)
     print(f"[*] Router listening on {rabbit.middleware_queue} (catalog refresh every {refresh_seconds}s)")
 
-    try:
-        await asyncio.Future()
-    finally:
-        refresher.cancel()
-        await mq_client.close()
+    await stop.wait()
+    print("[*] SIGTERM received, shutting down")
+    set_ready(lifecycle.ready_file, False)
+    refresher.cancel()
+    await mq_client.drain(lifecycle.shutdown_grace_seconds)
+    await mq_client.close()
+    await dispose_engine()
+    print("[OK] router stopped")
 
 
 if __name__ == "__main__":

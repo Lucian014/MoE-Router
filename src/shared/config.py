@@ -25,6 +25,7 @@ RABBITMQ_HOST            gateway, router,     rabbitmq
 RABBITMQ_PORT            worker               5672
 RABBITMQ_USER                                 (required)
 RABBITMQ_PASS                                 (required)
+RABBITMQ_CONNECT_RETRIES                      0 (= retry forever, with backoff up to 30 s)
 MIDDLEWARE_QUEUE         gateway, router      router.requests
 RPC_TIMEOUT_SECONDS      gateway              300 (> the worker's engine timeout of 240 s)
 CATALOG_REFRESH_SECONDS  router               30
@@ -36,6 +37,8 @@ MODEL_NAME               worker               (required)
 ENGINE_TYPE                                   ollama
 INFERENCE_HOST                                http://localhost:11434
 WORKER_PREFETCH                               1 (requests handled concurrently per pod)
+READY_FILE               router, worker       /tmp/ready (exists while the pod is ready)
+SHUTDOWN_GRACE_SECONDS                        25 (on SIGTERM: wait this long for in-flight work)
 """
 from functools import lru_cache
 from typing import TYPE_CHECKING
@@ -96,6 +99,17 @@ class RabbitMQSettings(_Settings):
     user: str
     password: SecretStr = Field(validation_alias="RABBITMQ_PASS")
     middleware_queue: str = Field("router.requests", validation_alias="MIDDLEWARE_QUEUE")
+    # 0 = retry forever: in Kubernetes the broker may start after the services
+    connect_retries: int = Field(0, ge=0, validation_alias="RABBITMQ_CONNECT_RETRIES")
+
+
+class LifecycleSettings(_Settings):
+    """Readiness and shutdown of the router and worker (they have no HTTP server)."""
+
+    # the readinessProbe is `test -f <ready_file>`
+    ready_file: str = Field("/tmp/ready", validation_alias="READY_FILE")
+    # keep below the pod's terminationGracePeriodSeconds
+    shutdown_grace_seconds: float = Field(25, ge=0, validation_alias="SHUTDOWN_GRACE_SECONDS")
 
 
 class GatewaySettings(_Settings):
@@ -131,6 +145,11 @@ def get_postgres_settings() -> PostgresSettings:
 @lru_cache
 def get_rabbitmq_settings() -> RabbitMQSettings:
     return RabbitMQSettings()
+
+
+@lru_cache
+def get_lifecycle_settings() -> LifecycleSettings:
+    return LifecycleSettings()
 
 
 @lru_cache

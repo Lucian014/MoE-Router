@@ -14,3 +14,9 @@ class InferenceEngine(ABC):
     async def generate(self, model: str, prompt: str) -> str:
         """Send `prompt` to `model` and return the generated text."""
         raise NotImplementedError
+
+    @abstractmethod
+    async def health(self, model: str) -> None:
+        """Return if the engine is up and can serve `model`; raise (with the reason) otherwise.
+        The worker only consumes / reports ready while this passes."""
+        raise NotImplementedError

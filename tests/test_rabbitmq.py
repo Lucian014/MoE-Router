@@ -194,6 +194,33 @@ def test_stale_request_is_dropped_without_running_the_handler():
     run(scenario())
 
 
+def test_drain_waits_for_the_in_flight_request_then_stops_consuming():
+    async def scenario():
+        async with Pipeline() as p:
+            in_flight = asyncio.create_task(p.call({"prompt": "busy", "sleep": 1}))
+            await asyncio.sleep(0.2)
+            t0 = time.perf_counter()
+            still_running = await p.worker.drain(timeout=5)       # what SIGTERM does
+            assert still_running == 0
+            assert 0.5 < time.perf_counter() - t0 < 2              # waited for the request
+            assert await in_flight == {"echo": "busy"}             # and it still got its answer
+            with pytest.raises(RpcTimeout):                        # nothing consumes any more
+                await p.call({"prompt": "after"}, timeout=1)
+            assert [c["prompt"] for c in p.calls] == ["busy"]
+    run(scenario())
+
+
+def test_drain_gives_up_after_its_timeout():
+    async def scenario():
+        async with Pipeline() as p:
+            asyncio.create_task(p.call({"prompt": "long", "sleep": 3}, timeout=10))
+            await asyncio.sleep(0.2)
+            t0 = time.perf_counter()
+            assert await p.worker.drain(timeout=0.5) == 1          # one message left (unacked:
+            assert time.perf_counter() - t0 < 1                    # the broker redelivers it)
+    run(scenario())
+
+
 def test_remaining_seconds():
     class Message:
         headers = {}
