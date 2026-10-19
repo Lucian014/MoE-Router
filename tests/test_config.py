@@ -6,6 +6,7 @@ from shared import config
 from shared.config import (
     ClassifierSettings,
     GatewaySettings,
+    LifecycleSettings,
     PostgresSettings,
     RabbitMQSettings,
     RouterSettings,
@@ -18,6 +19,7 @@ ALL_VARS = [
     "MIDDLEWARE_QUEUE", "RPC_TIMEOUT_SECONDS", "CATALOG_REFRESH_SECONDS",
     "DOMAIN_CHECKPOINT", "COMPLEXITY_CHECKPOINT", "CLASSIFIER_DEVICE", "COMPLEXITY_THRESHOLD",
     "MODEL_NAME", "ENGINE_TYPE", "INFERENCE_HOST", "WORKER_PREFETCH",
+    "RABBITMQ_CONNECT_RETRIES", "READY_FILE", "SHUTDOWN_GRACE_SECONDS",
 ]
 
 
@@ -28,7 +30,8 @@ def clean_env(monkeypatch, tmp_path):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.chdir(tmp_path)
     for getter in (config.get_postgres_settings, config.get_rabbitmq_settings, config.get_gateway_settings,
-                   config.get_router_settings, config.get_classifier_settings, config.get_worker_settings):
+                   config.get_router_settings, config.get_classifier_settings, config.get_worker_settings,
+                   config.get_lifecycle_settings):
         getter.cache_clear()
     yield
 
@@ -88,7 +91,26 @@ def test_rabbitmq_middleware_queue_override(monkeypatch):
     assert RabbitMQSettings().middleware_queue == "other.queue"
 
 
+def test_rabbitmq_connect_retries(monkeypatch):
+    monkeypatch.setenv("RABBITMQ_USER", "u")
+    monkeypatch.setenv("RABBITMQ_PASS", "p")
+    assert RabbitMQSettings().connect_retries == 0          # forever
+    monkeypatch.setenv("RABBITMQ_CONNECT_RETRIES", "3")
+    assert RabbitMQSettings().connect_retries == 3
+    monkeypatch.setenv("RABBITMQ_CONNECT_RETRIES", "-1")
+    with pytest.raises(ValidationError):
+        RabbitMQSettings()
+
+
 # ------------------------------------------------------------------ services
+def test_lifecycle_settings(monkeypatch):
+    s = LifecycleSettings()
+    assert (s.ready_file, s.shutdown_grace_seconds) == ("/tmp/ready", 25)
+    monkeypatch.setenv("SHUTDOWN_GRACE_SECONDS", "80")
+    assert LifecycleSettings().shutdown_grace_seconds == 80
+
+
+
 def test_gateway_timeout(monkeypatch):
     assert GatewaySettings().rpc_timeout_seconds == 300
     monkeypatch.setenv("RPC_TIMEOUT_SECONDS", "2.5")

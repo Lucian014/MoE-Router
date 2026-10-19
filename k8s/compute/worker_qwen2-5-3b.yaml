@@ -15,13 +15,23 @@ spec:
         app: worker
         model: qwen2-5-3b
     spec:
+      # a generation can take minutes: give in-flight requests time to finish on shutdown
+      terminationGracePeriodSeconds: 90
       nodeSelector:
         kubernetes.io/hostname: k8s-compute
       containers:
       - name: worker
         image: 192.168.56.102:30500/moe-worker:latest
         imagePullPolicy: IfNotPresent
+        # the worker writes /tmp/ready once its engine serves the model and it is consuming
+        readinessProbe:
+          exec:
+            command: ["test", "-f", "/tmp/ready"]
+          initialDelaySeconds: 5
+          periodSeconds: 10
         env:
+        - name: SHUTDOWN_GRACE_SECONDS
+          value: "80"
         - name: MODEL_NAME
           value: "qwen2.5:3b"
         - name: ENGINE_TYPE

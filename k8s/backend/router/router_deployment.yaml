@@ -72,6 +72,13 @@ spec:
             secretKeyRef:
               name: postgres-secret
               key: POSTGRES_PASSWORD
+        # the router writes /tmp/ready once it has a valid catalog and is consuming
+        # (classifier loading + catalog wait can take a while: no liveness probe on purpose)
+        readinessProbe:
+          exec:
+            command: ["test", "-f", "/tmp/ready"]
+          initialDelaySeconds: 10
+          periodSeconds: 5
         resources:
           requests:
             cpu: "1"

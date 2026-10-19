@@ -5,6 +5,8 @@ import uuid
 
 import aio_pika
 
+from shared.lifecycle import Stopped, retry
+
 # Header set on error replies, so the caller can tell them apart from a normal result.
 STATUS_HEADER = "x-status"
 # Absolute deadline of an RPC request (epoch milliseconds, int: AMQP floats are too
@@ -34,47 +36,55 @@ def remaining_seconds(message: aio_pika.abc.AbstractIncomingMessage) -> float | 
 
 
 class RabbitMQClient:
-    def __init__(self, host, user, password, port=5672):
+    def __init__(self, host, user, password, port=5672, connect_retries=0):
         self.host = host
         self.port = port
         self.user = user
         self.password = password
+        self.connect_retries = connect_retries
         self.connection = None
         self.channel = None
         self.callback_queue = None
         self.futures: dict[str, asyncio.Future] = {}
-        self._should_stop = False
         self._stop_event = asyncio.Event()
+        # consumers started by consume_messages() and the messages they are handling,
+        # so drain() can stop new deliveries and wait for the running ones
+        self._consumers: list[tuple[aio_pika.abc.AbstractQueue, str]] = []
+        self._inflight: set[asyncio.Task] = set()
 
     @classmethod
     def from_settings(cls, settings):
         """Build a client from shared.config.RabbitMQSettings."""
         return cls(host=settings.host, port=settings.port, user=settings.user,
-                   password=settings.password.get_secret_value())
+                   password=settings.password.get_secret_value(), connect_retries=settings.connect_retries)
 
-    async def connect(self, service_name="Service", max_retries=10):
-        self._should_stop = False
+    async def connect(self, service_name="Service", max_retries=None, stop_event: asyncio.Event | None = None):
+        """Connect, retrying with exponential backoff (1, 2, 4 ... 30 s).
+
+        max_retries: attempts before giving up; 0 = forever; None = self.connect_retries
+        (RABBITMQ_CONNECT_RETRIES). Once connected, aio-pika's robust connection
+        reconnects by itself. Setting `stop_event` (or calling close()) during the retries
+        aborts them with shared.lifecycle.Stopped."""
+        attempts = self.connect_retries if max_retries is None else max_retries
         self._stop_event.clear()
-        for attempt in range(max_retries):
-            if self._should_stop or self._stop_event.is_set():
-                break
-            try:
-                print(f"[*] {service_name} - Connecting to RabbitMQ ({attempt + 1}/{max_retries})...")
-                self.connection = await aio_pika.connect_robust(
-                    host=self.host, port=self.port, login=self.user, password=self.password
-                )
-                self.channel = await self.connection.channel()
-                print(f"[*] {service_name} - Connected successfully!")
-                return
-            except Exception as e:
-                print(f"[!] Connection failed: {e}. Retrying in 5s...")
-                try:
-                    await asyncio.wait_for(self._stop_event.wait(), timeout=5.0)
-                except asyncio.TimeoutError:
-                    pass
-                if self._should_stop or self._stop_event.is_set():
-                    break
-        raise RuntimeError("Failed to connect to RabbitMQ.")
+        if stop_event is not None:
+            self._stop_event = stop_event
+
+        async def attempt():
+            self.connection = await aio_pika.connect_robust(
+                host=self.host, port=self.port, login=self.user, password=self.password
+            )
+            self.channel = await self.connection.channel()
+
+        print(f"[*] {service_name} - Connecting to RabbitMQ at {self.host}:{self.port}...")
+        try:
+            await retry(attempt, f"{service_name} - connecting to RabbitMQ", max_attempts=attempts,
+                        stop_event=self._stop_event)
+        except Stopped:
+            raise
+        except Exception as e:
+            raise RuntimeError(f"Failed to connect to RabbitMQ: {e}") from e
+        print(f"[*] {service_name} - Connected successfully!")
 
     # ------------------------------------------------------------------ RPC client (Gateway)
     async def setup_rpc_client(self):
@@ -147,13 +157,51 @@ class RabbitMQClient:
         except Exception as e:
             print(f"[!] Could not send error reply for {message.correlation_id}: {e}")
 
-    async def consume_rpc(self, queue_name: str, handler_func, prefetch_count: int = 1):
-        """Listens on a durable queue and auto-replies to the caller.
+    # ------------------------------------------------------------------ consuming
+    async def consume_messages(self, queue_name: str, callback, prefetch_count: int = 1):
+        """Consume raw messages from a durable queue; `callback(message)` acks them itself.
 
-        `prefetch_count` messages are handled concurrently (aio-pika runs each callback
-        in its own task)."""
+        Every consumer of this client goes through here, so drain() can stop them and wait
+        for the messages they are still handling. `prefetch_count` messages are handled
+        concurrently (aio-pika runs each callback in its own task)."""
         await self.channel.set_qos(prefetch_count=prefetch_count)
         queue = await self.channel.declare_queue(queue_name, durable=True)
+
+        async def _tracked(message: aio_pika.IncomingMessage):
+            task = asyncio.current_task()
+            self._inflight.add(task)
+            try:
+                await callback(message)
+            finally:
+                self._inflight.discard(task)
+
+        tag = await queue.consume(_tracked)
+        self._consumers.append((queue, tag))
+        return queue
+
+    async def drain(self, timeout: float) -> int:
+        """Graceful shutdown, step 1: stop receiving new messages, then wait up to `timeout`
+        seconds for the in-flight ones. Returns how many were still running.
+
+        Messages that don't finish in time are not lost: they are unacked, so the broker
+        redelivers them once the connection closes (another pod, or this one restarted)."""
+        for queue, tag in self._consumers:
+            try:
+                await queue.cancel(tag)
+            except Exception as e:
+                print(f"[!] Could not cancel consumer on {queue.name}: {e}")
+        self._consumers.clear()
+        running = set(self._inflight)
+        if running:
+            print(f"[*] Waiting up to {timeout:g}s for {len(running)} in-flight message(s)...")
+            _, pending = await asyncio.wait(running, timeout=timeout)
+            if pending:
+                print(f"[!] {len(pending)} message(s) still running; they will be redelivered")
+            return len(pending)
+        return 0
+
+    async def consume_rpc(self, queue_name: str, handler_func, prefetch_count: int = 1):
+        """Listens on a durable queue and auto-replies to the caller."""
 
         async def _wrapper(message: aio_pika.IncomingMessage):
             async with message.process():
@@ -175,7 +223,7 @@ class RabbitMQClient:
                     print(f"[!] {message.correlation_id}: could not send reply: {e}")
                     await self.reply_error(message, f"could not send reply: {e}")
 
-        await queue.consume(_wrapper)
+        await self.consume_messages(queue_name, _wrapper, prefetch_count=prefetch_count)
 
     async def forward(self, message: aio_pika.IncomingMessage, routing_key: str,
                       payload: dict | None = None) -> bool:
@@ -243,8 +291,6 @@ class RabbitMQClient:
 
     async def consume(self, queue_name: str, handler_func):
         """Listens on a durable queue for one-way messages (no auto-reply)."""
-        await self.channel.set_qos(prefetch_count=1)
-        queue = await self.channel.declare_queue(queue_name, durable=True)
 
         async def _wrapper(message: aio_pika.IncomingMessage):
             async with message.process():
@@ -254,10 +300,15 @@ class RabbitMQClient:
                 except Exception as e:
                     print(f"[!] Error processing message: {e}")
 
-        await queue.consume(_wrapper)
+        await self.consume_messages(queue_name, _wrapper)
+
+    @property
+    def is_connected(self) -> bool:
+        return self.channel is not None and not self.channel.is_closed
 
     async def close(self):
-        self._should_stop = True
+        """Closes the connection (and aborts a connect() still retrying). Call drain() first
+        to let in-flight messages finish."""
         self._stop_event.set()
         # Fail requests still waiting for a reply instead of leaving them hanging.
         for future in self.futures.values():

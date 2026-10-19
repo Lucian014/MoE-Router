@@ -31,3 +31,11 @@ class VLLMEngine(InferenceEngine):
             response.raise_for_status()
             data = response.json()
             return data["choices"][0]["text"]
+
+    async def health(self, model: str) -> None:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(f"{self.host}/v1/models")
+            response.raise_for_status()
+        served = {m.get("id") for m in response.json().get("data", [])}
+        if model not in served:
+            raise RuntimeError(f"model '{model}' is not served by {self.host} (serving: {sorted(served)})")
