@@ -20,6 +20,7 @@ ALL_VARS = [
     "DOMAIN_CHECKPOINT", "COMPLEXITY_CHECKPOINT", "CLASSIFIER_DEVICE", "COMPLEXITY_THRESHOLD",
     "MODEL_NAME", "ENGINE_TYPE", "INFERENCE_HOST", "WORKER_PREFETCH",
     "RABBITMQ_CONNECT_RETRIES", "READY_FILE", "SHUTDOWN_GRACE_SECONDS",
+    "HF_TOKEN", "CHECKPOINT_DIR", "DOMAIN_REPO", "DOMAIN_REVISION", "COMPLEXITY_REPO", "COMPLEXITY_REVISION",
 ]
 
 
@@ -31,7 +32,7 @@ def clean_env(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     for getter in (config.get_postgres_settings, config.get_rabbitmq_settings, config.get_gateway_settings,
                    config.get_router_settings, config.get_classifier_settings, config.get_worker_settings,
-                   config.get_lifecycle_settings):
+                   config.get_lifecycle_settings, config.get_checkpoint_settings):
         getter.cache_clear()
     yield
 
@@ -125,6 +126,15 @@ def test_router_and_classifier_defaults():
     c = ClassifierSettings()
     assert (c.domain_checkpoint, c.complexity_checkpoint, c.device, c.complexity_threshold) == \
         (None, None, "cpu", 0.5)
+
+
+def test_checkpoint_settings_require_a_token(monkeypatch):
+    with pytest.raises(ValidationError, match="HF_TOKEN"):
+        config.CheckpointSettings()
+    monkeypatch.setenv("HF_TOKEN", "hf_secret")
+    s = config.CheckpointSettings()
+    assert (s.checkpoint_dir, s.domain_repo, s.domain_revision) == ("/checkpoints", "Lucian04/laya-domain-v4", "main")
+    assert "hf_secret" not in repr(s)
 
 
 def test_classifier_threshold_is_parsed_as_float(monkeypatch):

@@ -1,22 +1,7 @@
-
-# ---------- stage 1: download the checkpoints --------------------------------------------------
-FROM python:3.11-slim AS checkpoints
-
-ARG DOMAIN_REPO=Lucian04/laya-domain-v4
-ARG COMPLEXITY_REPO=Lucian04/laya-complexity-v2
-# pin a commit hash for reproducible builds (default: latest commit on main)
-ARG DOMAIN_REVISION=main
-ARG COMPLEXITY_REVISION=main
-
-RUN pip install --no-cache-dir "huggingface_hub>=0.23"
-
-COPY src/router/download_checkpoints.py /download_checkpoints.py
-RUN --mount=type=secret,id=hf_token \
-    DOMAIN_REPO=${DOMAIN_REPO} DOMAIN_REVISION=${DOMAIN_REVISION} \
-    COMPLEXITY_REPO=${COMPLEXITY_REPO} COMPLEXITY_REVISION=${COMPLEXITY_REVISION} \
-    python /download_checkpoints.py
-
-# ---------- stage 2: the router -------------------------------------------------------------------
+# The router image ships WITHOUT the classifier weights: it is public on GHCR, while the
+# checkpoints are private on Hugging Face. In the pod, an init container running this same
+# image (python router/download_checkpoints.py, with HF_TOKEN from a Secret and
+# HF_HUB_OFFLINE=0) downloads them into a volume that the router container mounts.
 FROM python:3.11-slim
 WORKDIR /app
 ENV PYTHONPATH=/app \
@@ -35,10 +20,10 @@ RUN pip install --no-cache-dir -r database/requirements.txt
 COPY src/shared ./shared
 COPY src/database ./database
 COPY src/router ./router
-COPY --from=checkpoints /checkpoints ./router/checkpoints
 
-RUN python -c "from router.classifier import load_classifiers; load_classifiers()"
+# fails the build if an import is broken (needs no env, no weights)
 RUN python -c "import router.router"
+# the router itself never downloads anything; the init container overrides this
 ENV HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1
 

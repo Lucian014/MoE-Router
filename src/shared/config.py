@@ -33,6 +33,12 @@ DOMAIN_CHECKPOINT        router (classifier)  router/checkpoints/laya-domain-v4,
 COMPLEXITY_CHECKPOINT                         router/checkpoints/laya-complexity-v2, else HF repo
 CLASSIFIER_DEVICE                             cpu
 COMPLEXITY_THRESHOLD                          0.5
+HF_TOKEN                 router init          (required: the classifier repos are private)
+CHECKPOINT_DIR           (download_           /checkpoints
+DOMAIN_REPO               checkpoints.py)     Lucian04/laya-domain-v4
+DOMAIN_REVISION                               main (pin a commit hash for reproducible pods)
+COMPLEXITY_REPO                               Lucian04/laya-complexity-v2
+COMPLEXITY_REVISION                           main
 MODEL_NAME               worker               (required)
 ENGINE_TYPE                                   ollama
 INFERENCE_HOST                                http://localhost:11434
@@ -122,11 +128,24 @@ class RouterSettings(_Settings):
 
 
 class ClassifierSettings(_Settings):
-    # None -> classifier.py falls back to the baked-in checkpoint, else the HF repo
+    # None -> classifier.py falls back to src/router/checkpoints/<name> (local runs), else the
+    # HF repo. In Kubernetes these point at the volume the init container downloaded into.
     domain_checkpoint: str | None = Field(None, validation_alias="DOMAIN_CHECKPOINT")
     complexity_checkpoint: str | None = Field(None, validation_alias="COMPLEXITY_CHECKPOINT")
     device: str = Field("cpu", validation_alias="CLASSIFIER_DEVICE")
     complexity_threshold: float = Field(0.5, validation_alias="COMPLEXITY_THRESHOLD")
+
+
+class CheckpointSettings(_Settings):
+    """Where router/download_checkpoints.py gets the classifiers from and puts them.
+    The repos are private, so the router pod's init container needs an HF token."""
+
+    hf_token: SecretStr = Field(validation_alias="HF_TOKEN")
+    checkpoint_dir: str = Field("/checkpoints", validation_alias="CHECKPOINT_DIR")
+    domain_repo: str = Field("Lucian04/laya-domain-v4", validation_alias="DOMAIN_REPO")
+    domain_revision: str = Field("main", validation_alias="DOMAIN_REVISION")
+    complexity_repo: str = Field("Lucian04/laya-complexity-v2", validation_alias="COMPLEXITY_REPO")
+    complexity_revision: str = Field("main", validation_alias="COMPLEXITY_REVISION")
 
 
 class WorkerSettings(_Settings):
@@ -135,6 +154,11 @@ class WorkerSettings(_Settings):
     inference_host: str = Field("http://localhost:11434", validation_alias="INFERENCE_HOST")
     # >1 lets an engine that batches (vLLM) work on several requests at once
     prefetch: int = Field(1, ge=1, validation_alias="WORKER_PREFETCH")
+
+
+@lru_cache
+def get_checkpoint_settings() -> CheckpointSettings:
+    return CheckpointSettings()
 
 
 @lru_cache

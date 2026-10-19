@@ -2,9 +2,16 @@
 # Router Deployment -- the two Laya classifiers run INSIDE each router pod.
 #
 # Each pod = 1 container: RabbitMQ consumer + domain classifier + complexity classifier.
-# The checkpoints are downloaded from HF at image build time and baked into the image
-# (src/router/Dockerfile): no HF_TOKEN in the cluster. Scale classification capacity by scaling
-# this Deployment (replicas, or KEDA on the router.requests queue).
+# The image is public and ships without weights; the classifiers are private on Hugging Face.
+# The init container (same image, router/download_checkpoints.py) downloads them with the
+# HF_TOKEN from Secret `hf-token` into the `router-checkpoints` PVC (router_checkpoints_pvc.yaml),
+# so only the first start downloads; restarts just re-check the files. Create the Secret once:
+#
+#   kubectl create secret generic hf-token -n gateway --from-literal=HF_TOKEN=hf_...
+#
+# Scale classification capacity by scaling this Deployment (replicas, or KEDA on the
+# router.requests queue). The PVC is ReadWriteOnce: replicas must stay on one node
+# (they do: nodeSelector below).
 # =============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -24,6 +31,24 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-route
       terminationGracePeriodSeconds: 30
+      initContainers:
+      - name: download-checkpoints
+        image: 192.168.56.102:30500/moe-router:latest
+        imagePullPolicy: Always
+        command: ["python", "router/download_checkpoints.py"]
+        env:
+        - name: HF_HUB_OFFLINE          # the image is offline by default
+          value: "0"
+        - name: CHECKPOINT_DIR
+          value: "/checkpoints"
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: hf-token
+              key: HF_TOKEN
+        volumeMounts:
+        - name: checkpoints
+          mountPath: /checkpoints
       containers:
       - name: router
         image: 192.168.56.102:30500/moe-router:latest
@@ -39,6 +64,10 @@ spec:
           value: "30"
         - name: OMP_NUM_THREADS
           value: "2"
+        - name: DOMAIN_CHECKPOINT
+          value: "/checkpoints/laya-domain-v4"
+        - name: COMPLEXITY_CHECKPOINT
+          value: "/checkpoints/laya-complexity-v2"
         # --- RabbitMQ ------------------------------------------------------------------------
         - name: RABBITMQ_HOST
           value: "rabbitmq.platform.svc.cluster.local"
@@ -79,6 +108,10 @@ spec:
             command: ["test", "-f", "/tmp/ready"]
           initialDelaySeconds: 10
           periodSeconds: 5
+        volumeMounts:
+        - name: checkpoints
+          mountPath: /checkpoints
+          readOnly: true
         resources:
           requests:
             cpu: "1"
@@ -86,3 +119,7 @@ spec:
           limits:
             cpu: "2"
             memory: "4Gi"
+      volumes:
+      - name: checkpoints
+        persistentVolumeClaim:
+          claimName: router-checkpoints

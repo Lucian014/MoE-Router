@@ -25,7 +25,7 @@ build:
     - image: 192.168.56.102:30500/moe-router
       context: .
       custom:
-        buildCommand: podman build --secret id=hf_token,env=HF_TOKEN -t $IMAGE . -f src/router/Dockerfile && podman push --tls-verify=false $IMAGE
+        buildCommand: podman build -t $IMAGE . -f src/router/Dockerfile && podman push --tls-verify=false $IMAGE
         dependencies:
           paths:
             - src/router/**/*
