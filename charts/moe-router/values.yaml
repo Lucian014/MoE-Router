@@ -1,0 +1,59 @@
+
+global:
+  # registry for the platform's own images (gateway, router, worker, tools)
+  imageRegistry: ghcr.io/lucian014
+  imagePullSecrets: []
+  # "" = the cluster's default StorageClass
+  storageClass: ""
+
+# --------------------------------------------------------------------------------- Postgres
+# The model registry. enabled: true runs it in the chart; false connects to `external`.
+postgresql:
+  enabled: true
+  image:
+    repository: docker.io/library/postgres
+    tag: "16"
+    pullPolicy: IfNotPresent
+  auth:
+    database: model_registry
+    username: moe
+    # empty = generated once at install and kept across upgrades
+    password: ""
+    # use an existing Secret instead; it must have the keys
+    # POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD
+    existingSecret: ""
+  external:
+    host: ""
+    port: 5432
+  persistence:
+    size: 5Gi
+    storageClass: ""          # overrides global.storageClass
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# --------------------------------------------------------------------------------- RabbitMQ
+# The message broker between gateway, router and workers.
+rabbitmq:
+  enabled: true
+  image:
+    repository: docker.io/library/rabbitmq
+    tag: "3.13-management"
+    pullPolicy: IfNotPresent
+  auth:
+    username: moe
+    # empty = generated once at install and kept across upgrades
+    password: ""
+    # use an existing Secret instead; it must have the keys RABBITMQ_USER, RABBITMQ_PASS
+    existingSecret: ""
+  external:
+    host: ""
+    port: 5672
+  persistence:
+    size: 2Gi
+    storageClass: ""
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

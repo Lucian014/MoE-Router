@@ -1,0 +1,13 @@
+# Settings for the 4-node VirtualBox k3s cluster (k8s-master, k8s-infra, k8s-route, k8s-compute).
+# Everything cluster-specific lives here; charts/moe-router/values.yaml stays portable.
+#
+#   helm upgrade --install moe charts/moe-router -n moe-router --create-namespace \
+#     -f values/values-virtualbox.yaml
+
+postgresql:
+  nodeSelector:
+    kubernetes.io/hostname: k8s-infra
+
+rabbitmq:
+  nodeSelector:
+    kubernetes.io/hostname: k8s-infra

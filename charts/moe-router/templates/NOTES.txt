@@ -1,0 +1,19 @@
+MoE-Router {{ .Chart.AppVersion }} installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Infrastructure:
+{{- if .Values.postgresql.enabled }}
+  Postgres  {{ include "moe.postgres.host" . }}:5432   (StatefulSet {{ include "moe.fullname" . }}-postgres)
+{{- else }}
+  Postgres  external: {{ include "moe.postgres.host" . }}:{{ include "moe.postgres.port" . }}
+{{- end }}
+{{- if .Values.rabbitmq.enabled }}
+  RabbitMQ  {{ include "moe.rabbitmq.host" . }}:5672   (StatefulSet {{ include "moe.fullname" . }}-rabbitmq)
+{{- else }}
+  RabbitMQ  external: {{ include "moe.rabbitmq.host" . }}:{{ include "moe.rabbitmq.port" . }}
+{{- end }}
+
+Credentials are in the Secrets {{ include "moe.postgres.secretName" . }} and {{ include "moe.rabbitmq.secretName" . }}:
+  kubectl get secret -n {{ .Release.Namespace }} {{ include "moe.postgres.secretName" . }} -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d
+
+Check the pods:
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}

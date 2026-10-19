@@ -1,0 +1,10 @@
+apiVersion: v2
+name: moe-router
+description: Self-hosted LLM routing platform - classifies each prompt and sends it to the cheapest capable model
+type: application
+# chart version (bump on chart changes) and the default image tag (the app release)
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/Lucian014/MoE-Router
+sources:
+  - https://github.com/Lucian014/MoE-Router
