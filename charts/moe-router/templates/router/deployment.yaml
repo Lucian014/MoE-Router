@@ -1,0 +1,116 @@
+{{- $ck := .Values.router.checkpoints }}
+{{- if and $ck.persistence.enabled (gt (int .Values.router.replicas) 1) }}
+{{- fail "router.replicas > 1 needs router.checkpoints.persistence.enabled=false (the checkpoint PVC is ReadWriteOnce)" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "moe.fullname" . }}-router
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: router
+spec:
+  replicas: {{ .Values.router.replicas }}
+  {{- if $ck.persistence.enabled }}
+  # a ReadWriteOnce volume may not be attachable to a second pod on another node
+  strategy:
+    type: Recreate
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "moe.selectorLabels" (dict "root" . "component" "router") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "moe.labels" . | nindent 8 }}
+        app.kubernetes.io/component: router
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- include "moe.imagePullSecrets" . | nindent 6 }}
+      {{- with .Values.router.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.router.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.router.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # SHUTDOWN_GRACE_SECONDS + a few seconds to close the connections
+      terminationGracePeriodSeconds: {{ add (int .Values.router.shutdownGraceSeconds) 5 }}
+      initContainers:
+        # the image ships without weights: download the private classifiers first
+        - name: download-checkpoints
+          image: {{ include "moe.image" (dict "root" . "image" .Values.router.image) }}
+          imagePullPolicy: {{ include "moe.pullPolicy" (dict "root" . "image" .Values.router.image) }}
+          command: ["python", "router/download_checkpoints.py"]
+          env:
+            - name: HF_HUB_OFFLINE          # the image is offline by default
+              value: "0"
+            - name: CHECKPOINT_DIR
+              value: /checkpoints
+            - name: DOMAIN_REPO
+              value: {{ $ck.domainRepo | quote }}
+            - name: DOMAIN_REVISION
+              value: {{ $ck.domainRevision | quote }}
+            - name: COMPLEXITY_REPO
+              value: {{ $ck.complexityRepo | quote }}
+            - name: COMPLEXITY_REVISION
+              value: {{ $ck.complexityRevision | quote }}
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.router.hfToken.existingSecret | default (printf "%s-hf-token" (include "moe.fullname" .)) }}
+                  key: {{ .Values.router.hfToken.key }}
+          volumeMounts:
+            - name: checkpoints
+              mountPath: /checkpoints
+      containers:
+        - name: router
+          image: {{ include "moe.image" (dict "root" . "image" .Values.router.image) }}
+          imagePullPolicy: {{ include "moe.pullPolicy" (dict "root" . "image" .Values.router.image) }}
+          envFrom:
+            {{- include "moe.serviceEnvFrom" (dict "root" . "postgres" true) | nindent 12 }}
+          env:
+            # folder names written by router/download_checkpoints.py
+            - name: DOMAIN_CHECKPOINT
+              value: /checkpoints/laya-domain-v4
+            - name: COMPLEXITY_CHECKPOINT
+              value: /checkpoints/laya-complexity-v2
+            - name: CLASSIFIER_DEVICE
+              value: {{ .Values.router.classifierDevice | quote }}
+            - name: COMPLEXITY_THRESHOLD
+              value: {{ .Values.router.complexityThreshold | quote }}
+            - name: CATALOG_REFRESH_SECONDS
+              value: {{ .Values.router.catalogRefreshSeconds | quote }}
+            - name: OMP_NUM_THREADS
+              value: {{ .Values.router.ompNumThreads | quote }}
+            - name: SHUTDOWN_GRACE_SECONDS
+              value: {{ .Values.router.shutdownGraceSeconds | quote }}
+          # /tmp/ready exists once the classifiers are loaded, the catalog is valid and the
+          # router consumes. No liveness probe: loading and waiting for the catalog can take long.
+          readinessProbe:
+            exec:
+              command: ["test", "-f", "/tmp/ready"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          {{- with .Values.router.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: checkpoints
+              mountPath: /checkpoints
+              readOnly: true
+      volumes:
+        - name: checkpoints
+          {{- if $ck.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "moe.fullname" . }}-router-checkpoints
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

@@ -1,0 +1,14 @@
+{{- /* Non-secret settings shared by every service (names = shared/config.py env vars).
+       Credentials come from the Postgres / RabbitMQ Secrets, also via envFrom. */ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "moe.fullname" . }}-config
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+data:
+  RABBITMQ_HOST: {{ include "moe.rabbitmq.host" . | quote }}
+  RABBITMQ_PORT: {{ include "moe.rabbitmq.port" . | quote }}
+  POSTGRES_HOST: {{ include "moe.postgres.host" . | quote }}
+  POSTGRES_PORT: {{ include "moe.postgres.port" . | quote }}
+  MIDDLEWARE_QUEUE: {{ .Values.messaging.middlewareQueue | quote }}

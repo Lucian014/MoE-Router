@@ -1,0 +1,126 @@
+
+global:
+  # registry for the platform's own images (gateway, router, worker, tools)
+  imageRegistry: ghcr.io/lucian014
+  # tag for the platform's own images; "" = the chart's appVersion (a release vX.Y.Z).
+  # CI also publishes sha-<commit> and <branch> tags (use pullPolicy Always for branch tags).
+  imageTag: ""
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  # "" = the cluster's default StorageClass
+  storageClass: ""
+
+# --------------------------------------------------------------------------------- Postgres
+# The model registry. enabled: true runs it in the chart; false connects to `external`.
+postgresql:
+  enabled: true
+  image:
+    repository: docker.io/library/postgres
+    tag: "16"
+    pullPolicy: IfNotPresent
+  auth:
+    database: model_registry
+    username: moe
+    # empty = generated once at install and kept across upgrades
+    password: ""
+    # use an existing Secret instead; it must have the keys
+    # POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD
+    existingSecret: ""
+  external:
+    host: ""
+    port: 5432
+  persistence:
+    size: 5Gi
+    storageClass: ""          # overrides global.storageClass
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# --------------------------------------------------------------------------------- RabbitMQ
+# The message broker between gateway, router and workers.
+rabbitmq:
+  enabled: true
+  image:
+    repository: docker.io/library/rabbitmq
+    tag: "3.13-management"
+    pullPolicy: IfNotPresent
+  auth:
+    username: moe
+    # empty = generated once at install and kept across upgrades
+    password: ""
+    # use an existing Secret instead; it must have the keys RABBITMQ_USER, RABBITMQ_PASS
+    existingSecret: ""
+  external:
+    host: ""
+    port: 5672
+  persistence:
+    size: 2Gi
+    storageClass: ""
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# --------------------------------------------------------------------------------- shared
+# Settings every service reads (shared/config.py); rendered into the ConfigMap <release>-config.
+messaging:
+  middlewareQueue: router.requests
+
+# --------------------------------------------------------------------------------- Gateway
+# The HTTP entry point: POST /generate -> RabbitMQ -> router -> worker -> reply.
+gateway:
+  image:
+    repository: moe-gateway
+    tag: ""                   # "" = global.imageTag, else appVersion
+  replicas: 1
+  # how long a request waits for its answer (and its TTL in the queues)
+  rpcTimeoutSeconds: 300
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { memory: 512Mi }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# --------------------------------------------------------------------------------- Router
+# Runs both classifiers and the routing rule. The image has no weights: an init container
+# downloads the private classifiers from Hugging Face before the router starts.
+router:
+  image:
+    repository: moe-router
+    tag: ""
+  replicas: 1
+  classifierDevice: cpu
+  complexityThreshold: 0.5
+  catalogRefreshSeconds: 30
+  # torch threads per pod (match the CPU limit)
+  ompNumThreads: 2
+  shutdownGraceSeconds: 25
+  # read access to the classifier repos on Hugging Face: either put the token here
+  # (the chart stores it in a Secret) or name an existing Secret
+  hfToken:
+    value: ""
+    existingSecret: ""
+    key: HF_TOKEN
+  checkpoints:
+    domainRepo: Lucian04/laya-domain-v4
+    domainRevision: main        # pin a commit hash so every pod gets the same weights
+    complexityRepo: Lucian04/laya-complexity-v2
+    complexityRevision: main
+    # true: cache the download on a PVC (only the first start downloads; one node, so the
+    # Deployment uses the Recreate strategy). false: emptyDir, every pod downloads (any
+    # number of replicas, rolling updates).
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: ""
+  resources:
+    requests: { cpu: "1", memory: 3Gi }
+    limits: { cpu: "2", memory: 4Gi }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

@@ -1,0 +1,34 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "moe.fullname" . }}-postgres
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+  selector:
+    {{- include "moe.selectorLabels" (dict "root" . "component" "postgres") | nindent 4 }}
+---
+# headless Service governing the StatefulSet (stable pod DNS names)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "moe.fullname" . }}-postgres-headless
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  clusterIP: None
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+  selector:
+    {{- include "moe.selectorLabels" (dict "root" . "component" "postgres") | nindent 4 }}
+{{- end }}

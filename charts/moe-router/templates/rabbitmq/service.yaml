@@ -1,0 +1,37 @@
+{{- if .Values.rabbitmq.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "moe.fullname" . }}-rabbitmq
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rabbitmq
+spec:
+  type: ClusterIP
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: amqp
+    - name: management
+      port: 15672
+      targetPort: management
+  selector:
+    {{- include "moe.selectorLabels" (dict "root" . "component" "rabbitmq") | nindent 4 }}
+---
+# headless Service governing the StatefulSet (stable pod DNS names)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "moe.fullname" . }}-rabbitmq-headless
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rabbitmq
+spec:
+  clusterIP: None
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: amqp
+  selector:
+    {{- include "moe.selectorLabels" (dict "root" . "component" "rabbitmq") | nindent 4 }}
+{{- end }}

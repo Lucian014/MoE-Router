@@ -1,0 +1,23 @@
+#
+
+global:
+  imageTag: clean-deploy
+  imagePullPolicy: Always
+
+postgresql:
+  nodeSelector:
+    kubernetes.io/hostname: k8s-infra
+
+rabbitmq:
+  nodeSelector:
+    kubernetes.io/hostname: k8s-infra
+
+gateway:
+  nodeSelector:
+    kubernetes.io/hostname: k8s-route
+
+router:
+  hfToken:
+    existingSecret: hf-token
+  nodeSelector:
+    kubernetes.io/hostname: k8s-route
