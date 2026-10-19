@@ -11,14 +11,13 @@ from sqlalchemy import create_engine, pool
 # on sys.path for `import database...` to resolve.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from shared.config import get_postgres_settings  # noqa: E402
-from database.base import Base  # noqa: E402
-
 # Importing database.models pulls in every table's schema.py (see
 # database/models/__init__.py), which is what registers each table onto
 # Base.metadata. Without this import, autogenerate would see an empty
 # schema and would try to DROP every real table.
 import database.models  # noqa: E402,F401
+from database.base import Base  # noqa: E402
+from shared.config import get_postgres_settings  # noqa: E402
 
 config = context.config
 

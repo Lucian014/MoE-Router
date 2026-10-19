@@ -2,10 +2,10 @@ import asyncio
 import sys
 import time
 
+from engine import get_engine
 from shared.config import get_rabbitmq_settings, get_worker_settings
 from shared.rabbitmq import RabbitMQClient
 from shared.utils import model_to_queue
-from engine import get_engine
 
 # Campurile pe care workerul le consuma; restul payload-ului e metadata de
 # rutare pusa de router (domeniu, nivel, probabilitati, confidence...) si se
@@ -68,7 +68,8 @@ async def main():
 
     await mq_client.connect(service_name=f"Worker ({MODEL_NAME})")
     print(f" [*] Worker listening on {queue_name} (model={MODEL_NAME}, engine={ENGINE_TYPE}).")
-    await mq_client.consume_rpc(queue_name=queue_name, handler_func=handle_request)
+    await mq_client.consume_rpc(queue_name=queue_name, handler_func=handle_request,
+                                prefetch_count=cfg.prefetch)
     try:
         await asyncio.Future()
     finally:

@@ -26,6 +26,7 @@ RABBITMQ_PORT            worker               5672
 RABBITMQ_USER                                 (required)
 RABBITMQ_PASS                                 (required)
 MIDDLEWARE_QUEUE         gateway, router      router.requests
+RPC_TIMEOUT_SECONDS      gateway              300 (> the worker's engine timeout of 240 s)
 CATALOG_REFRESH_SECONDS  router               30
 DOMAIN_CHECKPOINT        router (classifier)  router/checkpoints/laya-domain-v4, else HF repo
 COMPLEXITY_CHECKPOINT                         router/checkpoints/laya-complexity-v2, else HF repo
@@ -34,6 +35,7 @@ COMPLEXITY_THRESHOLD                          0.5
 MODEL_NAME               worker               (required)
 ENGINE_TYPE                                   ollama
 INFERENCE_HOST                                http://localhost:11434
+WORKER_PREFETCH                               1 (requests handled concurrently per pod)
 """
 from functools import lru_cache
 from typing import TYPE_CHECKING
@@ -96,6 +98,11 @@ class RabbitMQSettings(_Settings):
     middleware_queue: str = Field("router.requests", validation_alias="MIDDLEWARE_QUEUE")
 
 
+class GatewaySettings(_Settings):
+    # how long a request waits for its reply; also its TTL in the queues
+    rpc_timeout_seconds: float = Field(300, gt=0, validation_alias="RPC_TIMEOUT_SECONDS")
+
+
 class RouterSettings(_Settings):
     catalog_refresh_seconds: int = Field(30, validation_alias="CATALOG_REFRESH_SECONDS")
 
@@ -112,6 +119,8 @@ class WorkerSettings(_Settings):
     model_name: str = Field(validation_alias="MODEL_NAME")
     engine_type: str = Field("ollama", validation_alias="ENGINE_TYPE")
     inference_host: str = Field("http://localhost:11434", validation_alias="INFERENCE_HOST")
+    # >1 lets an engine that batches (vLLM) work on several requests at once
+    prefetch: int = Field(1, ge=1, validation_alias="WORKER_PREFETCH")
 
 
 @lru_cache
@@ -122,6 +131,11 @@ def get_postgres_settings() -> PostgresSettings:
 @lru_cache
 def get_rabbitmq_settings() -> RabbitMQSettings:
     return RabbitMQSettings()
+
+
+@lru_cache
+def get_gateway_settings() -> GatewaySettings:
+    return GatewaySettings()
 
 
 @lru_cache

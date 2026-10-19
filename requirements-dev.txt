@@ -1,0 +1,6 @@
+pytest>=8,<9
+ruff>=0.6
+pydantic-settings>=2.2,<3
+aio-pika>=9.4.0
+sqlalchemy[asyncio]
+pyyaml
