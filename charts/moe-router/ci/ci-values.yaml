@@ -1,0 +1,43 @@
+# Values for the CI test install on a kind cluster (.github/workflows/ci.yml, job `chart`).
+# Sized for a GitHub runner (4 CPUs, 16 GB): one tiny model, small requests.
+# global.imageTag is set by the workflow to the images built for the same commit.
+
+global:
+  imagePullPolicy: IfNotPresent
+
+# one small model as the default: every request routes to it
+catalog:
+  models:
+    - { model_id: "qwen2.5:0.5b", engine: ollama, category: open-qa, complexity_tier: low, is_default: true }
+
+router:
+  # created by the workflow: the real token if the repo has the HF_TOKEN secret, else a dummy
+  hfToken:
+    existingSecret: hf-token
+  resources:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits: { memory: 4Gi }
+  checkpoints:
+    persistence:
+      size: 3Gi
+
+ollama:
+  contextLength: 2048
+  persistence:
+    size: 3Gi
+  resources:
+    requests: { cpu: 500m, memory: 512Mi }
+    limits: { memory: 3Gi }
+
+gateway:
+  rpcTimeoutSeconds: 120
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+
+postgresql:
+  persistence:
+    size: 1Gi
+
+rabbitmq:
+  persistence:
+    size: 1Gi
