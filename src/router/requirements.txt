@@ -4,3 +4,4 @@ safetensors
 huggingface_hub
 aio-pika
 sqlalchemy[asyncio]>=2.0
+pydantic-settings>=2.2,<3

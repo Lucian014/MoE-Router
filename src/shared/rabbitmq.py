@@ -5,8 +5,9 @@ import aio_pika
 
 
 class RabbitMQClient:
-    def __init__(self, host, user, password):
+    def __init__(self, host, user, password, port=5672):
         self.host = host
+        self.port = port
         self.user = user
         self.password = password
         self.connection = None
@@ -15,6 +16,12 @@ class RabbitMQClient:
         self.futures = {}
         self._should_stop = False
         self._stop_event = asyncio.Event()
+
+    @classmethod
+    def from_settings(cls, settings):
+        """Build a client from shared.config.RabbitMQSettings."""
+        return cls(host=settings.host, port=settings.port, user=settings.user,
+                   password=settings.password.get_secret_value())
 
     async def connect(self, service_name="Service", max_retries=10):
         self._should_stop = False
@@ -25,7 +32,7 @@ class RabbitMQClient:
             try:
                 print(f"[*] {service_name} - Connecting to RabbitMQ ({attempt + 1}/{max_retries})...")
                 self.connection = await aio_pika.connect_robust(
-                    host=self.host, login=self.user, password=self.password
+                    host=self.host, port=self.port, login=self.user, password=self.password
                 )
                 self.channel = await self.connection.channel()
                 print(f"[*] {service_name} - Connected successfully!")
@@ -77,7 +84,7 @@ class RabbitMQClient:
             async with message.process():
                 try:
                     payload = json.loads(message.body.decode())
-                    result = await handler_func(payload)  # Call your custom logic
+                    result = await handler_func(payload)  # Call custom logic
 
                     if message.reply_to:
                         await self.channel.default_exchange.publish(

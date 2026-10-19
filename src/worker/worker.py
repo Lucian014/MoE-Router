@@ -1,22 +1,11 @@
 import asyncio
-import os
 import sys
 import time
 
+from shared.config import get_rabbitmq_settings, get_worker_settings
 from shared.rabbitmq import RabbitMQClient
 from shared.utils import model_to_queue
 from engine import get_engine
-
-MODEL_NAME = os.getenv("MODEL_NAME")
-ENGINE_TYPE = os.getenv("ENGINE_TYPE", "ollama")
-INFERENCE_HOST = os.getenv("INFERENCE_HOST", "http://localhost:11434")
-
-if not MODEL_NAME:
-    # Fara MODEL_NAME, workerul ar asculta pe coada unui model inventat.
-    # build_manifests.py il seteaza mereu; lipsa lui e o eroare de deployment.
-    raise SystemExit("[!] MODEL_NAME is not set -- refusing to start.")
-
-QUEUE_NAME = model_to_queue(MODEL_NAME)
 
 # Campurile pe care workerul le consuma; restul payload-ului e metadata de
 # rutare pusa de router (domeniu, nivel, probabilitati, confidence...) si se
@@ -24,13 +13,13 @@ QUEUE_NAME = model_to_queue(MODEL_NAME)
 # numele exacte ale campurilor din router.
 _CONSUMED_FIELDS = {"prompt", "model"}
 
-engine = get_engine(ENGINE_TYPE, INFERENCE_HOST)
-
-mq_client = RabbitMQClient(
-    host=os.getenv("RABBITMQ_HOST", "localhost"),
-    user=os.getenv("RABBITMQ_USER", "guest"),
-    password=os.getenv("RABBITMQ_PASS", "guest"),
-)
+# Construite in main() din shared.config. Fara MODEL_NAME, WorkerSettings
+# arunca o eroare de validare la pornire (build_manifests.py il seteaza mereu;
+# lipsa lui e o eroare de deployment).
+MODEL_NAME: str = ""
+ENGINE_TYPE: str = ""
+engine = None
+mq_client: RabbitMQClient | None = None
 
 
 async def handle_request(payload: dict) -> dict:
@@ -69,10 +58,17 @@ async def handle_request(payload: dict) -> dict:
 
 
 async def main():
+    global MODEL_NAME, ENGINE_TYPE, engine, mq_client
     sys.stdout.reconfigure(line_buffering=True)
+    cfg = get_worker_settings()
+    MODEL_NAME, ENGINE_TYPE = cfg.model_name, cfg.engine_type
+    queue_name = model_to_queue(MODEL_NAME)
+    engine = get_engine(ENGINE_TYPE, cfg.inference_host)
+    mq_client = RabbitMQClient.from_settings(get_rabbitmq_settings())
+
     await mq_client.connect(service_name=f"Worker ({MODEL_NAME})")
-    print(f" [*] Worker listening on {QUEUE_NAME} (model={MODEL_NAME}, engine={ENGINE_TYPE}).")
-    await mq_client.consume_rpc(queue_name=QUEUE_NAME, handler_func=handle_request)
+    print(f" [*] Worker listening on {queue_name} (model={MODEL_NAME}, engine={ENGINE_TYPE}).")
+    await mq_client.consume_rpc(queue_name=queue_name, handler_func=handle_request)
     try:
         await asyncio.Future()
     finally:

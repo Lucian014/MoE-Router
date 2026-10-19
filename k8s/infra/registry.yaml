@@ -23,7 +23,7 @@ spec:
           name: database-port
         volumeMounts:
         - name: database-storage
-          mountPath: /var/lib/database
+          mountPath: /var/lib/registry
       volumes:
       - name: database-storage
         hostPath:

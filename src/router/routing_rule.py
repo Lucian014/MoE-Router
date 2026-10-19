@@ -59,7 +59,7 @@ def default_model(catalog):
 def select_model(catalog, category, level, confidence=1.0, conf_threshold=0.0):
     """-> (model_id, reason)"""
     default = default_model(catalog)
-    if confidence < conf_threshold:                      # experiments only; threshold 0 = never
+    if confidence < conf_threshold:
         return default.model_id, "fallback:low-confidence"
     candidates = [m for m in catalog if m.enabled and m.category == category]
     if not candidates:

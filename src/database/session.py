@@ -1,21 +1,30 @@
 from contextlib import asynccontextmanager
+from functools import lru_cache
 from typing import AsyncIterator
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
-from database.config import ASYNC_DATABASE_URL
+from shared.config import get_postgres_settings
 
-engine = create_async_engine(
-    ASYNC_DATABASE_URL,
-    pool_pre_ping=True,
-    future=True,
-)
 
-AsyncSessionLocal = async_sessionmaker(
-    bind=engine,
-    expire_on_commit=False,
-    autoflush=False,
-)
+# The engine is created on first use, not at import: importing `database` must not
+# require POSTGRES_* to be set (the router image imports it at build time).
+@lru_cache
+def get_engine() -> AsyncEngine:
+    return create_async_engine(
+        get_postgres_settings().async_url,
+        pool_pre_ping=True,
+        future=True,
+    )
+
+
+@lru_cache
+def _session_factory() -> async_sessionmaker[AsyncSession]:
+    return async_sessionmaker(
+        bind=get_engine(),
+        expire_on_commit=False,
+        autoflush=False,
+    )
 
 
 @asynccontextmanager
@@ -30,7 +39,7 @@ async def get_session() -> AsyncIterator[AsyncSession]:
     Shared by every table's repository — none of them open their own
     engine or session factory.
     """
-    session = AsyncSessionLocal()
+    session = _session_factory()()
     try:
         yield session
         await session.commit()
@@ -43,4 +52,5 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 
 async def dispose_engine() -> None:
     """Call on service shutdown to close the connection pool cleanly."""
-    await engine.dispose()
+    if get_engine.cache_info().currsize:
+        await get_engine().dispose()
