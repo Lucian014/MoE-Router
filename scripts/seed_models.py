@@ -11,7 +11,9 @@ seed_models.py -- populate the `models` table.
    the DB: exactly one enabled default, one category per model (a domain label), complexity_tier
    in {low, high}, at most one enabled model per category + tier. upsert() makes re-runs safe.
    Models that are in the DB but no longer in the YAML are left untouched (disable them with
-   `enabled: false` instead of deleting the line).
+   `enabled: false` instead of deleting the line) -- unless --disable-missing is given, which
+   makes the YAML the complete catalog (the Helm setup Job uses it: a model removed from the
+   chart's values has no worker any more, so the router must stop routing to it).
 
 2. Add / update a single model:
 
@@ -51,7 +53,7 @@ def check_catalog(models: list[dict], source: str) -> None:
         print(f"     {c:17s} low -> {low:32s} high -> {high}")
 
 
-async def seed_from_yaml(yaml_path: Path, check_only: bool) -> None:
+async def seed_from_yaml(yaml_path: Path, check_only: bool, disable_missing: bool = False) -> None:
     import yaml
 
     with open(yaml_path, encoding="utf-8") as f:
@@ -82,6 +84,13 @@ async def seed_from_yaml(yaml_path: Path, check_only: bool) -> None:
                 is_default=entry.get("is_default", False),
             )
             print(f"[OK] upserted {entry['model_id']}")
+        # 3. optionally: the YAML is the whole catalog, disable everything else
+        if disable_missing:
+            listed = {entry["model_id"] for entry in models}
+            for row in await repo.list_enabled():
+                if row.model_id not in listed:
+                    await repo.update(row.model_id, enabled=False, is_default=False)
+                    print(f"[OK] disabled {row.model_id} (not in {yaml_path})")
     print(f"[OK] seeded {len(models)} model(s) from {yaml_path}")
 
 
@@ -104,6 +113,8 @@ def main() -> None:
     mode.add_argument("--from-yaml", type=Path, help="models.yaml to bulk-load")
     mode.add_argument("--add", action="store_true", help="add/update a single model from CLI args")
     parser.add_argument("--check", action="store_true", help="with --from-yaml: validate only, no DB writes")
+    parser.add_argument("--disable-missing", action="store_true",
+                        help="with --from-yaml: disable enabled DB models that are not in the YAML")
     parser.add_argument("--model-id")
     parser.add_argument("--engine")
     parser.add_argument("--category", choices=CATEGORIES, default=None,
@@ -114,7 +125,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.from_yaml:
-        asyncio.run(seed_from_yaml(args.from_yaml, args.check))
+        asyncio.run(seed_from_yaml(args.from_yaml, args.check, args.disable_missing))
     else:
         if not args.model_id or not args.engine:
             parser.error("--add requires --model-id and --engine")
