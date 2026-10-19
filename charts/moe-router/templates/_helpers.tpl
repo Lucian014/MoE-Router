@@ -25,14 +25,33 @@ app.kubernetes.io/component: {{ .component }}
 
 {{/* Usage: include "moe.image" (dict "root" . "image" .Values.gateway.image)
      A repository containing "/" is used as is (e.g. docker.io/library/postgres);
-     otherwise it is prefixed with global.imageRegistry. The tag defaults to appVersion. */}}
+     otherwise it is prefixed with global.imageRegistry.
+     Tag: image.tag, else global.imageTag, else the chart's appVersion. */}}
 {{- define "moe.image" -}}
-{{- $tag := .image.tag | default .root.Chart.AppVersion -}}
+{{- $tag := .image.tag | default .root.Values.global.imageTag | default .root.Chart.AppVersion -}}
 {{- if contains "/" .image.repository -}}
 {{ .image.repository }}:{{ $tag }}
 {{- else -}}
 {{ .root.Values.global.imageRegistry }}/{{ .image.repository }}:{{ $tag }}
 {{- end -}}
+{{- end -}}
+
+{{/* Usage: include "moe.pullPolicy" (dict "root" . "image" .Values.gateway.image) */}}
+{{- define "moe.pullPolicy" -}}
+{{- .image.pullPolicy | default .root.Values.global.imagePullPolicy -}}
+{{- end -}}
+
+{{/* Env for the platform's services: the shared ConfigMap + the RabbitMQ credentials,
+     plus the Postgres credentials with (dict "root" . "postgres" true). */}}
+{{- define "moe.serviceEnvFrom" -}}
+- configMapRef:
+    name: {{ include "moe.fullname" .root }}-config
+- secretRef:
+    name: {{ include "moe.rabbitmq.secretName" .root }}
+{{- if .postgres }}
+- secretRef:
+    name: {{ include "moe.postgres.secretName" .root }}
+{{- end }}
 {{- end -}}
 
 {{- define "moe.imagePullSecrets" -}}

@@ -1,0 +1,19 @@
+{{- if .Values.router.checkpoints.persistence.enabled }}
+# Cache for the downloaded classifiers: restarts only re-check the files.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "moe.fullname" . }}-router-checkpoints
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: router
+  annotations:
+    # keep the (large) download on `helm uninstall`
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- include "moe.storageClass" (dict "root" . "persistence" .Values.router.checkpoints.persistence) | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ .Values.router.checkpoints.persistence.size }}
+{{- end }}

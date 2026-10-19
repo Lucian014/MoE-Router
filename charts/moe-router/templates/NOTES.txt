@@ -12,6 +12,13 @@ Infrastructure:
   RabbitMQ  external: {{ include "moe.rabbitmq.host" . }}:{{ include "moe.rabbitmq.port" . }}
 {{- end }}
 
+Gateway:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "moe.fullname" . }}-gateway {{ .Values.gateway.service.port }}
+  curl -X POST localhost:{{ .Values.gateway.service.port }}/generate -H 'content-type: application/json' -d '{"prompt": "hi"}'
+
+Router: downloads the classifiers first (init container), then waits for a valid catalog:
+  kubectl logs -n {{ .Release.Namespace }} deploy/{{ include "moe.fullname" . }}-router -c download-checkpoints
+
 Credentials are in the Secrets {{ include "moe.postgres.secretName" . }} and {{ include "moe.rabbitmq.secretName" . }}:
   kubectl get secret -n {{ .Release.Namespace }} {{ include "moe.postgres.secretName" . }} -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d
 
