@@ -36,6 +36,21 @@ spec:
       {{- end }}
       # init containers run one after the other; the main container runs last
       initContainers:
+        # wait in-process for the services: pod restarts would use up backoffLimit
+        - name: wait
+          image: {{ $image }}
+          imagePullPolicy: {{ $pullPolicy }}
+          command:
+            - python
+            - scripts/manage_models/wait_for.py
+            - {{ printf "%s:%s" (include "moe.postgres.host" .) (include "moe.postgres.port" .) | quote }}
+            {{- if $pull }}
+            - {{ printf "%s-ollama:11434" (include "moe.fullname" .) | quote }}
+            {{- end }}
+          {{- with .Values.setup.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
         - name: migrate
           image: {{ $image }}
           imagePullPolicy: {{ $pullPolicy }}
