@@ -2,9 +2,8 @@ from .base import InferenceEngine
 from .ollama_engine import OllamaEngine
 from .vllm_engine import VLLMEngine
 
-# Keep this in sync with ENGINE_HOST_DEFAULTS in scripts/build_manifests.py —
-# both describe "which engine types exist", one for validation, one for
-# instantiation.
+# Keep this in sync with the engines the Helm chart accepts
+# (charts/moe-router/templates/catalog-validate.yaml: ollama, vllm).
 _ENGINES = {
     "ollama": OllamaEngine,
     "vllm": VLLMEngine,

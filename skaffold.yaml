@@ -1,12 +1,21 @@
+# Dev loop: build the 4 images, push them to your dev registry and deploy the Helm chart.
+#
+# One-time setup on your machine (keeps the registry address out of the repo):
+#   skaffold config set default-repo 192.168.56.102:30500
+#   skaffold config set --global insecure-registries 192.168.56.102:30500
+#
+#   skaffold dev     # rebuild + redeploy on every change
+#   skaffold run     # build + deploy once
+#
+# The images are tagged by Skaffold and passed to the chart pinned by digest
+# (setValueTemplates), so the cluster always runs exactly what was just built.
 apiVersion: skaffold/v4beta7
 kind: Config
 metadata:
   name: moe-router
 build:
-  insecureRegistries:
-    - 192.168.56.102:30500
   artifacts:
-    - image: 192.168.56.102:30500/fastapi-gateway
+    - image: moe-gateway
       context: .
       custom:
         buildCommand: podman build -t $IMAGE . -f src/gateway/Dockerfile && podman push --tls-verify=false $IMAGE
@@ -14,7 +23,7 @@ build:
           paths:
             - src/gateway/**/*
             - src/shared/**/*
-    - image: 192.168.56.102:30500/moe-worker
+    - image: moe-worker
       context: .
       custom:
         buildCommand: podman build -t $IMAGE . -f src/worker/Dockerfile && podman push --tls-verify=false $IMAGE
@@ -22,7 +31,8 @@ build:
           paths:
             - src/worker/**/*
             - src/shared/**/*
-    - image: 192.168.56.102:30500/moe-router
+            - src/engine/**/*
+    - image: moe-router
       context: .
       custom:
         buildCommand: podman build -t $IMAGE . -f src/router/Dockerfile && podman push --tls-verify=false $IMAGE
@@ -34,11 +44,42 @@ build:
           ignore:
             - src/router/checkpoints/**
             - "**/__pycache__/**"
+    - image: moe-tools
+      context: .
+      custom:
+        buildCommand: podman build -t $IMAGE . -f scripts/manage_models/Dockerfile && podman push --tls-verify=false $IMAGE
+        dependencies:
+          paths:
+            - src/**/*
+            - scripts/seed_models.py
+            - scripts/manage_models/**/*
+          ignore:
+            - src/router/checkpoints/**
+            - "**/__pycache__/**"
 
-manifests:
-  rawYaml:
-    - k8s/backend/fastapi/*.yaml
-    - k8s/backend/router/*.yaml
-    - k8s/compute/ollama_server.yaml
-    - k8s/compute/worker_*.yaml
+deploy:
+  helm:
+    releases:
+      - name: moe
+        chartPath: charts/moe-router
+        namespace: moe-router
+        createNamespace: true
+        valuesFiles:
+          - values/values-virtualbox.yaml
+        # full image references from the build (registry/name:tag@digest)
+        setValueTemplates:
+          gateway.image.repository: "{{.IMAGE_REPO_moe_gateway}}"
+          gateway.image.tag: "{{.IMAGE_TAG_moe_gateway}}@{{.IMAGE_DIGEST_moe_gateway}}"
+          router.image.repository: "{{.IMAGE_REPO_moe_router}}"
+          router.image.tag: "{{.IMAGE_TAG_moe_router}}@{{.IMAGE_DIGEST_moe_router}}"
+          worker.image.repository: "{{.IMAGE_REPO_moe_worker}}"
+          worker.image.tag: "{{.IMAGE_TAG_moe_worker}}@{{.IMAGE_DIGEST_moe_worker}}"
+          tools.image.repository: "{{.IMAGE_REPO_moe_tools}}"
+          tools.image.tag: "{{.IMAGE_TAG_moe_tools}}@{{.IMAGE_DIGEST_moe_tools}}"
 
+# Don't stamp Skaffold's per-run label into StatefulSet pod templates: it changes on every
+# `skaffold run`, which would restart Postgres and RabbitMQ although nothing changed.
+resourceSelector:
+  deny:
+    - groupKind: "StatefulSet.apps"
+      labels: [".*"]

@@ -99,14 +99,12 @@ imported anywhere, it never registers onto `Base.metadata`, and
 
 ## Environment variables
 
-Matches `k8s/infra/postgresql/{postgresql-statefulset,postgresql-service,
-postgresql-secret}.yaml` — Service `postgres` in namespace `platform`, and
-`postgres-secret` already exposes `POSTGRES_DB`/`POSTGRES_USER`/
-`POSTGRES_PASSWORD` with the right keys.
+Defined in `src/shared/config.py` (PostgresSettings). In Kubernetes the Helm
+chart sets them: `POSTGRES_HOST`/`POSTGRES_PORT` from the `<release>-config`
+ConfigMap, and `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD` from the
+generated `<release>-postgres` Secret (charts/moe-router/templates/postgres/).
 
-- `POSTGRES_HOST` (default `postgres.platform.svc.cluster.local`; plain
-  `postgres` also resolves for pods already running in the `platform`
-  namespace)
+- `POSTGRES_HOST` (default `postgres`; the chart sets `<release>-postgres`)
 - `POSTGRES_PORT` (default `5432`)
 - `POSTGRES_DB` (default `model_registry`)
 - `POSTGRES_USER` — **no default, must be set**

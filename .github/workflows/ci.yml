@@ -86,3 +86,79 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  # Chart checks that need no cluster: lint + Kubernetes schema validation of several renders.
+  chart-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.21.4
+      - name: install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | tar xz -C /usr/local/bin kubeconform
+      - name: helm lint
+        run: |
+          helm lint charts/moe-router --set router.hfToken.value=x
+          helm lint charts/moe-router -f charts/moe-router/ci/ci-values.yaml
+          helm lint charts/moe-router -f values/values-virtualbox.yaml
+      - name: validate rendered manifests (kubeconform)
+        run: |
+          for args in \
+            "--set router.hfToken.value=x" \
+            "-f charts/moe-router/ci/ci-values.yaml" \
+            "-f values/values-virtualbox.yaml" \
+            "--set router.hfToken.value=x,ollama.gpu=1,router.replicas=2,router.checkpoints.persistence.enabled=false" \
+            "--set router.hfToken.value=x,postgresql.enabled=false,postgresql.external.host=db,postgresql.auth.password=x,rabbitmq.enabled=false,rabbitmq.external.host=mq,rabbitmq.auth.password=x"
+          do
+            echo "::group::helm template $args"
+            helm template moe charts/moe-router $args | kubeconform -strict -summary
+            echo "::endgroup::"
+          done
+
+  # Real install on a fresh kind cluster, with the images built for this commit.
+  # With the repo secret HF_TOKEN the router downloads the classifiers and a prompt goes
+  # end to end; without it, everything except the router is checked.
+  chart-install:
+    needs: [images, chart-lint]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NS: moe-router
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.21.4
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: moe-ci
+      - name: settings
+        run: |
+          echo "IMAGE_TAG=sha-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+          if [ -n "$HF_TOKEN" ]; then echo "FULL=1" >> "$GITHUB_ENV"; else echo "FULL=0" >> "$GITHUB_ENV"; \
+            echo "::notice::No HF_TOKEN secret: the router can't download the classifiers, so the end-to-end prompt is skipped"; fi
+      - name: HF token Secret
+        run: |
+          kubectl create namespace "$NS"
+          kubectl create secret generic hf-token -n "$NS" --from-literal=HF_TOKEN="${HF_TOKEN:-none}"
+      - name: helm install
+        run: |
+          helm install moe charts/moe-router -n "$NS" -f charts/moe-router/ci/ci-values.yaml \
+            --set global.imageRegistry=ghcr.io/$OWNER --set global.imageTag=$IMAGE_TAG
+      - name: smoke test
+        run: charts/moe-router/ci/smoke-test.sh "$NS" moe
+      - name: helm upgrade keeps the generated passwords
+        run: |
+          before=$(kubectl get secret -n "$NS" moe-postgres moe-rabbitmq -o jsonpath='{range .items[*]}{.data}{end}' | sha256sum)
+          helm upgrade moe charts/moe-router -n "$NS" -f charts/moe-router/ci/ci-values.yaml \
+            --set global.imageRegistry=ghcr.io/$OWNER --set global.imageTag=$IMAGE_TAG
+          after=$(kubectl get secret -n "$NS" moe-postgres moe-rabbitmq -o jsonpath='{range .items[*]}{.data}{end}' | sha256sum)
+          [ "$before" = "$after" ] || { echo "::error::helm upgrade changed the generated passwords"; exit 1; }
+      - name: smoke test after upgrade
+        run: charts/moe-router/ci/smoke-test.sh "$NS" moe

@@ -1,0 +1,60 @@
+# Dev-only: the plain image registry that `skaffold dev` pushes to (192.168.56.102:30500).
+# Not part of the platform (the Helm chart pulls released images from GHCR).
+# Images live in /var/local-database on k8s-infra, so they survive re-creating this.
+#
+#   kubectl apply -f dev/registry.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev-registry
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: container-registry
+  namespace: dev-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: container-registry
+  template:
+    metadata:
+      labels:
+        app: container-registry
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-infra
+      containers:
+        - name: registry
+          image: docker.io/library/registry:2.8.3
+          ports:
+            - name: http
+              containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /v2/
+              port: http
+          volumeMounts:
+            - name: storage
+              mountPath: /var/lib/registry
+      volumes:
+        - name: storage
+          hostPath:
+            path: /var/local-database
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: container-registry
+  namespace: dev-registry
+spec:
+  type: NodePort
+  selector:
+    app: container-registry
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http
+      nodePort: 30500
