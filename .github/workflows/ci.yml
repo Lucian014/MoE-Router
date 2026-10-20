@@ -1,18 +1,28 @@
 name: ci
 
+# Runs on every pull request, on every push to main (i.e. every merge) and on version tags.
+# Pushes to other branches run nothing on their own: open a (draft) PR to get CI.
 on:
   push:
-    branches: ["**"]
+    branches: [main]
     tags: ["v*"]
   pull_request:
 
+# Least privilege by default; only the jobs that publish images get packages: write.
 permissions:
   contents: read
-  packages: write
 
+# A newer push to the same PR cancels the older run. Runs on main and on tags are never
+# cancelled, so every merge gets its images built, tested and tagged.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Explicit bash = `bash -eo pipefail`: a failing command anywhere in a pipe fails the step
+# (the implicit default is `bash -e`, where only the last command of a pipe counts).
+defaults:
+  run:
+    shell: bash
 
 jobs:
   test:
@@ -45,9 +55,16 @@ jobs:
           RABBITMQ_TEST_PORT: "5672"
         run: pytest -q
 
+  # Builds the 4 images.
+  #   push (main, tags): published to GHCR with ONLY the immutable sha-<commit> tag; main/latest/
+  #                      version tags are added by `release-tags` once the install test passed.
+  #   pull request:      not published; saved as a tarball artifact that chart-install loads into kind.
   images:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -56,13 +73,15 @@ jobs:
           - { name: moe-router,  dockerfile: src/router/Dockerfile }
           - { name: moe-worker,  dockerfile: src/worker/Dockerfile }
           - { name: moe-tools,   dockerfile: scripts/manage_models/Dockerfile }
+    env:
+      IS_PR: ${{ github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
       - name: lowercase owner
         run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
-        if: github.event_name != 'pull_request'
+        if: env.IS_PR != 'true'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -73,19 +92,24 @@ jobs:
           images: ghcr.io/${{ env.OWNER }}/${{ matrix.name }}
           tags: |
             type=sha,prefix=sha-,format=short
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
       - uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ env.IS_PR != 'true' }}
+          # on a PR: write the image to a tarball instead of pushing it
+          outputs: ${{ env.IS_PR == 'true' && format('type=docker,dest={0}/{1}.tar', runner.temp, matrix.name) || '' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+      - uses: actions/upload-artifact@v4
+        if: env.IS_PR == 'true'
+        with:
+          name: image-${{ matrix.name }}
+          path: ${{ runner.temp }}/${{ matrix.name }}.tar
+          retention-days: 1
+          compression-level: 1
 
   # Chart checks that need no cluster: lint + Kubernetes schema validation of several renders.
   chart-lint:
@@ -114,21 +138,25 @@ jobs:
             "--set router.hfToken.value=x,postgresql.enabled=false,postgresql.external.host=db,postgresql.auth.password=x,rabbitmq.enabled=false,rabbitmq.external.host=mq,rabbitmq.auth.password=x"
           do
             echo "::group::helm template $args"
+            # $args is unquoted on purpose: it has to split into separate helm arguments
+            # shellcheck disable=SC2086
             helm template moe charts/moe-router $args | kubeconform -strict -summary
             echo "::endgroup::"
           done
 
-  # Real install on a fresh kind cluster, with the images built for this commit.
+  # Real install on a fresh kind cluster, with the images built for this commit:
+  #   push:         kind pulls them from GHCR (also checks that they are pullable)
+  #   pull request: they are loaded into kind from the artifacts of the `images` job
   # With the repo secret HF_TOKEN the router downloads the classifiers and a prompt goes
-  # end to end; without it, everything except the router is checked.
+  # end to end; without it (e.g. PRs from forks), everything except the router is checked.
   chart-install:
     needs: [images, chart-lint]
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       NS: moe-router
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      IS_PR: ${{ github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4
@@ -141,8 +169,25 @@ jobs:
         run: |
           echo "IMAGE_TAG=sha-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
           echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
-          if [ -n "$HF_TOKEN" ]; then echo "FULL=1" >> "$GITHUB_ENV"; else echo "FULL=0" >> "$GITHUB_ENV"; \
-            echo "::notice::No HF_TOKEN secret: the router can't download the classifiers, so the end-to-end prompt is skipped"; fi
+          if [ -n "$HF_TOKEN" ]; then
+            echo "FULL=1" >> "$GITHUB_ENV"
+          else
+            echo "FULL=0" >> "$GITHUB_ENV"
+            echo "::notice::No HF_TOKEN secret: the router can't download the classifiers, so the end-to-end prompt is skipped"
+          fi
+      - uses: actions/download-artifact@v4
+        if: env.IS_PR == 'true'
+        with:
+          pattern: image-*
+          path: ${{ runner.temp }}/images
+          merge-multiple: true
+      - name: load the PR images into kind
+        if: env.IS_PR == 'true'
+        run: |
+          for archive in "$RUNNER_TEMP"/images/*.tar; do
+            kind load image-archive "$archive" --name moe-ci
+            rm "$archive"   # free the runner's disk
+          done
       - name: HF token Secret
         run: |
           kubectl create namespace "$NS"
@@ -150,15 +195,56 @@ jobs:
       - name: helm install
         run: |
           helm install moe charts/moe-router -n "$NS" -f charts/moe-router/ci/ci-values.yaml \
-            --set global.imageRegistry=ghcr.io/$OWNER --set global.imageTag=$IMAGE_TAG
+            --set global.imageRegistry="ghcr.io/$OWNER" --set global.imageTag="$IMAGE_TAG"
       - name: smoke test
         run: charts/moe-router/ci/smoke-test.sh "$NS" moe
       - name: helm upgrade keeps the generated passwords
         run: |
           before=$(kubectl get secret -n "$NS" moe-postgres moe-rabbitmq -o jsonpath='{range .items[*]}{.data}{end}' | sha256sum)
           helm upgrade moe charts/moe-router -n "$NS" -f charts/moe-router/ci/ci-values.yaml \
-            --set global.imageRegistry=ghcr.io/$OWNER --set global.imageTag=$IMAGE_TAG
+            --set global.imageRegistry="ghcr.io/$OWNER" --set global.imageTag="$IMAGE_TAG"
           after=$(kubectl get secret -n "$NS" moe-postgres moe-rabbitmq -o jsonpath='{range .items[*]}{.data}{end}' | sha256sum)
           [ "$before" = "$after" ] || { echo "::error::helm upgrade changed the generated passwords"; exit 1; }
       - name: smoke test after upgrade
         run: charts/moe-router/ci/smoke-test.sh "$NS" moe
+
+  release-tags:
+    needs: chart-install
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [moe-gateway, moe-router, moe-worker, moe-tools]
+    steps:
+      - name: lowercase owner
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ env.OWNER }}/${{ matrix.name }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: tag the tested image
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          src="ghcr.io/$OWNER/${{ matrix.name }}:sha-${GITHUB_SHA::7}"
+          args=()
+          while read -r tag; do
+            [ -n "$tag" ] && args+=(-t "$tag")
+          done <<< "$TAGS"
+          if [ ${#args[@]} -eq 0 ]; then echo "no tags to add"; exit 0; fi
+          echo "$src -> ${TAGS//$'\n'/, }"
+          docker buildx imagetools create "${args[@]}" "$src"
