@@ -1,21 +1,24 @@
 name: ci
 
 # Runs on every pull request, on every push to main (i.e. every merge) and on version tags.
-# Pushes to other branches run nothing on their own: open a (draft) PR to get CI.
+# Pushes to other branches run nothing on their own: open a (draft) PR to get CI, or start it
+# by hand for any branch (Actions -> ci -> Run workflow; publishes only sha-<commit> images).
 on:
   push:
     branches: [main]
     tags: ["v*"]
   pull_request:
+  workflow_dispatch:
 
 # Least privilege by default; only the jobs that publish images get packages: write.
 permissions:
   contents: read
 
-# A newer push to the same PR cancels the older run. Runs on main and on tags are never
-# cancelled, so every merge gets its images built, tested and tagged.
+# A newer push to the same PR cancels the older run. Every other run gets its own group (per
+# commit): with a shared group GitHub keeps only one waiting run and drops the others, so a
+# quick series of merges would leave commits on main without images.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Explicit bash = `bash -eo pipefail`: a failing command anywhere in a pipe fails the step

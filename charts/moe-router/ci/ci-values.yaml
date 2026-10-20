@@ -1,4 +1,4 @@
-# Values for the CI test install on a kind cluster (.github/workflows/ci.yml, job `chart`).
+# Values for the CI test install on a kind cluster (.github/workflows/ci.yml, job `chart-install`).
 # Sized for a GitHub runner (4 CPUs, 16 GB): one tiny model, small requests.
 # global.imageTag is set by the workflow to the images built for the same commit.
 
