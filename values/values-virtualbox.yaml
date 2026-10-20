@@ -1,7 +1,7 @@
 #
 
 global:
-  imageTag: clean-deploy
+  imageTag: main
   imagePullPolicy: Always
 
 postgresql:

@@ -6,7 +6,7 @@
 #   FULL=1 charts/moe-router/ci/smoke-test.sh <namespace> [release]   # + router, and one real prompt
 #
 # FULL needs a router that can download the private classifiers (a real HF token).
-# Used by CI (.github/workflows/ci.yml, job `chart`) on a fresh kind cluster; works on any
+# Used by CI (.github/workflows/ci.yml, job `chart-install`) on a fresh kind cluster; works on any
 # cluster. Prints diagnostics and exits non-zero on the first failure.
 set -euo pipefail
 
