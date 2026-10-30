@@ -7,11 +7,18 @@ from database.base import Base
 
 COMPLEXITY_TIERS = ("low", "high")
 
+# effective context at run time (Ollama num_ctx / vLLM --max-model-len), input + output together
+DEFAULT_CONTEXT_WINDOW = 4096
+DEFAULT_MAX_OUTPUT_TOKENS = 512
+
 
 class ModelRegistryEntry(Base):
     __tablename__ = "models"
     __table_args__ = (
         CheckConstraint("complexity_tier IN ('low', 'high')", name="ck_models_complexity_tier"),
+        CheckConstraint(
+            "max_output_tokens > 0 AND context_window > max_output_tokens", name="ck_models_context_limits"
+        ),
         Index(
             "ux_models_category_tier", "category", "complexity_tier", unique=True,
             postgresql_where=text("enabled AND category IS NOT NULL"),
@@ -35,6 +42,13 @@ class ModelRegistryEntry(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
+    context_window: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=DEFAULT_CONTEXT_WINDOW, server_default=str(DEFAULT_CONTEXT_WINDOW)
+    )
+    max_output_tokens: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=DEFAULT_MAX_OUTPUT_TOKENS, server_default=str(DEFAULT_MAX_OUTPUT_TOKENS)
+    )
+
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -49,7 +63,8 @@ class ModelRegistryEntry(Base):
         return (
             f"<ModelRegistryEntry model_id={self.model_id!r} engine={self.engine!r} "
             f"category={self.category!r} tier={self.complexity_tier!r} enabled={self.enabled} "
-            f"is_default={self.is_default}>"
+            f"is_default={self.is_default} context_window={self.context_window} "
+            f"max_output_tokens={self.max_output_tokens}>"
         )
 
     def to_dict(self) -> dict:
@@ -60,4 +75,6 @@ class ModelRegistryEntry(Base):
             "complexity_tier": self.complexity_tier,
             "enabled": self.enabled,
             "is_default": self.is_default,
+            "context_window": self.context_window,
+            "max_output_tokens": self.max_output_tokens,
         }

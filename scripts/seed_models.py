@@ -14,6 +14,8 @@ seed_models.py -- populate the `models` table.
    `enabled: false` instead of deleting the line) -- unless --disable-missing is given, which
    makes the YAML the complete catalog (the Helm setup Job uses it: a model removed from the
    chart's values has no worker any more, so the router must stop routing to it).
+   Optional per model: context_window (the effective Ollama num_ctx / vLLM --max-model-len, input
+   + output) and max_output_tokens; they default to 4096 / 512.
 
 2. Add / update a single model:
 
@@ -32,8 +34,23 @@ SRC_DIR = ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
 from database import ModelRepository, get_session
-from router.domain_schema import LABELS as CATEGORIES  
+from database.models.model_registry.schema import DEFAULT_CONTEXT_WINDOW, DEFAULT_MAX_OUTPUT_TOKENS
+from router.domain_schema import LABELS as CATEGORIES
 from router.routing_rule import catalog_from_rows, select_model, validate_catalog  # noqa: E402
+
+
+def check_context_limits(models: list[dict], source: str) -> None:
+    """context_window / max_output_tokens are optional per model (defaults above); when given they
+    must be integers with 0 < max_output_tokens < context_window, like ck_models_context_limits."""
+    errors = []
+    for m in models:
+        cw, mo = m["context_window"], m["max_output_tokens"]
+        if not isinstance(cw, int) or not isinstance(mo, int) or isinstance(cw, bool) or isinstance(mo, bool):
+            errors.append(f"{m['model_id']}: context_window and max_output_tokens must be integers")
+        elif mo <= 0 or cw <= mo:
+            errors.append(f"{m['model_id']}: need 0 < max_output_tokens ({mo}) < context_window ({cw})")
+    if errors:
+        raise SystemExit(f"[!] {source} has invalid context limits:\n  " + "\n  ".join(errors))
 
 
 def check_catalog(models: list[dict], source: str) -> None:
@@ -63,6 +80,9 @@ async def seed_from_yaml(yaml_path: Path, check_only: bool, disable_missing: boo
     for m in models:
         m.setdefault("complexity_tier", "high")
         m.setdefault("category", None)
+        m.setdefault("context_window", DEFAULT_CONTEXT_WINDOW)
+        m.setdefault("max_output_tokens", DEFAULT_MAX_OUTPUT_TOKENS)
+    check_context_limits(models, str(yaml_path))
     check_catalog(models, str(yaml_path))
     if check_only:
         return
@@ -82,6 +102,8 @@ async def seed_from_yaml(yaml_path: Path, check_only: bool, disable_missing: boo
                 complexity_tier=entry["complexity_tier"],
                 enabled=entry.get("enabled", True),
                 is_default=entry.get("is_default", False),
+                context_window=entry["context_window"],
+                max_output_tokens=entry["max_output_tokens"],
             )
             print(f"[OK] upserted {entry['model_id']}")
         # 3. optionally: the YAML is the whole catalog, disable everything else
@@ -103,6 +125,8 @@ async def add_single(args) -> None:
             complexity_tier=args.tier,
             enabled=not args.disabled,
             is_default=args.default,
+            context_window=args.context_window,
+            max_output_tokens=args.max_output_tokens,
         )
         print(f"[OK] upserted: {entry!r}")
 
@@ -120,6 +144,10 @@ def main() -> None:
     parser.add_argument("--category", choices=CATEGORIES, default=None,
                         help="the one category this model serves (omit only for a generalist default)")
     parser.add_argument("--tier", choices=["low", "high"], default="high")
+    parser.add_argument("--context-window", type=int, default=DEFAULT_CONTEXT_WINDOW,
+                        help="effective context at run time (Ollama num_ctx), input + output")
+    parser.add_argument("--max-output-tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS,
+                        help="tokens reserved for the answer")
     parser.add_argument("--disabled", action="store_true")
     parser.add_argument("--default", action="store_true", help="make this the fallback model")
     args = parser.parse_args()

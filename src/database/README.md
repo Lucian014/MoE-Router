@@ -17,14 +17,23 @@ database/
 │   ├── env.py             # wires Alembic to database.config + database.models
 │   ├── script.py.mako
 │   └── versions/
-│       └── 0001_create_models_table.py
+│       ├── 0001_create_models_table.py
+│       ├── ...
+│       └── c4f8e2a7d913_session_memory.py   # sessions, turns, chunks + context limits
 └── models/                 # one subfolder PER TABLE
     ├── __init__.py           # imports every table's schema.py (see below)
-    └── model_registry/        # <- the "models" table
-        ├── __init__.py          # exposes this table's schema + repository
-        ├── schema.py             # ORM class: ModelRegistryEntry
-        └── repository.py         # ModelRepository: CRUD + queries
+    ├── model_registry/        # <- the "models" table
+    │   ├── __init__.py          # exposes this table's schema + repository
+    │   ├── schema.py             # ORM class: ModelRegistryEntry
+    │   └── repository.py         # ModelRepository: CRUD + queries
+    ├── chat_session/          # <- "sessions": ChatSession, ChatSessionRepository
+    ├── turn/                  # <- "turns":    Turn, TurnRepository
+    └── chunk/                 # <- "chunks":   Chunk, ChunkRepository (+ R2 / R3 queries)
 ```
+
+The session memory tables need the `vector` extension, so Postgres runs the
+`pgvector/pgvector:pg16` image (charts/moe-router/values.yaml). The design is
+in docs/rag-planv2.md.
 
 ## What's shared vs. what's per-table
 
@@ -96,6 +105,25 @@ imported anywhere, it never registers onto `Base.metadata`, and
 | enabled      | boolean, default true | router should only load `enabled` |
 | created_at   | timestamptz    | server-generated                    |
 | updated_at   | timestamptz    | server-generated, updates on write  |
+
+## Session memory tables
+
+| table      | written by | read by | one row per |
+|------------|------------|---------|-------------|
+| `sessions` | worker (upsert + routing state, same transaction as the turn) | router | conversation |
+| `turns`    | worker, **before** it replies; `header` later by the memory service | router (last N turns) | prompt + answer |
+| `chunks`   | memory service (idempotent on `session_id, turn, ord`) | router (R2 candidates, R3 contents) | retrieval unit |
+
+- `turns.user_content` is the user's original prompt, never the assembled context.
+- `chunks` keeps every representation on one row: `embedding` / `terms` (V1, V2) are
+  always set, `context` / `terms_ctx` / `embedding_ctx` (V3+) stay NULL until a chunk is
+  contextualized. `content` never includes the turn header.
+- Deleting a session deletes its turns and chunks (`ON DELETE CASCADE`).
+- `models.context_window` is the effective context at run time (Ollama `num_ctx` /
+  vLLM `--max-model-len`), input + output together; `max_output_tokens` is reserved for the
+  answer. Both are optional in the catalog (defaults 4096 / 512).
+
+Tests: `tests/test_database_memory.py` (needs a pgvector Postgres, see the file's docstring).
 
 ## Environment variables
 

@@ -15,8 +15,8 @@ global:
 postgresql:
   enabled: true
   image:
-    repository: docker.io/library/postgres
-    tag: "16"
+    repository: docker.io/pgvector/pgvector
+    tag: "pg16"
     pullPolicy: IfNotPresent
   auth:
     database: model_registry
@@ -133,7 +133,9 @@ router:
 # so the seed disables it in the registry too).
 #   engine: ollama -> served by the chart's Ollama
 #   engine: vllm   -> set inference_host to that model's vLLM server (http://...:8000)
-# Optional per model: replicas (default 1), prefetch (default worker.prefetch).
+# Optional per model: replicas (default 1), prefetch (default worker.prefetch),
+#   context_window (default 4096): the effective context at run time (Ollama num_ctx /
+#   vLLM --max-model-len), input + output; max_output_tokens (default 512).
 catalog:
   models:
     - { model_id: "gemma3:1b",          engine: ollama, category: open-qa,          complexity_tier: low }
