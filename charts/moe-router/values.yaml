@@ -16,7 +16,9 @@ postgresql:
   enabled: true
   image:
     repository: docker.io/pgvector/pgvector
-    tag: "pg16"
+    # trixie: same glibc (2.41) as postgres:16, which created the data directory. The plain
+    # "pg16" tag is bookworm (glibc 2.36), so Postgres warns about a collation version mismatch.
+    tag: "pg16-trixie"
     pullPolicy: IfNotPresent
   auth:
     database: model_registry

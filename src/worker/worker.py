@@ -1,8 +1,10 @@
 import asyncio
 import sys
 import time
+import uuid
 
-from engine import get_engine
+from database import ChatSessionRepository, TurnAlreadyExistsError, TurnRepository, dispose_engine, get_session
+from engine import ChatResult, get_engine
 from shared.config import get_lifecycle_settings, get_rabbitmq_settings, get_worker_settings
 from shared.lifecycle import Stopped, install_stop_signals, retry, set_ready
 from shared.prompts import single_turn_messages
@@ -13,8 +15,11 @@ from shared.utils import model_to_queue
 # rutare pusa de router (domeniu, nivel, probabilitati, confidence...) si se
 # intoarce neatinsa la Gateway, sub "routing". Asa workerul nu depinde de
 # numele exacte ale campurilor din router.
-_CONSUMED_FIELDS = {"prompt", "messages", "model", "num_ctx", "max_tokens"}
+_CONSUMED_FIELDS = {"prompt", "messages", "model", "num_ctx", "max_tokens", "session_id", "turn"}
 _ROLES = {"system", "user", "assistant"}
+
+# Campuri optionale din payload copiate pe tura (contextul asamblat de router, pasul 4+)
+_TURN_CONTEXT_FIELDS = ("rag_variant", "recent_turns", "retrieved_chunk_ids")
 
 # how often the running worker re-checks its engine for the readiness probe
 ENGINE_CHECK_SECONDS = 15
@@ -59,6 +64,43 @@ def limits_from_payload(payload: dict) -> tuple[int, int]:
     return num_ctx, max_tokens
 
 
+async def store_turn(payload: dict, user_content: str, result: ChatResult) -> int | None:
+    """Scrierea W1: sesiunea (creata la prima tura), tura si starea de rutare a sesiunii, intr-o
+    singura tranzactie, INAINTE de raspuns -- urmatorul prompt al userului vede mereu tura asta.
+    Intoarce numarul turei. Fara session_id (client vechi) nu se salveaza nimic."""
+    if not payload.get("session_id"):
+        return None
+    session_id = uuid.UUID(str(payload["session_id"]))
+
+    # pana la pasul 4 routerul trimite doar predictia clasificatorului; atunci efectivul = prezisul
+    predicted_domain = payload.get("task_type")
+    predicted_complexity = payload.get("complexity_score")
+    effective_domain = payload.get("effective_domain", predicted_domain)
+    effective_complexity = payload.get("effective_complexity", predicted_complexity)
+
+    async with get_session() as session:
+        turns = TurnRepository(session)
+        sessions = ChatSessionRepository(session)
+        await sessions.ensure(session_id)
+        turn = payload.get("turn") or await turns.last_turn_number(session_id) + 1
+        await turns.create(
+            session_id, turn, user_content, result.text,
+            model_id=MODEL_NAME,
+            predicted_domain=predicted_domain,
+            predicted_complexity=predicted_complexity,
+            effective_domain=effective_domain,
+            effective_complexity=effective_complexity,
+            inherited=bool(payload.get("inherited", False)),
+            prompt_tokens=result.prompt_tokens,
+            completion_tokens=result.completion_tokens,
+            **{k: payload[k] for k in _TURN_CONTEXT_FIELDS if k in payload},
+        )
+        await sessions.update_routing_state(
+            session_id, effective_domain, payload.get("task_type_confidence"), effective_complexity
+        )
+    return turn
+
+
 async def handle_request(payload: dict) -> dict:
     messages = messages_from_payload(payload)
     num_ctx, max_tokens = limits_from_payload(payload)
@@ -88,6 +130,16 @@ async def handle_request(payload: dict) -> dict:
           f"{result.prompt_tokens} prompt / {result.completion_tokens} completion tokens"
           f"{', truncated' if result.truncated else ''})")
 
+    # Tura se salveaza cu prompt-ul original al userului, nu cu contextul asamblat. Daca
+    # salvarea esueaza, userul primeste totusi raspunsul; tura lipseste doar din istoric.
+    turn = None
+    try:
+        turn = await store_turn(payload, payload.get("prompt") or prompt, result)
+    except TurnAlreadyExistsError as e:
+        print(f" [!] turn not stored: {e} (two prompts of the session sent in parallel)")
+    except Exception as e:
+        print(f" [!] turn not stored: {type(e).__name__}: {e}")
+
     return {
         "response": result.text,
         "model": MODEL_NAME,
@@ -96,6 +148,7 @@ async def handle_request(payload: dict) -> dict:
         "prompt_tokens": result.prompt_tokens,
         "completion_tokens": result.completion_tokens,
         "truncated": result.truncated,
+        "turn": turn,
         "routing": routing,
     }
 
@@ -157,6 +210,7 @@ async def main():
     watcher.cancel()
     await mq_client.drain(lifecycle.shutdown_grace_seconds)
     await mq_client.close()
+    await dispose_engine()
     print(" [OK] worker stopped")
 
 

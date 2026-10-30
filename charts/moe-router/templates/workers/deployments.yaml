@@ -47,7 +47,7 @@ spec:
           image: {{ include "moe.image" (dict "root" $ "image" $.Values.worker.image) }}
           imagePullPolicy: {{ include "moe.pullPolicy" (dict "root" $ "image" $.Values.worker.image) }}
           envFrom:
-            {{- include "moe.serviceEnvFrom" (dict "root" $) | nindent 12 }}
+            {{- include "moe.serviceEnvFrom" (dict "root" $ "postgres" true) | nindent 12 }}
           env:
             - name: MODEL_NAME
               value: {{ .model_id | quote }}
