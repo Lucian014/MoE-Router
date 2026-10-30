@@ -32,6 +32,7 @@ build:
             - src/worker/**/*
             - src/shared/**/*
             - src/engine/**/*
+            - src/database/**/*
     - image: moe-router
       context: .
       custom:

@@ -280,3 +280,43 @@ def test_model_context_limits():
             async with db() as s:
                 await s.execute(text("DELETE FROM models WHERE model_id = :m"), {"m": model_id})
     run(go())
+
+
+# ------------------------------------------------------------------ the worker's turn store (W1)
+def test_worker_stores_numbered_turns_and_the_routing_state(sid, monkeypatch):
+    from database import session as db_session
+    from engine import ChatResult
+    from shared import config
+    from worker import worker
+
+    def fresh_settings():
+        config.get_postgres_settings.cache_clear()
+        db_session.get_engine.cache_clear()
+        db_session._session_factory.cache_clear()
+
+    for key, value in _env().items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setattr(worker, "MODEL_NAME", "gemma3:1b")
+    fresh_settings()
+    payload = {"prompt": "q1", "session_id": str(sid), "task_type": "coding",
+               "task_type_confidence": 0.91, "complexity_score": 0.2}
+
+    async def go():
+        try:
+            assert await worker.store_turn(payload, "q1", ChatResult("a1", 10, 2)) == 1
+            assert await worker.store_turn({**payload, "prompt": "q2"}, "q2", ChatResult("a2")) == 2
+        finally:
+            await db_session.dispose_engine()
+        async with db() as s:
+            t1, t2 = await TurnRepository(s).list_recent(sid, 10)
+            assert (t1.user_content, t1.assistant_content, t1.model_id) == ("q1", "a1", "gemma3:1b")
+            assert (t1.prompt_tokens, t1.completion_tokens) == (10, 2)
+            assert (t1.predicted_domain, t1.effective_domain, t1.inherited) == ("coding", "coding", False)
+            assert t2.turn == 2
+            state = await ChatSessionRepository(s).get(sid)
+            assert (state.domain, state.complexity_score) == ("coding", pytest.approx(0.2))
+
+    try:
+        run(go())
+    finally:
+        fresh_settings()

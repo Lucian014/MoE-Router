@@ -1,8 +1,10 @@
 import asyncio
 import sys
+import uuid
 
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from shared.config import get_gateway_settings, get_rabbitmq_settings
 from shared.lifecycle import Stopped
@@ -61,16 +63,27 @@ async def ready():
     return JSONResponse({"status": "not ready", "detail": "not connected to RabbitMQ"}, status_code=503)
 
 
+class GenerateRequest(BaseModel):
+    prompt: str = Field(..., min_length=1)
+    # The conversation this prompt continues. Omitted -> a new conversation; the id comes back
+    # in the response and the client sends it with its next prompts. The gateway has no DB:
+    # an id that is not stored yet simply starts a new conversation with that id (the worker
+    # creates the session row with its first turn).
+    session_id: uuid.UUID | None = None
+
+
 @app.post("/generate")
-async def generate(prompt: str = Body(..., embed=True)):
+async def generate(req: GenerateRequest):
     if not _rpc_ready():
         raise HTTPException(status_code=503, detail="not connected to RabbitMQ")
+    session_id = str(req.session_id or uuid.uuid4())
     try:
-        return await mq_client.call(
-            {"prompt": prompt},
+        reply = await mq_client.call(
+            {"prompt": req.prompt, "session_id": session_id},
             routing_key=get_rabbitmq_settings().middleware_queue,
             timeout=get_gateway_settings().rpc_timeout_seconds,
         )
+        return {**reply, "session_id": session_id}
     except RpcTimeout as e:
         raise HTTPException(status_code=504, detail=str(e))
     except RpcError as e:              # the router or the worker answered with an error
