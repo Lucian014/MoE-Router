@@ -4,6 +4,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 markers = [
     "rabbitmq: needs a running RabbitMQ (set RABBITMQ_TEST_PORT, see tests/test_rabbitmq.py)",
+    "postgres: needs a running Postgres with pgvector (set POSTGRES_TEST_PORT, see tests/test_database_memory.py)",
 ]
 
 [tool.ruff]

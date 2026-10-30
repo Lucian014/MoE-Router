@@ -3,7 +3,12 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models.model_registry.schema import COMPLEXITY_TIERS, ModelRegistryEntry
+from database.models.model_registry.schema import (
+    COMPLEXITY_TIERS,
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_MAX_OUTPUT_TOKENS,
+    ModelRegistryEntry,
+)
 
 
 class ModelNotFoundError(Exception):
@@ -32,6 +37,15 @@ class SlotTakenError(Exception):
 def _check_tier(tier: str) -> None:
     if tier not in COMPLEXITY_TIERS:
         raise ValueError(f"complexity_tier must be one of {COMPLEXITY_TIERS}, got {tier!r}")
+
+
+def _check_context_limits(context_window: int, max_output_tokens: int) -> None:
+    """Mirrors ck_models_context_limits: the answer must leave room for the prompt."""
+    if max_output_tokens <= 0 or context_window <= max_output_tokens:
+        raise ValueError(
+            f"need 0 < max_output_tokens < context_window, got max_output_tokens={max_output_tokens}, "
+            f"context_window={context_window}"
+        )
 
 
 class ModelRepository:
@@ -107,10 +121,13 @@ class ModelRepository:
         complexity_tier: str = "high",
         enabled: bool = True,
         is_default: bool = False,
+        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
     ) -> ModelRegistryEntry:
         if await self.get_by_id(model_id) is not None:
             raise ModelAlreadyExistsError(model_id)
         _check_tier(complexity_tier)
+        _check_context_limits(context_window, max_output_tokens)
         if enabled:
             await self._check_slot_free(category, complexity_tier, exclude_model_id=model_id)
         if is_default:
@@ -123,6 +140,8 @@ class ModelRepository:
             complexity_tier=complexity_tier,
             enabled=enabled,
             is_default=is_default,
+            context_window=context_window,
+            max_output_tokens=max_output_tokens,
         )
         self._session.add(entry)
         await self._session.flush()
@@ -136,6 +155,8 @@ class ModelRepository:
         complexity_tier: str = "high",
         enabled: bool = True,
         is_default: bool = False,
+        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
     ) -> ModelRegistryEntry:
         """Create the model if it doesn't exist, otherwise update it in place
         (safe to re-run seed_models.py after editing models.yaml)."""
@@ -148,9 +169,12 @@ class ModelRepository:
                 complexity_tier=complexity_tier,
                 enabled=enabled,
                 is_default=is_default,
+                context_window=context_window,
+                max_output_tokens=max_output_tokens,
             )
 
         _check_tier(complexity_tier)
+        _check_context_limits(context_window, max_output_tokens)
         if enabled:
             await self._check_slot_free(category, complexity_tier, exclude_model_id=model_id)
         if is_default:
@@ -161,6 +185,8 @@ class ModelRepository:
         entry.complexity_tier = complexity_tier
         entry.enabled = enabled
         entry.is_default = is_default
+        entry.context_window = context_window
+        entry.max_output_tokens = max_output_tokens
         await self._session.flush()
         return entry
 
@@ -174,6 +200,8 @@ class ModelRepository:
         complexity_tier: str | None = None,
         enabled: bool | None = None,
         is_default: bool | None = None,
+        context_window: int | None = None,
+        max_output_tokens: int | None = None,
     ) -> ModelRegistryEntry:
         """Partial update. `category=None` means "leave unchanged"; use clear_category=True to set
         it to NULL."""
@@ -182,7 +210,10 @@ class ModelRepository:
         new_category = None if clear_category else (category if category is not None else entry.category)
         new_tier = complexity_tier if complexity_tier is not None else entry.complexity_tier
         new_enabled = enabled if enabled is not None else entry.enabled
+        new_context = context_window if context_window is not None else entry.context_window
+        new_max_output = max_output_tokens if max_output_tokens is not None else entry.max_output_tokens
         _check_tier(new_tier)
+        _check_context_limits(new_context, new_max_output)
         if new_enabled:
             await self._check_slot_free(new_category, new_tier, exclude_model_id=model_id)
 
@@ -191,6 +222,8 @@ class ModelRepository:
         entry.category = new_category
         entry.complexity_tier = new_tier
         entry.enabled = new_enabled
+        entry.context_window = new_context
+        entry.max_output_tokens = new_max_output
         if is_default is not None:
             if is_default:
                 await self._clear_other_defaults(exclude_model_id=model_id)

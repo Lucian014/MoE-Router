@@ -11,4 +11,7 @@
 # When you add a new table folder, add one line here:
 #   from database.models.<table_name>.schema import <ORMClassName>  # noqa: F401
 
+from database.models.chat_session.schema import ChatSession  # noqa: F401
+from database.models.chunk.schema import Chunk  # noqa: F401
 from database.models.model_registry.schema import ModelRegistryEntry  # noqa: F401
+from database.models.turn.schema import Turn  # noqa: F401
