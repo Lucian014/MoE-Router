@@ -16,7 +16,8 @@ each service only validates the settings it actually uses (the gateway never nee
 
 Variable                 Used by              Default
 -----------------------  -------------------  ------------------------------------------
-POSTGRES_HOST            router, tools        postgres
+POSTGRES_HOST            router, worker,      postgres
+                         tools
 POSTGRES_PORT                                 5432
 POSTGRES_DB                                   model_registry
 POSTGRES_USER                                 (required)
@@ -29,6 +30,13 @@ RABBITMQ_CONNECT_RETRIES                      0 (= retry forever, with backoff u
 MIDDLEWARE_QUEUE         gateway, router      router.requests
 RPC_TIMEOUT_SECONDS      gateway              300 (> the worker's engine timeout of 240 s)
 CATALOG_REFRESH_SECONDS  router               30
+SHORT_PROMPT_MAX_WORDS   router (session      3 (shorter prompts inherit the session's routing)
+DOMAIN_MIN_CONFIDENCE     routing)            0.5 (below: ambiguous domain, inherit)
+DOMAIN_MIN_MARGIN                             0.15 (top two closer than this: ambiguous, inherit)
+RAG_RECENT_TURNS_MAX     router (context)     20 (turns read per request; most turns kept whole)
+RAG_RECENT_MAX_SHARE                          0.6 (of the budget for whole turns when there are fragments)
+RAG_LAST_TURN_MAX_SHARE                       0.5 (the last turn is cut beyond this share)
+RAG_CONTEXT_MARGIN                            0.1 (of the context window, for tokenizer differences)
 DOMAIN_CHECKPOINT        router (classifier)  router/checkpoints/laya-domain-v4, else HF repo
 COMPLEXITY_CHECKPOINT                         router/checkpoints/laya-complexity-v2, else HF repo
 CLASSIFIER_DEVICE                             cpu
@@ -127,6 +135,19 @@ class GatewaySettings(_Settings):
 
 class RouterSettings(_Settings):
     catalog_refresh_seconds: int = Field(30, validation_alias="CATALOG_REFRESH_SECONDS")
+    # session routing (router/session_routing.py)
+    short_prompt_max_words: int = Field(3, ge=0, validation_alias="SHORT_PROMPT_MAX_WORDS")
+    domain_min_confidence: float = Field(0.5, ge=0, le=1, validation_alias="DOMAIN_MIN_CONFIDENCE")
+    domain_min_margin: float = Field(0.15, ge=0, le=1, validation_alias="DOMAIN_MIN_MARGIN")
+
+
+class RetrievalSettings(_Settings):
+    """Context assembly (shared/memory/assembly.py); the retrieval switches come with RAG."""
+
+    recent_turns_max: int = Field(20, ge=1, validation_alias="RAG_RECENT_TURNS_MAX")
+    recent_max_share: float = Field(0.6, gt=0, le=1, validation_alias="RAG_RECENT_MAX_SHARE")
+    last_turn_max_share: float = Field(0.5, gt=0, le=1, validation_alias="RAG_LAST_TURN_MAX_SHARE")
+    context_margin: float = Field(0.1, ge=0, lt=1, validation_alias="RAG_CONTEXT_MARGIN")
 
 
 class ClassifierSettings(_Settings):
@@ -196,6 +217,11 @@ def get_gateway_settings() -> GatewaySettings:
 @lru_cache
 def get_router_settings() -> RouterSettings:
     return RouterSettings()
+
+
+@lru_cache
+def get_retrieval_settings() -> RetrievalSettings:
+    return RetrievalSettings()
 
 
 @lru_cache

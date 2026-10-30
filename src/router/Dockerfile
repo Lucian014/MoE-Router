@@ -17,12 +17,18 @@ RUN pip install --no-cache-dir -r router/requirements.txt
 COPY src/database/requirements.txt ./database/requirements.txt
 RUN pip install --no-cache-dir -r database/requirements.txt
 
+# the reference tokenizer for token budgets (shared/memory/tokens.py), public, ~7 MB; the router
+# runs offline, so it is baked in here
+ENV TOKENIZER_FILE=/app/tokenizer/tokenizer.json
+RUN python -c "from huggingface_hub import hf_hub_download; \
+hf_hub_download('Qwen/Qwen2.5-0.5B-Instruct', 'tokenizer.json', local_dir='/app/tokenizer')"
+
 COPY src/shared ./shared
 COPY src/database ./database
 COPY src/router ./router
 
-# fails the build if an import is broken (needs no env, no weights)
-RUN python -c "import router.router"
+# fails the build if an import is broken (needs no env, no weights) or the tokenizer doesn't load
+RUN python -c "import router.router; from shared.memory.tokens import _tokenizer; assert _tokenizer()"
 # the router itself never downloads anything; the init container overrides this
 ENV HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1

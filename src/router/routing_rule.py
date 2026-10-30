@@ -24,6 +24,13 @@ class Model:
     is_default: bool = False
     enabled: bool = True
     engine: str = "ollama"
+    # the model's token budget (models.context_window / max_output_tokens), for context assembly
+    context_window: int = 4096
+    max_output_tokens: int = 512
+
+
+def find_model(catalog, model_id):
+    return next(m for m in catalog if m.model_id == model_id)
 
 
 def _category_of(row):
@@ -39,7 +46,9 @@ def _category_of(row):
 def catalog_from_rows(rows):
     return [Model(model_id=r["model_id"], category=_category_of(r),
                   complexity_tier=r.get("complexity_tier"), is_default=bool(r.get("is_default", False)),
-                  enabled=bool(r.get("enabled", True)), engine=r.get("engine", "ollama"))
+                  enabled=bool(r.get("enabled", True)), engine=r.get("engine", "ollama"),
+                  context_window=int(r.get("context_window") or 4096),
+                  max_output_tokens=int(r.get("max_output_tokens") or 512))
             for r in rows]
 
 

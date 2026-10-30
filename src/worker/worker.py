@@ -72,7 +72,8 @@ async def store_turn(payload: dict, user_content: str, result: ChatResult) -> in
         return None
     session_id = uuid.UUID(str(payload["session_id"]))
 
-    # pana la pasul 4 routerul trimite doar predictia clasificatorului; atunci efectivul = prezisul
+    # routerul trimite si predictia, si rutarea efectiva (mostenita de la sesiune pentru un
+    # follow-up); fara campurile efective (router vechi), efectivul = prezisul
     predicted_domain = payload.get("task_type")
     predicted_complexity = payload.get("complexity_score")
     effective_domain = payload.get("effective_domain", predicted_domain)
@@ -96,7 +97,9 @@ async def store_turn(payload: dict, user_content: str, result: ChatResult) -> in
             **{k: payload[k] for k in _TURN_CONTEXT_FIELDS if k in payload},
         )
         await sessions.update_routing_state(
-            session_id, effective_domain, payload.get("task_type_confidence"), effective_complexity
+            session_id, effective_domain,
+            payload.get("effective_domain_confidence", payload.get("task_type_confidence")),
+            effective_complexity,
         )
     return turn
 
