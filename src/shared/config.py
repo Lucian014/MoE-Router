@@ -43,13 +43,15 @@ MODEL_NAME               worker               (required)
 ENGINE_TYPE                                   ollama
 INFERENCE_HOST                                http://localhost:11434
 WORKER_PREFETCH                               1 (requests handled concurrently per pod)
+CONTEXT_WINDOW                                4096 (num_ctx when the payload has none; input + output)
+MAX_OUTPUT_TOKENS                             512 (answer length when the payload has none)
 READY_FILE               router, worker       /tmp/ready (exists while the pod is ready)
 SHUTDOWN_GRACE_SECONDS                        25 (on SIGTERM: wait this long for in-flight work)
 """
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 if TYPE_CHECKING:
@@ -154,6 +156,16 @@ class WorkerSettings(_Settings):
     inference_host: str = Field("http://localhost:11434", validation_alias="INFERENCE_HOST")
     # >1 lets an engine that batches (vLLM) work on several requests at once
     prefetch: int = Field(1, ge=1, validation_alias="WORKER_PREFETCH")
+    # used when the payload doesn't carry them (until the router sends the model's own limits);
+    # the chart sets them from the catalog, the same values the registry holds
+    context_window: int = Field(4096, gt=0, validation_alias="CONTEXT_WINDOW")
+    max_output_tokens: int = Field(512, gt=0, validation_alias="MAX_OUTPUT_TOKENS")
+
+    @model_validator(mode="after")
+    def _answer_leaves_room_for_the_prompt(self):
+        if self.max_output_tokens >= self.context_window:
+            raise ValueError("MAX_OUTPUT_TOKENS must be smaller than CONTEXT_WINDOW")
+        return self
 
 
 @lru_cache

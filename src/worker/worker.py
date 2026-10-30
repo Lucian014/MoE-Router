@@ -5,6 +5,7 @@ import time
 from engine import get_engine
 from shared.config import get_lifecycle_settings, get_rabbitmq_settings, get_worker_settings
 from shared.lifecycle import Stopped, install_stop_signals, retry, set_ready
+from shared.prompts import single_turn_messages
 from shared.rabbitmq import RabbitMQClient
 from shared.utils import model_to_queue
 
@@ -12,7 +13,8 @@ from shared.utils import model_to_queue
 # rutare pusa de router (domeniu, nivel, probabilitati, confidence...) si se
 # intoarce neatinsa la Gateway, sub "routing". Asa workerul nu depinde de
 # numele exacte ale campurilor din router.
-_CONSUMED_FIELDS = {"prompt", "model"}
+_CONSUMED_FIELDS = {"prompt", "messages", "model", "num_ctx", "max_tokens"}
+_ROLES = {"system", "user", "assistant"}
 
 # how often the running worker re-checks its engine for the readiness probe
 ENGINE_CHECK_SECONDS = 15
@@ -22,14 +24,44 @@ ENGINE_CHECK_SECONDS = 15
 # lipsa lui e o eroare de deployment).
 MODEL_NAME: str = ""
 ENGINE_TYPE: str = ""
+CONTEXT_WINDOW: int = 4096
+MAX_OUTPUT_TOKENS: int = 512
 engine = None
 mq_client: RabbitMQClient | None = None
 
 
+def messages_from_payload(payload: dict) -> list[dict]:
+    """Mesajele de trimis modelului. Routerul trimite `messages` (contextul asamblat);
+    un payload doar cu `prompt` (routerul vechi) devine [system, user]."""
+    messages = payload.get("messages")
+    if messages is None:
+        prompt = payload.get("prompt", "")
+        if not prompt:
+            raise ValueError("Payload needs 'messages' or a non-empty 'prompt'.")
+        return single_turn_messages(prompt)
+
+    if not isinstance(messages, list) or not messages:
+        raise ValueError("'messages' must be a non-empty list.")
+    for m in messages:
+        if not isinstance(m, dict) or m.get("role") not in _ROLES or not isinstance(m.get("content"), str):
+            raise ValueError(f"invalid message {m!r}: need a role in {sorted(_ROLES)} and a string content")
+    if messages[-1]["role"] != "user":
+        raise ValueError("the last message must be the user's prompt")
+    return messages
+
+
+def limits_from_payload(payload: dict) -> tuple[int, int]:
+    """(num_ctx, max_tokens): ale modelului ales, trimise de router; altfel cele din setari."""
+    num_ctx = payload.get("num_ctx") or CONTEXT_WINDOW
+    max_tokens = payload.get("max_tokens") or MAX_OUTPUT_TOKENS
+    if not (isinstance(num_ctx, int) and isinstance(max_tokens, int) and 0 < max_tokens < num_ctx):
+        raise ValueError(f"need 0 < max_tokens < num_ctx, got max_tokens={max_tokens!r}, num_ctx={num_ctx!r}")
+    return num_ctx, max_tokens
+
+
 async def handle_request(payload: dict) -> dict:
-    prompt = payload.get("prompt", "")
-    if not prompt:
-        raise ValueError("Payload is missing the required 'prompt' field.")
+    messages = messages_from_payload(payload)
+    num_ctx, max_tokens = limits_from_payload(payload)
 
     # Un worker = un model: coada worker.<model> e a acestui model, deci
     # generam mereu cu MODEL_NAME. Daca routerul a scris alt model in payload,
@@ -44,19 +76,26 @@ async def handle_request(payload: dict) -> dict:
 
     routing = {k: v for k, v in payload.items() if k not in _CONSUMED_FIELDS}
 
-    print(f" [x] {MODEL_NAME} via {ENGINE_TYPE} | routing={routing} | prompt={prompt[:50]!r}")
+    prompt = messages[-1]["content"]
+    print(f" [x] {MODEL_NAME} via {ENGINE_TYPE} | routing={routing} | {len(messages)} messages, "
+          f"num_ctx={num_ctx} | prompt={prompt[:50]!r}")
 
     started = time.perf_counter()
-    text = await engine.generate(model=MODEL_NAME, prompt=prompt)
+    result = await engine.chat(model=MODEL_NAME, messages=messages, max_tokens=max_tokens, num_ctx=num_ctx)
     latency_ms = round((time.perf_counter() - started) * 1000, 1)
 
-    print(f" [OK] {MODEL_NAME} answered in {latency_ms} ms ({len(text)} chars)")
+    print(f" [OK] {MODEL_NAME} answered in {latency_ms} ms ({len(result.text)} chars, "
+          f"{result.prompt_tokens} prompt / {result.completion_tokens} completion tokens"
+          f"{', truncated' if result.truncated else ''})")
 
     return {
-        "response": text,
+        "response": result.text,
         "model": MODEL_NAME,
         "engine": ENGINE_TYPE,
         "latency_ms": latency_ms,
+        "prompt_tokens": result.prompt_tokens,
+        "completion_tokens": result.completion_tokens,
+        "truncated": result.truncated,
         "routing": routing,
     }
 
@@ -84,11 +123,12 @@ async def watch_engine(ready_file: str) -> None:
 
 
 async def main():
-    global MODEL_NAME, ENGINE_TYPE, engine, mq_client
+    global MODEL_NAME, ENGINE_TYPE, CONTEXT_WINDOW, MAX_OUTPUT_TOKENS, engine, mq_client
     sys.stdout.reconfigure(line_buffering=True)
     cfg = get_worker_settings()
     lifecycle = get_lifecycle_settings()
     MODEL_NAME, ENGINE_TYPE = cfg.model_name, cfg.engine_type
+    CONTEXT_WINDOW, MAX_OUTPUT_TOKENS = cfg.context_window, cfg.max_output_tokens
     queue_name = model_to_queue(MODEL_NAME)
     engine = get_engine(ENGINE_TYPE, cfg.inference_host)
     mq_client = RabbitMQClient.from_settings(get_rabbitmq_settings())
@@ -109,7 +149,7 @@ async def main():
     set_ready(lifecycle.ready_file, True)
     watcher = asyncio.create_task(watch_engine(lifecycle.ready_file))
     print(f" [*] Worker listening on {queue_name} (model={MODEL_NAME}, engine={ENGINE_TYPE}, "
-          f"prefetch={cfg.prefetch}).")
+          f"prefetch={cfg.prefetch}, context_window={CONTEXT_WINDOW}, max_output_tokens={MAX_OUTPUT_TOKENS}).")
 
     await stop.wait()
     print(" [*] SIGTERM received, shutting down")

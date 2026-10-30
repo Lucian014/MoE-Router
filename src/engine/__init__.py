@@ -1,4 +1,4 @@
-from .base import InferenceEngine
+from .base import ChatResult, InferenceEngine, Message  # noqa: F401
 from .ollama_engine import OllamaEngine
 from .vllm_engine import VLLMEngine
 

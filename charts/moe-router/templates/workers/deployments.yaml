@@ -57,6 +57,11 @@ spec:
               value: {{ include "moe.inferenceHost" (dict "root" $ "model" .) | quote }}
             - name: WORKER_PREFETCH
               value: {{ .prefetch | default $.Values.worker.prefetch | quote }}
+            # same defaults as the registry (seed_models.py), so worker and registry agree
+            - name: CONTEXT_WINDOW
+              value: {{ .context_window | default 4096 | quote }}
+            - name: MAX_OUTPUT_TOKENS
+              value: {{ .max_output_tokens | default 512 | quote }}
             - name: SHUTDOWN_GRACE_SECONDS
               value: {{ $.Values.worker.shutdownGraceSeconds | quote }}
           # /tmp/ready exists while the engine serves this model and the worker consumes
