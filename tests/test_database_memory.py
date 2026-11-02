@@ -303,8 +303,9 @@ def test_worker_stores_numbered_turns_and_the_routing_state(sid, monkeypatch):
 
     async def go():
         try:
-            assert await worker.store_turn(payload, "q1", ChatResult("a1", 10, 2)) == 1
-            assert await worker.store_turn({**payload, "prompt": "q2"}, "q2", ChatResult("a2")) == 2
+            turn1, id1 = await worker.store_turn(payload, "q1", ChatResult("a1", 10, 2))
+            turn2, id2 = await worker.store_turn({**payload, "prompt": "q2"}, "q2", ChatResult("a2"))
+            assert (turn1, turn2) == (1, 2) and id2 > id1
         finally:
             await db_session.dispose_engine()
         async with db() as s:
@@ -320,3 +321,68 @@ def test_worker_stores_numbered_turns_and_the_routing_state(sid, monkeypatch):
         run(go())
     finally:
         fresh_settings()
+
+
+# ------------------------------------------------------------------ the memory service's indexer (W2)
+class FakeEmbedder:
+    def __init__(self, model="fake-embed"):
+        self.model, self.calls = model, []
+
+    async def embed(self, texts):
+        self.calls.append(texts)
+        return [onehot(i % EMBEDDING_DIM) for i in range(len(texts))]
+
+
+@pytest.fixture
+def app_db(monkeypatch):
+    """Point the application's own get_session() at the test database."""
+    from database import session as db_session
+    from shared import config
+
+    def fresh():
+        config.get_postgres_settings.cache_clear()
+        db_session.get_engine.cache_clear()
+        db_session._session_factory.cache_clear()
+
+    for key, value in _env().items():
+        monkeypatch.setenv(key, value)
+    fresh()
+    yield db_session
+    fresh()
+
+
+ANSWER = ("Folosește passlib cu bcrypt.\n\n```python\nfrom passlib.context import CryptContext\n\n"
+          "pwd_context = CryptContext(schemes=['bcrypt'])\n\ndef verify_password(plain, hashed):\n"
+          "    return pwd_context.verify(plain, hashed)\n```\n")
+
+
+def test_indexer_writes_chunks_once_and_reindexes_on_new_rules(sid, app_db):
+    from memory.indexer import index_turn
+
+    async def go():
+        try:
+            async with app_db.get_session() as s:
+                await ChatSessionRepository(s).ensure(sid)
+                turn_id = await TurnRepository(s).create(sid, 1, "cum verific parola la login?", ANSWER)
+
+            first = await index_turn(turn_id, FakeEmbedder())
+            again = await index_turn(turn_id, FakeEmbedder())                    # redelivered message
+            other_model = await index_turn(turn_id, FakeEmbedder("other-embed"))
+            missing = await index_turn(10**12, FakeEmbedder())
+        finally:
+            await app_db.dispose_engine()
+
+        assert first.status == "indexed" and first.chunks >= 1
+        assert (again.status, again.chunks) == ("skipped", first.chunks)
+        assert other_model.status == "reindexed"
+        assert missing.status == "missing"
+
+        async with db() as s:
+            turn = await TurnRepository(s).get(turn_id)
+            chunks = await ChunkRepository(s).list_for_turn(turn_id)
+        assert turn.header == "cum verific parola la login?"
+        assert "".join(c.content for c in chunks if c.source == "response") == ANSWER
+        assert {c.embedding_model for c in chunks} == {"other-embed"}
+        assert any("verify_password" in c.terms for c in chunks)
+
+    run(go())

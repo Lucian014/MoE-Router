@@ -28,6 +28,11 @@ RABBITMQ_USER                                 (required)
 RABBITMQ_PASS                                 (required)
 RABBITMQ_CONNECT_RETRIES                      0 (= retry forever, with backoff up to 30 s)
 MIDDLEWARE_QUEUE         gateway, router      router.requests
+MEMORY_QUEUE             worker, memory       memory.ingest ("" = no indexing; dead letters: <queue>.dlq)
+EMBEDDING_HOST           memory               http://localhost:11434 (Ollama serving the embedding model)
+EMBEDDING_MODEL                               bge-m3
+EMBEDDING_KEEP_ALIVE                          30m
+MEMORY_MAX_ATTEMPTS                           3 (tries per turn, then the dead-letter queue)
 RPC_TIMEOUT_SECONDS      gateway              300 (> the worker's engine timeout of 240 s)
 CATALOG_REFRESH_SECONDS  router               30
 SHORT_PROMPT_MAX_WORDS   router (session      3 (shorter prompts inherit the session's routing)
@@ -115,8 +120,21 @@ class RabbitMQSettings(_Settings):
     user: str
     password: SecretStr = Field(validation_alias="RABBITMQ_PASS")
     middleware_queue: str = Field("router.requests", validation_alias="MIDDLEWARE_QUEUE")
+    # where workers publish stored turns for indexing; "" = no memory service, publish nothing
+    memory_queue: str = Field("memory.ingest", validation_alias="MEMORY_QUEUE")
     # 0 = retry forever: in Kubernetes the broker may start after the services
     connect_retries: int = Field(0, ge=0, validation_alias="RABBITMQ_CONNECT_RETRIES")
+
+
+class MemorySettings(_Settings):
+    """The memory service (src/memory/): indexes stored turns into chunks."""
+
+    embedding_host: str = Field("http://localhost:11434", validation_alias="EMBEDDING_HOST")
+    embedding_model: str = Field("bge-m3", validation_alias="EMBEDDING_MODEL")
+    # keep the embedding model loaded between turns (Ollama keep_alive); it is small
+    embedding_keep_alive: str = Field("30m", validation_alias="EMBEDDING_KEEP_ALIVE")
+    # tries per turn before the message goes to the dead-letter queue
+    max_attempts: int = Field(3, ge=1, validation_alias="MEMORY_MAX_ATTEMPTS")
 
 
 class LifecycleSettings(_Settings):
@@ -222,6 +240,11 @@ def get_router_settings() -> RouterSettings:
 @lru_cache
 def get_retrieval_settings() -> RetrievalSettings:
     return RetrievalSettings()
+
+
+@lru_cache
+def get_memory_settings() -> MemorySettings:
+    return MemorySettings()
 
 
 @lru_cache

@@ -88,6 +88,11 @@ spec:
           env:
             - name: OLLAMA_URL
               value: {{ include "moe.ollama.url" . | quote }}
+            {{- if and .Values.memory.enabled (not .Values.memory.embeddingHost) }}
+            # the memory service's embedding model lives on the same Ollama
+            - name: EXTRA_OLLAMA_MODELS
+              value: {{ .Values.memory.embeddingModel | quote }}
+            {{- end }}
         {{- else }}
         - name: seed
           image: {{ $image }}

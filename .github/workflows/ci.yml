@@ -58,7 +58,7 @@ jobs:
           RABBITMQ_TEST_PORT: "5672"
         run: pytest -q
 
-  # Builds the 4 images.
+  # Builds the 5 images.
   #   push (main, tags): published to GHCR with ONLY the immutable sha-<commit> tag; main/latest/
   #                      version tags are added by `release-tags` once the install test passed.
   #   pull request:      not published; saved as a tarball artifact that chart-install loads into kind.
@@ -76,6 +76,7 @@ jobs:
           - { name: moe-router,  dockerfile: src/router/Dockerfile }
           - { name: moe-worker,  dockerfile: src/worker/Dockerfile }
           - { name: moe-tools,   dockerfile: scripts/manage_models/Dockerfile }
+          - { name: moe-memory,  dockerfile: src/memory/Dockerfile }
     env:
       IS_PR: ${{ github.event_name == 'pull_request' }}
     steps:
@@ -221,7 +222,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [moe-gateway, moe-router, moe-worker, moe-tools]
+        name: [moe-gateway, moe-router, moe-worker, moe-tools, moe-memory]
     steps:
       - name: lowercase owner
         run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"

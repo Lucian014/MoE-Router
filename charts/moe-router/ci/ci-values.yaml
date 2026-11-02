@@ -41,3 +41,8 @@ postgresql:
 rabbitmq:
   persistence:
     size: 1Gi
+
+# the embedding model (~1.2 GB) doesn't fit the runner's budget; the memory service has its own
+# tests (tests/test_memory_service.py, tests/test_database_memory.py)
+memory:
+  enabled: false

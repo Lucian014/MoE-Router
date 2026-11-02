@@ -1,0 +1,69 @@
+{{- /* The memory service: consumes MEMORY_QUEUE (turns stored by the workers) and indexes each
+       turn into chunks with embeddings (src/memory/service.py). Reindex from inside the pod:
+       kubectl exec deploy/<release>-memory -- python -m memory.service --reindex */ -}}
+{{- if .Values.memory.enabled }}
+{{- if and (not .Values.memory.embeddingHost) (not .Values.ollama.enabled) }}
+{{- fail "memory.enabled needs ollama.enabled or memory.embeddingHost (the server of the embedding model)" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "moe.fullname" . }}-memory
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: memory
+spec:
+  replicas: {{ .Values.memory.replicas }}
+  selector:
+    matchLabels:
+      {{- include "moe.selectorLabels" (dict "root" . "component" "memory") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "moe.labels" . | nindent 8 }}
+        app.kubernetes.io/component: memory
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- include "moe.imagePullSecrets" . | nindent 6 }}
+      {{- with .Values.memory.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.memory.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.memory.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ add (int .Values.memory.shutdownGraceSeconds) 10 }}
+      containers:
+        - name: memory
+          image: {{ include "moe.image" (dict "root" . "image" .Values.memory.image) }}
+          imagePullPolicy: {{ include "moe.pullPolicy" (dict "root" . "image" .Values.memory.image) }}
+          envFrom:
+            {{- include "moe.serviceEnvFrom" (dict "root" . "postgres" true) | nindent 12 }}
+          env:
+            - name: EMBEDDING_HOST
+              value: {{ .Values.memory.embeddingHost | default (include "moe.ollama.url" .) | quote }}
+            - name: EMBEDDING_MODEL
+              value: {{ .Values.memory.embeddingModel | quote }}
+            - name: EMBEDDING_KEEP_ALIVE
+              value: {{ .Values.memory.embeddingKeepAlive | quote }}
+            - name: MEMORY_MAX_ATTEMPTS
+              value: {{ .Values.memory.maxAttempts | quote }}
+            - name: SHUTDOWN_GRACE_SECONDS
+              value: {{ .Values.memory.shutdownGraceSeconds | quote }}
+          # /tmp/ready exists while the embedding model is available and the service consumes
+          readinessProbe:
+            exec:
+              command: ["test", "-f", "/tmp/ready"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- with .Values.memory.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

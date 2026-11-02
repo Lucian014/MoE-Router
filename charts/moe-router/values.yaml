@@ -68,6 +68,8 @@ rabbitmq:
 # Settings every service reads (shared/config.py); rendered into the ConfigMap <release>-config.
 messaging:
   middlewareQueue: router.requests
+  # workers -> memory service: turns to index (rejected messages go to <memoryQueue>.dlq)
+  memoryQueue: memory.ingest
 
 # --------------------------------------------------------------------------------- Gateway
 # The HTTP entry point: POST /generate -> RabbitMQ -> router -> worker -> reply.
@@ -164,6 +166,9 @@ ollama:
   contextLength: 8192
   # how long a model stays in memory after its last request
   keepAlive: 5m
+  # models loaded at once (OLLAMA_MAX_LOADED_MODELS); 0 = Ollama's default. Counts the memory
+  # service's embedding model too: too low and it evicts a generation model on every turn
+  maxLoadedModels: 0
   # NVIDIA GPUs (needs the GPU Operator / device plugin); 0 = CPU only
   gpu: 0
   persistence:
@@ -195,12 +200,38 @@ worker:
   tolerations: []
   affinity: {}
 
+# --------------------------------------------------------------------------------- Memory
+# Indexes every stored turn into chunks with embeddings, for retrieval (docs/rag-planv2.md).
+# The embedding model runs on the chart's Ollama (pulled by the setup Job) unless
+# embeddingHost points elsewhere. disabled: turns are still stored, but not indexed.
+memory:
+  enabled: true
+  image:
+    repository: moe-memory
+    tag: ""
+  replicas: 1
+  embeddingModel: bge-m3
+  # "" = the chart's Ollama
+  embeddingHost: ""
+  # keep the embedding model loaded between turns (Ollama keep_alive)
+  embeddingKeepAlive: 30m
+  # tries per turn before its message goes to the dead-letter queue
+  maxAttempts: 3
+  shutdownGraceSeconds: 30
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 768Mi }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
 # --------------------------------------------------------------------------------- Setup Job
 # Runs on every install and upgrade (one Job per release revision), in order:
 #   1. alembic upgrade head        (database schema)
 #   2. seed the catalog above      (seed_models.py --disable-missing: the values are the
 #                                   whole catalog, removed models get disabled)
-#   3. ollama pull missing models  (manage_models.py --provision; can take long on a fresh install)
+#   3. ollama pull missing models  (manage_models.py --provision; can take long on a fresh install;
+#                                   with the memory service, its embedding model too)
 # Workers become ready as their model arrives; the router once the catalog is seeded.
 tools:
   image:

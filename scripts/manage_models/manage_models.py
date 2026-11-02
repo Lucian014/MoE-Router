@@ -20,6 +20,15 @@ OLLAMA_URL = os.getenv(
 
 HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "30"))
 
+# Models that are not in the catalog but must be pulled (and never pruned): e.g. the memory
+# service's embedding model. Comma-separated; the Helm setup Job sets it.
+EXTRA_MODELS = [m.strip() for m in os.getenv("EXTRA_OLLAMA_MODELS", "").split(",") if m.strip()]
+
+
+def _with_tag(model_id: str) -> str:
+    """Ollama lists a model pulled without a tag as '<name>:latest'."""
+    return model_id if ":" in model_id else f"{model_id}:latest"
+
 async def load_catalog_allow_empty() -> list[dict]:
     async with get_session() as session:
         repo = ModelRepository(session)
@@ -148,10 +157,12 @@ def provision_ollama(models: list[dict]) -> None:
         f"[*] Catalog contains {len(ollama_models)} Ollama model(s)."
     )
 
-    for model in ollama_models:
-        model_id = model["model_id"]
+    model_ids = [model["model_id"] for model in ollama_models]
+    if EXTRA_MODELS:
+        print(f"[*] Extra model(s), not in the catalog: {EXTRA_MODELS}")
 
-        if model_id in installed:
+    for model_id in model_ids + [m for m in EXTRA_MODELS if m not in model_ids]:
+        if model_id in installed or _with_tag(model_id) in installed:
             print(
                 f"[SKIP] Ollama model already installed: "
                 f"{model_id}"
@@ -215,8 +226,10 @@ def prune_ollama(models: list[dict]) -> None:
         for model in models
         if model.get("engine") == "ollama"
     }
+    keep = catalog_ids | set(EXTRA_MODELS)
+    keep |= {_with_tag(m) for m in keep}
 
-    stale = installed - catalog_ids
+    stale = installed - keep
 
     if not stale:
         print("[*] Nothing to prune — all installed models are in the catalog.")

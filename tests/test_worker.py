@@ -76,19 +76,51 @@ def test_without_session_id_nothing_is_stored(fake):
     assert handle({"prompt": "salut"})["turn"] is None          # store_turn returns before the DB
 
 
-def test_turn_is_stored_with_the_original_prompt(fake, monkeypatch):
-    stored = []
+class FakeMQ:
+    def __init__(self, fail=False):
+        self.published, self.fail = [], fail
 
+    async def publish(self, payload, routing_key, persistent=False):
+        if self.fail:
+            raise ConnectionError("broker gone")
+        self.published.append((routing_key, payload, persistent))
+
+
+def stored_as(turn, turn_id, log):
     async def store(payload, user_content, result):
-        stored.append((payload["session_id"], user_content, result.text))
-        return 3
+        log.append((payload["session_id"], user_content, result.text))
+        return turn, turn_id
+    return store
 
-    monkeypatch.setattr(worker, "store_turn", store)
+
+def test_turn_is_stored_with_the_original_prompt_and_sent_for_indexing(fake, monkeypatch):
+    stored, mq = [], FakeMQ()
+    monkeypatch.setattr(worker, "store_turn", stored_as(3, 42, stored))
+    monkeypatch.setattr(worker, "mq_client", mq)
+    monkeypatch.setattr(worker, "MEMORY_QUEUE", "memory.ingest")
     messages = [{"role": "system", "content": "s"}, {"role": "user", "content": "context + q"}]
     reply = handle({"prompt": "q", "messages": messages, "session_id": "sid"})
 
     assert stored == [("sid", "q", "ok")]                       # the user's prompt, not the context
     assert reply["turn"] == 3
+    assert mq.published == [("memory.ingest", {"turn_id": 42}, True)]
+
+
+def test_nothing_is_published_without_a_memory_queue(fake, monkeypatch):
+    mq = FakeMQ()
+    monkeypatch.setattr(worker, "store_turn", stored_as(1, 7, []))
+    monkeypatch.setattr(worker, "mq_client", mq)
+    monkeypatch.setattr(worker, "MEMORY_QUEUE", "")
+    assert handle({"prompt": "q", "session_id": "sid"})["turn"] == 1
+    assert mq.published == []
+
+
+def test_a_failed_publish_still_answers(fake, monkeypatch):
+    monkeypatch.setattr(worker, "store_turn", stored_as(1, 7, []))
+    monkeypatch.setattr(worker, "mq_client", FakeMQ(fail=True))
+    monkeypatch.setattr(worker, "MEMORY_QUEUE", "memory.ingest")
+    reply = handle({"prompt": "q", "session_id": "sid"})
+    assert (reply["response"], reply["turn"]) == ("ok", 1)
 
 
 @pytest.mark.parametrize("error", [RuntimeError("db down"), worker.TurnAlreadyExistsError("sid", 1)])
