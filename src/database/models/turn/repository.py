@@ -42,9 +42,14 @@ class TurnRepository:
         stmt = select(func.coalesce(func.max(Turn.turn), 0)).where(Turn.session_id == session_id)
         return (await self._session.execute(stmt)).scalar_one()
 
-    async def list_to_index(self, chunker_version: str, embedding_model: str, limit: int = 100) -> list[Turn]:
+    async def list_ids(self) -> list[int]:
+        """Every turn id, oldest first (a forced reindex)."""
+        return list((await self._session.execute(select(Turn.id).order_by(Turn.id))).scalars().all())
+
+    async def list_to_index(self, chunker_version: str, embedding_model: str,
+                            limit: int | None = 100) -> list[Turn]:
         """Turns the memory service still has to (re)index: no chunks yet, or chunks produced by
-        another chunker version or embedding model. Used by the reindex command."""
+        another chunker version or embedding model. Used by the reindex command. limit=None: all."""
         any_chunk = select(Chunk.id).where(Chunk.turn_id == Turn.id)
         stale_chunk = any_chunk.where(
             or_(Chunk.chunker_version != chunker_version, Chunk.embedding_model != embedding_model)

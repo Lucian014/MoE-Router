@@ -1,4 +1,4 @@
-# Dev loop: build the 4 images, push them to your dev registry and deploy the Helm chart.
+# Dev loop: build the 5 images, push them to your dev registry and deploy the Helm chart.
 #
 # One-time setup on your machine (keeps the registry address out of the repo):
 #   skaffold config set default-repo 192.168.56.102:30500
@@ -57,6 +57,18 @@ build:
           ignore:
             - src/router/checkpoints/**
             - "**/__pycache__/**"
+    - image: moe-memory
+      context: .
+      custom:
+        buildCommand: podman build -t $IMAGE . -f src/memory/Dockerfile && podman push --tls-verify=false $IMAGE
+        dependencies:
+          paths:
+            - src/memory/**/*
+            - src/shared/**/*
+            - src/database/**/*
+            - src/engine/**/*
+          ignore:
+            - "**/__pycache__/**"
 
 deploy:
   helm:
@@ -77,6 +89,8 @@ deploy:
           worker.image.tag: "{{.IMAGE_TAG_moe_worker}}@{{.IMAGE_DIGEST_moe_worker}}"
           tools.image.repository: "{{.IMAGE_REPO_moe_tools}}"
           tools.image.tag: "{{.IMAGE_TAG_moe_tools}}@{{.IMAGE_DIGEST_moe_tools}}"
+          memory.image.repository: "{{.IMAGE_REPO_moe_memory}}"
+          memory.image.tag: "{{.IMAGE_TAG_moe_memory}}@{{.IMAGE_DIGEST_moe_memory}}"
 
 # Don't stamp Skaffold's per-run label into StatefulSet pod templates: it changes on every
 # `skaffold run`, which would restart Postgres and RabbitMQ although nothing changed.

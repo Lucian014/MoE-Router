@@ -31,6 +31,7 @@ MODEL_NAME: str = ""
 ENGINE_TYPE: str = ""
 CONTEXT_WINDOW: int = 4096
 MAX_OUTPUT_TOKENS: int = 512
+MEMORY_QUEUE: str = ""          # "" = nu se publica nimic pentru indexare
 engine = None
 mq_client: RabbitMQClient | None = None
 
@@ -64,10 +65,10 @@ def limits_from_payload(payload: dict) -> tuple[int, int]:
     return num_ctx, max_tokens
 
 
-async def store_turn(payload: dict, user_content: str, result: ChatResult) -> int | None:
+async def store_turn(payload: dict, user_content: str, result: ChatResult) -> tuple[int, int] | None:
     """Scrierea W1: sesiunea (creata la prima tura), tura si starea de rutare a sesiunii, intr-o
     singura tranzactie, INAINTE de raspuns -- urmatorul prompt al userului vede mereu tura asta.
-    Intoarce numarul turei. Fara session_id (client vechi) nu se salveaza nimic."""
+    Intoarce (numarul turei, id-ul randului). Fara session_id (client vechi) nu se salveaza nimic."""
     if not payload.get("session_id"):
         return None
     session_id = uuid.UUID(str(payload["session_id"]))
@@ -84,7 +85,7 @@ async def store_turn(payload: dict, user_content: str, result: ChatResult) -> in
         sessions = ChatSessionRepository(session)
         await sessions.ensure(session_id)
         turn = payload.get("turn") or await turns.last_turn_number(session_id) + 1
-        await turns.create(
+        turn_id = await turns.create(
             session_id, turn, user_content, result.text,
             model_id=MODEL_NAME,
             predicted_domain=predicted_domain,
@@ -101,7 +102,18 @@ async def store_turn(payload: dict, user_content: str, result: ChatResult) -> in
             payload.get("effective_domain_confidence", payload.get("task_type_confidence")),
             effective_complexity,
         )
-    return turn
+    return turn, turn_id
+
+
+async def publish_for_indexing(turn_id: int) -> None:
+    """Tura salvata merge la serviciul memory (chunking + embeddings), asincron. Daca publicarea
+    esueaza, tura ramane in `turns` fara chunk-uri, iar `memory.service --reindex` o recupereaza."""
+    if not MEMORY_QUEUE or mq_client is None:
+        return
+    try:
+        await mq_client.publish({"turn_id": turn_id}, routing_key=MEMORY_QUEUE, persistent=True)
+    except Exception as e:
+        print(f" [!] turn {turn_id} not sent for indexing: {type(e).__name__}: {e}")
 
 
 async def handle_request(payload: dict) -> dict:
@@ -137,7 +149,10 @@ async def handle_request(payload: dict) -> dict:
     # salvarea esueaza, userul primeste totusi raspunsul; tura lipseste doar din istoric.
     turn = None
     try:
-        turn = await store_turn(payload, payload.get("prompt") or prompt, result)
+        stored = await store_turn(payload, payload.get("prompt") or prompt, result)
+        if stored:
+            turn, turn_id = stored
+            await publish_for_indexing(turn_id)
     except TurnAlreadyExistsError as e:
         print(f" [!] turn not stored: {e} (two prompts of the session sent in parallel)")
     except Exception as e:
@@ -179,15 +194,17 @@ async def watch_engine(ready_file: str) -> None:
 
 
 async def main():
-    global MODEL_NAME, ENGINE_TYPE, CONTEXT_WINDOW, MAX_OUTPUT_TOKENS, engine, mq_client
+    global MODEL_NAME, ENGINE_TYPE, CONTEXT_WINDOW, MAX_OUTPUT_TOKENS, MEMORY_QUEUE, engine, mq_client
     sys.stdout.reconfigure(line_buffering=True)
     cfg = get_worker_settings()
+    rabbit = get_rabbitmq_settings()
     lifecycle = get_lifecycle_settings()
     MODEL_NAME, ENGINE_TYPE = cfg.model_name, cfg.engine_type
     CONTEXT_WINDOW, MAX_OUTPUT_TOKENS = cfg.context_window, cfg.max_output_tokens
+    MEMORY_QUEUE = rabbit.memory_queue
     queue_name = model_to_queue(MODEL_NAME)
     engine = get_engine(ENGINE_TYPE, cfg.inference_host)
-    mq_client = RabbitMQClient.from_settings(get_rabbitmq_settings())
+    mq_client = RabbitMQClient.from_settings(rabbit)
     stop = install_stop_signals()
     set_ready(lifecycle.ready_file, False)
 
@@ -199,6 +216,9 @@ async def main():
     except Stopped:
         print(" [*] stopped before start-up finished")
         return
+    if MEMORY_QUEUE:
+        # declared here too, so turns published before the memory service first starts are kept
+        await mq_client.declare_with_dead_letters(MEMORY_QUEUE)
 
     await mq_client.consume_rpc(queue_name=queue_name, handler_func=handle_request,
                                 prefetch_count=cfg.prefetch)

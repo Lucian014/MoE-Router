@@ -12,3 +12,5 @@ data:
   POSTGRES_HOST: {{ include "moe.postgres.host" . | quote }}
   POSTGRES_PORT: {{ include "moe.postgres.port" . | quote }}
   MIDDLEWARE_QUEUE: {{ .Values.messaging.middlewareQueue | quote }}
+  # empty without the memory service: the workers then publish nothing for indexing
+  MEMORY_QUEUE: {{ if .Values.memory.enabled }}{{ .Values.messaging.memoryQueue | quote }}{{ else }}""{{ end }}

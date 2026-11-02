@@ -157,15 +157,31 @@ class RabbitMQClient:
         except Exception as e:
             print(f"[!] Could not send error reply for {message.correlation_id}: {e}")
 
+    # ------------------------------------------------------------------ dead letters
+    async def declare_with_dead_letters(self, queue_name: str) -> dict:
+        """Declare `queue_name` (durable) so that rejected messages go to `<queue_name>.dlq`,
+        and declare that queue too. Returns the queue arguments: every declaration of the queue
+        (publisher or consumer) must use the same ones, or RabbitMQ refuses it. Safe to call
+        from several services: declaring an existing queue with the same arguments is a no-op.
+        Declaring it from the publisher too means no message is dropped before the consumer
+        first starts."""
+        dlq = f"{queue_name}.dlq"
+        await self.channel.declare_queue(dlq, durable=True)
+        arguments = {"x-dead-letter-exchange": "", "x-dead-letter-routing-key": dlq}
+        await self.channel.declare_queue(queue_name, durable=True, arguments=arguments)
+        return arguments
+
     # ------------------------------------------------------------------ consuming
-    async def consume_messages(self, queue_name: str, callback, prefetch_count: int = 1):
+    async def consume_messages(self, queue_name: str, callback, prefetch_count: int = 1,
+                               arguments: dict | None = None):
         """Consume raw messages from a durable queue; `callback(message)` acks them itself.
 
         Every consumer of this client goes through here, so drain() can stop them and wait
         for the messages they are still handling. `prefetch_count` messages are handled
-        concurrently (aio-pika runs each callback in its own task)."""
+        concurrently (aio-pika runs each callback in its own task). `arguments` must match
+        the queue's existing declaration (see declare_with_dead_letters)."""
         await self.channel.set_qos(prefetch_count=prefetch_count)
-        queue = await self.channel.declare_queue(queue_name, durable=True)
+        queue = await self.channel.declare_queue(queue_name, durable=True, arguments=arguments)
 
         async def _tracked(message: aio_pika.IncomingMessage):
             task = asyncio.current_task()
@@ -279,12 +295,14 @@ class RabbitMQClient:
         return True
 
     # ------------------------------------------------------------------ one-way messages
-    async def publish(self, payload: dict, routing_key: str):
-        """Publishes a message without waiting for a response (Fire-and-forget)."""
+    async def publish(self, payload: dict, routing_key: str, persistent: bool = False):
+        """Publishes a message without waiting for a response (Fire-and-forget).
+        persistent=True: the message survives a broker restart (on a durable queue)."""
         await self.channel.default_exchange.publish(
             aio_pika.Message(
                 body=json.dumps(payload).encode(),
                 content_type="application/json",
+                delivery_mode=aio_pika.DeliveryMode.PERSISTENT if persistent else None,
             ),
             routing_key=routing_key,
         )

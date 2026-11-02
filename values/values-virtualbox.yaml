@@ -22,6 +22,11 @@ router:
   nodeSelector:
     kubernetes.io/hostname: k8s-route
 
+# light (chunking + calls to Ollama's embedding model), next to the router
+memory:
+  nodeSelector:
+    kubernetes.io/hostname: k8s-route
+
 ollama:
   # reuse the models already pulled on k8s-compute (26 GB) instead of a new PVC
   persistence:
