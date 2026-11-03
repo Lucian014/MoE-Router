@@ -23,8 +23,8 @@ def turn(n, size=10):
     return TurnText(n, f"q{n}", " ".join([f"a{n}"] * (size - 1)))
 
 
-def build(turns, budget, prompt="p", fragments=()):
-    return build_messages("s", turns, prompt, budget, fragments, count=words)
+def build(turns, budget, prompt="p", fragments=(), **kw):
+    return build_messages("s", turns, prompt, budget, fragments, count=words, **kw)
 
 
 def available(budget, prompt="p"):
@@ -68,6 +68,24 @@ def test_last_turn_is_kept_but_cut_when_too_long():
     assert words(answer) + O + 1 + O <= int(budget.last_turn_max_share * available(budget))
 
 
+def test_a_cut_last_turn_gets_its_missing_chunks_as_fragments():
+    pasted = " ".join(f"line{i}" for i in range(1000))
+    turns = [turn(1), TurnText(2, "q2", pasted)]
+    fragments = [Fragment(chunk_id=20, turn=2, ord=0, content="line0 line1 line2"),        # in the kept part
+                 Fragment(chunk_id=29, turn=2, ord=9, content="line990 line991 line992"),  # in the cut part
+                 Fragment(chunk_id=11, turn=1, ord=0, content="a1 a1")]                    # turn 1 is whole
+    ctx = build(turns, Budget(1000, 100), fragments=fragments)
+    assert ctx.last_turn_truncated
+    assert ctx.fragment_ids == [29]
+    assert "[turn 2]" in ctx.messages[1]["content"] and "line990" in ctx.messages[1]["content"]
+
+
+def test_a_last_turn_that_fits_gives_no_fragments():
+    turns = [turn(1), turn(2)]
+    ctx = build(turns, Budget(1000, 100), fragments=[Fragment(chunk_id=21, turn=2, ord=0, content="a2")])
+    assert not ctx.last_turn_truncated and ctx.fragment_ids == []
+
+
 def test_prompt_too_long_raises():
     with pytest.raises(PromptTooLongError):
         build([], Budget(100, 50), prompt=" ".join(["w"] * 100))
@@ -93,6 +111,31 @@ def test_left_over_space_brings_back_whole_turns_and_drops_their_fragments():
     fragments = [Fragment(chunk_id=1, turn=1, ord=0, content="old bit")]
     ctx = build(turns, budget, fragments=fragments)
     assert ctx.recent_turns == 4 and ctx.fragment_ids == []    # turn 1 fits whole after all
+
+
+def small_model_with_pool():
+    turns = [turn(i, size=100) for i in range(1, 13)]
+    pool = [Fragment(chunk_id=10 * t + o, turn=t, ord=o, content=f"f{t}.{o}") for t, o in
+            [(12, 0), (3, 0), (3, 1), (3, 2), (5, 0), (1, 0)]]
+    return turns, Budget(600, 100), pool
+
+
+def test_top_k_counts_after_the_whole_turns_are_dropped():
+    turns, budget, pool = small_model_with_pool()
+    ctx = build(turns, budget, fragments=pool, top_k=3)
+    assert ctx.fragment_ids == [30, 31, 32]                     # 120 (turn 12) is whole, not counted
+
+
+def test_max_chunks_per_turn():
+    turns, budget, pool = small_model_with_pool()
+    ctx = build(turns, budget, fragments=pool, top_k=3, max_per_turn=2)
+    assert ctx.fragment_ids == [30, 31, 50]
+
+
+def test_max_context_tokens_caps_the_budget():
+    turns = [turn(i) for i in range(1, 13)]
+    ctx = build(turns, Budget(32768, 2048, max_context_tokens=60))
+    assert ctx.recent_turns == 3                                # 3 * 18 = 54 <= 60 < 72
 
 
 def test_render_groups_by_turn_and_marks_gaps():

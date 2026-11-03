@@ -104,6 +104,14 @@ router:
   # torch threads per pod (match the CPU limit)
   ompNumThreads: 2
   shutdownGraceSeconds: 25
+  # session memory (docs/rag-planv2.md 5): V0 = recent turns only, V1 = + dense retrieval,
+  # V2 = + dense and BM25. V0 whenever memory.enabled is false (no chunks to search)
+  rag:
+    variant: V2
+    # fragments at most per request (fewer when they don't fit a small model)
+    topK: 8
+    # true: a request's `variant` field picks the preset (evaluation environments only)
+    allowVariantOverride: false
   # read access to the classifier repos on Hugging Face: either put the token here
   # (the chart stores it in a Secret) or name an existing Secret
   hfToken:

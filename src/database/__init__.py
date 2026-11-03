@@ -4,7 +4,7 @@ from database.base import Base
 # `from database import ModelRepository` instead of reaching into
 # `database.models.model_registry`. Add one line per new table.
 from database.models.chat_session import ChatSession, ChatSessionRepository  # noqa: F401
-from database.models.chunk import Chunk, ChunkCandidate, ChunkRepository  # noqa: F401
+from database.models.chunk import Chunk, ChunkCandidate, ChunkFragment, ChunkRepository  # noqa: F401
 from database.models.model_registry import (  # noqa: F401
     ModelAlreadyExistsError,
     ModelNotFoundError,
@@ -30,5 +30,6 @@ __all__ = [
     "TurnAlreadyExistsError",
     "Chunk",
     "ChunkCandidate",
+    "ChunkFragment",
     "ChunkRepository",
 ]

@@ -10,7 +10,7 @@ markers = [
 [tool.ruff]
 line-length = 120
 target-version = "py311"
-extend-exclude = ["scripts/laya", "scripts/resources", "src/database/migrations/versions"]
+extend-exclude = ["legacy", "scripts/laya", "scripts/resources", "src/database/migrations/versions"]
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]

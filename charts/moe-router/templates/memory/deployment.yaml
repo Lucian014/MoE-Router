@@ -45,13 +45,8 @@ spec:
           imagePullPolicy: {{ include "moe.pullPolicy" (dict "root" . "image" .Values.memory.image) }}
           envFrom:
             {{- include "moe.serviceEnvFrom" (dict "root" . "postgres" true) | nindent 12 }}
+          # EMBEDDING_* come from the ConfigMap (the router uses the same model)
           env:
-            - name: EMBEDDING_HOST
-              value: {{ .Values.memory.embeddingHost | default (include "moe.ollama.url" .) | quote }}
-            - name: EMBEDDING_MODEL
-              value: {{ .Values.memory.embeddingModel | quote }}
-            - name: EMBEDDING_KEEP_ALIVE
-              value: {{ .Values.memory.embeddingKeepAlive | quote }}
             - name: MEMORY_MAX_ATTEMPTS
               value: {{ .Values.memory.maxAttempts | quote }}
             - name: SHUTDOWN_GRACE_SECONDS

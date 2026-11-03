@@ -1,0 +1,164 @@
+id: s07-cafenea-brainstorming
+category: brainstorming
+lang: ro
+turns:
+  - user: |
+      Vreau să deschid o cafenea mică într-un oraș universitar, lângă campus. Dă-mi idei de concept care să se diferențieze.
+    assistant: |
+      Câteva concepte care merg bine lângă un campus:
+
+      1. **Cafenea de studiu („study café”)** – mese mari, prize la fiecare loc, Wi-Fi rapid, zone liniștite și un abonament lunar care include cafea nelimitată la filtru. Studenții stau mult, deci câștigi din abonamente, nu din rotația meselor.
+      2. **Cafenea cu board games** – jocuri de societate pe rafturi, taxă mică pe oră sau consumație minimă, seri tematice. Atrage grupuri seara, când o cafenea clasică e goală.
+      3. **Specialty coffee + brunch ieftin** – boabe de la o prăjitorie locală, meniu scurt de mic-dejun până la ora 14. Diferențierea vine din calitate, nu din preț.
+      4. **Cafenea „second hand”** – un colț cu cărți și haine la schimb, evenimente de swap. Se potrivește cu un public sensibil la sustenabilitate.
+      5. **Cafenea-atelier** – seara se transformă în spațiu pentru workshopuri (ceramică, ilustrație, programare), închiriat organizatorilor.
+
+      Primul concept are cel mai previzibil venit, pentru că abonamentele dau bani constanți chiar și în sesiune, când studenții nu ies, dar învață mult.
+  - user: |
+      Îmi place ideea cu study café. Cum ar arăta abonamentul?
+    assistant: |
+      O structură simplă, cu trei niveluri:
+
+      - **Basic – 89 lei/lună:** cafea la filtru și ceai nelimitate, acces între 8:00 și 18:00.
+      - **Plus – 149 lei/lună:** tot ce are Basic, plus o băutură pe bază de espresso pe zi și acces până la închidere (22:00).
+      - **Sesiune – 59 lei/2 săptămâni:** gândit pentru perioada examenelor, fără angajament lunar.
+
+      Reguli care protejează afacerea:
+
+      - abonamentul e nominal, cu un card sau un cod QR în aplicație;
+      - băuturile incluse se servesc doar în local, nu la pahar de luat;
+      - cel mult un abonat pe masa de patru, la ore de vârf.
+
+      Calculul de bază: o cafea la filtru te costă aproximativ 1,5–2 lei. Un abonat Basic care bea trei pe zi, 20 de zile pe lună, te costă cam 120 de lei, deci pierzi la el. În practică, cei mai mulți vin de 8–10 ori pe lună, iar marja reală vine din mâncarea și băuturile cumpărate în plus.
+  - user: |
+      Ce nume i-aș putea da?
+    assistant: |
+      Câteva direcții:
+
+      - **Legate de studiu:** „Capitolul 2”, „Sesiunea”, „Nota 10”, „Bibliotecafe”.
+      - **Jocuri de cuvinte cu cafeaua:** „Espresso Mode”, „Cafeteca”, „Boabe & Bibliografie”.
+      - **Simple și memorabile:** „Masa Lungă”, „Priza”, „Colțul Liniștit”.
+
+      Preferatul meu e **„Priza”**: e scurt, ușor de reținut și spune exact ce caută un student care vine cu laptopul. Merge bine și ca logo, un ștecher stilizat sub forma unei boabe de cafea, și ca slogan: „Priza – unde te reîncarci”.
+
+      Înainte să alegi, verifică dacă numele e liber la ONRC și ca marcă la OSIM, și dacă găsești domeniul și contul de Instagram disponibile.
+  - user: |
+      Cum promovez deschiderea fără buget mare?
+    assistant: |
+      Idei ieftine pentru lansare:
+
+      1. **Parteneriate cu asociațiile studențești** – oferă-le sala gratuit pentru ședințe în primele luni; ei aduc oamenii și vorbesc despre tine.
+      2. **Săptămâna de deschidere „cafea pentru notă”** – cine arată un 10 din sesiunea trecută primește o cafea gratuită. E ușor de pus pe rețelele sociale și studenții o distribuie singuri.
+      3. **Instagram și TikTok din prima zi** – filmează amenajarea, alegerea boabelor, testele de meniu. Oamenii urmăresc povestea înainte de deschidere.
+      4. **Flyere în cămine**, cu un cod QR pentru o lună de abonament Basic la jumătate de preț.
+      5. **Google Business Profile** completat din ziua 1, cu poze și program: când cineva caută „cafenea lângă mine”, apari pe hartă.
+
+      Măsoară ce funcționează: fiecare canal poate avea propriul cod de reducere, ca să vezi de unde vin clienții.
+  - user: |
+      Ce echipamente îmi trebuie și cât costă aproximativ?
+    assistant: |
+      Pentru o cafenea mică, de 30–40 de locuri, estimări orientative:
+
+      - **Espressor profesional cu 2 grupuri:** 25.000–45.000 lei nou, 10.000–20.000 lei second hand recondiționat;
+      - **Râșniță pentru espresso:** 5.000–10.000 lei; nu face economie aici, contează mai mult decât espressorul;
+      - **Mașină de cafea la filtru (batch brewer):** 3.000–6.000 lei, esențială pentru abonamente;
+      - **Frigider-vitrină și frigider sub blat:** 8.000–15.000 lei;
+      - **Mașină de spălat vase profesională:** 8.000–12.000 lei;
+      - **Mobilier, prize, iluminat:** 30.000–60.000 lei, în funcție de cât de mult refaci spațiul;
+      - **Sistem de casă și POS:** 2.000–5.000 lei plus abonament lunar.
+
+      Total realist: între 90.000 și 150.000 lei pentru echipamente și amenajare, fără chirie, garanții și stoc inițial. Mulți furnizori de cafea îți dau espressorul în comodat dacă te angajezi să cumperi boabe de la ei; reduce mult investiția inițială, dar te leagă de un furnizor.
+  - user: |
+      Ce aș putea vinde în afară de cafea?
+    assistant: |
+      Ce se potrivește unui study café:
+
+      - **Mâncare care se mănâncă ușor la laptop:** sandvișuri, wrapuri, bowl-uri cu ovăz, prăjituri la felie. Evită ce e lipicios sau cu sos.
+      - **Meniu de sesiune:** „combo de noapte” (cafea mare + sandviș) după ora 18, la preț fix.
+      - **Băuturi fără cafeină:** ceaiuri de calitate, ciocolată caldă, limonade – mulți studenți beau deja prea multă cafea.
+      - **Papetărie de bază:** pixuri, markere, caiete cu logo-ul „Priza”, încărcătoare și cabluri de rezervă.
+      - **Închirierea sălii** pentru grupuri de studiu sau prezentări, cu proiector, la oră.
+
+      Marja cea mai bună o ai la băuturi și la închirierea sălii; mâncarea aduce clienți și crește valoarea bonului, dar are pierderi din produse expirate.
+  - user: |
+      Cum gestionez zgomotul? Unii vor să învețe, alții să vorbească.
+    assistant: |
+      Împarte spațiul în zone, ca într-o bibliotecă:
+
+      - **Zona liniștită** – în spate, mese individuale, fără apeluri, căști recomandate. Un semn discret, „zonă de concentrare”, e suficient.
+      - **Zona de grup** – mese mari în față, lângă bar, unde vorbitul e normal.
+      - **Cabina de apeluri** – o cabină fonoizolantă sau un colț separat cu draperii groase, pentru apeluri video.
+
+      Ajutoare practice: covoare, panouri fonoabsorbante pe tavan, plante mari și muzică ambientală la volum mic, care acoperă conversațiile din jur. Mașina de măcinat și espressorul sunt cele mai zgomotoase: pune barul cât mai departe de zona liniștită.
+  - user: |
+      Care sunt riscurile principale?
+    assistant: |
+      Principalele riscuri, cu ce poți face pentru fiecare:
+
+      1. **Sezonalitatea** – vara și în vacanțe orașele universitare se golesc. Plănuiește venituri mai mici în iulie–august, închiriază sala pentru evenimente și atrage și clienți din cartier, nu doar studenți.
+      2. **Clienții care stau mult și consumă puțin** – de aici abonamentele și regula de consumație minimă la orele de vârf.
+      3. **Abonamente care costă mai mult decât aduc** – urmărește lunar consumul mediu pe abonat și ajustează prețul sau nivelurile.
+      4. **Chiria** – lângă campus e mare. Negociază o perioadă de grație de 2–3 luni pentru amenajare.
+      5. **Personalul** – angajații studenți pleacă des. Documentează rețetele și procedurile ca să poți instrui rapid oameni noi.
+
+      Cel mai periculos e primul: o cafenea care trăiește doar din studenți are două luni pe an aproape fără venituri.
+  - user: |
+      Dă-mi o idee de eveniment lunar.
+    assistant: |
+      **„Noaptea Lungă de Studiu”** – o dată pe lună, înainte de sesiune sau de termenele de proiecte, cafeneaua rămâne deschisă până la 2:00.
+
+      - intrarea e gratuită pentru abonați și costă 20 de lei pentru restul, cu o cafea inclusă;
+      - la fiecare oră fixă, o pauză de 10 minute cu ceva mic: o gustare oferită, un exercițiu de stretching, un mini-concurs de cultură generală;
+      - colaborezi cu un student din anii mari sau cu un asistent care răspunde la întrebări la o masă de „consultații”;
+      - pui pe Instagram poze cu atmosfera și un clasament cu cine a rămas cel mai mult.
+
+      Evenimentul întărește identitatea de study café, aduce abonați noi și umple localul într-o seară care altfel ar fi slabă.
+  - user: |
+      Mulțumesc, fă-mi un rezumat al planului.
+    assistant: |
+      Rezumatul planului pentru „Priza”:
+
+      - **Concept:** study café lângă campus, cu prize, Wi-Fi rapid și zone separate pentru liniște și pentru grupuri.
+      - **Venit principal:** abonamente (Basic 89 lei, Plus 149 lei, Sesiune 59 lei pentru 2 săptămâni), plus mâncare, băuturi și închirierea sălii.
+      - **Investiție:** aproximativ 90.000–150.000 lei pentru echipamente și amenajare; espressorul poate veni în comodat de la furnizorul de cafea.
+      - **Lansare:** parteneriate cu asociațiile studențești, „cafea pentru notă”, flyere cu QR în cămine, Google Business Profile.
+      - **Eveniment lunar:** „Noaptea Lungă de Studiu”, până la 2:00.
+      - **Risc principal:** vara, când studenții pleacă; de aceea contează evenimentele și clienții din cartier.
+questions:
+  - id: q1
+    type: semantic
+    prompt: |
+      Cât costa abonamentul Plus și ce includea?
+    gold:
+      - {turn: 2, quote: "**Plus – 149 lei/lună:**"}
+  - id: q2
+    type: semantic
+    prompt: |
+      De ce îmi recomandai numele „Priza”?
+    gold:
+      - {turn: 3, quote: "Preferatul meu e **„Priza”**"}
+  - id: q3
+    type: exact
+    prompt: |
+      Cât ziceai că ar costa râșnița?
+    gold:
+      - {turn: 5, quote: "**Râșniță pentru espresso:** 5.000–10.000 lei"}
+  - id: q4
+    type: ambiguous
+    prompt: |
+      și cu zgomotul cum rămăsese?
+    gold:
+      - {turn: 7, quote: "Împarte spațiul în zone, ca într-o bibliotecă"}
+  - id: q5
+    type: semantic
+    lang: en
+    prompt: |
+      What was the cheap launch idea with the grades?
+    gold:
+      - {turn: 4, quote: "**Săptămâna de deschidere „cafea pentru notă”**"}
+  - id: q6
+    type: semantic
+    prompt: |
+      Care era riscul cel mai mare pentru cafenea?
+    gold:
+      - {turn: 8, quote: "Cel mai periculos e primul: o cafenea care trăiește doar din studenți are două luni pe an aproape fără venituri."}

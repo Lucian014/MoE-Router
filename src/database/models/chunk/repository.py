@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models.chunk.schema import Chunk
+from database.models.turn.schema import Turn
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,18 @@ class ChunkCandidate:
     content_hash: str
     terms: list[str]
     distance: float | None      # cosine distance to the query, None when dense search is off
+
+
+@dataclass(frozen=True)
+class ChunkFragment:
+    """What R3 returns per chunk: its text and its turn's header (the title of the excerpt)."""
+
+    id: int
+    turn: int
+    ord: int
+    content: str
+    header: str
+    header_from_answer: bool
 
 
 class ChunkRepository:
@@ -71,11 +84,13 @@ class ChunkRepository:
         before_turn: int,
         query_embedding: Sequence[float] | None,
         contextual: bool = False,
+        embedding_model: str | None = None,
     ) -> list[ChunkCandidate]:
         """R2: every chunk of the session older than `before_turn`, with its cosine distance to
         the query computed in Postgres. Dense and BM25 ranking, fusion and dedup happen in Python
         on this one result. `contextual` reads embedding_ctx / terms_ctx and skips chunks that
-        have not been contextualized yet."""
+        have not been contextualized yet. `embedding_model`: only chunks embedded with the
+        query's model (a distance between vectors of two models means nothing)."""
         vector_col = Chunk.embedding_ctx if contextual else Chunk.embedding
         terms_col = Chunk.terms_ctx if contextual else Chunk.terms
         distance = (
@@ -89,6 +104,8 @@ class ChunkRepository:
         )
         if contextual:
             stmt = stmt.where(Chunk.embedding_ctx.is_not(None))
+        if embedding_model is not None:
+            stmt = stmt.where(Chunk.embedding_model == embedding_model)
         rows = (await self._session.execute(stmt)).all()
         return [
             ChunkCandidate(id=r[0], turn=r[1], ord=r[2], kind=r[3], tokens=r[4], content_hash=r[5],
@@ -96,12 +113,18 @@ class ChunkRepository:
             for r in rows
         ]
 
-    async def get_contents(self, chunk_ids: Sequence[int]) -> dict[int, Chunk]:
-        """R3: the full rows of the chunks that made it into the context, by id."""
+    async def get_fragments(self, chunk_ids: Sequence[int]) -> dict[int, ChunkFragment]:
+        """R3: the text of the chunks that may go into the context, with their turn's header, by id."""
         if not chunk_ids:
             return {}
-        stmt = select(Chunk).where(Chunk.id.in_(list(chunk_ids)))
-        return {c.id: c for c in (await self._session.execute(stmt)).scalars().all()}
+        stmt = (
+            select(Chunk.id, Chunk.turn, Chunk.ord, Chunk.content, Turn.header, Turn.header_from_answer)
+            .join(Turn, Turn.id == Chunk.turn_id)
+            .where(Chunk.id.in_(list(chunk_ids)))
+        )
+        return {r[0]: ChunkFragment(id=r[0], turn=r[1], ord=r[2], content=r[3], header=r[4] or "",
+                                    header_from_answer=bool(r[5]))
+                for r in (await self._session.execute(stmt)).all()}
 
     async def list_for_turn(self, turn_id: int) -> list[Chunk]:
         stmt = select(Chunk).where(Chunk.turn_id == turn_id).order_by(Chunk.ord)

@@ -12,7 +12,6 @@ from shared.rabbitmq import RabbitMQClient, RpcError, RpcTimeout
 
 app = FastAPI(title="MoE-Router Gateway")
 
-# built in startup() from shared.config, so importing this module needs no env
 mq_client: RabbitMQClient | None = None
 _connect_task: asyncio.Task | None = None
 
@@ -31,8 +30,6 @@ async def _connect():
 
 @app.on_event("startup")
 async def startup():
-    # Connect in the background (with backoff): the HTTP server starts right away, so
-    # /health answers while RabbitMQ is still unreachable and /ready says 503 until then.
     global mq_client, _connect_task
     sys.stdout.reconfigure(line_buffering=True)
     mq_client = RabbitMQClient.from_settings(get_rabbitmq_settings())
@@ -41,8 +38,6 @@ async def startup():
 
 @app.on_event("shutdown")
 async def shutdown():
-    # uvicorn has already stopped accepting connections and waited for in-flight
-    # requests; close() fails anything still waiting for a reply.
     if mq_client:
         await mq_client.close()
     if _connect_task and not _connect_task.done():
@@ -51,13 +46,11 @@ async def shutdown():
 
 @app.get("/health")
 async def health():
-    """Liveness: the process is up."""
     return {"status": "ok"}
 
 
 @app.get("/ready")
 async def ready():
-    """Readiness: connected to RabbitMQ with a reply queue, so /generate can work."""
     if _rpc_ready():
         return {"status": "ready"}
     return JSONResponse({"status": "not ready", "detail": "not connected to RabbitMQ"}, status_code=503)
@@ -65,11 +58,8 @@ async def ready():
 
 class GenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=1)
-    # The conversation this prompt continues. Omitted -> a new conversation; the id comes back
-    # in the response and the client sends it with its next prompts. The gateway has no DB:
-    # an id that is not stored yet simply starts a new conversation with that id (the worker
-    # creates the session row with its first turn).
     session_id: uuid.UUID | None = None
+    variant: str | None = Field(None, pattern=r"^V[0-9]$")
 
 
 @app.post("/generate")
@@ -78,15 +68,18 @@ async def generate(req: GenerateRequest):
         raise HTTPException(status_code=503, detail="not connected to RabbitMQ")
     session_id = str(req.session_id or uuid.uuid4())
     try:
+        request = {"prompt": req.prompt, "session_id": session_id}
+        if req.variant:
+            request["variant"] = req.variant
         reply = await mq_client.call(
-            {"prompt": req.prompt, "session_id": session_id},
+            request,
             routing_key=get_rabbitmq_settings().middleware_queue,
             timeout=get_gateway_settings().rpc_timeout_seconds,
         )
         return {**reply, "session_id": session_id}
     except RpcTimeout as e:
         raise HTTPException(status_code=504, detail=str(e))
-    except RpcError as e:              # the router or the worker answered with an error
+    except RpcError as e:
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

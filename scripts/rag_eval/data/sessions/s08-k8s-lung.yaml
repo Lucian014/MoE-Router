@@ -1,0 +1,287 @@
+id: s08-k8s-lung
+category: coding
+lang: ro
+turns:
+  - user: |
+      Am un cluster k3s pe trei VM-uri și vreau să instalez Postgres pentru o aplicație. StatefulSet sau Deployment?
+    assistant: |
+      **StatefulSet.** Postgres are nevoie de o identitate stabilă și de un volum care îl urmează: un StatefulSet dă fiecărui pod un nume fix (`postgres-0`) și un PVC propriu prin `volumeClaimTemplates`, care nu se șterge când podul e recreat.
+
+      Un Deployment ar putea porni temporar două poduri pe același volum în timpul unui rolling update, iar două procese Postgres pe același director de date corup baza. Dacă totuși folosești Deployment, pune `strategy: Recreate`.
+
+      Pe k3s, StorageClass-ul implicit e `local-path`: volumul stă pe disc, pe nodul unde a pornit podul prima dată, deci podul rămâne legat de acel nod.
+  - user: |
+      Cum îi dau parola fără s-o scriu în YAML?
+    assistant: |
+      Pune-o într-un Secret și citește-o prin `envFrom` sau `secretKeyRef`:
+
+      ```bash
+      kubectl create secret generic pg-auth \
+        --from-literal=POSTGRES_USER=app \
+        --from-literal=POSTGRES_PASSWORD="$(openssl rand -base64 24)"
+      ```
+
+      ```yaml
+      envFrom:
+        - secretRef:
+            name: pg-auth
+      ```
+
+      Secretul nu e criptat, doar codat base64; oricine are `get secrets` în namespace îl poate citi. Pentru un repo Git, folosește Sealed Secrets sau SOPS, ca să poți comite varianta criptată.
+  - user: |
+      Podul de Postgres stă în Pending de 10 minute.
+    assistant: |
+      Pending înseamnă că scheduler-ul nu-l poate pune pe niciun nod. Rulează:
+
+      ```bash
+      kubectl describe pod postgres-0
+      ```
+
+      și citește secțiunea **Events** de la final. Cauzele frecvente:
+
+      - `0/3 nodes are available: 3 Insufficient memory` – ai cerut în `resources.requests` mai mult decât e liber;
+      - `pod has unbound immediate PersistentVolumeClaims` – PVC-ul nu are volum: verifică `kubectl get pvc` și dacă există o StorageClass implicită;
+      - `node(s) didn't match Pod's node affinity/selector` – ai un `nodeSelector` cu o etichetă pe care niciun nod n-o are.
+  - user: |
+      Events:
+        Warning  FailedScheduling  2m  default-scheduler  0/3 nodes are available: 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }, 2 node(s) didn't match Pod's node affinity/selector.
+    assistant: |
+      Două probleme în același mesaj:
+
+      1. Nodul de control-plane are un taint, așa că nu primește poduri obișnuite; e normal și nu trebuie schimbat.
+      2. Pe celelalte două noduri nu se potrivește `nodeSelector`-ul tău.
+
+      Verifică etichetele nodurilor:
+
+      ```bash
+      kubectl get nodes --show-labels | tr ',' '\n' | grep hostname
+      ```
+
+      Cel mai probabil ai scris `kubernetes.io/hostname: infra`, iar nodul se numește de fapt `k8s-infra`. Fie corectezi valoarea în `nodeSelector`, fie pui o etichetă proprie pe nod:
+
+      ```bash
+      kubectl label node k8s-infra role=database
+      ```
+
+      și folosești `nodeSelector: {role: database}`, care nu depinde de numele VM-ului.
+  - user: |
+      A pornit. Cum mă conectez din laptop la el?
+    assistant: |
+      Cel mai simplu, cu port-forward:
+
+      ```bash
+      kubectl port-forward svc/postgres 5432:5432
+      psql -h localhost -U app -d app
+      ```
+
+      Tunelul trăiește cât rulează comanda și nu expune nimic în afara laptopului tău. Nu folosi NodePort pentru o bază de date decât într-un lab izolat: ar deschide portul pe toate nodurile.
+  - user: |
+      Vreau backup zilnic.
+    assistant: |
+      Un CronJob care rulează `pg_dump` și scrie pe un volum separat sau într-un bucket S3:
+
+      ```yaml
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: pg-backup
+      spec:
+        schedule: "0 3 * * *"
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                restartPolicy: OnFailure
+                containers:
+                  - name: dump
+                    image: postgres:16
+                    envFrom: [{secretRef: {name: pg-auth}}]
+                    command: ["sh", "-c", "pg_dump -h postgres -U $POSTGRES_USER -Fc app > /backup/app-$(date +%F).dump"]
+                    volumeMounts: [{name: backup, mountPath: /backup}]
+                volumes:
+                  - name: backup
+                    persistentVolumeClaim: {claimName: pg-backup}
+      ```
+
+      `-Fc` e formatul custom, comprimat, care se restaurează cu `pg_restore` și permite restaurarea doar a unor tabele. Testează periodic restaurarea: un backup nerestaurat niciodată nu e un backup.
+  - user: |
+      Acum aplicația. E un API în FastAPI, cum îl expun în afara clusterului?
+    assistant: |
+      Cu un Service de tip ClusterIP și un Ingress. k3s vine cu Traefik ca ingress controller:
+
+      ```yaml
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: api
+      spec:
+        rules:
+          - host: api.lab.local
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service: {name: api, port: {number: 8000}}
+      ```
+
+      Adaugă `api.lab.local` în `/etc/hosts` pe laptop, cu IP-ul unui nod.
+  - user: |
+      Primesc 404 de la Traefik.
+    assistant: |
+      404 de la Traefik înseamnă că nicio regulă nu se potrivește cu request-ul. Verifică:
+
+      - dacă trimiți header-ul `Host` corect: `curl -H 'Host: api.lab.local' http://<ip-nod>/`;
+      - `kubectl get ingress` – coloana ADDRESS ar trebui să aibă IP-uri;
+      - dacă Service-ul are endpoint-uri: `kubectl get endpoints api` – dacă e gol, selectorul Service-ului nu se potrivește cu etichetele podurilor.
+  - user: |
+      Endpoints era gol, aveam app: api-server în selector și app: api pe pod.
+    assistant: |
+      Asta era. Selectorul Service-ului trebuie să fie identic cu etichetele din `template.metadata.labels` ale Deployment-ului. Corectează selectorul la `app: api` și endpoint-urile apar imediat, fără restart. Ca regulă, definește etichetele o singură dată, într-un helper Helm sau într-o ancoră YAML, ca să nu mai divergă.
+  - user: |
+      Cum fac rolling update fără downtime?
+    assistant: |
+      Trei lucruri:
+
+      1. **readinessProbe**, ca podul nou să primească trafic doar după ce răspunde efectiv:
+
+      ```yaml
+      readinessProbe:
+        httpGet: {path: /health, port: 8000}
+        periodSeconds: 5
+      ```
+
+      2. **Strategia**: `maxUnavailable: 0`, `maxSurge: 1` – întâi pornește un pod nou, apoi oprește unul vechi.
+      3. **Oprire grațioasă**: la SIGTERM, uvicorn termină request-urile în curs; pune `terminationGracePeriodSeconds` mai mare decât cel mai lung request și, opțional, un `preStop` cu `sleep 5`, ca podul să iasă din endpoint-uri înainte să se oprească.
+  - user: |
+      Ce diferență e între liveness și readiness?
+    assistant: |
+      - **readiness**: „pot primi trafic acum?” Dacă pică, podul e scos din endpoint-urile Service-ului, dar nu e repornit.
+      - **liveness**: „sunt blocat?” Dacă pică, kubelet repornește containerul.
+
+      Greșeala frecventă e un liveness care verifică dependențele (baza de date): când Postgres are o problemă, toate podurile API sunt repornite în buclă, iar problema se agravează. Liveness-ul ar trebui să verifice doar procesul însuși.
+  - user: |
+      Cum limitez resursele?
+    assistant: |
+      Cu `requests` (ce rezervă scheduler-ul) și `limits` (plafonul):
+
+      ```yaml
+      resources:
+        requests: {cpu: 100m, memory: 256Mi}
+        limits: {memory: 512Mi}
+      ```
+
+      Pentru memorie pune mereu limită: la depășire containerul e oprit cu `OOMKilled`. Pentru CPU, mulți preferă să nu pună limită, pentru că throttling-ul încetinește aplicația chiar când nodul are CPU liber.
+  - user: |
+      Podul API a primit OOMKilled.
+    assistant: |
+      Containerul a depășit `limits.memory`. Verifică întâi cât consumă efectiv: `kubectl top pod`, care necesită metrics-server (k3s îl are inclus). Cauze tipice la un API Python: prea mulți workeri uvicorn în același container, fiecare cu o copie a modelului sau a cache-ului, ori un endpoint care încarcă un fișier mare în memorie. Fie crești limita, fie reduci numărul de workeri și scalezi prin replici.
+  - user: |
+      Cum scalez automat?
+    assistant: |
+      HorizontalPodAutoscaler, pe CPU:
+
+      ```bash
+      kubectl autoscale deployment api --cpu-percent=70 --min=2 --max=6
+      ```
+
+      HPA calculează procentul față de `requests.cpu`, deci fără requests nu funcționează. Pentru metrici precum lungimea unei cozi RabbitMQ, ai nevoie de KEDA.
+  - user: |
+      Ce e KEDA pe scurt?
+    assistant: |
+      KEDA e un operator care scalează poduri după surse externe de evenimente: lungimea unei cozi RabbitMQ sau Kafka, un query Prometheus, un cron. Poate scala și la zero replici când nu e nimic de procesat, ceea ce HPA nu poate. Îl instalezi cu Helm și definești un `ScaledObject` care indică Deployment-ul și sursa.
+  - user: |
+      Vreau să împachetez tot în Helm. De unde încep?
+    assistant: |
+      `helm create api` generează un schelet. Mută manifestele tale în `templates/`, înlocuiește valorile care diferă între medii (imagine, replici, resurse, host) cu `{{ .Values... }}` și pune valorile implicite în `values.yaml`. Verifică randarea cu `helm template . -f values-dev.yaml` înainte de `helm install`.
+  - user: |
+      Cum țin valori diferite pentru dev și producție?
+    assistant: |
+      Un `values.yaml` cu valorile implicite și câte un fișier per mediu, care conține doar diferențele:
+
+      ```bash
+      helm upgrade --install api ./chart -f values-prod.yaml
+      ```
+
+      Fișierele se aplică în ordine și se suprascriu, iar `--set` câștigă peste toate. Secretele nu intră în aceste fișiere: le creezi separat și le referi prin nume.
+  - user: |
+      helm upgrade zice "another operation (install/upgrade/rollback) is in progress".
+    assistant: |
+      O operație anterioară a rămas blocată (de exemplu ai întrerupt-o cu Ctrl+C), iar release-ul a rămas în starea `pending-upgrade`. Vezi istoricul:
+
+      ```bash
+      helm history api
+      ```
+
+      Apoi revino la ultima revizie reușită cu `helm rollback api <revizie>`, după care upgrade-ul merge din nou.
+  - user: |
+      Cum rulez migrările de bază de date la upgrade?
+    assistant: |
+      Un Job marcat ca hook Helm, `pre-upgrade` și `pre-install`, care rulează `alembic upgrade head` înainte să pornească podurile noi. Alternativa e un Job obișnuit, cu aplicația așteptând schema în readiness. Hook-urile sunt mai simple, dar dacă Job-ul eșuează, upgrade-ul eșuează și el, ceea ce e de obicei ce vrei.
+  - user: |
+      Ce monitorizare îmi recomanzi pentru un cluster mic?
+    assistant: |
+      `kube-prometheus-stack` (Prometheus, Grafana, Alertmanager), cu retenție scurtă, 7 zile, ca să nu umple discul. Pentru loguri, Loki cu Promtail. Pe trei VM-uri, ține-le pe nodul de infrastructură și limitează-le memoria: Prometheus crește repede odată cu numărul de serii.
+  - user: |
+      Cum văd logurile unui pod care s-a restartat?
+    assistant: |
+      `kubectl logs <pod> --previous` arată logurile instanței anterioare a containerului, adică exact cea care a căzut. Fără `--previous` vezi doar instanța curentă, care de obicei abia a pornit.
+  - user: |
+      Ok, și cum șterg tot ce am instalat pentru test?
+    assistant: |
+      `helm uninstall api` șterge resursele release-ului. PVC-urile create de StatefulSet prin `volumeClaimTemplates` **nu** sunt șterse automat; le ștergi explicit cu `kubectl delete pvc -l app=postgres`, după ce te asiguri că nu mai ai nevoie de date.
+  - user: |
+      Mersi, ai fost de mare ajutor.
+    assistant: |
+      Cu plăcere! Am acoperit Postgres ca StatefulSet, Secret pentru parolă, depanarea podului în Pending, backup cu CronJob, Ingress cu Traefik, rolling update, probe, resurse și OOMKilled, HPA și KEDA, Helm cu valori pe medii și migrări ca hook, plus monitorizarea.
+  - user: |
+      Încă ceva: cum fac ca podul API să aștepte după Postgres la pornire?
+    assistant: |
+      Un initContainer care așteaptă până când Postgres acceptă conexiuni:
+
+      ```yaml
+      initContainers:
+        - name: wait-db
+          image: postgres:16
+          command: ["sh", "-c", "until pg_isready -h postgres -p 5432; do sleep 2; done"]
+      ```
+
+      Totuși, aplicația trebuie să reziste oricum la o bază de date care cade mai târziu: reîncercări la conexiune și readiness care pică temporar. initContainer-ul acoperă doar pornirea.
+questions:
+  - id: q1
+    type: semantic
+    prompt: |
+      De ce îmi recomandai StatefulSet pentru Postgres și nu Deployment?
+    gold:
+      - {turn: 1, quote: "Un Deployment ar putea porni temporar două poduri pe același volum"}
+  - id: q2
+    type: error-only
+    prompt: |
+      Warning  FailedScheduling  default-scheduler  0/3 nodes are available: 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }, 2 node(s) didn't match Pod's node affinity/selector.
+    gold:
+      - {turn: 4, quote: "kubectl label node k8s-infra role=database"}
+  - id: q3
+    type: exact
+    prompt: |
+      Cum arăta comanda pentru secretul pg-auth?
+    gold:
+      - {turn: 2, quote: "kubectl create secret generic pg-auth"}
+  - id: q4
+    type: semantic
+    lang: en
+    prompt: |
+      What did you say about exposing the database with a NodePort?
+    gold:
+      - {turn: 5, quote: "Nu folosi NodePort pentru o bază de date decât într-un lab izolat"}
+  - id: q5
+    type: ambiguous
+    prompt: |
+      și backup-ul, în ce format îl făceam?
+    gold:
+      - {turn: 6, quote: "`-Fc` e formatul custom, comprimat"}
+  - id: q6
+    type: semantic
+    prompt: |
+      Ce cauza 404-ul de la Traefik până la urmă?
+    gold:
+      - {turn: 9, quote: "Selectorul Service-ului trebuie să fie identic cu etichetele"}

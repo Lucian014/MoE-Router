@@ -1,0 +1,302 @@
+id: s02-pandas-sales
+category: coding
+lang: en
+turns:
+  - user: |
+      I have a CSV export of sales (about 2 million rows) and I need to clean it with pandas. Columns: order_id, order_date, customer_email, country, amount, currency. Where do I start?
+    assistant: |
+      Start by loading it efficiently and looking at what's actually in it before cleaning anything.
+
+      ```python
+      import pandas as pd
+
+      dtypes = {
+          "order_id": "string",
+          "customer_email": "string",
+          "country": "category",
+          "currency": "category",
+      }
+      df = pd.read_csv("sales.csv", dtype=dtypes, parse_dates=["order_date"])
+      df.info(memory_usage="deep")
+      df.describe(include="all")
+      ```
+
+      Declaring `country` and `currency` as `category` cuts memory a lot: two million repeated strings become small integer codes plus one lookup table. On a file this size that is often the difference between 1.5 GB and 300 MB.
+
+      Then check the usual problems:
+
+      - `df.isna().sum()` – missing values per column;
+      - `df.duplicated("order_id").sum()` – repeated orders;
+      - `df["amount"].describe()` – negative amounts or absurd outliers;
+      - `df["country"].value_counts().head(30)` – spelling variants such as "RO", "Romania", "romania".
+  - user: |
+      read_csv crashed with this:
+
+      Traceback (most recent call last):
+        File "clean.py", line 9, in <module>
+          df = pd.read_csv("sales.csv", dtype=dtypes, parse_dates=["order_date"])
+        File "pandas/_libs/parsers.pyx", line 2061, in pandas._libs.parsers.raise_parser_error
+      pandas.errors.ParserError: Error tokenizing data. C error: Expected 6 fields in line 184233, saw 7
+    assistant: |
+      Line 184233 has one field more than the header. In exports like this the cause is almost always an unquoted comma inside a value, typically in an address or a product name, or a currency formatted as `1,299.00`.
+
+      First look at the line itself:
+
+      ```bash
+      sed -n '184232,184234p' sales.csv
+      ```
+
+      Then pick a fix:
+
+      1. If the values are quoted correctly but the file uses a different quote character, pass `quotechar`.
+      2. If a few lines are just broken, skip them and keep a record of which ones:
+
+      ```python
+      bad_lines = []
+      df = pd.read_csv(
+          "sales.csv", dtype=dtypes, parse_dates=["order_date"],
+          on_bad_lines=lambda fields: bad_lines.append(fields) or None,
+          engine="python",
+      )
+      print(f"skipped {len(bad_lines)} malformed lines")
+      ```
+
+      A callable for `on_bad_lines` requires `engine="python"`, which is slower; on 2 million rows expect a minute or two. Never silently drop rows in a sales dataset: save `bad_lines` to a file so someone can check them later.
+  - user: |
+      Ok, it loads now. How do I normalise the country column? I see "RO", "Romania", "ROMANIA", "România" and so on.
+    assistant: |
+      Map every variant to an ISO 3166 alpha-2 code. Normalise case, accents and whitespace first, so the mapping table stays small:
+
+      ```python
+      import unicodedata
+
+      def _key(value: str) -> str:
+          value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
+          return value.strip().lower()
+
+      COUNTRY_ALIASES = {
+          "ro": "RO", "romania": "RO", "rou": "RO",
+          "de": "DE", "germany": "DE", "deutschland": "DE",
+          "uk": "GB", "gb": "GB", "united kingdom": "GB", "great britain": "GB",
+      }
+
+      keys = df["country"].astype("string").map(_key, na_action="ignore")
+      df["country_code"] = keys.map(COUNTRY_ALIASES).astype("category")
+      unmapped = keys[df["country_code"].isna() & keys.notna()].value_counts()
+      print(unmapped.head(20))
+      ```
+
+      `unmapped` shows what the table doesn't cover yet; extend `COUNTRY_ALIASES` until it is empty or only has junk. If there are many countries, the `pycountry` package can resolve names with `pycountry.countries.lookup(name)`, but it doesn't know local spellings like "Deutschland", so you still need a small alias table.
+  - user: |
+      Some amounts are in EUR, some in RON and USD. I want everything in EUR, using the exchange rate of the order date.
+    assistant: |
+      Get daily rates into a DataFrame and join on (date, currency) with `merge_asof`, so weekends and holidays use the last published rate:
+
+      ```python
+      rates = pd.read_csv("ecb_rates.csv", parse_dates=["date"])   # columns: date, currency, rate_to_eur
+      rates = rates.sort_values("date")
+
+      df = df.sort_values("order_date")
+      df = pd.merge_asof(
+          df, rates,
+          left_on="order_date", right_on="date",
+          by="currency", direction="backward",
+      )
+      df.loc[df["currency"] == "EUR", "rate_to_eur"] = 1.0
+      df["amount_eur"] = (df["amount"] * df["rate_to_eur"]).round(2)
+      ```
+
+      `merge_asof` needs both frames sorted on the join key. `direction="backward"` takes the most recent rate on or before the order date, which is how accounting usually does it. After the join, check `df["rate_to_eur"].isna().sum()`: a missing rate means a currency code not present in your rates file.
+  - user: |
+      How do I find duplicate orders? Some order_ids appear twice but with slightly different timestamps.
+    assistant: |
+      Exact duplicates are easy: `df.duplicated("order_id", keep=False)` marks every row whose id appears more than once. For your case, look at the groups first:
+
+      ```python
+      dups = df[df.duplicated("order_id", keep=False)].sort_values(["order_id", "order_date"])
+      spread = dups.groupby("order_id")["order_date"].agg(lambda s: s.max() - s.min())
+      print(spread.describe())
+      ```
+
+      If the timestamps differ by seconds and everything else is identical, it's the same order exported twice (a retry, or an export window that overlapped). Keep the first occurrence:
+
+      ```python
+      df = df.sort_values("order_date").drop_duplicates(subset=["order_id"], keep="first")
+      ```
+
+      If the amounts differ too, it may be a correction (a refund or an edited order). Then don't drop anything blindly: keep the latest version with `keep="last"` and log the ids so the business side can confirm.
+  - user: |
+      The script is slow. Any quick wins?
+    assistant: |
+      Quick wins, roughly in order of impact:
+
+      1. **Avoid `apply` with a Python function on rows.** `df.apply(f, axis=1)` runs Python code two million times. Use vectorised operations (`df["a"] * df["b"]`, `.str` methods, `np.where`).
+      2. **`map` on unique values only.** For the country normalisation, compute `_key` on `df["country"].unique()` (a few hundred values), build a dict, then `map` the column. That is often 100× faster than mapping every row.
+      3. **Categoricals** for low-cardinality text columns, which you already have.
+      4. **Read only the columns you need** with `usecols=`.
+      5. **Parquet instead of CSV** for intermediate results: `df.to_parquet("sales_clean.parquet")` loads in seconds and keeps dtypes.
+
+      Measure before changing anything: `%timeit` in a notebook, or wrap the steps with `time.perf_counter()` and print the duration of each one.
+  - user: |
+      Now I need monthly revenue per country, in EUR.
+    assistant: |
+      Group by a monthly period and the country code:
+
+      ```python
+      monthly = (
+          df.assign(month=df["order_date"].dt.to_period("M"))
+            .groupby(["month", "country_code"], observed=True)["amount_eur"]
+            .sum()
+            .unstack("country_code", fill_value=0)
+            .round(2)
+      )
+      monthly.to_csv("monthly_revenue_eur.csv")
+      ```
+
+      `observed=True` matters with categoricals: without it, pandas creates a row for every combination of month and every category, even countries with no sales that month. The result has one row per month and one column per country. If you'd rather keep a long format for a BI tool, drop the `unstack` and call `reset_index()`.
+  - user: |
+      I got this warning, should I care?
+
+      /home/dan/clean.py:41: SettingWithCopyWarning:
+      A value is trying to be set on a copy of a slice from a DataFrame.
+      Try using .loc[row_indexer,col_indexer] = value instead
+        eu_orders["amount_eur"] = eu_orders["amount"] * eu_orders["rate_to_eur"]
+    assistant: |
+      Yes. `eu_orders` was created by filtering `df` (something like `eu_orders = df[df["country_code"].isin(EU)]`), and pandas can't tell whether it's a view or a copy. Your assignment may or may not reach `df`, and it may silently do nothing.
+
+      Make the intent explicit. If you want an independent frame:
+
+      ```python
+      eu_orders = df[df["country_code"].isin(EU)].copy()
+      eu_orders["amount_eur"] = eu_orders["amount"] * eu_orders["rate_to_eur"]
+      ```
+
+      If you want to modify `df` itself, assign through `.loc` on the original:
+
+      ```python
+      mask = df["country_code"].isin(EU)
+      df.loc[mask, "amount_eur"] = df.loc[mask, "amount"] * df.loc[mask, "rate_to_eur"]
+      ```
+
+      With pandas 2.x you can also turn on copy-on-write (`pd.options.mode.copy_on_write = True`), which makes the behaviour predictable and the warning goes away; it will be the default in pandas 3.
+  - user: |
+      How do I validate the cleaned data before sending it to finance?
+    assistant: |
+      Write the rules down as checks that fail loudly. With plain pandas:
+
+      ```python
+      def validate(df: pd.DataFrame) -> list[str]:
+          problems = []
+          if df["order_id"].duplicated().any():
+              problems.append("duplicate order_id")
+          if (df["amount_eur"] < 0).any():
+              problems.append("negative amount_eur")
+          if df["country_code"].isna().any():
+              problems.append("unmapped country")
+          if df["rate_to_eur"].isna().any():
+              problems.append("missing exchange rate")
+          if df["order_date"].max() > pd.Timestamp.now():
+              problems.append("orders in the future")
+          return problems
+      ```
+
+      Run it at the end of the script and exit with an error if the list isn't empty. For something more formal, `pandera` lets you declare a schema (types, ranges, uniqueness) and validates a DataFrame against it, with a readable report of the failing rows.
+
+      Also compare totals with the source system: the sum of `amount_eur` per month should match the finance report within rounding. That single check catches most join and duplicate mistakes.
+  - user: |
+      Thanks. Can you also suggest how to schedule this every night?
+    assistant: |
+      The simplest robust setup:
+
+      1. Turn the notebook into a script with a `main()` and clear exit codes: 0 on success, 1 when `validate` finds problems.
+      2. Run it with **cron** on a server, or a **Kubernetes CronJob** if you already have a cluster:
+
+      ```yaml
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: sales-clean
+      spec:
+        schedule: "30 2 * * *"
+        concurrencyPolicy: Forbid
+        jobTemplate:
+          spec:
+            backoffLimit: 2
+            template:
+              spec:
+                restartPolicy: Never
+                containers:
+                  - name: clean
+                    image: registry.example.com/sales-clean:1.4
+                    args: ["python", "clean.py", "--date", "yesterday"]
+      ```
+
+      `concurrencyPolicy: Forbid` prevents two runs overlapping if one is slow. Send yourself a notification on failure: most teams pipe the exit code to Slack or email. If the pipeline grows to several dependent steps, that's when Airflow or Prefect start to pay off.
+  - user: |
+      Last thing: the finance team wants an Excel file with one sheet per country.
+    assistant: |
+      Use `ExcelWriter` with the `openpyxl` engine and write one sheet per group:
+
+      ```python
+      with pd.ExcelWriter("revenue_by_country.xlsx", engine="openpyxl") as writer:
+          for code, part in df.groupby("country_code", observed=True):
+              (part.assign(month=part["order_date"].dt.to_period("M").astype(str))
+                   .groupby("month")["amount_eur"].sum().round(2)
+                   .to_frame("revenue_eur")
+                   .to_excel(writer, sheet_name=str(code)))
+      ```
+
+      Sheet names are limited to 31 characters and can't contain `[]:*?/\`, which is another reason to use country codes rather than names. If the file is big, `xlsxwriter` is faster than `openpyxl` for writing, and it lets you add number formats such as `#,##0.00 €`.
+  - user: |
+      Great, it all works now.
+    assistant: |
+      Glad it works. To recap the pipeline:
+
+      1. `read_csv` with explicit dtypes and categories, malformed lines saved to a file instead of dropped silently;
+      2. country normalisation through `_key` and an alias table, mapped on unique values;
+      3. conversion to EUR with `merge_asof` on the order date;
+      4. duplicate orders removed, keeping the first export;
+      5. monthly revenue per country with `observed=True`;
+      6. `validate()` before anything leaves the script;
+      7. a nightly CronJob, and the Excel export with one sheet per country.
+questions:
+  - id: q1
+    type: error-only
+    prompt: |
+      pandas.errors.ParserError: Error tokenizing data. C error: Expected 6 fields in line 912877, saw 8
+    gold:
+      - {turn: 2, quote: "on_bad_lines=lambda fields: bad_lines.append(fields) or None,"}
+  - id: q2
+    type: semantic
+    prompt: |
+      How were we converting the amounts to euros again? Which rate did we use for weekends?
+    gold:
+      - {turn: 4, quote: 'by="currency", direction="backward",'}
+  - id: q3
+    type: exact
+    prompt: |
+      What did COUNTRY_ALIASES look like?
+    gold:
+      - {turn: 3, quote: "COUNTRY_ALIASES = {"}
+  - id: q4
+    type: code-pasted
+    prompt: |
+      uk_orders = df[df["country_code"] == "GB"]
+      uk_orders["vat"] = uk_orders["amount_eur"] * 0.2
+
+      I get that copy warning again here, what was the fix?
+    gold:
+      - {turn: 8, quote: 'eu_orders = df[df["country_code"].isin(EU)].copy()'}
+  - id: q5
+    type: ambiguous
+    prompt: |
+      and the duplicates, which one did we keep?
+    gold:
+      - {turn: 5, quote: 'df = df.sort_values("order_date").drop_duplicates(subset=["order_id"], keep="first")'}
+  - id: q6
+    type: semantic
+    lang: ro
+    prompt: |
+      Cum făceam venitul lunar pe țară? De ce era nevoie de observed=True?
+    gold:
+      - {turn: 7, quote: "`observed=True` matters with categoricals"}

@@ -14,3 +14,9 @@ data:
   MIDDLEWARE_QUEUE: {{ .Values.messaging.middlewareQueue | quote }}
   # empty without the memory service: the workers then publish nothing for indexing
   MEMORY_QUEUE: {{ if .Values.memory.enabled }}{{ .Values.messaging.memoryQueue | quote }}{{ else }}""{{ end }}
+  {{- if .Values.memory.enabled }}
+  # the embedding model: the memory service embeds the chunks, the router the query, with the same one
+  EMBEDDING_HOST: {{ .Values.memory.embeddingHost | default (include "moe.ollama.url" .) | quote }}
+  EMBEDDING_MODEL: {{ .Values.memory.embeddingModel | quote }}
+  EMBEDDING_KEEP_ALIVE: {{ .Values.memory.embeddingKeepAlive | quote }}
+  {{- end }}

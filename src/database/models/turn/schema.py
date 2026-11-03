@@ -45,6 +45,9 @@ class Turn(Base):
     user_content: Mapped[str] = mapped_column(Text, nullable=False)
     assistant_content: Mapped[str] = mapped_column(Text, nullable=False)
     header: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # the header is the answer's first sentence (a prompt with no prose): shown as "Topic"
+    header_from_answer: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False,
+                                                     server_default="false")
 
     # routing: what the classifier predicted and what was actually used (inherited or not)
     model_id: Mapped[str | None] = mapped_column(String(255), nullable=True)

@@ -91,6 +91,13 @@ spec:
               value: {{ .Values.router.ompNumThreads | quote }}
             - name: SHUTDOWN_GRACE_SECONDS
               value: {{ .Values.router.shutdownGraceSeconds | quote }}
+            # retrieval needs the memory service's chunks: without it, recent turns only
+            - name: RAG_VARIANT
+              value: {{ if .Values.memory.enabled }}{{ .Values.router.rag.variant | quote }}{{ else }}"V0"{{ end }}
+            - name: RAG_TOP_K
+              value: {{ .Values.router.rag.topK | quote }}
+            - name: ALLOW_VARIANT_OVERRIDE
+              value: {{ .Values.router.rag.allowVariantOverride | quote }}
           # /tmp/ready exists once the classifiers are loaded, the catalog is valid and the
           # router consumes. No liveness probe: loading and waiting for the catalog can take long.
           readinessProbe:

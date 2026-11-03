@@ -35,7 +35,7 @@ async def index_turn(turn_id: int, embedder: EmbeddingClient, force: bool = Fals
     if up_to_date and not force:
         return IndexResult(turn_id, "skipped", len(existing))
 
-    header, _ = extract_question(turn.user_content, turn.assistant_content)
+    header, from_answer = extract_question(turn.user_content, turn.assistant_content)
     drafts = chunk_turn(turn.user_content, turn.assistant_content)
     vectors = await embedder.embed([embedding_input(header, d.content) for d in drafts])
     rows = [
@@ -50,6 +50,6 @@ async def index_turn(turn_id: int, embedder: EmbeddingClient, force: bool = Fals
         chunks = ChunkRepository(session)
         if existing:
             await chunks.delete_for_turn(turn.id)
-        await TurnRepository(session).set_header(turn.id, header)
+        await TurnRepository(session).set_header(turn.id, header, from_answer)
         await chunks.insert_many(rows)
     return IndexResult(turn_id, "reindexed" if existing else "indexed", len(rows))

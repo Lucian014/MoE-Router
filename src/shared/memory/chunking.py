@@ -21,7 +21,7 @@ from shared.memory.segment import segment
 from shared.memory.splitters import SPLITTERS
 from shared.memory.tokens import count_tokens
 
-CHUNKER_VERSION = "1"
+CHUNKER_VERSION = "2"          # 2: Markdown parser + line shapes instead of keyword lists
 MIN_TOKENS = 50
 MAX_TOKENS = 400          # a target, not a hard limit: merging and atomic blocks can go a little over
 
