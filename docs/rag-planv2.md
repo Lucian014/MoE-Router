@@ -28,8 +28,10 @@ Adaptarea *Contextual Retrieval* (Anthropic, 2024) la MoE-Router: memorie de con
 2. Router, citirea R1: `sessions` (starea de rutare) + ultimele `RAG_RECENT_TURNS_MAX` (20) ture, întregi. Tura curentă = ultima + 1. Un `session_id` necunoscut înseamnă sesiune goală.
 3. Router, în paralel (`asyncio.gather`):
    - **rutare de sesiune** (4.1) → domeniu și complexitate efective
-   - **retrieval**, dacă sesiunea are cel puțin 2 ture: query-urile (4.4, 4.5), apoi R2 pe chunk-urile **tuturor turelor, mai puțin ultima**, apoi dense + BM25 → RRF → deduplicare → `RAG_POOL` candidați (4.6)
-4. Router: `select_model` → `context_window`, `max_output_tokens` → turele recente care încap → filtrarea candidaților → R3 (conținutul fragmentelor alese) → asamblare (4.7).
+   - **retrieval**, dacă sesiunea are cel puțin 2 ture: query-urile (4.4, 4.5), apoi R2 pe chunk-urile **tuturor turelor anterioare**, apoi dense + BM25 → RRF → deduplicare → `RAG_POOL` candidați (4.6), apoi R3 (conținutul celor din pool, cel mult 30 de rânduri)
+4. Router: `select_model` → `context_window`, `max_output_tokens` → turele recente care încap → filtrarea candidaților → asamblare (4.7).
+
+R2 include și ultima tură: ea intră oricum întreagă, deci chunk-urile ei sunt scoase la asamblare, dar participă la deduplicare, iar o versiune veche a unui cod rescris în ultima tură cade din pool. R3 se face pe tot pool-ul, înainte de alegerea modelului, ca să ruleze în paralel cu clasificarea; costul e un query pe cel mult 30 de rânduri.
 5. Router → worker: `{messages, session_id, turn, routing, retrieved_chunk_ids}`.
 6. Worker: `engine.chat(messages)` → răspuns.
 7. Worker, scrierea W1, într-o tranzacție: `INSERT sessions ON CONFLICT DO NOTHING`, `INSERT turns`, `UPDATE sessions` (starea de rutare efectivă).
@@ -70,6 +72,7 @@ CREATE TABLE turns (
     user_content         text NOT NULL,
     assistant_content    text NOT NULL,
     header               text,          -- completat de memory
+    header_from_answer   boolean NOT NULL DEFAULT false,   -- titlul „Topic” în loc de „Question” (4.2)
     model_id             text,
     predicted_domain     text,  predicted_complexity real,
     effective_domain     text,  effective_complexity real,
@@ -135,14 +138,18 @@ RAG_DENSE_QUERY_MAX_TOKENS=512  # query-ul dense pe prompt-uri fără proză (4.
 
 ### 4.1 Rutarea de sesiune
 
-1. **Prompt scurt sau de continuare** (≤ 3 cuvinte sau o listă de expresii: „continuă”, „ok”, „și în …”) și sesiunea are stare → moștenește domeniul și complexitatea, fără clasificator.
+1. **Prompt scurt** (≤ `SHORT_PROMPT_MAX_WORDS`, 3 cuvinte) și sesiunea are stare → moștenește domeniul și complexitatea, fără clasificator. Fără liste de expresii: regula nu depinde de limbă.
 2. Altfel clasifică **doar prompt-ul curent**.
 3. **Domeniu ambiguu** (probabilitate maximă < 0.5 sau diferența dintre primele două < 0.15) → moștenește **ambele** valori.
 4. Prima tură a sesiunii → rezultatul clasificatorului, fără moștenire.
 
-Pragurile stau în `ClassifierSettings`. Valorile prezise, cele efective și `inherited` se salvează pe tură.
+Pragurile stau în `RouterSettings`. Valorile prezise, cele efective și `inherited` se salvează pe tură.
 
 Motivul: clasificatoarele au fost antrenate pe prompt-uri individuale, iar pe „continua” clasificatorul de domeniu a dat `summarization` cu 0.91. Regula 1 acoperă cazurile în care clasificatorul e greșit cu încredere mare, regula 3 pe cele în care distribuția e plată.
+
+**Prompt-urile lungi** (`router/classifier_input.py`, `CLASSIFIER_INPUT`): un clasificator Laya citește `max_len` = 512 tokeni, din care până la 256 sunt întrebarea și opțiunile, deci din prompt ~248. Laya păstrează **începutul** unui prompt mai lung, fără avertisment: la „<articol> … Rezumă textul de mai sus” clasificatorul vede doar articolul. Cu `edges` (implicit), un prompt care încape rămâne neschimbat, iar unul mai lung devine primul și/sau ultimul paragraf scurt (≤ 60 de tokeni, adică cererea, de obicei) + începutul restului. Fără paragraf scurt la capete: începutul + „[…]” + finalul. Regula folosește doar forma (linii goale, lungimea paragrafelor), deci nu depinde de limbă. Pe tură se salvează `classifier_input`: `full`, `edges` sau `cut` (`CLASSIFIER_INPUT=raw`).
+
+Măsurat cu `scripts/classifier_eval/long_prompts.py` (13 cereri, documente text / cod / log de 200–2000 de tokeni, cererea la început sau la final): 81% → 97% domeniu corect; pe documente text cu cererea la final 42% → 94%; fără pierderi cu cererea la început; latența scade (~670 față de ~950 ms). `predict_long` din Laya (ferestre suprapuse) a dat 69%: fereastra cea mai sigură e una de document, nu cea cu cererea.
 
 ### 4.2 Header-ul turei (`extract_question`)
 
@@ -184,23 +191,25 @@ Fără regula pentru proza lungă, la `summarization`, `translation` și `text-r
 
 **Pasul 1: segmentarea** (`segment(text) -> list[Segment]`, cu `kind`, `text` și `lang` pentru cod):
 
+Structura Markdown vine de la un parser CommonMark (`markdown-it-py`, plus `mdit-py-plugins` pentru formule), adică aceeași citire pe care o face o interfață de chat. Fără regex-uri scrise de mână și fără liste de cuvinte:
+
 | Tip | Cum se recunoaște |
 |---|---|
-| `code` | fence-uri ` ``` ` și `~~~`, cu o mașină de stări: închiderea cere același tip și cel puțin aceeași lungime, un fence neînchis (răspuns tăiat la `max_tokens`) e cod până la final. Fără fence: scor per linie (indentare, simboluri, cuvinte-cheie), grupuri de ≥ 3 linii |
-| `log` | tipare de log și traceback (`Traceback`, `File "...", line`, `...Error:`, timestamp-uri), grupuri de ≥ 3 linii |
+| `code` | blocuri cu fence (` ``` ` / `~~~`, închise sau nu; `lang` = ce urmează după fence). Fără fence: după **forma** liniilor, grupuri de ≥ 3 linii: se termină în `{` / `}` (sau `;` pe o linie scurtă ori cu simboluri), indentate, cu multe simboluri `{}()[];=<>`, sau cu primul cuvânt scris cu majuscule (SQL) |
+| `log` | după formă, grupuri de ≥ 3 linii: timestamp sau `[TAG]` la început, referințe `fișier:linie` (`main.py:42`, `List.jsx:12:15`, `"main.py", line 42`), nume de excepții (`ValueError:`, `java.lang.NullPointerException:`), coloane aliniate cu spații (`kubectl describe`, pytest) |
 | `math` | blocuri `$$ ... $$` și `\[ ... \]` |
-| `table` | tabele markdown (linia de separare `\|---\|`) |
-| `list` | elemente consecutive `-`, `*`, `1.` |
-| `prose` | restul, cu titlurile markdown păstrate ca limite de secțiune |
+| `table` | tabelele recunoscute de parser |
+| `list` | listele recunoscute de parser |
+| `prose` | restul, cu titlurile păstrate ca limite de secțiune |
 
-Detectarea codului și a log-urilor fără fence se aplică pe prompt **și**, ca rezervă, pe proza din răspuns, pentru modelele mici care uită uneori fence-urile. System prompt-ul cere oricum explicit codul în blocuri ` ``` ` (4.7). Un bloc de cod nerecunoscut ajunge în `prose`, tăiat pe paragrafe. Căutarea funcționează la fel, iar pierderea e doar tăierea precisă cu `ast`.
+Regulile de formă nu depind de limbajul de programare. Detectarea fără fence se aplică pe prompt **și**, ca rezervă, pe proza din răspuns, pentru modelele mici care uită uneori fence-urile. Un bloc de cod nerecunoscut (de exemplu câteva linii `import`, fără simboluri) ajunge în `prose`: e indexat la fel, doar tăiat mai puțin precis.
 
 **Pasul 2: tăierea**, doar pentru segmentele de peste `MAX_TOKENS=400`. Cele mai mici rămân întregi. Fiecare tip are un `Splitter` (`split(segment, max_tokens) -> list[str]`):
 
 | Tip | Splitter |
 |---|---|
 | `prose` | titluri, apoi paragrafe, apoi propoziții |
-| `code` | Python: `ast` pe nodurile de nivel superior, decoratorii cu funcția, clasele mari pe metode cu semnătura clasei în față. La `SyntaxError` și pentru alte limbaje: linii goale, apoi împachetare, apoi tăiere brută |
+| `code` | după indentare, în orice limbaj: o unitate începe la o linie neindentată de după o linie goală (funcție, clasă, bloc), deci decoratorii și comentariile de deasupra rămân cu definiția. O unitate prea mare se taie la fel un nivel de indentare mai jos (metodele unei clase), apoi pe linii goale, linii, tăiere brută |
 | `log` | pe linii, păstrând finalul împreună (excepția și ultimele cadre) |
 | `list` | între elemente, niciodată în interiorul unui element |
 | `math`, `table` | atomic: nu se taie, chiar dacă depășesc ușor limita |
@@ -255,7 +264,7 @@ disponibil = min(disponibil, RAG_MAX_CONTEXT_TOKENS)      # doar dacă experimen
 
 `build_messages` e o funcție pură, cu pașii:
 
-1. **Ultima tură**, garantată. Dacă depășește `RAG_LAST_TURN_MAX_SHARE × disponibil`, răspunsul se trunchiază cu `[…]`.
+1. **Ultima tură**, garantată. Dacă depășește `RAG_LAST_TURN_MAX_SHARE × disponibil`, răspunsul se trunchiază cu `[…]` (și prompt-ul, dacă singur e prea lung). O ultimă tură tăiată **nu** contează ca inclusă întreagă la pasul 3: chunk-urile ei, cu excepția celor deja în partea păstrată, pot intra ca fragmente. „Explică funcția X” după un fișier lipit găsește chunk-ul cu X, chiar dacă era în partea tăiată. De aceea retrieval-ul rulează de la prima tură anterioară, nu de la a doua; embedding-ul (~100–200 ms) e oricum în paralel cu clasificarea.
 2. **Turele recente**, din cele citite de R1, de la cea mai nouă spre cea mai veche, doar întregi, cât timp totalul rămâne sub `RAG_RECENT_MAX_SHARE × disponibil`. Cea mai veche tură inclusă e **granița**.
 3. **Filtrarea candidaților:** se elimină chunk-urile din turele incluse întregi și cele aproape identice (Jaccard pe `terms`) cu chunk-uri din turele incluse, de ex. o versiune veche a unei funcții rescrise recent. Apoi `RAG_MAX_CHUNKS_PER_TURN` și top `RAG_TOP_K`.
 4. **R3:** conținutul pentru candidații rămași.
@@ -268,7 +277,7 @@ Consecințe:
 - **Model mare, sesiune lungă:** ultimele 20 de ture întregi, plus fragmente din turele mai vechi.
 - **Model mic:** câteva ture întregi, plus fragmente din tot restul sesiunii.
 
-Dacă prompt-ul curent singur depășește bugetul: model cu context mai mare, altfel eroare 413.
+Dacă prompt-ul curent singur depășește bugetul: eroare (`PromptTooLongError`, „routing failed”). Escaladarea la un model cu fereastră mai mare e o extensie posibilă (8).
 
 Ordinea mesajelor, cronologică:
 
@@ -333,9 +342,9 @@ Ipoteza de verificat: pe CPU, V2 are cel mai bun raport calitate/cost, iar conte
 - indexare: timp per tură, apeluri LLM per tură
 - rutare: acuratețe pe conversații de mai multe ture, cu și fără moștenire
 
-**Harness offline** (principalul mod de evaluare): apelează direct funcțiile din `src/shared/memory/`, fără RabbitMQ sau cluster. Indexează o dată toate reprezentările și rulează preset × top-k × ablație × model (mic / mare, prin `context_window`). Rezultatele includ lungimea sesiunii și tipul întrebării.
+**Harness offline** (principalul mod de evaluare, `scripts/rag_eval/run.py`): apelează direct funcțiile din `src/shared/memory/`, fără RabbitMQ, Postgres sau cluster. Doar R2 diferă: distanța cosinus se calculează în Python, cu aceeași formulă ca pgvector (query-ul SQL e acoperit de testele pe Postgres). Embedding-urile se cache-uiesc pe disc, deci o rulare nouă embed-uiește doar ce e nou. Indexează o dată toate reprezentările și rulează preset × top-k × ablație × model (mic / mare, prin `context_window`). Rezultatele includ lungimea sesiunii și tipul întrebării. Setul de date e în YAML (`scripts/rag_eval/data/sessions/`), câte un fișier per conversație, ca textele lungi și codul să rămână lizibile la verificarea manuală.
 
-**Cap-coadă în cluster**, pentru 2–3 preseturi finale: `/generate` acceptă un câmp `variant` (numele presetului), luat în considerare doar dacă `ALLOW_VARIANT_OVERRIDE=true`, setat în mediul de test. Varianta se alege **per sesiune**: harness-ul trimite toate turele unei conversații cu aceeași variantă. Varianta se salvează pe tură, în `routing`. Routere separate, fiecare cu coada lui, sunt necesare doar pentru diferențe care nu se pot schimba per request (alt checkpoint de clasificator). Două routere diferite nu se pun niciodată pe aceeași coadă.
+**Cap-coadă în cluster**, pentru 2–3 preseturi finale (`scripts/rag_eval/cluster_eval.py`): `/generate` acceptă un câmp `variant` (numele presetului), luat în considerare doar dacă `ALLOW_VARIANT_OVERRIDE=true`, setat în mediul de test. Conversațiile **nu** se rejoacă prin modele, pentru că răspunsurile s-ar schimba și citatele gold n-ar mai exista. Fiecare conversație se scrie în Postgres așa cum e, se indexează cu codul serviciului `memory`, apoi, pentru fiecare întrebare × variantă, sesiunea se clonează în SQL (ture + chunk-uri, fără embedding din nou) și întrebarea merge prin gateway. Varianta efectivă se salvează pe tură (`rag_variant`), iar prezența gold-ului rezultă din `recent_turns` și `retrieved_chunk_ids`. Routere separate, fiecare cu coada lui, sunt necesare doar pentru diferențe care nu se pot schimba per request (alt checkpoint de clasificator). Două routere diferite nu se pun niciodată pe aceeași coadă.
 
 ---
 
@@ -396,13 +405,19 @@ Fiecare pas se termină cu teste și un criteriu clar de „gata”. Pașii 1–
 - **Skaffold:** un artefact nou pentru imaginea `memory`. CI: imaginea în matricea `images`.
 - **Gata când:** după o conversație de 6 ture, `chunks` conține rânduri pentru toate turele, iar reprocesarea aceluiași mesaj nu dublează nimic.
 
-### Pasul 7: Setul de date și harness-ul
+### Pasul 7: Setul de date și harness-ul ✅
+
+Implementat: `dataset.py` (încărcare + verificare: fiecare citat există și cade într-un chunk), `harness.py`, `run.py`, `report.py`, `generate.py` (răspunsurile unei conversații noi scrise de un model mare, întrebările de mână), `cluster_eval.py`. Set inițial: 8 conversații (coding RO/EN, math, summarization, translation, text-rewrite, brainstorming, una de 24 de ture), 48 de întrebări. **Trebuie extins** cu conversații mai lungi: la 8–14 ture, V0 are deja ~85% din gold în context pe modelul mic.
+
 
 - `scripts/rag_eval/`: generarea conversațiilor, fișierele de întrebări cu citate gold (JSONL), `run.py` care indexează și evaluează, și `report.py` cu tabelele.
 - Harness-ul folosește direct `src/shared/memory/` și o bază Postgres locală, separată.
 - **Gata când:** V0 rulează cap-coadă pe tot setul și produce tabelul gol pentru V1–V5.
 
-### Pasul 8: V1 și V2
+### Pasul 8: V1 și V2 ✅
+
+Implementat: `presets.py`, `retrieval.py` (BM25, RRF, deduplicare `off|hash|near`), parametrii `top_k` / `max_per_turn` / `max_context_tokens` în `build_messages`, `ChunkRepository.get_fragments` (R3 cu header-ul turei).
+
 
 - `src/shared/memory/retrieval.py`: R2 (un query pe chunk-urile sesiunii, fără ultima tură, cu distanța `embedding <=> :q`), clasamentul dense și BM25 în Python, RRF, deduplicarea (4.6), top `RAG_POOL`. Coloanele se aleg după preset.
 - **Teste:** deduplicarea pe același cod relipit (hash), pe codul rescris cu o modificare (near) și pe chunk-uri diferite cu termeni comuni, care trebuie să rămână amândouă. Filtrarea din `build_messages` pe candidați din ture incluse întregi.
@@ -419,7 +434,10 @@ Fiecare pas se termină cu teste și un criteriu clar de „gata”. Pașii 1–
 
 - Reranker-ul în spatele unei interfețe. Măsori calitatea și latența suplimentară per request.
 
-### Pasul 11: Integrarea retrieval-ului în router
+### Pasul 11: Integrarea retrieval-ului în router ✅ (evaluarea în cluster rămâne de rulat)
+
+Implementat: retrieval în paralel cu rutarea de sesiune, cu fallback pe V0 dacă embedding-ul sau DB-ul pică; `RAG_VARIANT` (implicit V2, V0 când `memory` e dezactivat), `variant` în gateway, timpii pe etape în payload (`retrieval`: embed / search / rank / fetch).
+
 
 - Cea mai bună variantă rulabilă pe CPU (practic V1 sau V2) intră în router: embedding-ul query-ului și căutarea, în paralel cu rutarea de sesiune, cu fragmentele trimise în `build_messages`.
 - `retrieved_chunk_ids`, numărul de ture întregi și top-k-ul efectiv merg în payload și pe tură.
@@ -440,5 +458,7 @@ Fiecare pas se termină cu teste și un criteriu clar de „gata”. Pașii 1–
 - **IDF zgomotos** în sesiunile scurte. Recall-ul se raportează în funcție de lungimea sesiunii.
 - **Tokenizer de referință unic**, compensat prin marja de 10%.
 - **Detectarea codului fără fence** e euristică, testată pe setul de date, nu pe cazul general.
+- **Prompt-uri lungi la clasificator:** `edges` găsește cererea doar la capete și doar dacă e despărțită de document printr-o linie goală. O cerere în mijloc sau lipită de text intră în rezerva început + final. Complexitatea iese `high` la aproape orice prompt lung (77–100% în test), indiferent de cerere.
+- **Prompt-ul prea lung pentru modelul ales** dă eroare, chiar dacă alt model din catalog l-ar primi. Extensii: escaladarea la un model cu context mai mare din același domeniu, apoi la cel general.
 - **Diferențe față de articol:** corpusul e o sesiune, contextul e generat de un model local mic, datele amestecă cod cu text în română, iar V3 se compară cu un baseline cu header, mai puternic decât chunk-ul gol.
 ddeci

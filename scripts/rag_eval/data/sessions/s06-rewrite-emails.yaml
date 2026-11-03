@@ -1,0 +1,152 @@
+id: s06-rewrite-emails
+category: text-rewrite
+lang: en
+turns:
+  - user: |
+      Rewrite this email to my landlord so it sounds firm but polite:
+
+      hi, the heating in the flat has been broken for 2 weeks now and nobody came to fix it even tho i called 3 times. its really cold and i have a small kid. if its not fixed this week i will stop paying rent until it is. thanks
+    assistant: |
+      Subject: Heating repair – urgent, third request
+
+      Dear Mr. Popescu,
+
+      I am writing about the heating in the flat, which has not been working for two weeks. I have reported the problem by phone three times, but no one has come to repair it yet.
+
+      The flat is very cold, and as I live here with a young child, this has become a serious problem for us. I would therefore ask you to arrange the repair by the end of this week.
+
+      If the heating is still not working by then, I will need to consider withholding rent until it is repaired, as the flat does not currently meet basic living conditions. I would much prefer to resolve this together, so please let me know when a technician can come.
+
+      Kind regards,
+      Ana Ionescu
+
+      I softened the rent threat into *I will need to consider withholding rent*, which keeps the pressure but leaves room for a reply. Before actually withholding rent, check your tenancy agreement and local law: in some places it's only allowed after formal written notice.
+  - user: |
+      Make it shorter, he reads emails on his phone.
+    assistant: |
+      Subject: Heating still broken – please fix this week
+
+      Dear Mr. Popescu,
+
+      The heating has been broken for two weeks, and my three calls haven't led to a repair. With a young child at home, the cold has become a real problem.
+
+      Please arrange a repair by Friday. If it's still not fixed by then, I'll have to consider withholding rent until it is.
+
+      Could you let me know when a technician can come?
+
+      Kind regards,
+      Ana
+
+      That's about 70 words: it fits on a phone screen without scrolling, and the deadline is in the subject line, so he sees it even before opening the email.
+  - user: |
+      Now help me with a cover letter paragraph. I'm applying for a junior data analyst job. Here's my draft:
+
+      I am very passionate about data and I think I would be a good fit for your company. I did a course on SQL and Python and I also did some projects. I am a hard worker and I learn fast.
+    assistant: |
+      Your draft makes claims (passionate, hard worker, learns fast) without evidence. Recruiters skim dozens of these; specifics stand out. Here's a rewrite, with placeholders where you should add real details:
+
+      > Over the past year I have taught myself SQL and Python and applied them to real data: in my most recent project, I analysed [3 years of public transport ticket data for Cluj], cleaning around [1.2 million rows] in pandas and building a dashboard that showed [which routes lost the most passengers after the 2023 fare change]. I enjoy turning messy data into a clear answer to a business question, and I would bring that same approach to your analytics team.
+
+      What changed:
+
+      - **show, don't tell**: a project with a size and a result instead of „passionate”;
+      - **one concrete tool chain** (SQL, pandas, a dashboard) that matches a junior analyst job;
+      - **the employer's point of view** in the last sentence: what you'd do for them.
+
+      Replace the bracketed parts with your own project; if you don't have numbers, describe the question you answered.
+  - user: |
+      My project was analysing Airbnb listings in Bucharest, about 20k rows, I found which neighbourhoods have the highest prices per night and made charts in matplotlib.
+    assistant: |
+      Here it is with your project:
+
+      > Over the past year I have taught myself SQL and Python and applied them to real data. In my most recent project, I analysed around 20,000 Airbnb listings in Bucharest: I cleaned the data in pandas, compared average nightly prices across neighbourhoods and presented the results in a set of matplotlib charts, which showed that listings in the Old Town cost almost twice as much as those in the outer districts. I enjoy turning raw data into a clear answer, and I would bring that same approach to your analytics team.
+
+      I added a concrete finding (*almost twice as much*) because a result is more memorable than a method. Only keep it if it's true for your data: check the actual ratio and replace it, for example *40% more*. If you put the project on GitHub, add the link right after the sentence.
+  - user: |
+      Can you make a more formal version of the same paragraph, for a bank?
+    assistant: |
+      > Over the past year, I have developed my skills in SQL and Python through independent study and practical projects. Most recently, I conducted an analysis of approximately 20,000 Airbnb listings in Bucharest, which involved data cleaning in pandas, a comparison of average nightly prices across neighbourhoods and the presentation of findings through a series of visualisations. This work strengthened my attention to data quality and my ability to communicate results clearly, both of which I consider essential for an analytical role within a financial institution.
+
+      Differences from the previous version:
+
+      - more neutral verbs (*conducted an analysis*, *involved*), no *I enjoy*;
+      - an explicit mention of **data quality** and **clear communication**, two things banks care about because of regulatory reporting;
+      - the closing sentence ties the experience to *a financial institution* instead of a generic *your team*.
+  - user: |
+      Rewrite this LinkedIn post so it doesn't sound like a humblebrag:
+
+      So humbled and honoured to announce that after months of hard work I was finally chosen out of 500 applicants for the data internship at a top bank!!! Hard work pays off, never give up on your dreams 🙏🙏
+    assistant: |
+      I'm happy to share that I'm starting a data analytics internship at [Bank name] next month. I'll be joining the risk reporting team, and I'm looking forward to learning how data is used in a regulated environment.
+
+      Thank you to everyone who reviewed my CV and helped me prepare for the interviews, especially [name]. If you have advice for someone starting their first data role, I'd love to hear it.
+
+      What I changed:
+
+      - removed *humbled and honoured* and the *500 applicants*: the number turns the post into a competition;
+      - removed the motivational slogan;
+      - added **what you'll actually do** and a thank-you to specific people, which reads as genuine;
+      - ended with a question, which invites comments without asking for congratulations.
+  - user: |
+      Write a short thank-you note to the person who referred me, Mihai.
+    assistant: |
+      Hi Mihai,
+
+      I wanted to let you know that I got the internship – thank you so much for referring me and for the tips before the interview. Your advice to prepare a short walkthrough of my Airbnb project was exactly what the panel asked about.
+
+      I'd love to buy you a coffee once I've started. Thanks again!
+
+      Best,
+      Ana
+
+      The note mentions one concrete way his help mattered (the project walkthrough), which makes the thanks feel specific rather than generic.
+  - user: |
+      Last one, make this out-of-office message less stiff: "I am currently out of the office with no access to e-mail. For urgent matters please contact my colleague."
+    assistant: |
+      Thanks for your email! I'm away until Monday, 14 July, and won't be checking messages. If it's urgent, please contact Elena Marin at elena.marin@example.com, who'll be happy to help. Otherwise, I'll get back to you when I'm back.
+
+      Three small changes make it friendlier: a thank-you at the start, a return date (people mostly want to know *when*), and the colleague's actual name and address instead of *my colleague*.
+  - user: |
+      Thanks, that's all.
+    assistant: |
+      You're welcome! A quick summary of what we wrote today:
+
+      1. the email to your landlord about the heating, a full version and a short one for the phone;
+      2. the cover letter paragraph about your Airbnb project, in a regular version and a formal one for a bank;
+      3. the LinkedIn post about the internship, without the humblebrag;
+      4. the thank-you note to Mihai;
+      5. the out-of-office message.
+
+      Good luck with the internship!
+questions:
+  - id: q1
+    type: semantic
+    prompt: |
+      In the landlord email, how did you phrase the part about not paying rent?
+    gold:
+      - {turn: 1, quote: "I will need to consider withholding rent until it is repaired"}
+  - id: q2
+    type: semantic
+    prompt: |
+      What finding did we put in the cover letter about the Airbnb data?
+    gold:
+      - {turn: 4, quote: "listings in the Old Town cost almost twice as much as those in the outer districts"}
+  - id: q3
+    type: ambiguous
+    prompt: |
+      and the version for the bank?
+    gold:
+      - {turn: 5, quote: "both of which I consider essential for an analytical role within a financial institution"}
+  - id: q4
+    type: exact
+    lang: ro
+    prompt: |
+      Ce am schimbat la postarea de LinkedIn? De ce am scos „humbled and honoured”?
+    gold:
+      - {turn: 6, quote: "removed *humbled and honoured* and the *500 applicants*: the number turns the post into a competition"}
+  - id: q5
+    type: semantic
+    prompt: |
+      Who did the out-of-office message point to for urgent matters?
+    gold:
+      - {turn: 8, quote: "please contact Elena Marin at elena.marin@example.com"}

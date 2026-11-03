@@ -97,6 +97,42 @@ def test_two_code_looking_lines_stay_prose():
     assert kinds("Folosește f(x) = 2;\nsau g(y) = 3;\nAsta e tot.") == ["prose"]
 
 
+@pytest.mark.parametrize("text, expected", [
+    ("de ce nu merge?\nfunction add(a, b) {\n  const s = a + b;\n  return s;\n}\nmerci", ["prose", "code", "prose"]),
+    ("uite:\nfunc main() {\n\tfmt.Println(\"hi\")\n\tos.Exit(1)\n}\n", ["prose", "code"]),
+    ("query-ul:\nSELECT name, email\nFROM users\nORDER BY name\n", ["prose", "code"]),
+    ("Exception in thread \"main\" java.lang.NullPointerException: x\n\tat a.Main.run(Main.java:42)\n"
+     "\tat a.Main.main(Main.java:10)\n", ["log"]),
+    ("TypeError: Cannot read properties of undefined\n    at render (/app/src/List.jsx:12:15)\n"
+     "    at mount (/app/node_modules/react-dom/index.js:300:7)\n", ["log"]),
+    ("2024-05-01 12:03:44 INFO start\n2024-05-01 12:03:45 WARN slow\n2024-05-01 12:03:47 ERROR down\n", ["log"]),
+    ("  Warning  FailedScheduling  2m  default-scheduler  0/3 nodes\n  Normal   Pulled  1m  kubelet  pulled\n"
+     "  Warning  BackOff  30s  kubelet  restarting\n", ["log"]),
+    ("E       assert 422 == 200\nE        +  where 422 = <Response [422]>.status_code\n\n"
+     "tests/test_auth.py:9: AssertionError\n", ["log"]),
+])
+def test_unfenced_code_and_logs_by_shape_in_any_language(text, expected):
+    assert kinds(text) == expected
+
+
+@pytest.mark.parametrize("text", [
+    "Am încercat (de trei ori) să rulez scriptul.\nApoi (după restart) a mers.\nDar (din nou) a picat.\n",
+    "Acesta e un paragraf lung care continuă\npe mai multe rânduri fără punct\nși tot proză rămâne\n",
+    "Pași:\nPrimul: instalezi pachetul\nAl doilea: rulezi scriptul\nAl treilea: verifici\n",
+    "API-ul răspunde lent.\nHTTP e protocolul folosit.\nJSON e formatul.\n",
+    "Am trei opțiuni: prima e rapidă;\na doua e ieftină;\na treia e sigură;\n",
+])
+def test_prose_stays_prose(text):
+    assert kinds(text) == ["prose"]
+
+
+def test_bracket_math_and_numbered_list_follow_commonmark():
+    assert kinds("Text:\n\\[\nx^2\n\\]\nmai departe") == ["prose", "math", "prose"]
+    # a numbered list not starting at 1 doesn't interrupt a paragraph (a chat UI shows it as text)
+    assert kinds("Primul paragraf\n3. al treilea pas\n") == ["prose"]
+    assert kinds("Primul paragraf\n1. primul pas\n2. al doilea\n") == ["prose", "list"]
+
+
 def test_math_table_and_list():
     text = ("Avem:\n$$\n\\int_0^3 x^2 dx = 9\n$$\n| a | b |\n|---|---|\n| 1 | 2 |\n"
             "- primul\n- al doilea\n  continuare\n\nfinal\n")
@@ -104,7 +140,7 @@ def test_math_table_and_list():
 
 
 # ------------------------------------------------------------------ splitters
-def test_python_code_is_split_on_top_level_definitions():
+def test_code_is_split_on_top_level_definitions():
     funcs = "\n".join(f"@app.get('/r{i}')\ndef route_{i}(x):\n" + "    y = x\n" * 30 + "    return y\n"
                       for i in range(4))
     seg = Segment("code", f"{FENCE}python\nimport os\n\n{funcs}{FENCE}\n", "python")
@@ -115,7 +151,16 @@ def test_python_code_is_split_on_top_level_definitions():
     assert all("@app.get" in p for p in pieces if "def route_" in p)  # decorator with its function
 
 
-def test_code_that_does_not_parse_is_split_on_blank_lines():
+def test_any_language_splits_by_indentation_and_a_big_class_by_method():
+    methods = "\n".join("  method%d(x) {\n" % i + "    let y = x;\n" * 30 + "    return y;\n  }\n" for i in range(3))
+    js = f"{FENCE}js\nimport x from 'y';\n\nclass Repo {{\n{methods}}}\n\nexport default Repo;\n{FENCE}\n"
+    pieces = SPLITTERS["code"].split(Segment("code", js, "js"), 110, words)
+    assert "".join(pieces) == js
+    assert len(pieces) >= 3
+    assert all(p.count("method") <= 1 for p in pieces)                # a method is never cut apart
+
+
+def test_code_without_definitions_is_split_on_blank_lines():
     seg = Segment("code", "def f(:\n" + "a b c\n" * 50 + "\n" + "d e f\n" * 50, "python")
     pieces = SPLITTERS["code"].split(seg, 160, words)
     assert "".join(pieces) == seg.text and len(pieces) == 2

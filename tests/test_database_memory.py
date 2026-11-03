@@ -12,6 +12,7 @@ Optional: POSTGRES_TEST_HOST (localhost), POSTGRES_TEST_USER / POSTGRES_TEST_PAS
 POSTGRES_TEST_DB (model_registry). Every test works in its own session id and deletes it afterwards.
 """
 import asyncio
+import json
 import os
 import subprocess
 import sys
@@ -198,8 +199,14 @@ def test_candidates_carry_distance_and_skip_newer_turns(sid):
             no_dense = await chunks.list_candidates(sid, 3, None)       # BM25 only
             assert all(c.distance is None for c in no_dense)
 
-            contents = await chunks.get_contents([got[(2, 0)].id])
-            assert contents[got[(2, 0)].id].content == "chunk 2.0"
+            other_model = await chunks.list_candidates(sid, 3, onehot(0), embedding_model="other-model")
+            assert other_model == []
+
+            await TurnRepository(s).set_header(t2, "only a log", from_answer=True)
+            fragment = (await chunks.get_fragments([got[(2, 0)].id]))[got[(2, 0)].id]
+            assert (fragment.turn, fragment.ord, fragment.content) == (2, 0, "chunk 2.0")
+            assert (fragment.header, fragment.header_from_answer) == ("only a log", True)
+            assert await chunks.get_fragments([]) == {}
     run(go())
 
 
@@ -386,3 +393,125 @@ def test_indexer_writes_chunks_once_and_reindexes_on_new_rules(sid, app_db):
         assert any("verify_password" in c.terms for c in chunks)
 
     run(go())
+
+
+# ------------------------------------------------------------------ the router's retrieval (R2 + R3)
+class TopicEmbedder(FakeEmbedder):
+    """Texts about tokens point one way, everything else another."""
+
+    async def embed(self, texts):
+        return [onehot(1) if "token" in t.lower() else onehot(2) for t in texts]
+
+
+def test_router_retrieves_the_relevant_older_turn(sid, app_db, monkeypatch):
+    from memory.indexer import index_turn
+    from router import router
+    from shared.memory.presets import PRESETS
+
+    embedder = TopicEmbedder("topic-embed")
+    monkeypatch.setattr(router, "_embedder", embedder)
+    turns = [
+        ("cum sortez o listă în Python?", "Folosește `sorted(lista)`; pentru ordine inversă, `reverse=True`."),
+        ("cum creez un token JWT?", "Cu PyJWT: `jwt.encode({'sub': user_id}, SECRET, algorithm='HS256')`."),
+        ("și cum citesc un CSV?", "Cu `csv.DictReader(f)` sau `pandas.read_csv(path)`."),
+    ]
+
+    async def go():
+        try:
+            async with app_db.get_session() as s:
+                await ChatSessionRepository(s).ensure(sid)
+                ids = [await TurnRepository(s).create(sid, n, q, a) for n, (q, a) in enumerate(turns, 1)]
+            for turn_id in ids:
+                await index_turn(turn_id, embedder)
+            v1 = await router.retrieve(sid, 4, "cum era codul pentru token?", PRESETS["V1"])
+            v2 = await router.retrieve(sid, 4, "csv DictReader", PRESETS["V2"])
+            older = await router.retrieve(sid, 2, "cum era codul pentru token?", PRESETS["V1"])
+        finally:
+            await app_db.dispose_engine()
+
+        assert v1.candidates == 3
+        top = v1.fragments[0]
+        assert (top.turn, top.header, top.header_from_answer) == (2, "cum creez un token JWT?", False)
+        assert "jwt.encode" in top.content
+        assert set(v1.timings) == {"embed_ms", "search_ms", "rank_ms", "fetch_ms"}
+        assert v2.fragments[0].turn == 3                     # BM25 on the exact names
+        assert [f.turn for f in older.fragments] == [1]      # only turns before `before_turn`
+
+    run(go())
+
+
+# ------------------------------------------------------------------ scripts/rag_eval/cluster_eval.py
+def test_cluster_eval_seeds_and_clones_sessions(app_db):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "rag_eval"))
+    import cluster_eval
+    from dataset import load_dataset
+
+    session = next(s for s in load_dataset() if s.id.startswith("s03"))
+    question = session.questions[0]
+
+    async def go():
+        created = []
+        try:
+            template = await cluster_eval.seed(session, FakeEmbedder())
+            created.append(template)
+            copy = await cluster_eval.clone(template)
+            created.append(copy)
+            async with app_db.get_session() as s:
+                originals = await TurnRepository(s).list_recent(template, 100)
+                copies = await TurnRepository(s).list_recent(copy, 100)
+                original_chunks = [c for t in originals for c in await ChunkRepository(s).list_for_turn(t.id)]
+                copied_chunks = [c for t in copies for c in await ChunkRepository(s).list_for_turn(t.id)]
+                state = await ChatSessionRepository(s).get(copy)
+            gold = await cluster_eval.gold_chunk_ids(copy, session, question)
+        finally:
+            await cluster_eval.delete_sessions(created)
+            await app_db.dispose_engine()
+
+        assert [t.turn for t in copies] == list(range(1, len(session.turns) + 1))
+        assert [(t.user_content, t.header) for t in copies] == [(t.user_content, t.header) for t in originals]
+        assert len(copied_chunks) == len(original_chunks) > 0
+        assert {c.turn_id for c in copied_chunks} == {t.id for t in copies}       # re-pointed to the copies
+        assert state.domain == "math"
+        gold_turn = question.gold[0].turn
+        assert gold and all(c.turn == gold_turn for c in copied_chunks if c.id in gold)
+
+    run(go())
+
+
+def test_cluster_eval_ask_reads_presence_from_the_reply(app_db):
+    import httpx
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "rag_eval"))
+    import cluster_eval
+    from dataset import load_dataset
+
+    session = next(s for s in load_dataset() if s.id.startswith("s03"))
+    question = session.questions[0]                          # gold in turn 1, out of the recent turns
+    sent = []
+
+    async def go():
+        created = []
+        try:
+            template = await cluster_eval.seed(session, FakeEmbedder())
+            created.append(template)
+
+            async def gateway(request):
+                body = json.loads(request.content)
+                sent.append(body)
+                gold = await cluster_eval.gold_chunk_ids(uuid.UUID(body["session_id"]), session, question)
+                return httpx.Response(200, json={"response": "16.7%", "model": "m", "latency_ms": 900.0, "routing": {
+                    "rag_variant": body["variant"], "recent_turns": 2, "retrieved_chunk_ids": sorted(gold),
+                    "context_tokens": 2000, "classify_ms": 30.0, "retrieval": {"embed_ms": 80.0}}})
+
+            async with httpx.AsyncClient(transport=httpx.MockTransport(gateway)) as http:
+                row = await cluster_eval.ask(http, "http://gw", session, question, template, "V2")
+            created.append(uuid.UUID(row["session_id"]))
+        finally:
+            await cluster_eval.delete_sessions(created)
+            await app_db.dispose_engine()
+        return row
+
+    row = run(go())
+    assert sent[0]["variant"] == "V2" and sent[0]["session_id"] == row["session_id"]
+    assert (row["present"], row["via"]) == (True, "fragment") and row["fragments"] >= 1
+    assert "| V2 | 1 | V2 |" in cluster_eval.report([row], ["V2"])

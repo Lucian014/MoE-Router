@@ -1,15 +1,18 @@
 """Context assembly: fit a session's memory into the chosen model's token budget
-(docs/rag-planv2.md 4.7). Pure functions, no I/O: the router loads the turns (R1) and the
-fragments (R2/R3) and passes them in.
+
 
     available = context_window - max_output_tokens - system - prompt - margin
+    available = min(available, max_context_tokens)          (only when that experiment is on)
 
 1. the last turn is always included (its texts are cut with "[…]" if it would take more than
    last_turn_max_share of `available`)
 2. older turns, newest first and whole, while they fit in recent_max_share of `available`
    (all of `available` when there are no fragments); the first that doesn't fit stops the walk,
    so the included turns are always the most recent, contiguous ones
-3. fragments from turns that are not included whole, in the given (relevance) order, while they fit
+3. fragments from turns that are not included whole, in the given (relevance) order: at most
+   max_per_turn per turn (0 = no cap), the first top_k of them, each added while it fits. A last
+   turn that was cut counts as not whole: its chunks stand in for the part that is missing ("explain
+   function X" after a pasted file finds the chunk with X), except those already in the kept text
 4. space still left: older turns whole again; a turn added this way drops its fragments
 
 Messages, in chronological order:
@@ -40,7 +43,7 @@ class Fragment:
     turn: int
     ord: int
     content: str
-    header: str = ""                  # the turn's header (docs/rag-planv2.md 4.2)
+    header: str = ""                  # the turn's header
     header_from_answer: bool = False  # header taken from the answer: shown as "Topic", not "Question"
 
 
@@ -51,6 +54,7 @@ class Budget:
     margin: float = 0.10              # the pool's tokenizers differ from the reference one
     recent_max_share: float = 0.6
     last_turn_max_share: float = 0.5
+    max_context_tokens: int = 0       # 0 = off; else a cap on `available` (the RAG_MAX_CONTEXT_TOKENS experiment)
 
 
 @dataclass
@@ -87,8 +91,10 @@ def build_messages(
     budget: Budget,
     fragments: Sequence[Fragment] = (),
     count: Callable[[str], int] = count_tokens,
+    top_k: int | None = None,
+    max_per_turn: int = 0,
 ) -> AssembledContext:
-    """`turns` oldest first (as R1 returns them); `fragments` in relevance order."""
+    """`turns` oldest first (as R1 returns them); `fragments` in relevance order (the pool)."""
 
     def cost(text: str) -> int:
         return count(text) + MESSAGE_OVERHEAD_TOKENS
@@ -103,6 +109,8 @@ def build_messages(
         raise PromptTooLongError(
             f"the prompt needs {fixed} tokens with the system prompt, the model has "
             f"{budget.context_window} (of which {budget.max_output_tokens} for the answer)")
+    if budget.max_context_tokens:
+        available = min(available, budget.max_context_tokens)
 
     # 1. the last turn, cut if it's too long
     included: list[TurnText] = []
@@ -124,9 +132,18 @@ def build_messages(
         included.insert(0, t)
         used += turn_cost(t)
 
-    # 3. fragments of the turns that are not included whole
+    # 3. fragments of the turns that are not included whole, and of the last turn when it was cut
     whole = {t.turn for t in included}
-    chosen = _fit_fragments([f for f in fragments if f.turn not in whole], available - used, count)
+    kept = ""
+    if last_truncated:
+        whole.discard(last.turn)
+        kept = f"{last.user}\n{last.assistant}"
+
+    def missing(f: Fragment) -> bool:
+        return f.turn not in whole and not (kept and f.turn == last.turn and f.content.strip() in kept)
+
+    eligible = _cap_per_turn([f for f in fragments if missing(f)], max_per_turn)
+    chosen = _fit_fragments(eligible[:top_k], available - used, count)
 
     # 4. space left: more older turns whole, dropping their fragments
     while older:
@@ -166,6 +183,18 @@ def _shrink_turn(t: TurnText, cap: int, cost, count) -> TurnText:
         return TurnText(t.turn, t.user, truncate_to(t.assistant, room, count))
     half = cap // 2 - MESSAGE_OVERHEAD_TOKENS
     return TurnText(t.turn, truncate_to(t.user, half, count), truncate_to(t.assistant, half, count))
+
+
+def _cap_per_turn(fragments: Sequence[Fragment], max_per_turn: int) -> list[Fragment]:
+    if max_per_turn <= 0:
+        return list(fragments)
+    seen: dict[int, int] = {}
+    out = []
+    for f in fragments:
+        if seen.get(f.turn, 0) < max_per_turn:
+            seen[f.turn] = seen.get(f.turn, 0) + 1
+            out.append(f)
+    return out
 
 
 def _fit_fragments(candidates: Sequence[Fragment], room: int, count) -> list[Fragment]:

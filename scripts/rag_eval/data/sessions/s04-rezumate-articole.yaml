@@ -1,0 +1,124 @@
+id: s04-rezumate-articole
+category: summarization
+lang: ro
+turns:
+  - user: |
+      Rezumă-mi articolul ăsta în 5 propoziții:
+
+      Insulele de căldură urbane sunt zone ale orașelor în care temperatura aerului și a suprafețelor este semnificativ mai ridicată decât în împrejurimile rurale. Fenomenul apare pentru că asfaltul, betonul și acoperișurile închise la culoare absorb radiația solară în timpul zilei și o eliberează lent în timpul nopții. În marile orașe europene, diferența de temperatură față de zonele rurale poate ajunge la 5–7 grade Celsius în nopțile de vară, iar în cartierele dense, cu puțină vegetație, chiar mai mult.
+
+      Efectele nu sunt doar o chestiune de confort. În timpul valurilor de căldură, mortalitatea crește mai ales în rândul persoanelor vârstnice și al celor cu boli cardiovasculare, iar nopțile tropicale, în care temperatura nu scade sub 20 de grade, împiedică organismul să se refacă. Consumul de energie pentru aer condiționat crește și el, ceea ce încarcă rețeaua electrică exact în orele de vârf și, paradoxal, eliberează și mai multă căldură în aerul din oraș.
+
+      Soluțiile cele mai eficiente sunt cunoscute de mult. Arborii maturi răcesc aerul prin umbră și evapotranspirație, iar un parc de câteva hectare poate fi cu 2–3 grade mai răcoros decât străzile din jur. Acoperișurile verzi și cele vopsite în culori deschise reflectă o parte din radiație. Pavajele permeabile permit apei să se infiltreze și să se evapore. Orașe precum Viena și Paris au planuri publice de „oaze de răcoare” care includ fântâni, curți de școli transformate în spații verzi și trasee umbrite pentru pietoni.
+
+      Cea mai mare problemă rămâne timpul: un arbore plantat azi oferă umbră semnificativă abia peste 15–20 de ani. De aceea, specialiștii recomandă ca orașele să protejeze în primul rând arborii existenți, în loc să-i taie pentru parcări sau lărgiri de drumuri, și să combine plantările cu măsuri rapide, cum ar fi umbrarele temporare și acoperișurile reflectorizante.
+    assistant: |
+      Insulele de căldură urbane sunt zone ale orașului mai calde decât împrejurimile rurale, pentru că asfaltul și betonul absorb căldura ziua și o eliberează noaptea, iar diferența poate ajunge la 5–7 °C în nopțile de vară. Efectele sunt grave în valurile de căldură: crește mortalitatea în rândul vârstnicilor și al bolnavilor cardiovasculari, iar nopțile tropicale împiedică refacerea organismului. Aerul condiționat încarcă rețeaua electrică la orele de vârf și încălzește suplimentar aerul din oraș. Cele mai eficiente soluții sunt arborii maturi, parcurile, acoperișurile verzi sau deschise la culoare și pavajele permeabile, aplicate de exemplu în planurile de „oaze de răcoare” ale Vienei și Parisului. Pentru că un arbore nou dă umbră abia după 15–20 de ani, prioritatea e protejarea arborilor existenți, combinată cu măsuri rapide, precum umbrarele temporare.
+  - user: |
+      Acum fă-l în 3 bullet-uri, pentru un newsletter.
+    assistant: |
+      - **Problema:** orașele sunt cu până la 5–7 °C mai calde decât zonele rurale în nopțile de vară, din cauza asfaltului și a betonului care stochează căldura.
+      - **De ce contează:** valurile de căldură cresc mortalitatea în rândul vârstnicilor, iar aerul condiționat suprasolicită rețeaua și încălzește și mai mult orașul.
+      - **Ce funcționează:** arbori și parcuri, acoperișuri verzi sau reflectorizante, pavaje permeabile – dar primul pas e să păstrăm arborii pe care îi avem deja, pentru că unul nou dă umbră abia peste 15–20 de ani.
+  - user: |
+      Încă unul, despre baterii:
+
+      Stocarea energiei în baterii a devenit în ultimii ani piesa care lipsea tranziției către surse regenerabile. Panourile solare produc cel mai mult la prânz, când cererea nu este maximă, iar turbinele eoliene depind de vânt, nu de orele de consum. Fără stocare, o parte din energia produsă trebuie oprită, iar seara, la vârful de consum, rețeaua revine la centralele pe gaz.
+
+      Bateriile litiu-ion domină piața pentru stocarea pe termen scurt, de la una la patru ore. Prețul lor a scăzut cu aproape 90% în ultimul deceniu, în mare parte datorită producției de masă pentru mașinile electrice. Un parc de baterii poate răspunde în câteva milisecunde, ceea ce îl face ideal pentru stabilizarea frecvenței rețelei, un serviciu pentru care operatorii plătesc separat.
+
+      Pentru stocarea pe durate mai lungi, de zile sau săptămâni, litiu-ionul devine prea scump. Aici se testează alternative: baterii cu flux pe bază de vanadiu, care pot funcționa zeci de ani fără să se degradeze, baterii fier-aer, mult mai ieftine pe kilowatt-oră, dar lente, și hidrocentrale cu acumulare prin pompaj, care există de un secol, dar au nevoie de un relief potrivit.
+
+      Problemele rămase sunt legate de materii prime și de reciclare. Extracția litiului și a cobaltului are costuri de mediu și sociale importante, iar infrastructura de reciclare este abia la început. Chimiile noi, precum litiu-fier-fosfat (LFP), renunță la cobalt și sunt mai stabile termic, motiv pentru care sunt preferate tot mai des în parcurile de stocare staționare.
+    assistant: |
+      Bateriile au devenit esențiale pentru energia regenerabilă, pentru că producția solară și eoliană nu coincide cu orele de consum, iar fără stocare surplusul se pierde și seara se revine la gaz. Litiu-ionul domină stocarea de 1–4 ore, după o scădere a prețului de aproape 90% într-un deceniu datorită mașinilor electrice, și poate stabiliza frecvența rețelei în milisecunde. Pentru zile sau săptămâni se testează baterii cu flux pe bază de vanadiu, baterii fier-aer și hidrocentrale cu pompaj. Rămân problemele materiilor prime, precum litiul și cobaltul, și ale reciclării, motiv pentru care chimia LFP, fără cobalt și mai stabilă termic, câștigă teren în stocarea staționară.
+  - user: |
+      Care e diferența dintre cele două articole ca ton?
+    assistant: |
+      Primul articol, despre insulele de căldură, e mai **normativ** și mai apropiat de cititor: pornește de la efecte asupra sănătății (mortalitate, nopți tropicale), dă exemple de orașe și se încheie cu o recomandare clară („protejați arborii existenți”). Tonul e de advocacy blând, de politică publică.
+
+      Al doilea, despre baterii, e mai **tehnic și neutru**: explică rolul stocării în sistemul energetic, compară tehnologii după durată și cost și menționează problemele fără să ia o poziție fermă. Termenii sunt mai specializați (stabilizarea frecvenței, LFP, baterii cu flux), deci presupune un cititor cu ceva cultură tehnică.
+
+      Amândouă urmează aceeași structură: problemă, soluții, limite. Diferența e că primul se adresează cetățeanului și administrației locale, iar al doilea mai degrabă unui public interesat de energie și investiții.
+  - user: |
+      Scrie un titlu bun pentru fiecare.
+    assistant: |
+      Pentru articolul despre insulele de căldură:
+
+      1. „Orașul care nu se mai răcește noaptea: cum ne apără copacii de valurile de căldură”
+      2. „Cu 7 grade mai cald decât la țară: soluțiile pentru insulele de căldură urbane”
+
+      Pentru articolul despre baterii:
+
+      1. „Piesa care lipsea: cum fac bateriile energia verde disponibilă și seara”
+      2. „De la litiu la vanadiu: cursa pentru stocarea energiei pe termen lung”
+
+      Eu aș alege primul titlu din fiecare pereche: sunt concrete, au o imagine ușor de reținut și nu promit mai mult decât spune articolul.
+  - user: |
+      Ok. Acum rezumă-mi și asta, e mai lung, pentru o prezentare de 2 minute:
+
+      Munca hibridă a devenit norma în multe companii după pandemie, dar studiile arată rezultate amestecate. Angajații apreciază timpul economisit pe navetă, în medie aproape o oră pe zi în marile orașe, și flexibilitatea de a-și organiza programul. Cei mai mulți declară că ar accepta un salariu ușor mai mic în schimbul a două-trei zile de lucru de acasă pe săptămână.
+
+      Managerii sunt mai rezervați. Ei invocă dificultatea de a integra angajații noi, care învață mult din observarea colegilor, și scăderea colaborării spontane, a discuțiilor de pe hol în care apar idei. Unele companii mari au cerut întoarcerea la birou cinci zile pe săptămână, dar au pierdut o parte din angajații cei mai căutați, care au găsit ușor alte locuri de muncă flexibile.
+
+      Datele despre productivitate sunt contradictorii pentru că depind de tipul muncii. Sarcinile care cer concentrare individuală, precum programarea sau scrisul, ies adesea mai bine de acasă. Activitățile creative de grup și mentoratul au de câștigat din prezența fizică. Un studiu pe o companie de turism a arătat că un program cu două zile acasă nu a schimbat productivitatea, dar a redus demisiile cu o treime.
+
+      Concluzia tot mai multor cercetători este că nu există o formulă universală. Funcționează cel mai bine aranjamentele în care echipele stabilesc împreună zilele de birou, astfel încât oamenii să se întâlnească efectiv când vin, iar biroul să fie folosit pentru ce nu se poate face online: întâlniri de planificare, ateliere și integrarea colegilor noi. Un birou în care fiecare vine în altă zi și stă pe videoconferințe nu aduce niciun avantaj.
+    assistant: |
+      Pentru o prezentare de două minute, aș structura rezumatul așa:
+
+      **Ce câștigă angajații.** Aproape o oră pe zi economisită pe navetă și flexibilitate; mulți ar accepta chiar un salariu puțin mai mic pentru două-trei zile de lucru de acasă.
+
+      **Ce îi îngrijorează pe manageri.** Integrarea angajaților noi și pierderea colaborării spontane. Companiile care au impus cinci zile la birou au pierdut o parte din oamenii cei mai căutați.
+
+      **Ce spun datele.** Productivitatea depinde de tipul muncii: munca de concentrare merge bine de acasă, mentoratul și creativitatea de grup au nevoie de prezență. Într-un studiu, două zile acasă n-au schimbat productivitatea, dar au redus demisiile cu o treime.
+
+      **Concluzia.** Nu există o formulă universală. Funcționează echipele care își aleg împreună zilele de birou și folosesc biroul pentru ce nu se poate face online: planificare, ateliere, integrare. Un birou în care fiecare vine în altă zi și stă pe videoconferințe nu aduce niciun avantaj.
+  - user: |
+      Dă-mi și trei întrebări pe care le-ar putea pune publicul.
+    assistant: |
+      1. „Cum măsurați productivitatea la munca de acasă, dacă depinde atât de mult de tipul sarcinilor?” – poți răspunde că studiile folosesc indicatori specifici fiecărui rol (cod livrat, tichete rezolvate, vânzări), nu ore lucrate.
+      2. „Ce faceți cu angajații noi, care au nevoie de mentorat?” – aici argumentul articolului e clar: zilele de birou comune ale echipei sunt exact momentul pentru integrare.
+      3. „Dacă oamenii acceptă un salariu mai mic pentru flexibilitate, nu e asta o reducere de costuri ascunsă?” – o întrebare incomodă; răspunsul onest e că depinde de cum e negociat, dar rata mai mică a demisiilor are și ea o valoare financiară reală.
+  - user: |
+      Mersi, atât pentru azi.
+    assistant: |
+      Cu plăcere! Recapitulând, azi am lucrat pe trei texte: insulele de căldură urbane (rezumat, bullet-uri pentru newsletter și titluri), stocarea energiei în baterii (rezumat, comparația de ton și titluri) și munca hibridă (rezumat pentru o prezentare de două minute și trei întrebări din public). Spor la prezentare!
+questions:
+  - id: q1
+    type: semantic
+    prompt: |
+      Cu cât e mai cald în oraș față de zonele rurale, conform primului articol?
+    gold:
+      - {turn: 1, quote: "diferența de temperatură față de zonele rurale poate ajunge la 5–7 grade Celsius în nopțile de vară"}
+  - id: q2
+    type: exact
+    prompt: |
+      Ce spunea articolul despre bateriile cu vanadiu?
+    gold:
+      - {turn: 3, quote: "baterii cu flux pe bază de vanadiu, care pot funcționa zeci de ani fără să se degradeze"}
+  - id: q3
+    type: semantic
+    prompt: |
+      Ce rezultat avea studiul despre compania de turism?
+    gold:
+      - {turn: 6, quote: "un program cu două zile acasă nu a schimbat productivitatea, dar a redus demisiile cu o treime"}
+  - id: q4
+    type: ambiguous
+    prompt: |
+      și titlurile pe care le-ai propus pentru primul?
+    gold:
+      - {turn: 5, quote: "„Orașul care nu se mai răcește noaptea: cum ne apără copacii de valurile de căldură”"}
+  - id: q5
+    type: semantic
+    lang: en
+    prompt: |
+      Why is LFP preferred for stationary storage?
+    gold:
+      - {turn: 3, quote: "Chimiile noi, precum litiu-fier-fosfat (LFP), renunță la cobalt și sunt mai stabile termic"}
+  - id: q6
+    type: semantic
+    prompt: |
+      Cum comparai tonul celor două articole?
+    gold:
+      - {turn: 4, quote: "Primul articol, despre insulele de căldură, e mai **normativ**"}

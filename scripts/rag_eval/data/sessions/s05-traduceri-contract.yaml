@@ -1,0 +1,106 @@
+id: s05-traduceri-contract
+category: translation
+lang: ro
+turns:
+  - user: |
+      Tradu în engleză, păstrând tonul formal:
+
+      Prestatorul se obligă să livreze serviciile descrise în Anexa 1 în termen de 30 de zile calendaristice de la data semnării prezentului contract. În cazul în care termenul nu este respectat din motive imputabile Prestatorului, Beneficiarul are dreptul la penalități de 0,1% din valoarea contractului pentru fiecare zi de întârziere, fără ca valoarea totală a penalităților să depășească 10% din valoarea contractului.
+    assistant: |
+      The Service Provider undertakes to deliver the services described in Annex 1 within 30 calendar days from the date of signature of this Agreement. Should the deadline not be met for reasons attributable to the Service Provider, the Beneficiary shall be entitled to penalties of 0.1% of the contract value for each day of delay, provided that the total amount of penalties does not exceed 10% of the contract value.
+
+      Note on terms: „Beneficiar” is usually rendered as *Beneficiary* in Romanian-English contracts, but *Client* or *Customer* is more natural for a native reader; keep whichever the rest of the document uses. „Motive imputabile” is translated as *reasons attributable to*, the standard legal phrasing.
+  - user: |
+      Acum clauza de confidențialitate:
+
+      Părțile se obligă să păstreze confidențialitatea tuturor informațiilor primite în executarea prezentului contract, pe toată durata acestuia și timp de 3 ani după încetarea sa. Nu sunt considerate confidențiale informațiile care erau publice la data comunicării sau care devin publice fără o încălcare a prezentei clauze. Obligația de confidențialitate nu se aplică dezvăluirilor impuse de lege sau de o autoritate competentă, cu condiția ca partea în cauză să o notifice în prealabil pe cealaltă parte, în măsura permisă de lege.
+    assistant: |
+      The Parties undertake to keep confidential all information received in the performance of this Agreement, for its entire duration and for a period of 3 years after its termination. Information which was public at the date of disclosure, or which becomes public other than through a breach of this clause, shall not be deemed confidential. The confidentiality obligation shall not apply to disclosures required by law or by a competent authority, provided that the Party concerned gives prior notice to the other Party, to the extent permitted by law.
+
+      I used *shall* for the obligations and exclusions, which is the conventional register of English contracts, and *other than through a breach* instead of a literal *without a breach*, because it reads more naturally.
+  - user: |
+      Translate this one into Romanian, it's from the client's side:
+
+      Either Party may terminate this Agreement for convenience by giving the other Party not less than sixty (60) days' prior written notice. Upon termination, the Client shall pay for all Services performed up to the effective date of termination, and the Provider shall deliver all work in progress in its current state.
+    assistant: |
+      Oricare dintre Părți poate rezilia prezentul Contract în mod unilateral, fără a invoca un motiv, printr-o notificare scrisă transmisă celeilalte Părți cu cel puțin șaizeci (60) de zile înainte. La încetarea Contractului, Clientul va plăti toate Serviciile prestate până la data efectivă a încetării, iar Prestatorul va preda toate lucrările în curs, în stadiul în care se află.
+
+      Observație juridică: *terminate for convenience* nu are un echivalent fix în dreptul românesc. Tehnic, e o **denunțare unilaterală**, nu o reziliere (rezilierea presupune neexecutarea obligațiilor). Dacă documentul e supus legii române, aș scrie „poate denunța unilateral prezentul Contract”, ca să nu existe confuzii la o eventuală dispută.
+  - user: |
+      Folosește varianta cu denunțare unilaterală.
+    assistant: |
+      Oricare dintre Părți poate denunța unilateral prezentul Contract, fără a fi necesară invocarea unui motiv, printr-o notificare scrisă transmisă celeilalte Părți cu cel puțin șaizeci (60) de zile înainte. La încetarea Contractului, Clientul va plăti toate Serviciile prestate până la data la care denunțarea produce efecte, iar Prestatorul va preda toate lucrările în curs, în stadiul în care se află.
+
+      Am schimbat și „data efectivă a încetării” în „data la care denunțarea produce efecte”, ca terminologia să fie consecventă în toată clauza.
+  - user: |
+      Tradu în engleză paragraful despre forța majoră:
+
+      Niciuna dintre părți nu răspunde pentru neexecutarea obligațiilor sale dacă aceasta este cauzată de un eveniment de forță majoră, definit ca un eveniment extern, imprevizibil, absolut invincibil și inevitabil. Partea care invocă forța majoră are obligația de a o notifica celeilalte părți în termen de 5 zile de la producerea evenimentului și de a prezenta, în termen de 15 zile, certificatul emis de Camera de Comerț și Industrie a României.
+    assistant: |
+      Neither Party shall be liable for the non-performance of its obligations if such non-performance is caused by an event of force majeure, defined as an external, unforeseeable, absolutely insurmountable and unavoidable event. The Party invoking force majeure shall notify the other Party within 5 days of the occurrence of the event and shall submit, within 15 days, the certificate issued by the Chamber of Commerce and Industry of Romania.
+
+      The four adjectives follow the definition in the Romanian Civil Code (art. 1351), so I kept all of them even though English contracts usually just list example events (war, natural disasters, epidemics). If the counterparty is foreign, they may ask to add such a list, which is compatible with the Romanian definition.
+  - user: |
+      What's the difference between "shall" and "will" in contracts? The client asked.
+    assistant: |
+      In traditional drafting, **shall** expresses an obligation imposed by the contract (“The Provider shall deliver…” means the Provider *must* deliver), while **will** describes a future fact or an intention, without the same binding force.
+
+      In practice:
+
+      - *shall* – obligations of the parties: “The Client shall pay within 30 days.”
+      - *will* – statements about the future or about a party's own declarations: “The Agreement will enter into force on the date of signature.”
+      - *may* – a right or an option: “Either Party may terminate…”
+      - *must* – increasingly used in plain-English drafting instead of *shall*, because *shall* is sometimes used inconsistently.
+
+      The key rule is consistency: if a contract uses *shall* for obligations, a court may read a *will* in the same document as something weaker. In Romanian this distinction maps roughly to „se obligă să” / „va” (obligație) versus „urmează să” (fapt viitor).
+  - user: |
+      Tradu și asta, e pentru emailul de trimitere: "Vă transmitem atașat varianta revizuită a contractului, cu modificările evidențiate. Vă rugăm să ne comunicați eventualele observații până vineri."
+    assistant: |
+      Please find attached the revised version of the agreement, with the changes highlighted. We would be grateful if you could send us any comments by Friday.
+
+      *We would be grateful if you could* sună mai politicos decât un *please let us know* direct, potrivit pentru o corespondență cu un client. Dacă relația e deja informală, poți scrie simplu: *Please let us know if you have any comments by Friday.*
+  - user: |
+      Mulțumesc mult!
+    assistant: |
+      Cu plăcere! Am tradus astăzi clauza de termen și penalități, clauza de confidențialitate (3 ani după încetare), clauza de denunțare unilaterală cu preaviz de 60 de zile, forța majoră cu notificare în 5 zile și certificatul CCIR în 15 zile, plus emailul de trimitere. Dacă mai apar clauze, păstrează aceeași terminologie: *Service Provider*, *Beneficiary*, *shall* pentru obligații.
+questions:
+  - id: q1
+    type: semantic
+    lang: en
+    prompt: |
+      How did you translate the penalties clause? What was the cap?
+    gold:
+      - {turn: 1, quote: "provided that the total amount of penalties does not exceed 10% of the contract value"}
+  - id: q2
+    type: exact
+    prompt: |
+      Care era traducerea pentru „motive imputabile”?
+    gold:
+      - {turn: 1, quote: "„Motive imputabile” is translated as *reasons attributable to*"}
+  - id: q3
+    type: semantic
+    prompt: |
+      De ce ziceai că terminate for convenience nu e reziliere?
+    gold:
+      - {turn: 3, quote: "Tehnic, e o **denunțare unilaterală**, nu o reziliere"}
+  - id: q4
+    type: semantic
+    prompt: |
+      Dă-mi din nou varianta finală în română a clauzei de încetare.
+    gold:
+      - {turn: 4, quote: "Oricare dintre Părți poate denunța unilateral prezentul Contract"}
+    outdated:
+      - {turn: 3, quote: "Oricare dintre Părți poate rezilia prezentul Contract în mod unilateral"}
+  - id: q5
+    type: ambiguous
+    prompt: |
+      și la forța majoră, în câte zile trebuia notificarea?
+    gold:
+      - {turn: 5, quote: "The Party invoking force majeure shall notify the other Party within 5 days of the occurrence of the event"}
+  - id: q6
+    type: exact
+    lang: en
+    prompt: |
+      Remind me the rule for shall vs will.
+    gold:
+      - {turn: 6, quote: "In traditional drafting, **shall** expresses an obligation imposed by the contract"}

@@ -1,0 +1,447 @@
+id: s01-fastapi-jwt
+category: coding
+lang: ro
+turns:
+  - user: |
+      Vreau să fac autentificare cu JWT într-un API FastAPI. De unde încep?
+    assistant: |
+      Un flux JWT minimal în FastAPI are patru piese:
+
+      1. **Hash-uirea parolelor** – nu salvezi niciodată parola în clar; folosești bcrypt prin `passlib`.
+      2. **Crearea tokenului** – la login, după ce verifici parola, semnezi un JWT cu o cheie secretă.
+      3. **Endpoint-ul de login** – primește username + parolă și întoarce tokenul.
+      4. **Dependența de autentificare** – o funcție pe care o pui pe rutele protejate; citește tokenul din header-ul `Authorization: Bearer ...` și îl validează.
+
+      Instalează pachetele:
+
+      ```bash
+      pip install fastapi uvicorn "python-jose[cryptography]" "passlib[bcrypt]" python-multipart
+      ```
+
+      `python-multipart` e necesar pentru că formularul OAuth2 de login vine ca `application/x-www-form-urlencoded`, nu ca JSON.
+
+      O structură simplă de proiect:
+
+      ```text
+      app/
+        main.py        # aplicația și rutele
+        security.py    # hash, tokenuri, dependența get_current_user
+        models.py      # modelele Pydantic
+        config.py      # SECRET_KEY, ALGORITHM, durate
+      ```
+
+      Cheia secretă nu o pui în cod: o citești din variabile de mediu. O generezi cu `openssl rand -hex 32`. Începem cu funcția care creează tokenul?
+  - user: |
+      Da, scrie-mi funcția care creează tokenul de acces.
+    assistant: |
+      În `security.py`:
+
+      ```python
+      import os
+      from datetime import datetime, timedelta, timezone
+
+      from jose import jwt
+
+      SECRET_KEY = os.environ["SECRET_KEY"]
+      ALGORITHM = "HS256"
+      ACCESS_TOKEN_EXPIRE_MINUTES = 15
+
+
+      def create_access_token(data: dict) -> str:
+          to_encode = data.copy()
+          expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+          to_encode.update({"exp": expire})
+          return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+      ```
+
+      Câteva observații:
+
+      - `data` conține de obicei `{"sub": username}`; `sub` (subject) e câmpul standard pentru identitatea userului.
+      - `exp` e verificat automat de `jwt.decode`: după 15 minute tokenul e respins.
+      - Folosește `datetime.now(timezone.utc)`, nu `datetime.utcnow()`, care e depreciat în Python 3.12.
+      - HS256 e un algoritm simetric: aceeași cheie semnează și verifică. E suficient cât timp un singur serviciu validează tokenurile.
+  - user: |
+      Cum verific parola userului la login?
+    assistant: |
+      Cu `passlib` și bcrypt. Tot în `security.py`:
+
+      ```python
+      from passlib.context import CryptContext
+
+      pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+      def get_password_hash(password: str) -> str:
+          return pwd_context.hash(password)
+
+
+      def verify_password(plain_password: str, hashed_password: str) -> bool:
+          return pwd_context.verify(plain_password, hashed_password)
+      ```
+
+      `get_password_hash` o folosești la înregistrare, când salvezi userul în baza de date, iar `verify_password` la login.
+
+      De ce bcrypt: e lent intenționat (are un *cost factor*), deci un atac brute-force pe hash-uri furate durează mult. Salt-ul e generat automat și e inclus în hash, așa că nu-l mai salvezi separat.
+
+      `deprecated="auto"` înseamnă că, dacă schimbi mai târziu schema (de exemplu pe argon2), hash-urile vechi rămân valide, iar `pwd_context.needs_update(hash)` îți spune când să le regenerezi la următorul login reușit.
+  - user: |
+      Fă endpoint-ul /token de login.
+    assistant: |
+      În `main.py`, folosind formularul standard OAuth2:
+
+      ```python
+      from fastapi import Depends, FastAPI, HTTPException, status
+      from fastapi.security import OAuth2PasswordRequestForm
+
+      from app.security import create_access_token, verify_password
+      from app.users import get_user
+
+      app = FastAPI()
+
+
+      @app.post("/token")
+      async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+          user = get_user(form_data.username)
+          if not user or not verify_password(form_data.password, user.hashed_password):
+              raise HTTPException(
+                  status_code=status.HTTP_401_UNAUTHORIZED,
+                  detail="Incorrect username or password",
+                  headers={"WWW-Authenticate": "Bearer"},
+              )
+          access_token = create_access_token({"sub": user.username})
+          return {"access_token": access_token, "token_type": "bearer"}
+      ```
+
+      Mesajul de eroare e același pentru user inexistent și parolă greșită, ca să nu dezvălui ce usernames există. Răspunsul are forma cerută de standardul OAuth2 (`access_token` + `token_type`), așa că butonul *Authorize* din `/docs` funcționează direct.
+  - user: |
+      Cum protejez o rută ca să ceară token?
+    assistant: |
+      Cu o dependență care decodează tokenul:
+
+      ```python
+      from fastapi import Depends, HTTPException, status
+      from fastapi.security import OAuth2PasswordBearer
+      from jose import JWTError, jwt
+
+      oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+      async def get_current_user(token: str = Depends(oauth2_scheme)):
+          credentials_exception = HTTPException(
+              status_code=status.HTTP_401_UNAUTHORIZED,
+              detail="Could not validate credentials",
+              headers={"WWW-Authenticate": "Bearer"},
+          )
+          try:
+              payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+              username = payload.get("sub")
+              if username is None:
+                  raise credentials_exception
+          except JWTError:
+              raise credentials_exception
+          user = get_user(username)
+          if user is None:
+              raise credentials_exception
+          return user
+      ```
+
+      Apoi pe orice rută:
+
+      ```python
+      @app.get("/users/me")
+      async def read_me(current_user = Depends(get_current_user)):
+          return current_user
+      ```
+
+      `OAuth2PasswordBearer` citește header-ul `Authorization: Bearer <token>` și răspunde singur cu 401 dacă lipsește. Observă `algorithms=[ALGORITHM]` ca listă: dacă nu restrângi algoritmii acceptați, un token semnat cu `none` ar putea trece.
+  - user: |
+      Traceback (most recent call last):
+        File "/app/.venv/lib/python3.11/site-packages/jose/jwt.py", line 147, in decode
+          _validate_claims(
+        File "/app/.venv/lib/python3.11/site-packages/jose/jwt.py", line 485, in _validate_claims
+          _validate_exp(claims, leeway=leeway)
+        File "/app/.venv/lib/python3.11/site-packages/jose/jwt.py", line 313, in _validate_exp
+          raise ExpiredSignatureError("Signature has expired.")
+      jose.exceptions.ExpiredSignatureError: Signature has expired.
+    assistant: |
+      Eroarea înseamnă că tokenul a expirat: claim-ul `exp` e în trecut, iar `jwt.decode` refuză tokenul. E comportamentul corect după cele 15 minute setate în `create_access_token`.
+
+      Problema e că excepția ajunge netratată până la tine, adică tokenul expirat produce probabil un 500. `ExpiredSignatureError` e o subclasă a lui `JWTError`, deci ar trebui prinsă de `except JWTError`; dacă vezi traceback-ul, cel mai probabil decodezi tokenul și în alt loc, în afara dependenței.
+
+      Ca să-i spui clientului explicit că tokenul a expirat, prinde-o separat, înaintea lui `JWTError`:
+
+      ```python
+      from jose import ExpiredSignatureError, JWTError, jwt
+
+      try:
+          payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+      except ExpiredSignatureError:
+          raise HTTPException(
+              status_code=status.HTTP_401_UNAUTHORIZED,
+              detail="Token expired",
+              headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+          )
+      except JWTError:
+          raise credentials_exception
+      ```
+
+      Clientul vede `Token expired` și știe că trebuie să obțină un token nou, fără să ceară din nou parola, dacă ai refresh tokens.
+  - user: |
+      Vreau și refresh token. Rescrie create_access_token să primească durata ca parametru și adaugă funcția pentru refresh.
+    assistant: |
+      Versiunea nouă, în `security.py`:
+
+      ```python
+      from datetime import datetime, timedelta, timezone
+      from uuid import uuid4
+
+      from jose import jwt
+
+      ACCESS_TOKEN_EXPIRE = timedelta(minutes=15)
+      REFRESH_TOKEN_EXPIRE = timedelta(days=7)
+
+
+      def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+          to_encode = data.copy()
+          expire = datetime.now(timezone.utc) + (expires_delta or ACCESS_TOKEN_EXPIRE)
+          to_encode.update({"exp": expire, "type": "access", "jti": str(uuid4())})
+          return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+      def create_refresh_token(username: str) -> str:
+          return create_access_token(
+              {"sub": username, "type": "refresh"}, expires_delta=timedelta(days=7)
+          )
+      ```
+
+      Ce s-a schimbat:
+
+      - durata e acum un parametru (`expires_delta`), cu 15 minute implicit;
+      - fiecare token are un `type` (`access` sau `refresh`), ca un refresh token să nu poată fi folosit pe rutele protejate. În `get_current_user` adaugi verificarea `payload.get("type") == "access"`;
+      - fiecare token are un `jti` unic, util mai târziu pentru revocare.
+
+      Atenție: `create_refresh_token` trece `type: refresh` în `data`, dar `to_encode.update` îl suprascrie cu `access`. Pune `type` după update sau dă-l ca parametru separat; varianta corectă e `to_encode.update({"exp": expire, "jti": str(uuid4())})` și `to_encode.setdefault("type", "access")`.
+  - user: |
+      Unde țin refresh token-ul pe client?
+    assistant: |
+      Recomandarea mea: refresh token-ul într-un **cookie httpOnly**, iar access token-ul doar în memoria aplicației (o variabilă în JavaScript), nu în `localStorage`.
+
+      - Un cookie `httpOnly` nu poate fi citit de JavaScript, deci un atac XSS nu-l poate fura.
+      - Setează `Secure` (doar HTTPS) și `SameSite=Strict` sau `Lax`, ca browserul să nu-l trimită din alte site-uri (protecție CSRF).
+      - Restrânge cookie-ul la ruta de refresh cu `path="/refresh"`, ca să nu circule la fiecare request.
+      - `localStorage` e accesibil oricărui script de pe pagină: dacă ai o vulnerabilitate XSS, tokenul e compromis.
+
+      În FastAPI:
+
+      ```python
+      response.set_cookie(
+          key="refresh_token",
+          value=refresh_token,
+          httponly=True,
+          secure=True,
+          samesite="strict",
+          path="/refresh",
+          max_age=7 * 24 * 3600,
+      )
+      ```
+
+      La reîncărcarea paginii, access token-ul din memorie se pierde, iar aplicația cheamă `/refresh` ca să obțină unul nou.
+  - user: |
+      Scrie endpoint-ul /refresh.
+    assistant: |
+      ```python
+      from fastapi import Cookie, HTTPException, Response, status
+
+
+      @app.post("/refresh")
+      async def refresh(response: Response, refresh_token: str | None = Cookie(default=None)):
+          if refresh_token is None:
+              raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Missing refresh token")
+          try:
+              payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+          except JWTError:
+              raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
+          if payload.get("type") != "refresh":
+              raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not a refresh token")
+
+          username = payload["sub"]
+          new_refresh = create_refresh_token(username)       # rotație
+          response.set_cookie("refresh_token", new_refresh, httponly=True, secure=True,
+                              samesite="strict", path="/refresh", max_age=7 * 24 * 3600)
+          return {"access_token": create_access_token({"sub": username}), "token_type": "bearer"}
+      ```
+
+      Fac și **rotația** refresh token-ului: la fiecare folosire primești unul nou. Dacă un refresh token furat e folosit după ce userul legitim l-a rotit deja, poți detecta reutilizarea (cu `jti` salvat) și revoca toată sesiunea.
+  - user: |
+      Cum fac logout dacă JWT e stateless?
+    assistant: |
+      JWT nu poate fi „șters” de pe server, așa că ai trei opțiuni:
+
+      1. **Access token scurt + revocarea refresh token-ului.** La logout ștergi cookie-ul și marchezi refresh token-ul ca revocat. Access token-ul rămâne valid cel mult 15 minute, ceea ce e acceptabil pentru majoritatea aplicațiilor.
+      2. **Blacklist pe `jti`.** Salvezi `jti`-ul tokenului revocat în Redis, cu un TTL egal cu timpul rămas până la expirare, ca lista să se curețe singură:
+
+      ```python
+      async def logout(token_payload: dict, redis):
+          ttl = token_payload["exp"] - int(time.time())
+          if ttl > 0:
+              await redis.setex(f"revoked:{token_payload['jti']}", ttl, "1")
+      ```
+
+      iar în `get_current_user` verifici `await redis.exists(f"revoked:{jti}")`. Asta adaugă un acces la Redis pe request, deci tokenul nu mai e complet stateless.
+      3. **Versiune de token pe user** (`token_version` în tabela users, inclusă în JWT): o incrementezi la logout sau la schimbarea parolei și invalidezi toate tokenurile vechi dintr-o dată.
+
+      Pentru început, varianta 1 plus blacklist-ul pe `jti` doar pentru refresh tokens e un compromis bun.
+  - user: |
+      Scrie teste cu pytest pentru login.
+    assistant: |
+      Cu `TestClient`, care pornește aplicația în proces:
+
+      ```python
+      from fastapi.testclient import TestClient
+
+      from app.main import app
+
+      client = TestClient(app)
+
+
+      def test_login_ok():
+          r = client.post("/token", data={"username": "ana", "password": "secret123"})
+          assert r.status_code == 200
+          body = r.json()
+          assert body["token_type"] == "bearer"
+          assert body["access_token"]
+
+
+      def test_login_wrong_password():
+          r = client.post("/token", data={"username": "ana", "password": "gresit"})
+          assert r.status_code == 401
+
+
+      def test_me_requires_token():
+          assert client.get("/users/me").status_code == 401
+
+
+      def test_me_with_token():
+          token = client.post("/token", data={"username": "ana", "password": "secret123"}).json()["access_token"]
+          r = client.get("/users/me", headers={"Authorization": f"Bearer {token}"})
+          assert r.json()["username"] == "ana"
+      ```
+
+      Pentru userul de test, suprascrie `get_user` cu `app.dependency_overrides` sau folosește o bază SQLite în memorie, populată într-un fixture.
+  - user: |
+      ============================= FAILURES =============================
+      ___________________________ test_login_ok ___________________________
+
+          def test_login_ok():
+              r = client.post("/token", json={"username": "ana", "password": "secret123"})
+      >       assert r.status_code == 200
+      E       assert 422 == 200
+      E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+      tests/test_auth.py:9: AssertionError
+    assistant: |
+      422 înseamnă că FastAPI n-a putut valida request-ul: endpoint-ul `/token` folosește `OAuth2PasswordRequestForm`, care așteaptă un **formular** (`application/x-www-form-urlencoded`), dar testul tău trimite **JSON** (`json=...`).
+
+      Corectura e un singur cuvânt:
+
+      ```python
+      r = client.post("/token", data={"username": "ana", "password": "secret123"})
+      ```
+
+      Cu `data=`, `TestClient` codifică body-ul ca formular. Dacă te uiți în `r.json()` la 422, vezi exact ce lipsește: `{"detail": [{"loc": ["body", "username"], "msg": "Field required"}, ...]}`.
+
+      Dacă vrei neapărat login cu JSON, înlocuiești `OAuth2PasswordRequestForm` cu un model Pydantic propriu, dar pierzi compatibilitatea cu butonul *Authorize* din `/docs`.
+  - user: |
+      Cum schimb algoritmul pe RS256?
+    assistant: |
+      RS256 e asimetric: semnezi cu o cheie privată și verifici cu cea publică. E util când mai multe servicii validează tokenurile, dar doar serviciul de autentificare trebuie să le poată emite.
+
+      Generezi perechea de chei:
+
+      ```bash
+      openssl genrsa -out private.pem 2048
+      openssl rsa -in private.pem -pubout -out public.pem
+      ```
+
+      Și schimbi configurarea:
+
+      ```python
+      ALGORITHM = "RS256"
+      PRIVATE_KEY = Path(os.environ["JWT_PRIVATE_KEY_FILE"]).read_text()
+      PUBLIC_KEY = Path(os.environ["JWT_PUBLIC_KEY_FILE"]).read_text()
+
+      # la emitere
+      jwt.encode(to_encode, PRIVATE_KEY, algorithm=ALGORITHM)
+      # la verificare
+      jwt.decode(token, PUBLIC_KEY, algorithms=[ALGORITHM])
+      ```
+
+      Cheia privată o montezi ca Secret (în Kubernetes) și nu o pui niciodată în imagine. Cheia publică o poți expune la un endpoint JWKS (`/.well-known/jwks.json`), ca celelalte servicii să o descarce singure.
+  - user: |
+      Mulțumesc, fă un rezumat al pașilor.
+    assistant: |
+      Rezumat:
+
+      1. Parolele: bcrypt prin `passlib`, cu `get_password_hash` la înregistrare și `verify_password` la login.
+      2. Tokenurile: `create_access_token(data, expires_delta)`, cu 15 minute implicit, `type` și `jti`; `create_refresh_token` cu 7 zile.
+      3. Login: `POST /token` cu `OAuth2PasswordRequestForm` (formular, nu JSON).
+      4. Rute protejate: dependența `get_current_user`, care decodează tokenul și tratează separat `ExpiredSignatureError`.
+      5. Refresh: cookie httpOnly, `Secure`, `SameSite=strict`, restrâns la `/refresh`, cu rotație la fiecare folosire.
+      6. Logout: revocarea refresh token-ului și blacklist pe `jti` în Redis, cu TTL.
+      7. Teste: `TestClient`, cu `data=` pentru login.
+      8. Opțional: RS256 cu pereche de chei, când mai multe servicii verifică tokenurile.
+questions:
+  - id: q1
+    type: semantic
+    prompt: |
+      Cum verificam parola la login? Ce bibliotecă foloseam pentru hash?
+    gold:
+      - {turn: 3, quote: 'pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")'}
+  - id: q2
+    type: exact
+    prompt: |
+      Arată-mi din nou create_refresh_token.
+    gold:
+      - {turn: 7, quote: "def create_refresh_token(username: str) -> str:"}
+  - id: q3
+    type: error-only
+    prompt: |
+      Traceback (most recent call last):
+        File "/app/app/security.py", line 41, in get_current_user
+          payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        File "/app/.venv/lib/python3.11/site-packages/jose/jwt.py", line 313, in _validate_exp
+          raise ExpiredSignatureError("Signature has expired.")
+      jose.exceptions.ExpiredSignatureError: Signature has expired.
+    gold:
+      - {turn: 6, quote: "except ExpiredSignatureError:"}
+  - id: q4
+    type: semantic
+    prompt: |
+      Dă-mi versiunea actuală a funcției care creează tokenul de acces.
+    gold:
+      - {turn: 7, quote: "def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:"}
+    outdated:
+      - {turn: 2, quote: "def create_access_token(data: dict) -> str:"}
+  - id: q5
+    type: code-pasted
+    prompt: |
+      def test_refresh():
+          r = client.post("/token", json={"username": "ana", "password": "secret123"})
+          assert r.status_code == 200
+
+      De ce iar pică testul ăsta?
+    gold:
+      - {turn: 12, quote: 'r = client.post("/token", data={"username": "ana", "password": "secret123"})'}
+  - id: q6
+    type: ambiguous
+    prompt: |
+      și cu logout-ul cum rămăsese?
+    gold:
+      - {turn: 10, quote: "**Blacklist pe `jti`.**"}
+  - id: q7
+    type: semantic
+    lang: en
+    prompt: |
+      Where did you recommend storing the refresh token on the client side?
+    gold:
+      - {turn: 8, quote: "refresh token-ul într-un **cookie httpOnly**"}

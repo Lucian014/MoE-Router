@@ -29,7 +29,7 @@ RABBITMQ_PASS                                 (required)
 RABBITMQ_CONNECT_RETRIES                      0 (= retry forever, with backoff up to 30 s)
 MIDDLEWARE_QUEUE         gateway, router      router.requests
 MEMORY_QUEUE             worker, memory       memory.ingest ("" = no indexing; dead letters: <queue>.dlq)
-EMBEDDING_HOST           memory               http://localhost:11434 (Ollama serving the embedding model)
+EMBEDDING_HOST           memory, router       http://localhost:11434 (Ollama serving the embedding model)
 EMBEDDING_MODEL                               bge-m3
 EMBEDDING_KEEP_ALIVE                          30m
 MEMORY_MAX_ATTEMPTS                           3 (tries per turn, then the dead-letter queue)
@@ -42,10 +42,21 @@ RAG_RECENT_TURNS_MAX     router (context)     20 (turns read per request; most t
 RAG_RECENT_MAX_SHARE                          0.6 (of the budget for whole turns when there are fragments)
 RAG_LAST_TURN_MAX_SHARE                       0.5 (the last turn is cut beyond this share)
 RAG_CONTEXT_MARGIN                            0.1 (of the context window, for tokenizer differences)
+RAG_VARIANT                                   V2 (V0 = recent turns only, V1 dense, V2 dense + BM25)
+ALLOW_VARIANT_OVERRIDE                        false (true: a request's `variant` picks the preset; tests)
+RAG_TOP_K                                     8 (fragments at most, after the whole turns are known)
+RAG_POOL                                      30 (candidates kept after fusion + dedup)
+RAG_CANDIDATES                                50 (per method, before fusion)
+RAG_DEDUP                                     near (off | hash | near)
+RAG_DEDUP_JACCARD                             0.8 ("near": Jaccard on the terms)
+RAG_MAX_CHUNKS_PER_TURN                       0 (= no cap)
+RAG_DENSE_QUERY_MAX_TOKENS                    512 (prompts with no prose: their last N tokens)
+RAG_MAX_CONTEXT_TOKENS                        0 (= off; else a cap on the context, an experiment)
 DOMAIN_CHECKPOINT        router (classifier)  router/checkpoints/laya-domain-v4, else HF repo
 COMPLEXITY_CHECKPOINT                         router/checkpoints/laya-complexity-v2, else HF repo
 CLASSIFIER_DEVICE                             cpu
 COMPLEXITY_THRESHOLD                          0.5
+CLASSIFIER_INPUT                              edges (long prompts: the request + the document's start; raw)
 HF_TOKEN                 router init          (required: the classifier repos are private)
 CHECKPOINT_DIR           (download_           /checkpoints
 DOMAIN_REPO               checkpoints.py)     Lucian04/laya-domain-v4
@@ -62,7 +73,7 @@ READY_FILE               router, worker       /tmp/ready (exists while the pod i
 SHUTDOWN_GRACE_SECONDS                        25 (on SIGTERM: wait this long for in-flight work)
 """
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -127,7 +138,8 @@ class RabbitMQSettings(_Settings):
 
 
 class MemorySettings(_Settings):
-    """The memory service (src/memory/): indexes stored turns into chunks."""
+    """The memory service (src/memory/): indexes stored turns into chunks. The router reads the
+    EMBEDDING_* settings too: the query must be embedded with the chunks' model."""
 
     embedding_host: str = Field("http://localhost:11434", validation_alias="EMBEDDING_HOST")
     embedding_model: str = Field("bge-m3", validation_alias="EMBEDDING_MODEL")
@@ -160,12 +172,32 @@ class RouterSettings(_Settings):
 
 
 class RetrievalSettings(_Settings):
-    """Context assembly (shared/memory/assembly.py); the retrieval switches come with RAG."""
+    """Context assembly (shared/memory/assembly.py) and retrieval (shared/memory/retrieval.py)."""
 
     recent_turns_max: int = Field(20, ge=1, validation_alias="RAG_RECENT_TURNS_MAX")
     recent_max_share: float = Field(0.6, gt=0, le=1, validation_alias="RAG_RECENT_MAX_SHARE")
     last_turn_max_share: float = Field(0.5, gt=0, le=1, validation_alias="RAG_LAST_TURN_MAX_SHARE")
     context_margin: float = Field(0.1, ge=0, lt=1, validation_alias="RAG_CONTEXT_MARGIN")
+    # the preset (shared/memory/presets.py); the router runs the online ones (V0-V2)
+    variant: str = Field("V2", validation_alias="RAG_VARIANT")
+    # a request's `variant` overrides `variant` only when this is on (evaluation environments)
+    allow_variant_override: bool = Field(False, validation_alias="ALLOW_VARIANT_OVERRIDE")
+    top_k: int = Field(8, ge=0, validation_alias="RAG_TOP_K")
+    pool: int = Field(30, ge=1, validation_alias="RAG_POOL")
+    candidates: int = Field(50, ge=1, validation_alias="RAG_CANDIDATES")
+    dedup: Literal["off", "hash", "near"] = Field("near", validation_alias="RAG_DEDUP")
+    dedup_jaccard: float = Field(0.8, gt=0, le=1, validation_alias="RAG_DEDUP_JACCARD")
+    max_chunks_per_turn: int = Field(0, ge=0, validation_alias="RAG_MAX_CHUNKS_PER_TURN")
+    dense_query_max_tokens: int = Field(512, ge=16, validation_alias="RAG_DENSE_QUERY_MAX_TOKENS")
+    max_context_tokens: int = Field(0, ge=0, validation_alias="RAG_MAX_CONTEXT_TOKENS")
+
+    @model_validator(mode="after")
+    def _known_online_variant(self):
+        from shared.memory.presets import get_preset
+
+        if not get_preset(self.variant).online:
+            raise ValueError(f"RAG_VARIANT={self.variant} needs offline chunk context; the router runs V0-V2")
+        return self
 
 
 class ClassifierSettings(_Settings):
@@ -175,6 +207,8 @@ class ClassifierSettings(_Settings):
     complexity_checkpoint: str | None = Field(None, validation_alias="COMPLEXITY_CHECKPOINT")
     device: str = Field("cpu", validation_alias="CLASSIFIER_DEVICE")
     complexity_threshold: float = Field(0.5, validation_alias="COMPLEXITY_THRESHOLD")
+    # what a classifier reads of a prompt longer than its window (router/classifier_input.py)
+    input_strategy: Literal["edges", "raw"] = Field("edges", validation_alias="CLASSIFIER_INPUT")
 
 
 class CheckpointSettings(_Settings):

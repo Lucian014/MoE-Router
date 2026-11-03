@@ -4,3 +4,5 @@ pydantic-settings>=2.2,<3
 snowballstemmer>=3,<4
 tokenizers>=0.20
 huggingface_hub
+markdown-it-py>=3,<5
+mdit-py-plugins>=0.4,<1

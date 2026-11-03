@@ -3,20 +3,20 @@
 
 Every splitter returns pieces that join back to the segment's text exactly. Small parts are packed
 greedily up to max_tokens, so a long segment becomes a few full pieces, not many tiny ones.
+
+Where Markdown structure matters (headings, list items) the boundaries come from the same parser
+as the segmentation; code is cut by indentation and blank lines, the same way in any language.
 """
-import ast
 import re
 from collections.abc import Callable
 from typing import Protocol
 
-from shared.memory.segment import _LIST_ITEM as LIST_ITEM
-from shared.memory.segment import Segment
+from shared.memory.segment import Segment, blocks, lines_of
 
 Count = Callable[[str], int]
 
-_HEADING = re.compile(r"^#{1,6}\s")
 _SENTENCE_END = re.compile(r"(?<=[.!?…])\s+")
-_PYTHON = {"python", "py", "python3"}
+_FENCE_CHARS = ("`", "~")
 
 
 class Splitter(Protocol):
@@ -57,27 +57,26 @@ def hard_cut(text: str, max_tokens: int, count: Count) -> list[str]:
 
 
 def _split_lines(text: str) -> list[str]:
-    return text.splitlines(keepends=True)
+    return lines_of(text)
 
 
-def _split_before(lines: list[str], is_boundary) -> list[str]:
-    """Group lines into blocks, starting a new block at each boundary line."""
-    blocks: list[str] = []
-    for line in lines:
-        if not blocks or is_boundary(line):
-            blocks.append(line)
+def _split_at(lines: list[str], starts: set[int]) -> list[str]:
+    """Group lines into blocks, a new block starting at each line index in `starts`."""
+    out: list[str] = []
+    for i, line in enumerate(lines):
+        if not out or i in starts:
+            out.append(line)
         else:
-            blocks[-1] += line
-    return blocks
+            out[-1] += line
+    return out
 
 
 def _paragraphs(text: str) -> list[str]:
-    """Paragraphs with their trailing blank lines."""
-    parts = re.split(r"(\n[ \t]*\n)", text)
-    out = []
-    for i in range(0, len(parts), 2):
-        out.append(parts[i] + (parts[i + 1] if i + 1 < len(parts) else ""))
-    return [p for p in out if p]
+    """Paragraphs with their trailing blank lines: a new one starts at a non-blank line that
+    follows a blank one."""
+    lines = lines_of(text)
+    starts = {i for i in range(1, len(lines)) if lines[i].strip() and not lines[i - 1].strip()}
+    return _split_at(lines, starts)
 
 
 def _sentences(text: str) -> list[str]:
@@ -96,10 +95,11 @@ def _refine(parts: list[str], max_tokens: int, count: Count, finer: Callable[[st
 
 # ------------------------------------------------------------------ splitters
 class ProseSplitter:
-    """Headings, then paragraphs, then sentences, then a hard cut."""
+    """Headings (from the Markdown parser), then paragraphs, then sentences, then a hard cut."""
 
     def split(self, seg: Segment, max_tokens: int, count: Count) -> list[str]:
-        parts = _split_before(_split_lines(seg.text), lambda line: bool(_HEADING.match(line)))
+        headings = {tok.map[0] for tok in blocks(seg.text) if tok.type == "heading_open"}
+        parts = _split_at(_split_lines(seg.text), headings)
         parts = _refine(parts, max_tokens, count, _paragraphs)
         parts = _refine(parts, max_tokens, count, _sentences)
         parts = _refine(parts, max_tokens, count, lambda p: hard_cut(p, max_tokens, count))
@@ -107,18 +107,22 @@ class ProseSplitter:
 
 
 class CodeSplitter:
-    """Python: top-level definitions (ast), decorators and preceding comments with their
-    definition, classes over the limit by method. Other languages, or code that doesn't parse:
-    blank lines, then lines, then a hard cut. Fence lines stay with the first / last piece."""
+    """By indentation, in any language: a unit starts at an unindented line after a blank line
+    (a function, a class, a block of statements), so decorators and comments right above a
+    definition stay with it. A unit still too long is cut the same way one indentation level
+    deeper (the methods of a class), then by blank lines, lines, a hard cut. Fence lines stay with
+    the first / last piece."""
 
     def split(self, seg: Segment, max_tokens: int, count: Count) -> list[str]:
-        lines = _split_lines(seg.text)
-        head, body, tail = _strip_fence(lines)
-        units = None
-        if seg.lang in _PYTHON or seg.lang is None:
-            units = _python_units(body, max_tokens, count)
-        if units is None:
-            units = _paragraphs("".join(body))
+        head, body, tail = _strip_fence(_split_lines(seg.text))
+        units = []
+        for unit in _units_at_level(body, 0):
+            if count("".join(unit)) > max_tokens and len(unit) > 1:
+                inner = _units_at_level(unit, _inner_indent(unit))
+                units.extend("".join(u) for u in inner)
+            else:
+                units.append("".join(unit))
+        units = _refine(units, max_tokens, count, _paragraphs)
         units = _refine(units, max_tokens, count, _split_lines)
         units = _refine(units, max_tokens, count, lambda p: hard_cut(p, max_tokens, count))
         pieces = pack(units, max_tokens, count) or [""]
@@ -148,7 +152,8 @@ class ListSplitter:
     """Between items, never inside one."""
 
     def split(self, seg: Segment, max_tokens: int, count: Count) -> list[str]:
-        items = _split_before(_split_lines(seg.text), lambda line: bool(LIST_ITEM.match(line)))
+        items_start = {tok.map[0] for tok in blocks(seg.text, level=1) if tok.type == "list_item_open"}
+        items = _split_at(_split_lines(seg.text), items_start)
         items = _refine(items, max_tokens, count, lambda p: ProseSplitter().split(Segment("prose", p), max_tokens, count))
         return pack(items, max_tokens, count)
 
@@ -171,39 +176,40 @@ SPLITTERS: dict[str, Splitter] = {
 
 
 # ------------------------------------------------------------------ code helpers
+def _is_fence_line(line: str, closing: bool = False) -> bool:
+    body = line.strip()
+    if closing:
+        return len(body) >= 3 and body[0] in _FENCE_CHARS and body == body[0] * len(body)
+    return line.startswith(("```", "~~~", " ```", " ~~~", "  ```", "  ~~~", "   ```", "   ~~~"))
+
+
 def _strip_fence(lines: list[str]) -> tuple[list[str], list[str], list[str]]:
-    if lines and re.match(r"^ {0,3}(`{3,}|~{3,})", lines[0]):
+    """(opening fence line, the code, closing fence line); empty lists for unfenced code."""
+    if lines and _is_fence_line(lines[0]):
         head, rest = lines[:1], lines[1:]
-        if rest and re.match(r"^ {0,3}(`{3,}|~{3,})\s*$", rest[-1]):
+        if rest and _is_fence_line(rest[-1], closing=True):
             return head, rest[:-1], rest[-1:]
         return head, rest, []
     return [], lines, []
 
 
-def _python_units(lines: list[str], max_tokens: int, count: Count) -> list[str] | None:
-    """Top-level statements as units: a unit starts at a definition's first decorator or at the
-    comments / blank lines right after the previous unit. None if the code doesn't parse."""
-    source = "".join(lines)
-    try:
-        tree = ast.parse(source)
-    except (SyntaxError, ValueError):
-        return None
-    if not tree.body:
-        return None
-    units = []
-    for node, a, b in zip(tree.body, *_bounds(tree.body, 0, len(lines))):
-        text = "".join(lines[a:b])
-        if isinstance(node, ast.ClassDef) and count(text) > max_tokens and len(node.body) > 1:
-            # the class line (+ docstring / first statement) is the first unit, then one per method
-            for _, x, y in zip(node.body, *_bounds(node.body, a, b)):
-                units.append("".join(lines[x:y]))
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip(" \t"))
+
+
+def _inner_indent(lines: list[str]) -> int:
+    """The smallest indentation of the unit's body (its lines after the first)."""
+    indents = [_indent(line) for line in lines[1:] if line.strip()]
+    return min(indents) if indents else 0
+
+
+def _units_at_level(lines: list[str], level: int) -> list[list[str]]:
+    """Cut before every line indented exactly `level` that follows a blank line."""
+    units: list[list[str]] = []
+    for i, line in enumerate(lines):
+        starts = (i > 0 and line.strip() and _indent(line) == level and not lines[i - 1].strip())
+        if not units or starts:
+            units.append([line])
         else:
-            units.append(text)
+            units[-1].append(line)
     return units
-
-
-def _bounds(nodes: list[ast.stmt], start: int, end: int) -> tuple[list[int], list[int]]:
-    """Line ranges [a, b) per statement: each runs from the end of the previous one, so the
-    comments, blank lines and decorators before a definition go with it."""
-    ends = [n.end_lineno for n in nodes[:-1]]
-    return [start] + ends, ends + [end]

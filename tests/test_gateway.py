@@ -47,8 +47,17 @@ def test_given_session_id_is_passed_through(client):
     assert mq.calls[0]["session_id"] == sid
 
 
+def test_variant_is_passed_only_when_given(client):
+    http, mq = client
+    http.post("/generate", json={"prompt": "x", "variant": "V1"})
+    http.post("/generate", json={"prompt": "y"})
+    assert mq.calls[0]["variant"] == "V1"
+    assert "variant" not in mq.calls[1]
+
+
 @pytest.mark.parametrize("payload", [
     {"prompt": "x", "session_id": "not-a-uuid"},
+    {"prompt": "x", "variant": "best"},
     {"prompt": ""},
     {"session_id": str(uuid.uuid4())},
 ])

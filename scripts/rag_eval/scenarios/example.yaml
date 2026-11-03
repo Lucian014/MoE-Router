@@ -1,0 +1,9 @@
+id: s09-docker-example
+category: coding
+lang: ro
+turns:
+  - user: |
+      Cum scriu un Dockerfile bun pentru o aplicație Flask?
+  - user: |
+      Imaginea iese de 1.2 GB, cum o micșorez?
+questions: []

@@ -84,5 +84,6 @@ class TurnRepository:
             raise TurnAlreadyExistsError(session_id, turn)
         return turn_id
 
-    async def set_header(self, turn_id: int, header: str) -> None:
-        await self._session.execute(update(Turn).where(Turn.id == turn_id).values(header=header))
+    async def set_header(self, turn_id: int, header: str, from_answer: bool = False) -> None:
+        await self._session.execute(
+            update(Turn).where(Turn.id == turn_id).values(header=header, header_from_answer=from_answer))

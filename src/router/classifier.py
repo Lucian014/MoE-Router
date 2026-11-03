@@ -16,6 +16,9 @@ Settings (shared/config.py, ClassifierSettings), read when load_classifiers() ru
                                                     else Lucian04/laya-complexity-v2)
   CLASSIFIER_DEVICE      cpu | cuda               (default: cpu)
   COMPLEXITY_THRESHOLD   "high" when P(high) >= this (default 0.5; 0.3-0.6 give the same routing)
+  CLASSIFIER_INPUT       edges | raw: what a classifier is given when the prompt is longer than it
+                         reads (default edges: the request + the start of the document;
+                         classifier_input.py)
   HF_TOKEN               only when loading the private repos from the Hub (read by huggingface_hub)
 """
 from dataclasses import dataclass
@@ -23,9 +26,11 @@ from pathlib import Path
 
 try:                                    # run as package (python -m router.router) ...
     from router import complexity_schema, domain_schema
+    from router.classifier_input import classifier_text
 except ImportError:                     # ... or from inside src/router/
     import complexity_schema
     import domain_schema
+    from classifier_input import classifier_text
 
 from shared.config import get_classifier_settings
 
@@ -46,6 +51,7 @@ class DomainPrediction:
     category: str
     confidence: float        # its probability (logged only: NOT used for routing)
     probabilities: dict      # {category: probability} for all 8 categories
+    input: str = "full"      # full | edges | cut (classifier_input.classifier_text)
 
 
 @dataclass
@@ -53,17 +59,30 @@ class ComplexityPrediction:
     level: str               # "low" | "high"
     score: float             # P(high), 0..1
     probabilities: dict      # {"low": p, "high": p}
+    input: str = "full"
 
 
 class _LayaClassifier:
-    def __init__(self, checkpoint: str, schema, device: str):
+    def __init__(self, checkpoint: str, schema, device: str, input_strategy: str = "edges"):
         import laya
         self.schema = schema
+        self.input_strategy = input_strategy
         print(f"[*] Loading {schema.QID} classifier from '{checkpoint}' on {device}...")
         self.agent = laya.Agent(checkpoint, device=device)
 
-    def answer(self, prompt: str) -> dict:
-        return self.agent.predict(prompt, self.schema.QUESTIONS)["answers"][self.schema.QID]
+    @property
+    def budget(self) -> int:
+        """Prompt tokens the classifier reads: its window minus the question and options (the
+        state budget Laya itself uses for long inputs)."""
+        cfg = self.agent.cfg
+        return max(64, cfg.get("max_len", 512) - cfg.get("head_max_len", 192) - 8)
+
+    def count(self, text: str) -> int:
+        return len(self.agent.tok(text, add_special_tokens=False)["input_ids"])
+
+    def answer(self, prompt: str) -> tuple[dict, str]:
+        text, how = classifier_text(prompt, self.budget, self.count, self.input_strategy)
+        return self.agent.predict(text, self.schema.QUESTIONS)["answers"][self.schema.QID], how
 
 
 _DOMAIN: _LayaClassifier | None = None
@@ -79,26 +98,28 @@ def load_classifiers() -> None:
     complexity_checkpoint = cfg.complexity_checkpoint or _default_checkpoint(
         "laya-complexity-v2", "Lucian04/laya-complexity-v2")
     _COMPLEXITY_THRESHOLD = cfg.complexity_threshold
-    _DOMAIN = _LayaClassifier(domain_checkpoint, domain_schema, cfg.device)
-    _COMPLEXITY = _LayaClassifier(complexity_checkpoint, complexity_schema, cfg.device)
+    _DOMAIN = _LayaClassifier(domain_checkpoint, domain_schema, cfg.device, cfg.input_strategy)
+    _COMPLEXITY = _LayaClassifier(complexity_checkpoint, complexity_schema, cfg.device, cfg.input_strategy)
     predict_domain("warm-up")
     predict_complexity("warm-up")
     print(f"[OK] classifiers ready: domain {CATEGORIES} | complexity {LEVELS} "
-          f"(threshold {_COMPLEXITY_THRESHOLD})")
+          f"(threshold {_COMPLEXITY_THRESHOLD}, long prompts: {cfg.input_strategy}, "
+          f"~{_DOMAIN.budget} prompt tokens read)")
 
 
 def predict_domain(prompt: str) -> DomainPrediction:
     if _DOMAIN is None:
         raise RuntimeError("Call load_classifiers() first.")
-    probs = {c: float(p) for c, p in _DOMAIN.answer(prompt)["probabilities"].items()}
+    answer, how = _DOMAIN.answer(prompt)
+    probs = {c: float(p) for c, p in answer["probabilities"].items()}
     category = max(probs, key=probs.get)
-    return DomainPrediction(category, probs[category], probs)
+    return DomainPrediction(category, probs[category], probs, how)
 
 
 def predict_complexity(prompt: str) -> ComplexityPrediction:
     if _COMPLEXITY is None:
         raise RuntimeError("Call load_classifiers() first.")
-    a = _COMPLEXITY.answer(prompt)
+    a, how = _COMPLEXITY.answer(prompt)
     probs = {LEVELS[int(k)]: float(v) for k, v in a["probabilities"].items()}
     score = float(a["score"])
-    return ComplexityPrediction(LEVELS[int(score >= _COMPLEXITY_THRESHOLD)], score, probs)
+    return ComplexityPrediction(LEVELS[int(score >= _COMPLEXITY_THRESHOLD)], score, probs, how)

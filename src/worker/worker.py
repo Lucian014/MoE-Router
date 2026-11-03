@@ -11,22 +11,13 @@ from shared.prompts import single_turn_messages
 from shared.rabbitmq import RabbitMQClient
 from shared.utils import model_to_queue
 
-# Campurile pe care workerul le consuma; restul payload-ului e metadata de
-# rutare pusa de router (domeniu, nivel, probabilitati, confidence...) si se
-# intoarce neatinsa la Gateway, sub "routing". Asa workerul nu depinde de
-# numele exacte ale campurilor din router.
 _CONSUMED_FIELDS = {"prompt", "messages", "model", "num_ctx", "max_tokens", "session_id", "turn"}
 _ROLES = {"system", "user", "assistant"}
 
-# Campuri optionale din payload copiate pe tura (contextul asamblat de router, pasul 4+)
 _TURN_CONTEXT_FIELDS = ("rag_variant", "recent_turns", "retrieved_chunk_ids")
 
-# how often the running worker re-checks its engine for the readiness probe
 ENGINE_CHECK_SECONDS = 15
 
-# Construite in main() din shared.config. Fara MODEL_NAME, WorkerSettings
-# arunca o eroare de validare la pornire (chart-ul Helm il seteaza mereu;
-# lipsa lui e o eroare de deployment).
 MODEL_NAME: str = ""
 ENGINE_TYPE: str = ""
 CONTEXT_WINDOW: int = 4096
@@ -73,8 +64,6 @@ async def store_turn(payload: dict, user_content: str, result: ChatResult) -> tu
         return None
     session_id = uuid.UUID(str(payload["session_id"]))
 
-    # routerul trimite si predictia, si rutarea efectiva (mostenita de la sesiune pentru un
-    # follow-up); fara campurile efective (router vechi), efectivul = prezisul
     predicted_domain = payload.get("task_type")
     predicted_complexity = payload.get("complexity_score")
     effective_domain = payload.get("effective_domain", predicted_domain)
@@ -210,7 +199,6 @@ async def main():
 
     try:
         # Don't take requests before the model can answer them (Ollama starting, model
-        # still being pulled): they wait in the queue instead, up to their deadline.
         await retry(engine_health, f"{ENGINE_TYPE} health check for {MODEL_NAME}", stop_event=stop)
         await mq_client.connect(service_name=f"Worker ({MODEL_NAME})", stop_event=stop)
     except Stopped:
