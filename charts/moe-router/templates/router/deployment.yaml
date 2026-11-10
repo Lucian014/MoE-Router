@@ -76,11 +76,10 @@ spec:
           envFrom:
             {{- include "moe.serviceEnvFrom" (dict "root" . "postgres" true) | nindent 12 }}
           env:
-            # folder names written by router/download_checkpoints.py
-            - name: DOMAIN_CHECKPOINT
-              value: /checkpoints/laya-domain-v4
-            - name: COMPLEXITY_CHECKPOINT
-              value: /checkpoints/laya-complexity-v2
+            # where the init container downloaded the classifiers (router/download_checkpoints.py);
+            # the folder names are in shared/config.py
+            - name: CHECKPOINT_DIR
+              value: /checkpoints
             - name: CLASSIFIER_DEVICE
               value: {{ .Values.router.classifierDevice | quote }}
             - name: COMPLEXITY_THRESHOLD
@@ -98,11 +97,13 @@ spec:
               value: {{ .Values.router.rag.topK | quote }}
             - name: ALLOW_VARIANT_OVERRIDE
               value: {{ .Values.router.rag.allowVariantOverride | quote }}
-          # /tmp/ready exists once the classifiers are loaded, the catalog is valid and the
+            - name: READY_FILE
+              value: {{ include "moe.readyFile" . | quote }}
+          # the ready file exists once the classifiers are loaded, the catalog is valid and the
           # router consumes. No liveness probe: loading and waiting for the catalog can take long.
           readinessProbe:
             exec:
-              command: ["test", "-f", "/tmp/ready"]
+              command: ["test", "-f", {{ include "moe.readyFile" . | quote }}]
             initialDelaySeconds: 10
             periodSeconds: 5
           {{- with .Values.router.resources }}

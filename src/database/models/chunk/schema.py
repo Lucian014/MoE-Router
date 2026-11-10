@@ -20,8 +20,8 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database.base import Base
+from shared.config import EMBEDDING_DIM
 
-EMBEDDING_DIM = 1024  # bge-m3
 CHUNK_SOURCES = ("prompt", "response")
 CHUNK_KINDS = ("prose", "code", "log", "math", "list", "table")
 

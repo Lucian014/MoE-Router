@@ -12,6 +12,7 @@ SRC_DIR = ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
 from database import get_session, ModelRepository
+from shared.utils import with_latest_tag
 
 OLLAMA_URL = os.getenv(
     "OLLAMA_URL",
@@ -24,10 +25,6 @@ HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "30"))
 # service's embedding model. Comma-separated; the Helm setup Job sets it.
 EXTRA_MODELS = [m.strip() for m in os.getenv("EXTRA_OLLAMA_MODELS", "").split(",") if m.strip()]
 
-
-def _with_tag(model_id: str) -> str:
-    """Ollama lists a model pulled without a tag as '<name>:latest'."""
-    return model_id if ":" in model_id else f"{model_id}:latest"
 
 async def load_catalog_allow_empty() -> list[dict]:
     async with get_session() as session:
@@ -162,7 +159,7 @@ def provision_ollama(models: list[dict]) -> None:
         print(f"[*] Extra model(s), not in the catalog: {EXTRA_MODELS}")
 
     for model_id in model_ids + [m for m in EXTRA_MODELS if m not in model_ids]:
-        if model_id in installed or _with_tag(model_id) in installed:
+        if model_id in installed or with_latest_tag(model_id) in installed:
             print(
                 f"[SKIP] Ollama model already installed: "
                 f"{model_id}"
@@ -227,7 +224,7 @@ def prune_ollama(models: list[dict]) -> None:
         if model.get("engine") == "ollama"
     }
     keep = catalog_ids | set(EXTRA_MODELS)
-    keep |= {_with_tag(m) for m in keep}
+    keep |= {with_latest_tag(m) for m in keep}
 
     stale = installed - keep
 

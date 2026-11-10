@@ -5,7 +5,13 @@ import uuid
 
 from database import ChatSessionRepository, TurnAlreadyExistsError, TurnRepository, dispose_engine, get_session
 from engine import ChatResult, get_engine
-from shared.config import get_lifecycle_settings, get_rabbitmq_settings, get_worker_settings
+from shared.config import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_MAX_OUTPUT_TOKENS,
+    get_lifecycle_settings,
+    get_rabbitmq_settings,
+    get_worker_settings,
+)
 from shared.lifecycle import Stopped, install_stop_signals, retry, set_ready
 from shared.prompts import single_turn_messages
 from shared.rabbitmq import RabbitMQClient
@@ -20,16 +26,16 @@ ENGINE_CHECK_SECONDS = 15
 
 MODEL_NAME: str = ""
 ENGINE_TYPE: str = ""
-CONTEXT_WINDOW: int = 4096
-MAX_OUTPUT_TOKENS: int = 512
-MEMORY_QUEUE: str = ""          # "" = nu se publica nimic pentru indexare
+CONTEXT_WINDOW: int = DEFAULT_CONTEXT_WINDOW          # set from WorkerSettings in main()
+MAX_OUTPUT_TOKENS: int = DEFAULT_MAX_OUTPUT_TOKENS
+MEMORY_QUEUE: str = ""          # "" = nothing is published for indexing
 engine = None
 mq_client: RabbitMQClient | None = None
 
 
 def messages_from_payload(payload: dict) -> list[dict]:
-    """Mesajele de trimis modelului. Routerul trimite `messages` (contextul asamblat);
-    un payload doar cu `prompt` (routerul vechi) devine [system, user]."""
+    """The messages for the model. The router sends `messages` (the assembled context);
+    a payload with only a `prompt` (an older router) becomes [system, user]."""
     messages = payload.get("messages")
     if messages is None:
         prompt = payload.get("prompt", "")
@@ -48,7 +54,7 @@ def messages_from_payload(payload: dict) -> list[dict]:
 
 
 def limits_from_payload(payload: dict) -> tuple[int, int]:
-    """(num_ctx, max_tokens): ale modelului ales, trimise de router; altfel cele din setari."""
+    """(num_ctx, max_tokens): the chosen model's, sent by the router; else the settings'."""
     num_ctx = payload.get("num_ctx") or CONTEXT_WINDOW
     max_tokens = payload.get("max_tokens") or MAX_OUTPUT_TOKENS
     if not (isinstance(num_ctx, int) and isinstance(max_tokens, int) and 0 < max_tokens < num_ctx):
@@ -57,9 +63,9 @@ def limits_from_payload(payload: dict) -> tuple[int, int]:
 
 
 async def store_turn(payload: dict, user_content: str, result: ChatResult) -> tuple[int, int] | None:
-    """Scrierea W1: sesiunea (creata la prima tura), tura si starea de rutare a sesiunii, intr-o
-    singura tranzactie, INAINTE de raspuns -- urmatorul prompt al userului vede mereu tura asta.
-    Intoarce (numarul turei, id-ul randului). Fara session_id (client vechi) nu se salveaza nimic."""
+    """Write W1: the session (created on its first turn), the turn and the session's routing state,
+    in one transaction, BEFORE the reply -- the user's next prompt always sees this turn.
+    Returns (turn number, row id). Without a session_id (an older client) nothing is stored."""
     if not payload.get("session_id"):
         return None
     session_id = uuid.UUID(str(payload["session_id"]))
@@ -95,8 +101,8 @@ async def store_turn(payload: dict, user_content: str, result: ChatResult) -> tu
 
 
 async def publish_for_indexing(turn_id: int) -> None:
-    """Tura salvata merge la serviciul memory (chunking + embeddings), asincron. Daca publicarea
-    esueaza, tura ramane in `turns` fara chunk-uri, iar `memory.service --reindex` o recupereaza."""
+    """The stored turn goes to the memory service (chunking + embeddings), asynchronously. If the
+    publish fails, the turn stays in `turns` without chunks and `memory.service --reindex` picks it up."""
     if not MEMORY_QUEUE or mq_client is None:
         return
     try:
@@ -109,10 +115,9 @@ async def handle_request(payload: dict) -> dict:
     messages = messages_from_payload(payload)
     num_ctx, max_tokens = limits_from_payload(payload)
 
-    # Un worker = un model: coada worker.<model> e a acestui model, deci
-    # generam mereu cu MODEL_NAME. Daca routerul a scris alt model in payload,
-    # e un bug de rutare -- il logam, dar nu fortam Ollama sa incarce alt
-    # model pe workerul asta.
+    # One worker = one model: the worker.<model> queue belongs to this model, so we always
+    # generate with MODEL_NAME. Another model in the payload is a routing bug -- logged, but
+    # Ollama is not made to load another model on this worker.
     requested_model = payload.get("model")
     if requested_model and requested_model != MODEL_NAME:
         print(
@@ -134,8 +139,8 @@ async def handle_request(payload: dict) -> dict:
           f"{result.prompt_tokens} prompt / {result.completion_tokens} completion tokens"
           f"{', truncated' if result.truncated else ''})")
 
-    # Tura se salveaza cu prompt-ul original al userului, nu cu contextul asamblat. Daca
-    # salvarea esueaza, userul primeste totusi raspunsul; tura lipseste doar din istoric.
+    # The turn is stored with the user's original prompt, not the assembled context. If storing
+    # fails the user still gets the answer; the turn is only missing from the history.
     turn = None
     try:
         stored = await store_turn(payload, payload.get("prompt") or prompt, result)
@@ -198,7 +203,7 @@ async def main():
     set_ready(lifecycle.ready_file, False)
 
     try:
-        # Don't take requests before the model can answer them (Ollama starting, model
+        # Don't take requests before the model can answer them (Ollama starting, model not pulled yet)
         await retry(engine_health, f"{ENGINE_TYPE} health check for {MODEL_NAME}", stop_event=stop)
         await mq_client.connect(service_name=f"Worker ({MODEL_NAME})", stop_event=stop)
     except Stopped:

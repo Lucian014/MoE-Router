@@ -22,6 +22,17 @@ def sanitize_k8s_name(model_id: str) -> str:
 
 
 def model_to_queue(model_id: str) -> str:
-#Deterministically map a model_id to its dedicated worker queue.
-
+    """Deterministically map a model_id to its dedicated worker queue."""
     return f"worker.{sanitize_k8s_name(model_id)}"
+
+
+def with_latest_tag(model_id: str) -> str:
+    """Ollama lists a model pulled without a tag as '<name>:latest'."""
+    return model_id if ":" in model_id else f"{model_id}:latest"
+
+
+def model_is_listed(tags: dict, model: str) -> bool:
+    """True if `model` is in an Ollama /api/tags response (the worker's engine, the memory
+    service's embedding model, the setup Job's pulls)."""
+    names = {m.get("name") for m in tags.get("models", [])}
+    return model in names or with_latest_tag(model) in names

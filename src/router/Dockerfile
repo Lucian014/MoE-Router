@@ -20,8 +20,9 @@ RUN pip install --no-cache-dir -r database/requirements.txt
 # the reference tokenizer for token budgets (shared/memory/tokens.py), public, ~7 MB; the router
 # runs offline, so it is baked in here
 ENV TOKENIZER_FILE=/app/tokenizer/tokenizer.json
-RUN python -c "from huggingface_hub import hf_hub_download; \
-hf_hub_download('Qwen/Qwen2.5-0.5B-Instruct', 'tokenizer.json', local_dir='/app/tokenizer')"
+# only tokens.py is copied here (REFERENCE_TOKENIZER), so the layer is rebuilt only when it changes
+COPY src/shared/memory/tokens.py /tmp/tokens.py
+RUN python /tmp/tokens.py /app/tokenizer && rm /tmp/tokens.py
 
 COPY src/shared ./shared
 COPY src/database ./database

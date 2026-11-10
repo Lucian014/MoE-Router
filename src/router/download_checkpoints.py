@@ -5,8 +5,10 @@ The router image ships WITHOUT weights (the image is public on GHCR, the classif
 private on Hugging Face). Before the router starts, this script downloads both checkpoints
 into CHECKPOINT_DIR (a volume shared with the router container):
 
-    CHECKPOINT_DIR/laya-domain-v4/
-    CHECKPOINT_DIR/laya-complexity-v2/
+    CHECKPOINT_DIR/<DOMAIN_CHECKPOINT_NAME>/          (shared/config.py)
+    CHECKPOINT_DIR/<COMPLEXITY_CHECKPOINT_NAME>/
+
+The router container reads them from the same CHECKPOINT_DIR (router/classifier.py).
 
 Settings (shared/config.py, CheckpointSettings): HF_TOKEN (required), CHECKPOINT_DIR,
 DOMAIN_REPO / DOMAIN_REVISION, COMPLEXITY_REPO / COMPLEXITY_REVISION.
@@ -22,19 +24,19 @@ from pathlib import Path
 from huggingface_hub import snapshot_download
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # src/ (or /app in the image)
-from shared.config import get_checkpoint_settings  # noqa: E402
-
-# folder names the router expects (DOMAIN_CHECKPOINT / COMPLEXITY_CHECKPOINT point here)
-DOMAIN_DIR = "laya-domain-v4"
-COMPLEXITY_DIR = "laya-complexity-v2"
+from shared.config import (  # noqa: E402
+    COMPLEXITY_CHECKPOINT_NAME,
+    DOMAIN_CHECKPOINT_NAME,
+    get_checkpoint_settings,
+)
 
 
 def main() -> None:
     cfg = get_checkpoint_settings()
     out = Path(cfg.checkpoint_dir)
     for repo, revision, name in [
-        (cfg.domain_repo, cfg.domain_revision, DOMAIN_DIR),
-        (cfg.complexity_repo, cfg.complexity_revision, COMPLEXITY_DIR),
+        (cfg.domain_repo, cfg.domain_revision, DOMAIN_CHECKPOINT_NAME),
+        (cfg.complexity_repo, cfg.complexity_revision, COMPLEXITY_CHECKPOINT_NAME),
     ]:
         print(f"[*] {repo}@{revision} -> {out / name}")
         path = Path(snapshot_download(

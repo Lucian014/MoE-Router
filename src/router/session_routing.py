@@ -15,6 +15,13 @@ The rules are language-independent (no word lists):
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from shared.config import ClassifierSettings, RouterSettings
+
+
+def _default(settings, name: str):
+    """The default of a setting, so the rules' defaults are the deployed ones (no second copy)."""
+    return settings.model_fields[name].default
+
 
 @dataclass(frozen=True)
 class SessionState:
@@ -30,10 +37,11 @@ class SessionState:
 
 @dataclass(frozen=True)
 class RoutingRules:
-    short_prompt_max_words: int = 3
-    min_confidence: float = 0.5
-    min_margin: float = 0.15
-    complexity_threshold: float = 0.5      # P(high) >= this -> "high", like the classifier
+    short_prompt_max_words: int = _default(RouterSettings, "short_prompt_max_words")
+    min_confidence: float = _default(RouterSettings, "domain_min_confidence")
+    min_margin: float = _default(RouterSettings, "domain_min_margin")
+    # P(high) >= this -> "high", like the classifier
+    complexity_threshold: float = _default(ClassifierSettings, "complexity_threshold")
 
 
 @dataclass(frozen=True)

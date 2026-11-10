@@ -51,10 +51,12 @@ spec:
               value: {{ .Values.memory.maxAttempts | quote }}
             - name: SHUTDOWN_GRACE_SECONDS
               value: {{ .Values.memory.shutdownGraceSeconds | quote }}
-          # /tmp/ready exists while the embedding model is available and the service consumes
+            - name: READY_FILE
+              value: {{ include "moe.readyFile" . | quote }}
+          # the ready file exists while the embedding model is available and the service consumes
           readinessProbe:
             exec:
-              command: ["test", "-f", "/tmp/ready"]
+              command: ["test", "-f", {{ include "moe.readyFile" . | quote }}]
             initialDelaySeconds: 5
             periodSeconds: 10
           {{- with .Values.memory.resources }}

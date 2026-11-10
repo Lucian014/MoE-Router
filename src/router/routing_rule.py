@@ -13,7 +13,10 @@ There is no fallback on classifier confidence (decided 9 Oct, see docs/laya_trai
 """
 from dataclasses import dataclass
 
-LEVELS = ["low", "high"]
+from router.complexity_schema import LABELS
+from shared.config import DEFAULT_CONTEXT_WINDOW, DEFAULT_MAX_OUTPUT_TOKENS
+
+LEVELS = list(LABELS)                   # the complexity classifier's labels: low, high
 
 
 @dataclass
@@ -25,12 +28,8 @@ class Model:
     enabled: bool = True
     engine: str = "ollama"
     # the model's token budget (models.context_window / max_output_tokens), for context assembly
-    context_window: int = 4096
-    max_output_tokens: int = 512
-
-
-def find_model(catalog, model_id):
-    return next(m for m in catalog if m.model_id == model_id)
+    context_window: int = DEFAULT_CONTEXT_WINDOW
+    max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS
 
 
 def _category_of(row):
@@ -47,8 +46,8 @@ def catalog_from_rows(rows):
     return [Model(model_id=r["model_id"], category=_category_of(r),
                   complexity_tier=r.get("complexity_tier"), is_default=bool(r.get("is_default", False)),
                   enabled=bool(r.get("enabled", True)), engine=r.get("engine", "ollama"),
-                  context_window=int(r.get("context_window") or 4096),
-                  max_output_tokens=int(r.get("max_output_tokens") or 512))
+                  context_window=int(r.get("context_window") or DEFAULT_CONTEXT_WINDOW),
+                  max_output_tokens=int(r.get("max_output_tokens") or DEFAULT_MAX_OUTPUT_TOKENS))
             for r in rows]
 
 
@@ -66,17 +65,17 @@ def default_model(catalog):
 
 
 def select_model(catalog, category, level, confidence=1.0, conf_threshold=0.0):
-    """-> (model_id, reason)"""
+    """-> (the Model, reason)"""
     default = default_model(catalog)
     if confidence < conf_threshold:
-        return default.model_id, "fallback:low-confidence"
+        return default, "fallback:low-confidence"
     candidates = [m for m in catalog if m.enabled and m.category == category]
     if not candidates:
-        return default.model_id, "fallback:no-model"
+        return default, "fallback:no-model"
     for m in candidates:
         if m.complexity_tier == level:
-            return m.model_id, "match"
-    return candidates[0].model_id, "other-level"
+            return m, "match"
+    return candidates[0], "other-level"
 
 
 def validate_catalog(catalog, categories):

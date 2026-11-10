@@ -99,3 +99,12 @@ def test_is_short(prompt, expected):
 ])
 def test_is_ambiguous(probs, expected):
     assert is_ambiguous(probs, RULES) is expected
+
+
+def test_the_rules_default_to_the_deployed_settings():
+    from shared.config import ClassifierSettings, RouterSettings
+
+    router, classifier = RouterSettings(), ClassifierSettings()
+    assert (RULES.short_prompt_max_words, RULES.min_confidence, RULES.min_margin, RULES.complexity_threshold) == \
+        (router.short_prompt_max_words, router.domain_min_confidence, router.domain_min_margin,
+         classifier.complexity_threshold)

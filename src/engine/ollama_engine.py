@@ -1,13 +1,8 @@
 import httpx
 
+from shared.utils import model_is_listed
+
 from .base import ChatResult, InferenceEngine, Message
-
-
-def model_is_listed(tags: dict, model: str) -> bool:
-    """True if `model` is in an Ollama /api/tags response. A model pulled without a tag
-    is listed as '<name>:latest'."""
-    names = {m.get("name") for m in tags.get("models", [])}
-    return model in names or (":" not in model and f"{model}:latest" in names)
 
 
 class OllamaEngine(InferenceEngine):

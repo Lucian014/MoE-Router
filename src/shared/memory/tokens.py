@@ -46,3 +46,11 @@ def count_tokens(text: str) -> int:
 
 def count_message_tokens(content: str) -> int:
     return count_tokens(content) + MESSAGE_OVERHEAD_TOKENS
+
+
+if __name__ == "__main__":      # image builds: python tokens.py <dir> -> <dir>/tokenizer.json
+    import sys
+
+    from huggingface_hub import hf_hub_download
+
+    hf_hub_download(REFERENCE_TOKENIZER, "tokenizer.json", local_dir=sys.argv[1])

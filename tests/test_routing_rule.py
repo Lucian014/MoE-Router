@@ -17,40 +17,45 @@ DEFAULT = Model("general:4b", category="open-qa", complexity_tier="high", is_def
 
 
 # ------------------------------------------------------------------ select_model
+def pick(*args, **kwargs):
+    model, reason = select_model(*args, **kwargs)
+    return model.model_id, reason
+
+
 def test_exact_match_on_category_and_tier():
     cat = catalog(DEFAULT,
                   Model("coder:1b", category="coding", complexity_tier="low"),
                   Model("coder:7b", category="coding", complexity_tier="high"))
-    assert select_model(cat, "coding", "low") == ("coder:1b", "match")
-    assert select_model(cat, "coding", "high") == ("coder:7b", "match")
+    assert pick(cat, "coding", "low") == ("coder:1b", "match")
+    assert pick(cat, "coding", "high") == ("coder:7b", "match")
 
 
 def test_missing_tier_falls_back_to_other_tier():
     cat = catalog(DEFAULT, Model("coder:1b", category="coding", complexity_tier="low"))
-    assert select_model(cat, "coding", "high") == ("coder:1b", "other-level")
+    assert pick(cat, "coding", "high") == ("coder:1b", "other-level")
 
 
 def test_no_model_in_category_falls_back_to_default():
     cat = catalog(DEFAULT, Model("coder:1b", category="coding", complexity_tier="low"))
-    assert select_model(cat, "math", "high") == ("general:4b", "fallback:no-model")
+    assert pick(cat, "math", "high") == ("general:4b", "fallback:no-model")
 
 
 def test_disabled_models_are_never_selected():
     cat = catalog(DEFAULT,
                   Model("coder:1b", category="coding", complexity_tier="low"),
                   Model("coder:7b", category="coding", complexity_tier="high", enabled=False))
-    assert select_model(cat, "coding", "high") == ("coder:1b", "other-level")
+    assert pick(cat, "coding", "high") == ("coder:1b", "other-level")
 
 
 def test_disabled_category_falls_back_to_default():
     cat = catalog(DEFAULT, Model("coder:1b", category="coding", complexity_tier="low", enabled=False))
-    assert select_model(cat, "coding", "low") == ("general:4b", "fallback:no-model")
+    assert pick(cat, "coding", "low") == ("general:4b", "fallback:no-model")
 
 
 def test_confidence_threshold_is_off_by_default():
     cat = catalog(DEFAULT, Model("coder:1b", category="coding", complexity_tier="low"))
-    assert select_model(cat, "coding", "low", confidence=0.01) == ("coder:1b", "match")
-    assert select_model(cat, "coding", "low", confidence=0.01, conf_threshold=0.5) == \
+    assert pick(cat, "coding", "low", confidence=0.01) == ("coder:1b", "match")
+    assert pick(cat, "coding", "low", confidence=0.01, conf_threshold=0.5) == \
         ("general:4b", "fallback:low-confidence")
 
 
@@ -63,7 +68,7 @@ def test_select_requires_exactly_one_enabled_default(defaults):
 
 def test_disabled_default_does_not_count():
     cat = catalog(Model("old", category="open-qa", complexity_tier="low", is_default=True, enabled=False), DEFAULT)
-    assert select_model(cat, "math", "low") == ("general:4b", "fallback:no-model")
+    assert pick(cat, "math", "low") == ("general:4b", "fallback:no-model")
 
 
 # ------------------------------------------------------------------ validate_catalog

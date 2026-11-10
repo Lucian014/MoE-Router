@@ -5,9 +5,9 @@ import time
 
 import pytest
 
-from engine.ollama_engine import model_is_listed
 from shared.lifecycle import Stopped, retry, set_ready
 from shared.rabbitmq import RabbitMQClient
+from shared.utils import model_is_listed
 
 
 def run(coro):

@@ -6,7 +6,8 @@ from abc import ABC, abstractmethod
 
 import httpx
 
-DEFAULT_EMBEDDING_MODEL = "bge-m3"
+from shared.config import DEFAULT_EMBEDDING_MODEL
+from shared.utils import model_is_listed
 
 
 class EmbeddingClient(ABC):
@@ -15,6 +16,11 @@ class EmbeddingClient(ABC):
     @abstractmethod
     async def embed(self, texts: list[str]) -> list[list[float]]:
         """One vector per text, in order."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def health(self) -> None:
+        """Return if the server is up and has the model; raise (with the reason) otherwise."""
         raise NotImplementedError
 
 
@@ -41,3 +47,10 @@ class OllamaEmbeddingClient(EmbeddingClient):
         if len(vectors) != len(texts):
             raise RuntimeError(f"{self.model}: asked for {len(texts)} embeddings, got {len(vectors)}")
         return vectors
+
+    async def health(self) -> None:
+        async with httpx.AsyncClient(timeout=5.0, transport=self._transport) as client:
+            response = await client.get(f"{self.host}/api/tags")
+            response.raise_for_status()
+        if not model_is_listed(response.json(), self.model):
+            raise RuntimeError(f"embedding model '{self.model}' is not pulled on {self.host}")

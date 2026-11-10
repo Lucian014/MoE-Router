@@ -21,11 +21,9 @@ import asyncio
 import json
 import sys
 
-import httpx
 from sqlalchemy import text
 
 from database import TurnRepository, dispose_engine, get_session
-from engine.ollama_engine import model_is_listed
 from memory.indexer import IndexResult, index_turn
 from shared.config import get_lifecycle_settings, get_memory_settings, get_rabbitmq_settings
 from shared.lifecycle import Stopped, install_stop_signals, retry, set_ready
@@ -41,13 +39,9 @@ def make_embedder() -> OllamaEmbeddingClient:
     return OllamaEmbeddingClient(cfg.embedding_host, cfg.embedding_model, keep_alive=cfg.embedding_keep_alive)
 
 
-async def check_ready(embedder: OllamaEmbeddingClient) -> None:
-    """The embedding model is pulled on its Ollama and the database answers."""
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        response = await client.get(f"{embedder.host}/api/tags")
-        response.raise_for_status()
-    if not model_is_listed(response.json(), embedder.model):
-        raise RuntimeError(f"embedding model '{embedder.model}' is not pulled on {embedder.host}")
+async def check_ready(embedder: EmbeddingClient) -> None:
+    """The embedding model is available and the database answers."""
+    await embedder.health()
     async with get_session() as session:
         await session.execute(text("SELECT 1"))
 

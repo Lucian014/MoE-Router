@@ -312,3 +312,12 @@ def test_ollama_embedding_client_batches_and_checks_the_count():
         lambda r: httpx.Response(200, json={"embeddings": [[0.1]]})))
     with pytest.raises(RuntimeError, match="asked for 2"):
         asyncio.run(broken.embed(["a", "b"]))
+
+
+def test_embedding_health_needs_the_model_pulled():
+    def tags(models):
+        return httpx.MockTransport(lambda request: httpx.Response(200, json={"models": [{"name": m} for m in models]}))
+
+    asyncio.run(OllamaEmbeddingClient("http://o", "bge-m3", transport=tags(["bge-m3:latest"])).health())
+    with pytest.raises(RuntimeError, match="not pulled"):
+        asyncio.run(OllamaEmbeddingClient("http://o", "bge-m3", transport=tags(["gemma3:1b"])).health())

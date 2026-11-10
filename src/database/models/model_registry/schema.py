@@ -4,12 +4,12 @@ from sqlalchemy import Boolean, CheckConstraint, DateTime, Index, Integer, Strin
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database.base import Base
+from shared.config import DEFAULT_CONTEXT_WINDOW, DEFAULT_MAX_OUTPUT_TOKENS  # noqa: F401  (re-exported)
 
 COMPLEXITY_TIERS = ("low", "high")
 
-# effective context at run time (Ollama num_ctx / vLLM --max-model-len), input + output together
-DEFAULT_CONTEXT_WINDOW = 4096
-DEFAULT_MAX_OUTPUT_TOKENS = 512
+# context_window: the effective context at run time (Ollama num_ctx / vLLM --max-model-len), input
+# + output together; the defaults (DEFAULT_CONTEXT_WINDOW / DEFAULT_MAX_OUTPUT_TOKENS) are in shared/config.py
 
 
 class ModelRegistryEntry(Base):

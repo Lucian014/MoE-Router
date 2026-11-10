@@ -10,10 +10,9 @@ interchangeable). The question text lives in domain_schema.py / complexity_schem
 byte-identical to the one used in training -- copy those files from scripts/laya/, never edit them here.
 
 Settings (shared/config.py, ClassifierSettings), read when load_classifiers() runs:
-  DOMAIN_CHECKPOINT      local folder or HF repo  (default: router/checkpoints/laya-domain-v4,
-                                                    else Lucian04/laya-domain-v4)
-  COMPLEXITY_CHECKPOINT  local folder or HF repo  (default: router/checkpoints/laya-complexity-v2,
-                                                    else Lucian04/laya-complexity-v2)
+  DOMAIN_CHECKPOINT      local folder or HF repo  (default: the first of <CHECKPOINT_DIR>/<name>,
+  COMPLEXITY_CHECKPOINT                             router/checkpoints/<name> that exists, else the
+                                                    HF repo; names: DOMAIN_ / COMPLEXITY_CHECKPOINT_NAME)
   CLASSIFIER_DEVICE      cpu | cuda               (default: cpu)
   COMPLEXITY_THRESHOLD   "high" when P(high) >= this (default 0.5; 0.3-0.6 give the same routing)
   CLASSIFIER_INPUT       edges | raw: what a classifier is given when the prompt is longer than it
@@ -24,22 +23,27 @@ Settings (shared/config.py, ClassifierSettings), read when load_classifiers() ru
 from dataclasses import dataclass
 from pathlib import Path
 
-try:                                    # run as package (python -m router.router) ...
-    from router import complexity_schema, domain_schema
-    from router.classifier_input import classifier_text
-except ImportError:                     # ... or from inside src/router/
-    import complexity_schema
-    import domain_schema
-    from classifier_input import classifier_text
-
-from shared.config import get_classifier_settings
+from router import complexity_schema, domain_schema
+from router.classifier_input import classifier_text
+from shared.config import (
+    COMPLEXITY_CHECKPOINT_NAME,
+    DOMAIN_CHECKPOINT_NAME,
+    HF_NAMESPACE,
+    get_classifier_settings,
+)
 
 _HERE = Path(__file__).resolve().parent
 
 
-def _default_checkpoint(local_name: str, hub_repo: str) -> str:
-    local = _HERE / "checkpoints" / local_name
-    return str(local) if local.is_dir() else hub_repo
+def _checkpoint(explicit: str | None, checkpoint_dir: str | None, name: str) -> str:
+    """The explicit path / repo, else the first local copy (the pod's volume, then
+    src/router/checkpoints/), else the HF repo."""
+    if explicit:
+        return explicit
+    for base in (checkpoint_dir, _HERE / "checkpoints"):
+        if base and (Path(base) / name).is_dir():
+            return str(Path(base) / name)
+    return f"{HF_NAMESPACE}/{name}"
 
 
 CATEGORIES = list(domain_schema.LABELS)
@@ -75,7 +79,7 @@ class _LayaClassifier:
         """Prompt tokens the classifier reads: its window minus the question and options (the
         state budget Laya itself uses for long inputs)."""
         cfg = self.agent.cfg
-        return max(64, cfg.get("max_len", 512) - cfg.get("head_max_len", 192) - 8)
+        return max(64, cfg.get("max_len", 512) - cfg.get("head_max_len", 256) - 8)
 
     def count(self, text: str) -> int:
         return len(self.agent.tok(text, add_special_tokens=False)["input_ids"])
@@ -87,16 +91,14 @@ class _LayaClassifier:
 
 _DOMAIN: _LayaClassifier | None = None
 _COMPLEXITY: _LayaClassifier | None = None
-_COMPLEXITY_THRESHOLD = 0.5
+_COMPLEXITY_THRESHOLD: float | None = None      # COMPLEXITY_THRESHOLD, set by load_classifiers()
 
 
 def load_classifiers() -> None:
     global _DOMAIN, _COMPLEXITY, _COMPLEXITY_THRESHOLD
     cfg = get_classifier_settings()
-    domain_checkpoint = cfg.domain_checkpoint or _default_checkpoint(
-        "laya-domain-v4", "Lucian04/laya-domain-v4")
-    complexity_checkpoint = cfg.complexity_checkpoint or _default_checkpoint(
-        "laya-complexity-v2", "Lucian04/laya-complexity-v2")
+    domain_checkpoint = _checkpoint(cfg.domain_checkpoint, cfg.checkpoint_dir, DOMAIN_CHECKPOINT_NAME)
+    complexity_checkpoint = _checkpoint(cfg.complexity_checkpoint, cfg.checkpoint_dir, COMPLEXITY_CHECKPOINT_NAME)
     _COMPLEXITY_THRESHOLD = cfg.complexity_threshold
     _DOMAIN = _LayaClassifier(domain_checkpoint, domain_schema, cfg.device, cfg.input_strategy)
     _COMPLEXITY = _LayaClassifier(complexity_checkpoint, complexity_schema, cfg.device, cfg.input_strategy)
