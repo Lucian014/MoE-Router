@@ -57,17 +57,23 @@ spec:
               value: {{ include "moe.inferenceHost" (dict "root" $ "model" .) | quote }}
             - name: WORKER_PREFETCH
               value: {{ .prefetch | default $.Values.worker.prefetch | quote }}
-            # same defaults as the registry (seed_models.py), so worker and registry agree
+            # unset in the catalog -> the worker's default, the registry's too (shared/config.py)
+            {{- with .context_window }}
             - name: CONTEXT_WINDOW
-              value: {{ .context_window | default 4096 | quote }}
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .max_output_tokens }}
             - name: MAX_OUTPUT_TOKENS
-              value: {{ .max_output_tokens | default 512 | quote }}
+              value: {{ . | quote }}
+            {{- end }}
             - name: SHUTDOWN_GRACE_SECONDS
               value: {{ $.Values.worker.shutdownGraceSeconds | quote }}
-          # /tmp/ready exists while the engine serves this model and the worker consumes
+            - name: READY_FILE
+              value: {{ include "moe.readyFile" $ | quote }}
+          # the ready file exists while the engine serves this model and the worker consumes
           readinessProbe:
             exec:
-              command: ["test", "-f", "/tmp/ready"]
+              command: ["test", "-f", {{ include "moe.readyFile" $ | quote }}]
             initialDelaySeconds: 5
             periodSeconds: 10
           {{- with $.Values.worker.resources }}

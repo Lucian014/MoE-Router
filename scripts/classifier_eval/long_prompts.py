@@ -281,8 +281,8 @@ def run(cases: list[Case], configs: list[Config], domain_agent, complexity_agent
             if given is not None and given != case.prompt:
                 row["given"] = given
             if catalog is not None:
-                row["model"] = select_model(catalog, predicted, level)[0]
-                row["expected_model"] = select_model(catalog, case.label, level)[0]
+                row["model"] = select_model(catalog, predicted, level)[0].model_id
+                row["expected_model"] = select_model(catalog, case.label, level)[0].model_id
             rows.append(row)
             if done % 25 == 0 or done == total:
                 print(f"[*] {done}/{total} ({config.name}, {time.perf_counter() - started:.0f} s, "

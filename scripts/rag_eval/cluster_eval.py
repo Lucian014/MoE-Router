@@ -50,6 +50,7 @@ from database import ChatSessionRepository, ChunkRepository, TurnRepository, dis
 from database.models.chunk.schema import Chunk
 from database.models.turn.schema import Turn
 from memory.indexer import index_turn
+from shared.config import DEFAULT_EMBEDDING_MODEL
 from shared.memory.chunking import chunk_turn
 from shared.memory.embedding import OllamaEmbeddingClient
 
@@ -252,7 +253,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--gateway", default="http://localhost:8000")
     ap.add_argument("--embedding-host", default="http://localhost:11434")
-    ap.add_argument("--embedding-model", default="bge-m3")
+    ap.add_argument("--embedding-model", default=DEFAULT_EMBEDDING_MODEL)
     ap.add_argument("--variants", nargs="+", default=["V0", "V1", "V2"])
     ap.add_argument("--sessions", default="*.yaml")
     ap.add_argument("--timeout", type=float, default=600)

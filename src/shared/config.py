@@ -52,13 +52,13 @@ RAG_DEDUP_JACCARD                             0.8 ("near": Jaccard on the terms)
 RAG_MAX_CHUNKS_PER_TURN                       0 (= no cap)
 RAG_DENSE_QUERY_MAX_TOKENS                    512 (prompts with no prose: their last N tokens)
 RAG_MAX_CONTEXT_TOKENS                        0 (= off; else a cap on the context, an experiment)
-DOMAIN_CHECKPOINT        router (classifier)  router/checkpoints/laya-domain-v4, else HF repo
-COMPLEXITY_CHECKPOINT                         router/checkpoints/laya-complexity-v2, else HF repo
+DOMAIN_CHECKPOINT        router (classifier)  <CHECKPOINT_DIR>/laya-domain-v4, router/checkpoints/..., else HF repo
+COMPLEXITY_CHECKPOINT                         <CHECKPOINT_DIR>/laya-complexity-v2, router/checkpoints/..., else HF repo
 CLASSIFIER_DEVICE                             cpu
 COMPLEXITY_THRESHOLD                          0.5
 CLASSIFIER_INPUT                              edges (long prompts: the request + the document's start; raw)
 HF_TOKEN                 router init          (required: the classifier repos are private)
-CHECKPOINT_DIR           (download_           /checkpoints
+CHECKPOINT_DIR           (download_           /checkpoints (the router reads the checkpoints from here too)
 DOMAIN_REPO               checkpoints.py)     Lucian04/laya-domain-v4
 DOMAIN_REVISION                               main (pin a commit hash for reproducible pods)
 COMPLEXITY_REPO                               Lucian04/laya-complexity-v2
@@ -80,6 +80,18 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import URL
+
+# Defaults that code outside this file needs too (the DB schema, the memory library, the eval
+# scripts): defined once here and imported, never repeated.
+DEFAULT_CONTEXT_WINDOW = 4096           # models.context_window, the worker's CONTEXT_WINDOW
+DEFAULT_MAX_OUTPUT_TOKENS = 512         # models.max_output_tokens, the worker's MAX_OUTPUT_TOKENS
+DEFAULT_EMBEDDING_MODEL = "bge-m3"
+EMBEDDING_DIM = 1024                    # of DEFAULT_EMBEDDING_MODEL: the chunks.embedding column
+DENSE_QUERY_MAX_TOKENS = 512            # the dense query of a prompt with no prose (header.py)
+# the classifiers: folder names under CHECKPOINT_DIR and the Hugging Face repos they come from
+HF_NAMESPACE = "Lucian04"
+DOMAIN_CHECKPOINT_NAME = "laya-domain-v4"
+COMPLEXITY_CHECKPOINT_NAME = "laya-complexity-v2"
 
 
 class _Settings(BaseSettings):
@@ -142,7 +154,7 @@ class MemorySettings(_Settings):
     EMBEDDING_* settings too: the query must be embedded with the chunks' model."""
 
     embedding_host: str = Field("http://localhost:11434", validation_alias="EMBEDDING_HOST")
-    embedding_model: str = Field("bge-m3", validation_alias="EMBEDDING_MODEL")
+    embedding_model: str = Field(DEFAULT_EMBEDDING_MODEL, validation_alias="EMBEDDING_MODEL")
     # keep the embedding model loaded between turns (Ollama keep_alive); it is small
     embedding_keep_alive: str = Field("30m", validation_alias="EMBEDDING_KEEP_ALIVE")
     # tries per turn before the message goes to the dead-letter queue
@@ -188,7 +200,7 @@ class RetrievalSettings(_Settings):
     dedup: Literal["off", "hash", "near"] = Field("near", validation_alias="RAG_DEDUP")
     dedup_jaccard: float = Field(0.8, gt=0, le=1, validation_alias="RAG_DEDUP_JACCARD")
     max_chunks_per_turn: int = Field(0, ge=0, validation_alias="RAG_MAX_CHUNKS_PER_TURN")
-    dense_query_max_tokens: int = Field(512, ge=16, validation_alias="RAG_DENSE_QUERY_MAX_TOKENS")
+    dense_query_max_tokens: int = Field(DENSE_QUERY_MAX_TOKENS, ge=16, validation_alias="RAG_DENSE_QUERY_MAX_TOKENS")
     max_context_tokens: int = Field(0, ge=0, validation_alias="RAG_MAX_CONTEXT_TOKENS")
 
     @model_validator(mode="after")
@@ -201,10 +213,11 @@ class RetrievalSettings(_Settings):
 
 
 class ClassifierSettings(_Settings):
-    # None -> classifier.py falls back to src/router/checkpoints/<name> (local runs), else the
-    # HF repo. In Kubernetes these point at the volume the init container downloaded into.
+    # None -> classifier.py looks for <checkpoint_dir>/<name> (the pod's volume), then
+    # src/router/checkpoints/<name> (local runs), else the HF repo
     domain_checkpoint: str | None = Field(None, validation_alias="DOMAIN_CHECKPOINT")
     complexity_checkpoint: str | None = Field(None, validation_alias="COMPLEXITY_CHECKPOINT")
+    checkpoint_dir: str | None = Field(None, validation_alias="CHECKPOINT_DIR")
     device: str = Field("cpu", validation_alias="CLASSIFIER_DEVICE")
     complexity_threshold: float = Field(0.5, validation_alias="COMPLEXITY_THRESHOLD")
     # what a classifier reads of a prompt longer than its window (router/classifier_input.py)
@@ -217,9 +230,9 @@ class CheckpointSettings(_Settings):
 
     hf_token: SecretStr = Field(validation_alias="HF_TOKEN")
     checkpoint_dir: str = Field("/checkpoints", validation_alias="CHECKPOINT_DIR")
-    domain_repo: str = Field("Lucian04/laya-domain-v4", validation_alias="DOMAIN_REPO")
+    domain_repo: str = Field(f"{HF_NAMESPACE}/{DOMAIN_CHECKPOINT_NAME}", validation_alias="DOMAIN_REPO")
     domain_revision: str = Field("main", validation_alias="DOMAIN_REVISION")
-    complexity_repo: str = Field("Lucian04/laya-complexity-v2", validation_alias="COMPLEXITY_REPO")
+    complexity_repo: str = Field(f"{HF_NAMESPACE}/{COMPLEXITY_CHECKPOINT_NAME}", validation_alias="COMPLEXITY_REPO")
     complexity_revision: str = Field("main", validation_alias="COMPLEXITY_REVISION")
 
 
@@ -231,8 +244,8 @@ class WorkerSettings(_Settings):
     prefetch: int = Field(1, ge=1, validation_alias="WORKER_PREFETCH")
     # used when the payload doesn't carry them (until the router sends the model's own limits);
     # the chart sets them from the catalog, the same values the registry holds
-    context_window: int = Field(4096, gt=0, validation_alias="CONTEXT_WINDOW")
-    max_output_tokens: int = Field(512, gt=0, validation_alias="MAX_OUTPUT_TOKENS")
+    context_window: int = Field(DEFAULT_CONTEXT_WINDOW, gt=0, validation_alias="CONTEXT_WINDOW")
+    max_output_tokens: int = Field(DEFAULT_MAX_OUTPUT_TOKENS, gt=0, validation_alias="MAX_OUTPUT_TOKENS")
 
     @model_validator(mode="after")
     def _answer_leaves_room_for_the_prompt(self):

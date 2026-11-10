@@ -46,6 +46,9 @@ from database import (
     dispose_engine,
     get_session,
 )
+from router.classifier import CATEGORIES, load_classifiers, predict_complexity, predict_domain
+from router.routing_rule import catalog_from_rows, default_model, select_model, validate_catalog
+from router.session_routing import RoutingRules, SessionState, decide
 from shared.config import (
     get_classifier_settings,
     get_lifecycle_settings,
@@ -65,16 +68,6 @@ from shared.prompts import SYSTEM_PROMPT
 from shared.rabbitmq import RabbitMQClient, remaining_seconds
 from shared.utils import model_to_queue
 
-try:
-    from router.classifier import CATEGORIES, load_classifiers, predict_complexity, predict_domain
-    from router.routing_rule import catalog_from_rows, default_model, find_model, select_model, validate_catalog
-    from router.session_routing import RoutingRules, SessionState, decide
-except ImportError:
-    from classifier import CATEGORIES, load_classifiers, predict_complexity, predict_domain
-    from routing_rule import catalog_from_rows, default_model, find_model, select_model, validate_catalog
-    from session_routing import RoutingRules, SessionState, decide
-
-# built in main() from shared.config, so importing this module needs no env
 mq_client: RabbitMQClient | None = None
 _embedder: EmbeddingClient | None = None
 
@@ -94,7 +87,7 @@ def _print_catalog(catalog, warnings):
     for c in CATEGORIES:
         low, _ = select_model(catalog, c, "low")
         high, _ = select_model(catalog, c, "high")
-        print(f"     {c:17s} low -> {low:32s} high -> {high}")
+        print(f"     {c:17s} low -> {low.model_id:32s} high -> {high.model_id}")
     for w in warnings:
         print(f"     [warn] {w}")
 
@@ -274,8 +267,8 @@ async def route_message(message) -> None:
             retrieval_info = {"candidates": retrieved.candidates, "pool": len(fragments), **retrieved.timings}
 
         # 3. the model
-        selected_model, reason = select_model(_CATALOG, decision.domain, decision.complexity_level)
-        model = find_model(_CATALOG, selected_model)
+        model, reason = select_model(_CATALOG, decision.domain, decision.complexity_level)
+        selected_model = model.model_id
         worker_queue = model_to_queue(selected_model)
 
         # 4. the context, in that model's budget

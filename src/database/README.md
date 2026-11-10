@@ -5,7 +5,6 @@
 ```
 database/
 ├── __init__.py         # re-exports shared infra + every table's public API
-├── config.py            # env-var driven Postgres connection settings
 ├── session.py            # async engine + get_session() — shared by ALL tables
 ├── base.py               # the ONE shared declarative Base every schema.py uses
 ├── alembic.ini
@@ -14,7 +13,7 @@ database/
 │                            # credentials from postgres-secret, then runs
 │                            # whatever alembic command you pass it
 ├── migrations/
-│   ├── env.py             # wires Alembic to database.config + database.models
+│   ├── env.py             # wires Alembic to shared.config + database.models
 │   ├── script.py.mako
 │   └── versions/
 │       ├── 0001_create_models_table.py
@@ -38,7 +37,7 @@ in docs/rag-planv2.md.
 ## What's shared vs. what's per-table
 
 **Shared once, for the whole project — never duplicated:**
-- `config.py` — connection settings
+- `src/shared/config.py` (PostgresSettings) — connection settings
 - `session.py` — the engine and `get_session()`
 - `base.py` — the declarative `Base` class
 - `alembic.ini` + `migrations/env.py` + `migrations/script.py.mako` — the

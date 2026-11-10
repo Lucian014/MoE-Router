@@ -83,3 +83,10 @@ def test_raw_gives_the_long_prompt_as_it_is(monkeypatch):
     monkeypatch.setattr(classifier, "_DOMAIN", fake)
     assert classifier.predict_domain(f"{DOC}\n\n{REQUEST}").input == "cut"
     assert fake.agent.seen == [f"{DOC}\n\n{REQUEST}"]
+
+
+def test_checkpoint_explicit_then_the_volume_then_the_hub(tmp_path):
+    assert classifier._checkpoint("/explicit", str(tmp_path), "laya-x") == "/explicit"
+    assert classifier._checkpoint(None, str(tmp_path), "laya-x") == f"{classifier.HF_NAMESPACE}/laya-x"
+    (tmp_path / "laya-x").mkdir()
+    assert classifier._checkpoint(None, str(tmp_path), "laya-x") == str(tmp_path / "laya-x")

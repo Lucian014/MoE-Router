@@ -67,7 +67,7 @@ def check_catalog(models: list[dict], source: str) -> None:
     for c in CATEGORIES:
         low, _ = select_model(catalog, c, "low")
         high, _ = select_model(catalog, c, "high")
-        print(f"     {c:17s} low -> {low:32s} high -> {high}")
+        print(f"     {c:17s} low -> {low.model_id:32s} high -> {high.model_id}")
 
 
 async def seed_from_yaml(yaml_path: Path, check_only: bool, disable_missing: bool = False) -> None:

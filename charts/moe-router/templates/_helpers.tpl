@@ -156,3 +156,9 @@ http://{{ include "moe.fullname" . }}-ollama:11434
 {{ randAlphaNum 32 | b64enc }}
 {{- end -}}
 {{- end -}}
+
+{{/* The readiness file of the router, worker and memory pods: READY_FILE and the probe that
+     tests it use this one value. */}}
+{{- define "moe.readyFile" -}}
+/tmp/ready
+{{- end }}

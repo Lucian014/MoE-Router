@@ -462,3 +462,37 @@ Implementat: retrieval în paralel cu rutarea de sesiune, cu fallback pe V0 dac�
 - **Prompt-ul prea lung pentru modelul ales** dă eroare, chiar dacă alt model din catalog l-ar primi. Extensii: escaladarea la un model cu context mai mare din același domeniu, apoi la cel general.
 - **Diferențe față de articol:** corpusul e o sesiune, contextul e generat de un model local mic, datele amestecă cod cu text în română, iar V3 se compară cu un baseline cu header, mai puternic decât chunk-ul gol.
 ddeci
+---
+
+## 9. De implementat în viitor
+
+### 9.1 Întrebarea separată de atașamente (odată cu interfața)
+
+**Ideea:** interfața are două câmpuri: unul pentru întrebare și unul pentru fișiere / text lung. Gateway-ul primește `prompt` (întrebarea) și un câmp opțional `attachments: [{name, content}]`. Structura vine de la utilizator, deci nu mai trebuie ghicită din text.
+
+**Ce se simplifică atunci când cererea are atașamente:**
+
+| Unde | Acum (euristic) | Cu atașamente |
+|---|---|---|
+| `classifier_input.py` (`edges`) | caută cererea într-un paragraf scurt de la capete | clasificatorul primește întrebarea + începutul fișierului |
+| `build_dense_query` (`header.py`) | `prose_of` + `select_sentences` | embedding direct pe întrebare |
+| Header-ul chunk-urilor (`extract_question`) | proza prompt-ului, altfel prima propoziție din răspuns | întrebarea + numele fișierului |
+| Fragmentele din context | fără sursă | cu sursa („din `config.py`”) |
+
+Rezolvă limitarea din secțiunea 8 despre prompt-urile lungi la clasificator: cererea nu mai trebuie găsită la capetele documentului.
+
+**Segmentarea rămâne, ca fallback:**
+
+- utilizatorii tot vor lipi traceback-uri și cod în câmpul de întrebare;
+- clienții API (scripturi, `rag_eval`, clienți compatibili OpenAI) trimit doar `prompt`, deci `attachments` e opțional;
+- chunking-ul (`chunking.py`) folosește `segment()` ca să nu taie blocurile de cod. E nevoie de el și pentru fișierele atașate.
+
+Regula din router: cu `attachments`, întrebarea = `prompt` și documentul = atașamentele, fără euristici; fără ele, comportamentul de acum.
+
+**De decis la implementare:**
+
+- **Stocarea:** atașamentele separat de `turns.user_content` (tabel nou sau coloană JSON), nu serializate în text cu delimitatori pe care segmentarea ar trebui apoi să-i parseze.
+- **Bugetul:** întrebarea intră mereu întreagă, iar fișierele întregi doar dacă încap. Altfel sunt indexate imediat și intră prin RAG chiar în tura curentă (acum retrieval-ul caută doar în turele anterioare, `before_turn = next_turn`).
+- **Worker-ul** reconstruiește mesajul pentru model: întrebarea + fișierele cu numele lor (de ex. `<file name="x.py">…</file>`).
+
+**Atinge:** gateway (`src/gateway/main.py`), schema turelor + migrare, router (`classifier_input.py`, `retrieve`), worker, `shared/memory` (`header.py`, `chunking.py`), serviciul `memory` (chunking per fișier).

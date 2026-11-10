@@ -25,6 +25,7 @@ sys.path.insert(0, str(HERE))
 from dataset import DATA_DIR, check, load_dataset
 from harness import CachedEmbedder, ModelProfile, ablation_configs, evaluate, index_sessions, main_configs
 from report import write_report
+from shared.config import DEFAULT_EMBEDDING_MODEL
 from shared.memory.chunking import CHUNKER_VERSION
 from shared.memory.embedding import OllamaEmbeddingClient
 
@@ -76,7 +77,7 @@ async def run(args) -> Path:
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--embedding-host", default="http://localhost:11434")
-    ap.add_argument("--embedding-model", default="bge-m3")
+    ap.add_argument("--embedding-model", default=DEFAULT_EMBEDDING_MODEL)
     ap.add_argument("--sessions", default="*.yaml", help="glob in data/sessions/")
     ap.add_argument("--top-k", type=int, nargs="+", default=[5, 10, 20])
     ap.add_argument("--models", nargs="+", default=["small=4096/512", "large=32768/2048"],

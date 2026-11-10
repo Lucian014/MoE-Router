@@ -15,11 +15,11 @@ truncation is done here: Ollama would cut the end instead.
 import re
 from collections.abc import Callable
 
+from shared.config import DENSE_QUERY_MAX_TOKENS
 from shared.memory.segment import segment
 from shared.memory.tokens import count_tokens
 
 HEADER_MAX_TOKENS = 150
-DENSE_QUERY_MAX_TOKENS = 512
 
 Count = Callable[[str], int]
 

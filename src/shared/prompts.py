@@ -1,5 +1,5 @@
-"""Prompts shared by the services that build model input (the worker now, the router's context
-assembly later, docs/rag-planv2.md 4.7)."""
+"""Prompts shared by the services that build model input: the router's context assembly
+(docs/rag-planv2.md 4.7) and the worker, for a payload without assembled messages."""
 
 # In English: the small models follow English instructions more reliably. Without it, a prompt
 # in Romanian can get an answer in English or Chinese. The code-block rule lets the chunker

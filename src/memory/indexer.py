@@ -46,7 +46,7 @@ async def index_turn(turn_id: int, embedder: EmbeddingClient, force: bool = Fals
         for d, vector in zip(drafts, vectors)
     ]
 
-    async with get_session() as session:            # W2: header + chunks, all or nothing
+    async with get_session() as session:
         chunks = ChunkRepository(session)
         if existing:
             await chunks.delete_for_turn(turn.id)
