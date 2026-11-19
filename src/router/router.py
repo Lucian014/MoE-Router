@@ -204,7 +204,9 @@ async def retrieve(session_id: uuid.UUID, before_turn: int, prompt: str, preset:
         timings["search_ms"] = _ms(t)
         t = time.perf_counter()
         pool = rank(candidates, query_terms, preset,
-                    RankParams(candidates=cfg.candidates, pool=cfg.pool, dedup=cfg.dedup, jaccard=cfg.dedup_jaccard))
+                    RankParams(candidates=cfg.candidates, pool=cfg.pool, dedup=cfg.dedup, jaccard=cfg.dedup_jaccard,
+                               neighbor_turns=cfg.neighbor_turns, neighbor_from_top=cfg.neighbor_from_top,
+                               gate_similarity=cfg.gate_similarity, min_similarity=cfg.min_similarity))
         timings["rank_ms"] = _ms(t)
         t = time.perf_counter()
         texts = await chunks.get_fragments([r.id for r in pool])

@@ -95,6 +95,10 @@ spec:
               value: {{ if .Values.memory.enabled }}{{ .Values.router.rag.variant | quote }}{{ else }}"V0"{{ end }}
             - name: RAG_TOP_K
               value: {{ .Values.router.rag.topK | quote }}
+            - name: RAG_NEIGHBOR_TURNS
+              value: {{ .Values.router.rag.neighborTurns | quote }}
+            - name: RAG_NEIGHBOR_FROM_TOP
+              value: {{ .Values.router.rag.neighborFromTop | quote }}
             - name: ALLOW_VARIANT_OVERRIDE
               value: {{ .Values.router.rag.allowVariantOverride | quote }}
             - name: READY_FILE

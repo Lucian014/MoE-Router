@@ -8,7 +8,7 @@ import httpx
 import pytest
 
 from shared.memory import chunking
-from shared.memory.analyzer import analyze, strip_diacritics
+from shared.memory.analyzer import analyze, strip_diacritics, version
 from shared.memory.chunking import chunk_text, chunk_turn, content_hash, embedding_input
 from shared.memory.embedding import OllamaEmbeddingClient
 from shared.memory.header import build_dense_query, extract_question, select_sentences, tail_tokens
@@ -292,6 +292,42 @@ def test_analyzer_drops_latex_commands():
 
 def test_analyzer_keeps_term_frequencies():
     assert analyze("token token token").count(analyze("token")[0]) == 3
+
+
+def test_analyzer_keeps_every_token_in_any_script():
+    # short tokens are not dropped: numbers, variables, Greek letters (the corpus IDF weighs them)
+    terms = analyze("Cât era P(X ≤ 2) pentru λ = 4? ALARM 2001")
+    for t in ["2", "4", "λ", "p", "x", "2001", "alarm"]:
+        assert t in terms
+    assert "привет" in analyze("Привет")
+
+
+def test_analyzer_applies_every_configured_stemmer():
+    # one term per distinct stem, so the same word matches whatever language is around it
+    both = analyze("changes", languages=("romanian", "english"))
+    assert set(both) == set(analyze("changes", languages=("romanian",))) | set(analyze("changes", languages=("english",)))
+    assert len(both) == len(set(both))
+    assert analyze("changes", languages=()) == ["changes"]             # no stemmer: the word itself
+
+
+def test_analyzer_version_follows_the_stemmers():
+    assert version(("romanian",)) != version(("romanian", "english"))
+    assert version(("romanian", "english")) == version(("romanian", "english"))
+
+
+def test_unknown_stemmer_is_rejected(monkeypatch):
+    from shared.config import RetrievalSettings
+
+    monkeypatch.setenv("RAG_BM25_STEMMERS", "romanian,klingon")
+    with pytest.raises(ValueError, match="klingon"):
+        RetrievalSettings()
+
+
+def test_index_version_has_the_chunker_and_the_analyzer():
+    v = chunking.index_version()
+    assert v.startswith(f"{chunking.CHUNKER_VERSION}+a") and len(v) <= 32     # chunks.chunker_version is 32
+    assert chunking.same_chunks(v) and chunking.same_chunks(chunking.CHUNKER_VERSION)   # rows from before "+"
+    assert not chunking.same_chunks("0+" + version())
 
 
 # ------------------------------------------------------------------ embedding client

@@ -2,163 +2,815 @@ id: s07-cafenea-brainstorming
 category: brainstorming
 lang: ro
 turns:
-  - user: |
-      Vreau să deschid o cafenea mică într-un oraș universitar, lângă campus. Dă-mi idei de concept care să se diferențieze.
-    assistant: |
-      Câteva concepte care merg bine lângă un campus:
+- user: |
+    Vreau să deschid o cafenea mică într-un oraș universitar, lângă campus. Dă-mi idei de concept care să se diferențieze.
+  assistant: |
+    Câteva concepte care merg bine lângă un campus:
 
-      1. **Cafenea de studiu („study café”)** – mese mari, prize la fiecare loc, Wi-Fi rapid, zone liniștite și un abonament lunar care include cafea nelimitată la filtru. Studenții stau mult, deci câștigi din abonamente, nu din rotația meselor.
-      2. **Cafenea cu board games** – jocuri de societate pe rafturi, taxă mică pe oră sau consumație minimă, seri tematice. Atrage grupuri seara, când o cafenea clasică e goală.
-      3. **Specialty coffee + brunch ieftin** – boabe de la o prăjitorie locală, meniu scurt de mic-dejun până la ora 14. Diferențierea vine din calitate, nu din preț.
-      4. **Cafenea „second hand”** – un colț cu cărți și haine la schimb, evenimente de swap. Se potrivește cu un public sensibil la sustenabilitate.
-      5. **Cafenea-atelier** – seara se transformă în spațiu pentru workshopuri (ceramică, ilustrație, programare), închiriat organizatorilor.
+    1. **Cafenea de studiu („study café”)** – mese mari, prize la fiecare loc, Wi-Fi rapid, zone liniștite și un abonament lunar care include cafea nelimitată la filtru. Studenții stau mult, deci câștigi din abonamente, nu din rotația meselor.
+    2. **Cafenea cu board games** – jocuri de societate pe rafturi, taxă mică pe oră sau consumație minimă, seri tematice. Atrage grupuri seara, când o cafenea clasică e goală.
+    3. **Specialty coffee + brunch ieftin** – boabe de la o prăjitorie locală, meniu scurt de mic-dejun până la ora 14. Diferențierea vine din calitate, nu din preț.
+    4. **Cafenea „second hand”** – un colț cu cărți și haine la schimb, evenimente de swap. Se potrivește cu un public sensibil la sustenabilitate.
+    5. **Cafenea-atelier** – seara se transformă în spațiu pentru workshopuri (ceramică, ilustrație, programare), închiriat organizatorilor.
 
-      Primul concept are cel mai previzibil venit, pentru că abonamentele dau bani constanți chiar și în sesiune, când studenții nu ies, dar învață mult.
-  - user: |
-      Îmi place ideea cu study café. Cum ar arăta abonamentul?
-    assistant: |
-      O structură simplă, cu trei niveluri:
+    Primul concept are cel mai previzibil venit, pentru că abonamentele dau bani constanți chiar și în sesiune, când studenții nu ies, dar învață mult.
+- user: |
+    Îmi place ideea cu study café. Cum ar arăta abonamentul?
+  assistant: |
+    O structură simplă, cu trei niveluri:
 
-      - **Basic – 89 lei/lună:** cafea la filtru și ceai nelimitate, acces între 8:00 și 18:00.
-      - **Plus – 149 lei/lună:** tot ce are Basic, plus o băutură pe bază de espresso pe zi și acces până la închidere (22:00).
-      - **Sesiune – 59 lei/2 săptămâni:** gândit pentru perioada examenelor, fără angajament lunar.
+    - **Basic – 89 lei/lună:** cafea la filtru și ceai nelimitate, acces între 8:00 și 18:00.
+    - **Plus – 149 lei/lună:** tot ce are Basic, plus o băutură pe bază de espresso pe zi și acces până la închidere (22:00).
+    - **Sesiune – 59 lei/2 săptămâni:** gândit pentru perioada examenelor, fără angajament lunar.
 
-      Reguli care protejează afacerea:
+    Reguli care protejează afacerea:
 
-      - abonamentul e nominal, cu un card sau un cod QR în aplicație;
-      - băuturile incluse se servesc doar în local, nu la pahar de luat;
-      - cel mult un abonat pe masa de patru, la ore de vârf.
+    - abonamentul e nominal, cu un card sau un cod QR în aplicație;
+    - băuturile incluse se servesc doar în local, nu la pahar de luat;
+    - cel mult un abonat pe masa de patru, la ore de vârf.
 
-      Calculul de bază: o cafea la filtru te costă aproximativ 1,5–2 lei. Un abonat Basic care bea trei pe zi, 20 de zile pe lună, te costă cam 120 de lei, deci pierzi la el. În practică, cei mai mulți vin de 8–10 ori pe lună, iar marja reală vine din mâncarea și băuturile cumpărate în plus.
-  - user: |
-      Ce nume i-aș putea da?
-    assistant: |
-      Câteva direcții:
+    Calculul de bază: o cafea la filtru te costă aproximativ 1,5–2 lei. Un abonat Basic care bea trei pe zi, 20 de zile pe lună, te costă cam 120 de lei, deci pierzi la el. În practică, cei mai mulți vin de 8–10 ori pe lună, iar marja reală vine din mâncarea și băuturile cumpărate în plus.
+- user: |
+    Ce nume i-aș putea da?
+  assistant: |
+    Câteva direcții:
 
-      - **Legate de studiu:** „Capitolul 2”, „Sesiunea”, „Nota 10”, „Bibliotecafe”.
-      - **Jocuri de cuvinte cu cafeaua:** „Espresso Mode”, „Cafeteca”, „Boabe & Bibliografie”.
-      - **Simple și memorabile:** „Masa Lungă”, „Priza”, „Colțul Liniștit”.
+    - **Legate de studiu:** „Capitolul 2”, „Sesiunea”, „Nota 10”, „Bibliotecafe”.
+    - **Jocuri de cuvinte cu cafeaua:** „Espresso Mode”, „Cafeteca”, „Boabe & Bibliografie”.
+    - **Simple și memorabile:** „Masa Lungă”, „Priza”, „Colțul Liniștit”.
 
-      Preferatul meu e **„Priza”**: e scurt, ușor de reținut și spune exact ce caută un student care vine cu laptopul. Merge bine și ca logo, un ștecher stilizat sub forma unei boabe de cafea, și ca slogan: „Priza – unde te reîncarci”.
+    Preferatul meu e **„Priza”**: e scurt, ușor de reținut și spune exact ce caută un student care vine cu laptopul. Merge bine și ca logo, un ștecher stilizat sub forma unei boabe de cafea, și ca slogan: „Priza – unde te reîncarci”.
 
-      Înainte să alegi, verifică dacă numele e liber la ONRC și ca marcă la OSIM, și dacă găsești domeniul și contul de Instagram disponibile.
-  - user: |
-      Cum promovez deschiderea fără buget mare?
-    assistant: |
-      Idei ieftine pentru lansare:
+    Înainte să alegi, verifică dacă numele e liber la ONRC și ca marcă la OSIM, și dacă găsești domeniul și contul de Instagram disponibile.
+- user: |
+    Cum promovez deschiderea fără buget mare?
+  assistant: |
+    Idei ieftine pentru lansare:
 
-      1. **Parteneriate cu asociațiile studențești** – oferă-le sala gratuit pentru ședințe în primele luni; ei aduc oamenii și vorbesc despre tine.
-      2. **Săptămâna de deschidere „cafea pentru notă”** – cine arată un 10 din sesiunea trecută primește o cafea gratuită. E ușor de pus pe rețelele sociale și studenții o distribuie singuri.
-      3. **Instagram și TikTok din prima zi** – filmează amenajarea, alegerea boabelor, testele de meniu. Oamenii urmăresc povestea înainte de deschidere.
-      4. **Flyere în cămine**, cu un cod QR pentru o lună de abonament Basic la jumătate de preț.
-      5. **Google Business Profile** completat din ziua 1, cu poze și program: când cineva caută „cafenea lângă mine”, apari pe hartă.
+    1. **Parteneriate cu asociațiile studențești** – oferă-le sala gratuit pentru ședințe în primele luni; ei aduc oamenii și vorbesc despre tine.
+    2. **Săptămâna de deschidere „cafea pentru notă”** – cine arată un 10 din sesiunea trecută primește o cafea gratuită. E ușor de pus pe rețelele sociale și studenții o distribuie singuri.
+    3. **Instagram și TikTok din prima zi** – filmează amenajarea, alegerea boabelor, testele de meniu. Oamenii urmăresc povestea înainte de deschidere.
+    4. **Flyere în cămine**, cu un cod QR pentru o lună de abonament Basic la jumătate de preț.
+    5. **Google Business Profile** completat din ziua 1, cu poze și program: când cineva caută „cafenea lângă mine”, apari pe hartă.
 
-      Măsoară ce funcționează: fiecare canal poate avea propriul cod de reducere, ca să vezi de unde vin clienții.
-  - user: |
-      Ce echipamente îmi trebuie și cât costă aproximativ?
-    assistant: |
-      Pentru o cafenea mică, de 30–40 de locuri, estimări orientative:
+    Măsoară ce funcționează: fiecare canal poate avea propriul cod de reducere, ca să vezi de unde vin clienții.
+- user: |
+    Ce echipamente îmi trebuie și cât costă aproximativ?
+  assistant: |
+    Pentru o cafenea mică, de 30–40 de locuri, estimări orientative:
 
-      - **Espressor profesional cu 2 grupuri:** 25.000–45.000 lei nou, 10.000–20.000 lei second hand recondiționat;
-      - **Râșniță pentru espresso:** 5.000–10.000 lei; nu face economie aici, contează mai mult decât espressorul;
-      - **Mașină de cafea la filtru (batch brewer):** 3.000–6.000 lei, esențială pentru abonamente;
-      - **Frigider-vitrină și frigider sub blat:** 8.000–15.000 lei;
-      - **Mașină de spălat vase profesională:** 8.000–12.000 lei;
-      - **Mobilier, prize, iluminat:** 30.000–60.000 lei, în funcție de cât de mult refaci spațiul;
-      - **Sistem de casă și POS:** 2.000–5.000 lei plus abonament lunar.
+    - **Espressor profesional cu 2 grupuri:** 25.000–45.000 lei nou, 10.000–20.000 lei second hand recondiționat;
+    - **Râșniță pentru espresso:** 5.000–10.000 lei; nu face economie aici, contează mai mult decât espressorul;
+    - **Mașină de cafea la filtru (batch brewer):** 3.000–6.000 lei, esențială pentru abonamente;
+    - **Frigider-vitrină și frigider sub blat:** 8.000–15.000 lei;
+    - **Mașină de spălat vase profesională:** 8.000–12.000 lei;
+    - **Mobilier, prize, iluminat:** 30.000–60.000 lei, în funcție de cât de mult refaci spațiul;
+    - **Sistem de casă și POS:** 2.000–5.000 lei plus abonament lunar.
 
-      Total realist: între 90.000 și 150.000 lei pentru echipamente și amenajare, fără chirie, garanții și stoc inițial. Mulți furnizori de cafea îți dau espressorul în comodat dacă te angajezi să cumperi boabe de la ei; reduce mult investiția inițială, dar te leagă de un furnizor.
-  - user: |
-      Ce aș putea vinde în afară de cafea?
-    assistant: |
-      Ce se potrivește unui study café:
+    Total realist: între 90.000 și 150.000 lei pentru echipamente și amenajare, fără chirie, garanții și stoc inițial. Mulți furnizori de cafea îți dau espressorul în comodat dacă te angajezi să cumperi boabe de la ei; reduce mult investiția inițială, dar te leagă de un furnizor.
+- user: |
+    Ce aș putea vinde în afară de cafea?
+  assistant: |
+    Ce se potrivește unui study café:
 
-      - **Mâncare care se mănâncă ușor la laptop:** sandvișuri, wrapuri, bowl-uri cu ovăz, prăjituri la felie. Evită ce e lipicios sau cu sos.
-      - **Meniu de sesiune:** „combo de noapte” (cafea mare + sandviș) după ora 18, la preț fix.
-      - **Băuturi fără cafeină:** ceaiuri de calitate, ciocolată caldă, limonade – mulți studenți beau deja prea multă cafea.
-      - **Papetărie de bază:** pixuri, markere, caiete cu logo-ul „Priza”, încărcătoare și cabluri de rezervă.
-      - **Închirierea sălii** pentru grupuri de studiu sau prezentări, cu proiector, la oră.
+    - **Mâncare care se mănâncă ușor la laptop:** sandvișuri, wrapuri, bowl-uri cu ovăz, prăjituri la felie. Evită ce e lipicios sau cu sos.
+    - **Meniu de sesiune:** „combo de noapte” (cafea mare + sandviș) după ora 18, la preț fix.
+    - **Băuturi fără cafeină:** ceaiuri de calitate, ciocolată caldă, limonade – mulți studenți beau deja prea multă cafea.
+    - **Papetărie de bază:** pixuri, markere, caiete cu logo-ul „Priza”, încărcătoare și cabluri de rezervă.
+    - **Închirierea sălii** pentru grupuri de studiu sau prezentări, cu proiector, la oră.
 
-      Marja cea mai bună o ai la băuturi și la închirierea sălii; mâncarea aduce clienți și crește valoarea bonului, dar are pierderi din produse expirate.
-  - user: |
-      Cum gestionez zgomotul? Unii vor să învețe, alții să vorbească.
-    assistant: |
-      Împarte spațiul în zone, ca într-o bibliotecă:
+    Marja cea mai bună o ai la băuturi și la închirierea sălii; mâncarea aduce clienți și crește valoarea bonului, dar are pierderi din produse expirate.
+- user: |
+    Cum gestionez zgomotul? Unii vor să învețe, alții să vorbească.
+  assistant: |
+    Împarte spațiul în zone, ca într-o bibliotecă:
 
-      - **Zona liniștită** – în spate, mese individuale, fără apeluri, căști recomandate. Un semn discret, „zonă de concentrare”, e suficient.
-      - **Zona de grup** – mese mari în față, lângă bar, unde vorbitul e normal.
-      - **Cabina de apeluri** – o cabină fonoizolantă sau un colț separat cu draperii groase, pentru apeluri video.
+    - **Zona liniștită** – în spate, mese individuale, fără apeluri, căști recomandate. Un semn discret, „zonă de concentrare”, e suficient.
+    - **Zona de grup** – mese mari în față, lângă bar, unde vorbitul e normal.
+    - **Cabina de apeluri** – o cabină fonoizolantă sau un colț separat cu draperii groase, pentru apeluri video.
 
-      Ajutoare practice: covoare, panouri fonoabsorbante pe tavan, plante mari și muzică ambientală la volum mic, care acoperă conversațiile din jur. Mașina de măcinat și espressorul sunt cele mai zgomotoase: pune barul cât mai departe de zona liniștită.
-  - user: |
-      Care sunt riscurile principale?
-    assistant: |
-      Principalele riscuri, cu ce poți face pentru fiecare:
+    Ajutoare practice: covoare, panouri fonoabsorbante pe tavan, plante mari și muzică ambientală la volum mic, care acoperă conversațiile din jur. Mașina de măcinat și espressorul sunt cele mai zgomotoase: pune barul cât mai departe de zona liniștită.
+- user: |
+    Care sunt riscurile principale?
+  assistant: |
+    Principalele riscuri, cu ce poți face pentru fiecare:
 
-      1. **Sezonalitatea** – vara și în vacanțe orașele universitare se golesc. Plănuiește venituri mai mici în iulie–august, închiriază sala pentru evenimente și atrage și clienți din cartier, nu doar studenți.
-      2. **Clienții care stau mult și consumă puțin** – de aici abonamentele și regula de consumație minimă la orele de vârf.
-      3. **Abonamente care costă mai mult decât aduc** – urmărește lunar consumul mediu pe abonat și ajustează prețul sau nivelurile.
-      4. **Chiria** – lângă campus e mare. Negociază o perioadă de grație de 2–3 luni pentru amenajare.
-      5. **Personalul** – angajații studenți pleacă des. Documentează rețetele și procedurile ca să poți instrui rapid oameni noi.
+    1. **Sezonalitatea** – vara și în vacanțe orașele universitare se golesc. Plănuiește venituri mai mici în iulie–august, închiriază sala pentru evenimente și atrage și clienți din cartier, nu doar studenți.
+    2. **Clienții care stau mult și consumă puțin** – de aici abonamentele și regula de consumație minimă la orele de vârf.
+    3. **Abonamente care costă mai mult decât aduc** – urmărește lunar consumul mediu pe abonat și ajustează prețul sau nivelurile.
+    4. **Chiria** – lângă campus e mare. Negociază o perioadă de grație de 2–3 luni pentru amenajare.
+    5. **Personalul** – angajații studenți pleacă des. Documentează rețetele și procedurile ca să poți instrui rapid oameni noi.
 
-      Cel mai periculos e primul: o cafenea care trăiește doar din studenți are două luni pe an aproape fără venituri.
-  - user: |
-      Dă-mi o idee de eveniment lunar.
-    assistant: |
-      **„Noaptea Lungă de Studiu”** – o dată pe lună, înainte de sesiune sau de termenele de proiecte, cafeneaua rămâne deschisă până la 2:00.
+    Cel mai periculos e primul: o cafenea care trăiește doar din studenți are două luni pe an aproape fără venituri.
+- user: |
+    Dă-mi o idee de eveniment lunar.
+  assistant: |
+    **„Noaptea Lungă de Studiu”** – o dată pe lună, înainte de sesiune sau de termenele de proiecte, cafeneaua rămâne deschisă până la 2:00.
 
-      - intrarea e gratuită pentru abonați și costă 20 de lei pentru restul, cu o cafea inclusă;
-      - la fiecare oră fixă, o pauză de 10 minute cu ceva mic: o gustare oferită, un exercițiu de stretching, un mini-concurs de cultură generală;
-      - colaborezi cu un student din anii mari sau cu un asistent care răspunde la întrebări la o masă de „consultații”;
-      - pui pe Instagram poze cu atmosfera și un clasament cu cine a rămas cel mai mult.
+    - intrarea e gratuită pentru abonați și costă 20 de lei pentru restul, cu o cafea inclusă;
+    - la fiecare oră fixă, o pauză de 10 minute cu ceva mic: o gustare oferită, un exercițiu de stretching, un mini-concurs de cultură generală;
+    - colaborezi cu un student din anii mari sau cu un asistent care răspunde la întrebări la o masă de „consultații”;
+    - pui pe Instagram poze cu atmosfera și un clasament cu cine a rămas cel mai mult.
 
-      Evenimentul întărește identitatea de study café, aduce abonați noi și umple localul într-o seară care altfel ar fi slabă.
-  - user: |
-      Mulțumesc, fă-mi un rezumat al planului.
-    assistant: |
-      Rezumatul planului pentru „Priza”:
+    Evenimentul întărește identitatea de study café, aduce abonați noi și umple localul într-o seară care altfel ar fi slabă.
+- user: |
+    Mulțumesc, fă-mi un rezumat al planului.
+  assistant: |
+    Rezumatul planului pentru „Priza”:
 
-      - **Concept:** study café lângă campus, cu prize, Wi-Fi rapid și zone separate pentru liniște și pentru grupuri.
-      - **Venit principal:** abonamente (Basic 89 lei, Plus 149 lei, Sesiune 59 lei pentru 2 săptămâni), plus mâncare, băuturi și închirierea sălii.
-      - **Investiție:** aproximativ 90.000–150.000 lei pentru echipamente și amenajare; espressorul poate veni în comodat de la furnizorul de cafea.
-      - **Lansare:** parteneriate cu asociațiile studențești, „cafea pentru notă”, flyere cu QR în cămine, Google Business Profile.
-      - **Eveniment lunar:** „Noaptea Lungă de Studiu”, până la 2:00.
-      - **Risc principal:** vara, când studenții pleacă; de aceea contează evenimentele și clienții din cartier.
+    - **Concept:** study café lângă campus, cu prize, Wi-Fi rapid și zone separate pentru liniște și pentru grupuri.
+    - **Venit principal:** abonamente (Basic 89 lei, Plus 149 lei, Sesiune 59 lei pentru 2 săptămâni), plus mâncare, băuturi și închirierea sălii.
+    - **Investiție:** aproximativ 90.000–150.000 lei pentru echipamente și amenajare; espressorul poate veni în comodat de la furnizorul de cafea.
+    - **Lansare:** parteneriate cu asociațiile studențești, „cafea pentru notă”, flyere cu QR în cămine, Google Business Profile.
+    - **Eveniment lunar:** „Noaptea Lungă de Studiu”, până la 2:00.
+    - **Risc principal:** vara, când studenții pleacă; de aceea contează evenimentele și clienții din cartier.
+- user: |
+    Revin: am găsit un spațiu în Iași, pe strada Păcurari, la 5 minute de campusul de la Copou. Are 68 mp, e la parter, cu vitrină mare, chiria e 1.900 de euro pe lună. Merită pentru un study café?
+  assistant: |
+    Merită, cu câteva rezerve. Hai să vedem cifrele:
+
+    **Ce e bine:**
+
+    - Strada Păcurari are trafic pietonal constant, iar proximitatea de campusul de medicină e un avantaj real: studenții la medicină învață enorm și au și putere de cumpărare peste medie. Sunt publicul ideal pentru abonamente.
+    - Parterul cu vitrină mare e exact ce trebuie pentru vizibilitate și pentru a transforma trecătorii în clienți.
+    - 68 mp îți permit 30–35 de locuri plus zona de bar, suficient pentru concept.
+
+    **Ce mă îngrijorează:**
+
+    - 1.900 €/lună (circa 9.500 lei) e o chirie serioasă pentru Iași. Regula de bază spune că chiria nu ar trebui să depășească 10–15% din venit, deci ai avea nevoie de venituri de 65.000–95.000 lei pe lună.
+    - Fă socoteala punctului de echilibru: la chirie de 9.500 lei, salarii pentru 2 oameni (~8.000 lei), utilități și alte costuri fixe (~5.000 lei), ajungi la fixe de peste 22.000 lei lunar. Cu un bon mediu de 20–25 lei, înseamnă 45–55 de clienți pe zi, în fiecare zi, ca să ieși pe zero. Realizabil în sesiune, greu în iulie.
+
+    **Ce aș face înainte să semnez:**
+
+    1. Negociază: cere 2–3 luni de grație pentru amenajare și o clauză de ieșire timpurie în primul an.
+    2. Verifică ce include chiria: utilități, întreținere, TVA. Diferența poate fi de sute de euro.
+    3. Stai 2–3 zile pe strada respectivă și numără trecătorii în intervale diferite, inclusiv în vacanță, dacă poți.
+    4. Întreabă de ce e liber spațiul și ce afaceri au mai fost acolo.
+
+    Concluzia: locația e potrivită pentru concept, dar chiria nu lasă multă marjă de eroare. Dacă obții grația și o reducere spre 1.600–1.700 €, echilibrul devine mult mai confortabil.
+- user: |
+    Am negociat chiria la 1.650 de euro, cu 3 luni de grație pentru amenajare. Refă-mi calculul de break-even: câte cafele pe zi trebuie să vând?
+  domain: math
+  assistant: |
+    Felicitări, astea sunt condiții bune. Hai să refacem socoteala:
+
+    **Costuri fixe lunare:**
+
+    - Chirie: 1.650 € ≈ 8.250 lei
+    - Salarii (2 oameni): ~8.000 lei
+    - Utilități, internet, contabilitate, alte fixe: ~5.000 lei
+    - **Total: ~21.250 lei/lună**, adică **~710 lei pe zi** (30 de zile)
+
+    **Pe client:**
+
+    La un bon mediu de 22 lei și un cost variabil de ~35% (marja brută 65%), fiecare client îți lasă **~14 lei contribuție**. Deci:
+
+    - 710 ÷ 14 ≈ **51 de clienți pe zi** ca să ieși pe zero
+    - Dacă aduci bonul mediu la 25 lei (combo-uri, prăjituri), coboară la **~44 pe zi**
+
+    **Pe băuturi, ca referință:**
+
+    O băutură la 12 lei cu cost de 3 lei îți dă 9 lei contribuție, deci echivalentul a **~79 de băuturi pe zi**. Cum un client cumpără de obicei o băutură plus ceva de mâncare, socoteala pe client e cea care contează.
+
+    **Ce s-a schimbat față de înainte:** ai coborât pragul cu circa 5–7 clienți pe zi și, mai important, ai marjă de eroare. La 60–70 de clienți pe zi în sesiune, diferența acoperă lunile slabe de vară.
+
+    **În perioada de grație (3 luni):** plătești doar costurile variabile și utilitățile, deci pragul scade la ~25–30 de clienți pe zi. Folosește-le pentru lansare și pentru a prinde primele 50–80 de abonamente, care îți dau o bază de venit predictibilă din start.
+
+    Ținte practice: 50 de clienți/zi = punct mort, 70 = confortabil, iar abonamentele numără separat, ca venit fix.
+- user: |
+    Pentru cafea am trei prăjitorii locale care mi-au trimis oferte: Prăjitoria Nord, Tostato și Boabe Bune. Ce ar trebui să întreb și să testez la degustare?
+  assistant: |
+    **Ce să întrebi fiecare prăjitorie:**
+
+    1. **Preț și structură:** prețul per kilogram la volumele tale (estimează 60–100 kg/lună la început), discounturi la cantitate, dacă prețul e fixat pe contract sau fluctuează.
+    2. **Comodatul espressorului:** îl oferă, cu ce model, ce se întâmplă dacă vrei să schimbi furnizorul, cine plătește reparațiile.
+    3. **Termenul de prăjire:** cât de proaspete ajung boabele? Ideal sub 10 zile de la prăjire. Îți scriu data prăjirii pe pungă?
+    4. **Frecvența livrării:** pot livra săptămânal, în cantități mici? Stocul vechi îți strică calitatea.
+    5. **Suport:** te antrenează la extracție și la calibrare? Vin la deschidere să seteze rețetele? Oferă cursuri pentru barista?
+    6. **Consistența blendului:** dacă un lot nu mai e disponibil, cum asigură același gust? Îți pot da același blend 12 luni?
+    7. **Exclusivitate:** te obligă la cantități minime lunare sau la contract pe durată? Ce penalizare e dacă reduci volumul în vară?
+    8. **Decafeinizat și alternative la lapte:** au în portofoliu? Le vei avea nevoie.
+
+    **Ce să testezi la degustare:**
+
+    - **Espresso „curat”**, fără lapte, din fiecare ofertă: dulceață, echilibru, amărăciune excesivă. Un espresso bun rămâne plăcut și după ce s-a răcit.
+    - **Cu lapte** (latte): aici se decide de fapt majoritatea vânzărilor. Boabele trebuie să iasă prin lapte, nu să dispară.
+    - **Cafea la filtru**, dacă o vei include în abonamente: aici se văd defectele cel mai clar.
+    - **Consistență:** cere același produs de două ori, la o săptămână distanță. Diferența mare de gust e un semnal de alarmă.
+    - **Rezistență la greșeala baristei:** cere extracții puțin mai lungi și mai scurte. Un blend iertător e valoros când angajații sunt începători.
+
+    **Sfat practic:** organizează degustarea oarbă, în aceeași zi, cu aceeași apă și același echipament, ideal cu 3–4 persoane din publicul țintă. Alege după gust și după condițiile de contract, nu după prețul cel mai mic: diferența de 2–3 lei/kg e nesemnificativă față de ce înseamnă o cafea inconsistentă.
+- user: |
+    Ofertele: Prăjitoria Nord, 95 de lei pe kilogram, cu espressorul în comodat; Tostato, 82 de lei pe kilogram, fără espressor; Boabe Bune, 110 lei pe kilogram, cafea de specialitate. Pe care o aleg?
+  assistant: |
+    Pe hârtie, **Prăjitoria Nord** câștigă, dar hai să vedem de ce:
+
+    **Socoteala la 80 kg/lună (consum realist la început):**
+
+    | | Preț/kg | Cost lunar | Espressor |
+    |---|---|---|---|
+    | Prăjitoria Nord | 95 lei | 7.600 lei | în comodat |
+    | Tostato | 82 lei | 6.560 lei | îl cumperi tu |
+    | Boabe Bune | 110 lei | 8.800 lei | nespecificat |
+
+    - **Nord vs. Tostato:** diferența e de doar ~1.040 lei/lună. Un espressor cu 2 grupuri costă 25.000–45.000 lei nou, deci comodatul valorează 1.000–2.000 lei pe lună în sine, fără să număr riscul reparațiilor. Nord iese practic mai ieftin.
+    - **Boabe Bune:** plătești cu ~2.200 lei/lună mai mult decât Nord. Cafeaua de specialitate se simte în espresso-ul simplu și la filtru, dar 80% din vânzările tale vor fi băuturi cu lapte, unde diferența se pierde. Pentru un study café cu marjă strânsă, e un lux pe care ți-l poți permite abia în anul doi.
+
+    **Decizia mea:** Nord, cu trei condiții de verificat înainte de semnare:
+
+    1. **Modelul espressorului în comodat** – cere unul cu 2 grupuri, recent revizuit, și cine plătește service-ul.
+    2. **Ce se întâmplă dacă reduci volumul vara** – vrei să poți coborî la 40 kg/lună fără penalizări.
+    3. **Suportul la deschidere** – să vină să calibreze rețetele și să instruiască barista.
+
+    **Dar nu semna încă:** fă mai întâi degustarea oarbă dintre Nord și Tostato. Dacă Tostato iese clar mai gustos, merită să suni la ei și să le spui: „aveți cea mai bună cafea, dar Nord dă espressorul în comodat – dacă îl oferiți și voi, semnăm cu voi”. Cu o ofertă concretă în mână, ai putere de negociere reală pe ambele fronturi.
+- user: |
+    Am ales Prăjitoria Nord, mai ales pentru espressorul în comodat. Ce ar trebui să scrie neapărat în contractul de comodat?
+  assistant: |
+    Câteva clauze esențiale de pus în contractul de comodat:
+
+    **1. Descrierea exactă a echipamentului**
+
+    - Marcă, model, număr de serie, anul fabricației;
+    - Starea la predare: revizuit, cu ce piese înlocuite, plus un proces-verbal de predare cu poze;
+    - Accesoriile incluse: portafiltre, palete, duze de abur, filtru de apă.
+
+    **2. Cine plătește ce**
+
+    - **Întreținerea curentă** (de obicei tu): schimbarea filtrelor de apă, curățarea, decalcifierea;
+    - **Reparațiile majore și piesele** (ideal, proprietarul): pompa, supapele, boilerul;
+    - Timpul de răspuns: „service în maximum 48 de ore lucrătoare”. Un espressor blocat 5 zile înseamnă afacere închisă;
+    - Dacă e cazul, o **mașină de înlocuire** pe durata reparațiilor.
+
+    **3. Durata și condițiile de reziliere**
+
+    - Durata minimă a comodului (de exemplu, 24 de luni) și ce se întâmplă după;
+    - **Ce se întâmplă dacă schimbi furnizorul de cafea**: să poți returna mașina fără penalizări, cu un termen rezonabil de preaviz (30–60 de zile);
+    - Ce se întâmplă dacă prăjitoria e preluată de altcineva sau își încetează activitatea: mașina nu trebuie să devină monedă de negociere forțată.
+
+    **4. Protecția ta**
+
+    - **Nu garanta pentru valoarea de înlocuire** la preț de mașină nouă. Dacă mașina are 6 ani, valoarea ei actuală e mult mai mică;
+    - Limitează răspunderea la neglijență dovedită (lipsă de întreținere, lovituri), nu la uzură normală;
+    - Cine suportă riscul unui defect ascuns care apare în primele luni.
+
+    **5. Clauze de evitat**
+
+    - Vânzare obligatorie de cantități minime mari, cu penalizări dure vara;
+    - Exclusivitate pe termen nedeterminat;
+    - Dreptul proprietarului de a-ți retrage mașina „oricând, fără motiv”;
+    - Obligația de a plăti „întregul contract de cafea” dacă reziliezi comodatul.
+
+    **Sfat final:** arată contractul unui avocat înainte de semnare; costă câteva sute de lei și e cea mai bună poliță pentru o relație care va dura ani. Și păstrează procesul-verbal de predare: la returnare, te scutește de discuții despre „starea în care ai primit-o”.
+- user: |
+    Fă-mi un meniu de băuturi cu 10 produse și prețuri.
+  assistant: |
+    Meniu pentru „Priza”, cu prețuri potrivite pentru studenți:
+
+    | # | Produs | Preț |
+    |---|---|---|
+    | 1 | **Espresso** | 8 lei |
+    | 2 | **Cafea la filtru** (batch brew, la cană mare) | 10 lei |
+    | 3 | **Cappuccino** | 12 lei |
+    | 4 | **Latte** | 13 lei |
+    | 5 | **Flat white** | 13 lei |
+    | 6 | **Cold brew** (vara, cu gheață) | 14 lei |
+    | 7 | **Ciocolată caldă** | 13 lei |
+    | 8 | **Ceai** (selecție de 4–5 sortimente, cană mare) | 9 lei |
+    | 9 | **Limonadă** (clasică, cu ghimbir sau cu mentă) | 12 lei |
+    | 10 | **Iced latte** | 14 lei |
+
+    **Extra:** lapte vegetal (ovăz, migdale) +2 lei; shot de espresso suplimentar +3 lei; sirop (vanilie, caramel) +1,5 lei.
+
+    **Logica din spatele listei:**
+
+    - **Filtrul la 10 lei** e produsul-semnătură: e inclus în abonamente, deci prețul lui ancorează valoarea abonamentului (Basic de 89 lei se amortizează în 9 cani).
+    - **Espresso-ul la 8 lei** e cel mai ieftin produs, dar rareori se vinde singur – există ca ancoră care face cappuccino-ul să pară rezonabil.
+    - **Băuturile reci (cold brew, iced latte)** acoperă sezonul cald și marja lor e mai bună, pentru că nu depinzi de lapte spumat.
+    - **Ciocolata și ceaiul** prind non-cofeinici și veniturile serii, când nimeni nu mai vrea cafea la ora 20:00.
+
+    Bonul mediu țintă de 22–25 lei se atinge ușor: o băutură de 12–13 lei plus un sandviș sau o prăjitură de 10–12 lei.
+- user: |
+    Prea scump pentru studenți. Espresso maximum 8 lei, cappuccino maximum 12 lei. Refă prețurile la tot meniul.
+  assistant: |
+    Meniu revizuit, cu prețuri mai prietenoase pentru studenți:
+
+    | # | Produs | Preț |
+    |---|---|---|
+    | 1 | **Espresso** | 7 lei |
+    | 2 | **Cafea la filtru** | 8 lei |
+    | 3 | **Cappuccino** | 10 lei |
+    | 4 | **Latte** | 11 lei |
+    | 5 | **Flat white** | 11 lei |
+    | 6 | **Cold brew** | 12 lei |
+    | 7 | **Ciocolată caldă** | 11 lei |
+    | 8 | **Ceai** | 7 lei |
+    | 9 | **Limonadă** | 10 lei |
+    | 10 | **Iced latte** | 12 lei |
+
+    **Extra:** lapte vegetal +2 lei; shot suplimentar +3 lei; sirop +1,5 lei.
+
+    **Ce s-a schimbat și ce înseamnă:**
+
+    - Am coborât toate produsele cu 1–2 lei față de varianta anterioară, păstrând espresso-ul și cappuccino-ul sub plafoanele tale.
+    - **Filtrul la 8 lei** rămâne produsul-cheie: abonamentul Basic de 89 lei se amortizează în 11 cani, deci tot e o ofertă bună pentru client.
+    - Bonul mediu țintă scade acum la **18–20 lei** (băutură de 10–11 lei + ceva de mâncare la 8–10 lei). Refă socoteala break-even-ului: la marja brută de 65%, fiecare client îți lasă ~12 lei contribuție, deci punctul mort urcă la **~59 de clienți pe zi** față de 51.
+    - Ca să compensezi, ai două pârghii: **combo-urile** (băutură + sandviș la 18 lei, în loc de 20 separat) care cresc volumul fără să pară scump, și **abonamentele**, care aduc venit fix indiferent de prețul bonului.
+
+    Dacă observi după 2–3 luni că clienții vin, poți urca treptat 1 leu la produsele de top, fără ca nimeni să simtă.
+- user: |
+    Un prieten zice că „Priza” sună a magazin de electrice. Ai alte idei pe aceeași idee, de loc unde te încarci?
+  assistant: |
+    Prietenul are un punct, dar ideea de „reîncărcare” rămâne bună. Variante pe aceeași temă:
+
+    - **„Reîncărcare”** – direct, ca un semn de service; merge cu sloganul „cafea, prăjituri și 100% baterie”.
+    - **„Baterie”** – scurt, memorabil; logo simplu, o baterie care se umple. Riscă tot asociera cu electrice, dar mai puțin decât „Priza”.
+    - **„Modul Avion”** – locul unde te deconectezi de telefon și te conectezi la învățat. Jocul de cuvinte e clar pentru generația de studenți.
+    - **„Full”** – minimal, ușor de strigat: „ne vedem la Full”. Merge cu „full baterie, full cafea”.
+    - **„Încărcător”** – aceeași familie ca „Priza”, dar sună mai puțin a magazin.
+    - **„Reset”** – scurt, internațional, ușor de pus pe logo și pe pahare.
+
+    Preferatul meu e **„Modul Avion”**: spune exact ce faci acolo – stai departe de distrageri și te concentrezi –, e unic printre cafenele și are potențial de merch (cănile, stickerele cu simbolul avionului tăiat). Ca slogan: „Modul Avion – telefonul jos, cafeaua sus”.
+
+    Dacă vrei să rămâi aproape de ideea originală, **„Reîncărcare”** e a doua alegere: nu se confundă cu un magazin de electrice, pentru că e un cuvânt-acțiune, nu un obiect.
+
+    Ca la orice nume: verifică disponibilitatea la ONRC, OSIM, domeniul web și contul de Instagram înainte să te atașezi de unul.
+- user: |
+    Am votat cu prietenii și rămâne „Priza”. Dă-mi 5 sloganuri pentru ea.
+  assistant: |
+    Cinci sloganuri pentru „Priza”:
+
+    1. **„Priza – unde te reîncarci.”** – cel direct, spune tot: cafeaua, energia, pauza de la învățat.
+    2. **„Cafeaua e la curent cu tine.”** – joc de cuvinte dublu: la curent cu moda, dar și conectat la priză.
+    3. **„Stai conectat. La cafea.”** – pentru publicul de studenți cu laptopul deschis.
+    4. **„Baterie plină, sesiune dată.”** – vorbește direct despre scopul final al clientului: examenele.
+    5. **„Priza – 220 de volți de cafea.”** – tehnic și amuzant, merge bine pe pahare și stickere.
+
+    Preferatul meu rămâne primul: e simplu, se reține după o singură audiere și funcționează în orice context – pe vitrină, pe flyere, ca răspuns la „ce e Priza?”. Al cincilea e cel mai bun pentru merch și rețele sociale, unde umorul se distribuie singur.
+- user: |
+    Îl alegem pe al treilea. Cum îl folosesc pe vitrină și pe pahare?
+  assistant: |
+    Bună alegere – e versatil și se traduce ușor în imagini. Iată cum îl folosești:
+
+    **Pe vitrină:**
+
+    - **Vitraliu / folie decal** pe sticlă, la înălțimea ochilor, pe partea dreaptă a intrării (unde privirea oprește natural): „Stai conectat. La cafea.” cu logo-ul „Priza” deasupra. Litere albe sau negre, fără fundal – vitrina trebuie să lase lumina să intre.
+    - **Pe partea stângă a vitrinei**, un element grafic: un ștecher stilizat din care iese abur de cafea, ca povestea vizuală să completeze textul.
+    - **Sub slogan**, mici: „Wi-Fi gratuit · prize la fiecare masă · deschis până la 22:00” – trei argumente care transformă trecătorul curios în client.
+    - **Varianta de noapte:** o bandă LED în jurul textului, care se aprinde seara. La un study café, vitrina luminoasă seara e publicitate gratuită pentru studenții care se întorc din oraș.
+
+    **Pe pahare:**
+
+    - **Pe paharele de luat:** sloganul mic, pe lateral, la nivelul unde ține mâna – plus un detaliu care face oamenii să-l fotografieze: sub text, o linie de baterie care se umple, cu „100%” la bază.
+    - **Pe căni ceramice** (pentru consum în local): logo-ul „Priza” pe față, sloganul pe spate – ca cel care stă față în față cu tine la masă să-l citească. E o glumă bună care se povestește.
+    - **Stickere incluse în pahar:** un sticker mic cu sloganul pe capac sau pe suport de pahar. Studenții îl pun pe laptop, iar laptopul stă deschis ore întregi în biblioteci și săli de curs – e cea mai ieftină reclamă pe care o ai.
+
+    **Regula de aur:** sloganul apare întotdeauna cu același font și aceleași culori, de pe vitrină până pe pahar și pe Instagram. Consistența face ca după câteva săptămâni oamenii să-l recunoască din colțul ochiului, fără să citească.
+- user: |
+    Ce autorizații îmi trebuie de la DSV, ISU și primărie pentru o cafenea fără bucătărie, doar cu produse de patiserie cumpărate?
+  domain: open-qa
+  assistant: |
+    Pentru o cafenea fără bucătărie, cu produse cumpărate gata, lista e mai scurtă decât la un restaurant, dar nu zero. Iată ce îți trebuie:
+
+    **1. Autorizarea funcționării (înainte de toate)**
+
+    - **PFA sau SRL** la ONRC, cu obiect de activitate CAEN 5630 (baruri și alte activități de servire a băuturilor);
+    - **Cod de înregistrare fiscală** de la ANAF.
+
+    **2. DSV / Autoritatea pentru Protecția Consumatorului (ANPC/DSA)**
+
+    - **Autorizare sanitară pentru funcționare** de la Direcția de Sănătate Publică (DSVSA/DSA Iași) – se eliberează după o inspecție a spațiului. Chiar fără bucătărie, servirea de alimente (patiserie, sandvișuri) impune autorizarea;
+    - **Autorizare/înregistrare sanitar-veterinară** – dacă manipulezi alimente de origine animală (lapte, produse cu cremă, brânzeturi), spațiul trebuie înregistrat la DSVSA. Cafeaua cu lapte și prăjiturile cu cremă intră aici;
+    - **Fisa de asigurare a calității** pentru produsele pe care le aduci: cere de la fiecare furnizor de patiserie specificațiile și termenele de valabilitate;
+    - **Registrul de evidență a produselor** și condiții de păstrare (frigider verificat, termometru).
+
+    **3. ISU (Inspectoratul pentru Situații de Urgență)**
+
+    - **Autorizare de securitate la incendiu** – obligatorie pentru unități cu public. Pentru 68 mp, procedura e simplificată, dar necesară;
+    - **Scenariu de siguranță** și stingătoare verificate, plan de evacuare afișat, trasee libere;
+    - Verifică dacă spațiul are deja autorizarea ISU de la chiriașul anterior – uneori poate fi revalidată, altfel se refac documentațiile.
+
+    **4. Primărie**
+
+    - **Autorizare de funcționare** de la Primăria Iași (comisia de autorizare) – se dă doar după ce ai autorizările de la DSV și ISU;
+    - **Autorizație de amplasare de mese în terasă**, dacă vrei 2–3 mese afară pe trotuar (se plătește taxă lunară);
+    - **Afiș de publicitate** pentru vitrină și orice semn exterior, dacă e cazul.
+
+    **5. Alte obligații curente**
+
+    - **Casă de marcat fiscală** conectată la ANAF;
+    - **Atestat de manipulant alimentar** pentru tine și angajați – curs scurt, se obține online sau de la un furnizor autorizat;
+    - **Contract de salubrizare** și evidența deșeurilor (inclusiv uleiuri, dacă folosești – la tine probabil nu).
+
+    **Ordinea practică:** ONRC → proiect/amenajare → DSV + ISU (inspectează spațiul amenajat) → autorizare primărie → deschidere. Procesul durează de obicei 1–3 luni, deci pornește demersurile în paralel cu amenajarea, ca să nu pierzi din perioada de grație a chiriei.
+
+    Verifică exact la DSVSA Iași și ISU Iași lista de acte actualizată, pentru că se schimbă periodic, și ia în calcul un consultant sau contabil care a mai autorizat hoReca local – câteva sute de lei care te scutesc de respingeri și reprogramări.
+- user: |
+    Vreau 2 bariști cu jumătate de normă. Cât mă costă în total pe lună, cu taxele, dacă îi plătesc la nivelul salariului minim?
+  domain: math
+  assistant: |
+    Hai să facem socoteala pentru 2025, cu salariul minim de **4.050 lei brut** pe normă întreagă:
+
+    **Pe fiecare baristă, cu jumătate de normă:**
+
+    | Componentă | Sumă |
+    |---|---|
+    | Salariu brut (jumătate de normă) | 2.025 lei |
+    | CAS 25% (reținut din brut) | −506 lei |
+    | Impozit pe venit 10% (din brut − CAS) | −152 lei |
+    | **Salariu net de plată** | **~1.367 lei** |
+    | CAM 2,25% (plătit de angajator, în plus) | +46 lei |
+    | **Cost total angajator** | **~2.071 lei** |
+
+    **Total pentru 2 bariști: ~4.140 lei/lună**, din care ~2.735 lei net în mână și ~1.410 lei taxe la stat.
+
+    **De reținut:**
+
+    - La jumătate de normă, salariul minim se calculează proporțional, deci 2.025 lei brut e corect legal.
+    - Costul total e cu ~2% peste brut din cauza CAM (contribuția angajatorului).
+    - Dacă le oferi **tichete de masă** (nu sunt obligatorii, dar standard în hoReca), adaugă ~300–400 lei/persoană pe lună, deductibili parțial.
+    - **Programul:** jumătate de normă înseamnă ~4 ore pe zi. Pentru un study café deschis 8:00–22:00, 2 oameni pe jumătate de normă nu acoperă programul – ai nevoie de tine acolo sau de un al treilea angajat. O variantă practică: 2 oameni la jumătate de normă pentru vârfuri (dimineața și după-amiaza) plus tine la deschidere/închidere.
+
+    **Un avertisment realist:** la minim pe economie, în Iași, vei pierde oameni repede spre lanțuri de cafenele care plătesc mai bine. Dacă poți urca la 2.300–2.500 lei brut (jumătate de normă), costă cu ~300–400 lei/lună mai mult în total, dar scade dramatic fluctuația – iar fiecare plecare înseamnă 2–3 săptămâni de instruire și dezorganizare. În bugetul tău de fixe (~21.250 lei), cei 4.140 lei se încadrează în estimarea de 8.000 lei pentru personal, lăsându-ți loc să urci salariile sau să adaugi un al treilea om în sesiune.
+- user: |
+    Programul pe care îl vreau: luni–vineri 7:30–22:00, sâmbătă și duminică 9:00–20:00. E realist cu doi bariști și cu mine?
+  assistant: |
+    Pe hârtie e la limită; în practică, doar dacă lucrezi tu foarte mult. Hai să vedem cifrele:
+
+    **Orele de funcționare:**
+
+    - Luni–vineri: 14,5 h/zi × 5 zile = 72,5 h
+    - Weekend: 11 h/zi × 2 zile = 22 h
+    - **Total: 94,5 h pe săptămână** de acoperit
+
+    **Ce ai la dispoziție:**
+
+    - 2 bariști × jumătate de normă (4 h/zi) = 40 h/săptămână
+    - Tu, realist, 45–50 h/săptămână (mai mult nu e sustenabil lunile în șir)
+    - **Total: 85–90 h** – îți lipsesc 5–10 h, iar asta presupune că ești acolo aproape mereu.
+
+    **Problema reală nu e volumul, ci vârfurile:**
+
+    Un study café are două vârfuri clare: dimineața (7:30–10:00) și după-amiaza (16:00–20:00). În acele intervale ai nevoie de **2 oameni în același timp** – unul la espressor, unul la casă/masă. Cu 2 bariști câte 4 h pe zi, tu devii al doilea om din fiecare vârf, adică 12 vârfuri pe săptămână acoperite de tine. Plus că rămâi singur în orele mici, unde nu poți nici măcar merge la baie fără să închizi barul.
+
+    **Trei variante realiste:**
+
+    1. **Al treilea barist cu jumătate de normă** (~+2.070 lei/lună): acoperire completă, tu devii manager care umple golurile, nu omul de la bar. Recomandat dacă bugetul ține.
+    2. **Scurtezi programul:** luni–vineri 8:00–21:00, duminică închis (sau 9:00–18:00). Scapi de ~10 h/săptămână și programul devine fezabil cu ce ai. Un study café plin e rar după 21:00 oricum, iar testul îl faci cu „Noaptea Lungă de Studiu”, nu cu programul fix.
+    3. **Un barist cu normă întreagă + unul cu jumătate** (~+2.000 lei față de varianta actuală): omul cu normă întreagă devine șeful de tură, tu acoperi weekendul și vârfurile.
+
+    **Concluzie:** cu exact 2 jumătăți de normă și tine, programul pe care îl vrei ține 2–3 luni, apoi oboseala ta devine problema afacerii. Alege varianta 1 sau 2 înainte de deschidere, nu după ce ajungi epuizat în plină sesiune.
+- user: |
+    Dintre ideile tale de evenimente lunare am ales seara de quiz. Cum o organizez concret, de la întrebări la premii?
+  assistant: |
+    Ghid complet pentru „Seara de Quiz” la Priza:
+
+    **1. Formatul (2–2,5 ore, de exemplu joi 19:00–21:30)**
+
+    - **Echipe de 2–5 persoane**, taxă de participare 10 lei/persoană, care include o cafea sau o limonadă – astfel taxa nu descurajează, iar tu acoperi costurile;
+    - **5 runde a câte 8 întrebări**, cu pauze de 10 minute între runde (aici vinzi runda a doua de băuturi și prăjituri);
+    - Răspunsurile se scriu pe fișe și se predau la finalul fiecărei runde – nu pe voce, ca să nu se copieze;
+    - Un **scorer vizibil**: un flipchart sau o tablă cu clasamentul după fiecare rundă.
+
+    **2. Rundele (structura care merge cel mai bine)**
+
+    1. **Generalități** – amestec ușor, ca să încălzești atmosfera;
+    2. **Muzică** – pui 8 secunde din 8 melodii, ei ghicesc titlul/artistul;
+    3. **Iași și campus** – istorie locală, profesori legendari, clădiri din oraș. Runda asta e mereu cea mai iubită;
+    4. **Foto/obiecte** – arăți detalii zoomate din campus sau obiecte din cafenea;
+    5. **Runda decisivă** – întrebări mai grele, cu puncte duble, ca orice echipă să poată urca în clasament la final.
+
+    **3. De unde iei întrebările**
+
+    - Le scrii tu, 40 pe lună – cam 3–4 ore de muncă. Surse: Wikipedia, arhivele locale, quiz-uri britanice de la care traduci idei (nu întrebări literal);
+    - **Nu repeta întrebările** cel puțin 6 luni – quiz-erii fideli le țin minte;
+    - Cere publicului să-ți trimită întrebări pe Instagram: autorul primește o cafea gratuită dacă întrebarea intră în joc. Îți face și conținut, și comunitate.
+
+    **4. Prezintă un maestru de ceremonii**
+
+    - Tu sau un prieten carismatic. Prezența pe scenă vinde seara mai mult decât întrebările;
+    - Regula de aur: citește întrebarea de două ori, fă o glumă scurtă, treci mai departe. Ritmul nu trebuie să moară.
+
+    **5. Premii (buget 150–250 lei/seară)**
+
+    - **Locul 1:** 3 luni de abonament Basic sau bon de consumație de 150 lei – premiu care îi aduce înapoi;
+    - **Locul 2:** bon de 75 lei;
+    - **Premiu consolare cu umor:** „Cea mai frumoasă greșită răspuns” – o prăjitură și un aplauz. Studenții adoră premiile de genul ăsta;
+    - Un **premiu surpriză** trăgea la sorți între toate echipele, ca toți să rămână până la final.
+
+    **6. Logistica practică**
+
+    - **Rezervare în avans** pe Instagram sau la bar, maximum 10 echipe – plinul controlat e mai bun decât haosul;
+    - Mesele se aranjează în cluster de 4–6 persoane, cu distanță între echipe;
+    - Muzica se oprește în timpul întrebărilor, volumul conversațiilor crește oricum – seara de quiz e ziua în care ignori zona liniștită;
+    - Un angajat dedicat doar barului în timpul jocului, altfel pierzi vânzările dintre runde.
+
+    **7. După seară**
+
+    - Postezi clasamentul și 2–3 poze pe Instagram a doua zi, cu data următoarei ediții deja anunțată;
+    - Ține seara **în aceeași zi a lunii** (de exemplu, ultimul joi) – regularitatea transformă evenimentul în obicei, iar obiceiul în venit.
+
+    **Socoteala rapidă:** 10 echipe × 4 persoane × 10 lei = 400 lei din taxe, plus consumația dintre runde (realist 300–500 lei). Cu un cost de premii de 200 lei, seara de quiz devine una dintre cele mai profitabile seri din lună – și, mai important, umple localul într-o seară de joi care altfel ar fi fost pe jumătate goală.
+- user: |
+    La primul quiz au venit doar 14 oameni. Cum ajung la 40?
+  assistant: |
+    14 oameni la primul quiz e un start normal, nu un eșec – majoritatea evenimentelor au nevoie de 3–4 ediții ca să prindă. Iată cum accelerezi:
+
+    **1. Transformă cei 14 în recrutatori**
+
+    - **Reducere pentru echipă completă:** dacă echipa are 5 membri, al 5-lea intră gratuit. Oamenii aduc prieteni ca să economisească;
+    - **Premiul „cea mai numeroasă echipă”** – o cafea gratuită pentru fiecare membru. Paradoxal, crește numărul de participanți mai bine decât premiul întâi;
+    - Cere-le celor veniți să posteze o poză cu hashtag-ul evenimentului – oferă-le o prăjitură pentru asta.
+
+    **2. Umple golurile dinainte de eveniment**
+
+    - Anunță cu **2 săptămâni înainte**, nu cu 3 zile. Postează apoi un reminder cu 3 zile și unul în ziua respectivă;
+    - **Rezervările deschise** pe Instagram: echipa își lasă numele, iar tu afișezi „echipe înscrise: 7/10”. Frica că se umple locurile aduce înscrieri devreme;
+    - Flyere în cămine și la facultăți în săptămâna dinainte, cu QR direct la postarea de rezervare.
+
+    **3. Schimbă ziua și ora dacă e nevoie**
+
+    Întreabă la finalul serii: „v-a fost bine, dar joi e ok?”. Dacă joi se lovește de laboratoare până târziu sau de alte evenimente din campus, mută marți sau miercuri. O singură întrebare adresată direct îți poate spune mai mult decât orice statistică.
+
+    **4. Dă seara un temă lunară**
+
+    Quiz-ul generic atrage greu; quiz-ul tematic atrage pasionații care vin cu echipa lor pregătită:
+
+    - „Quiz Harry Potter”, „Quiz de fotbal”, „Quiz Iași vechi”, „Quiz de medicină” (perfect pentru publicul de la Păcurari);
+    - Tema se anunță din timp, iar echipele vin „costumate” sau pregătite – asta generează poze, distribuiri și așteptare.
+
+    **5. Parteneriate cu asociațiile studențești**
+
+    - O asociație își aduce 2–3 echipe dacă le dai ceva în schimb: o rundă cu întrebări de la ei, logo-ul pe afiș, sau un procent mic din taxe pentru proiectul lor;
+    - Un singur partener de încredere îți aduce 10–15 oameni constanți.
+
+    **6. Pragul psihologic al sălii**
+
+    14 oameni într-o sală de 30–35 de locuri arată gol. La primele ediții:
+
+    - **Comprimă spațiul:** aranjează mesele doar într-o zonă, ca sala să pară plină;
+    - Nu lăsa goluri vizibile spre vitrină – un local care pare plin atrage, unul gol descurajează chiar și pe cei veniți special.
+
+    **7. Socoteala realistă a creșterii**
+
+    - Ediția 1: 14 → ediția 2: 20–24 (cei vechi + 1 prieten fiecare) → ediția 3: 28–32 (efectul temei și al parteneriatului) → ediția 4–5: 40;
+    - Dacă după 3 ediții stai pe loc, problema e formatul sau ziua, nu promovarea – schimbă un lucru pe ediție, ca să știi ce funcționează.
+
+    Cel mai important: **nu sări peste ediții** și nu le anula dacă vin puțini. Un quiz care se întâmplă în fiecare lună, indiferent de număr, construiește obiceiul; unul care apare și dispare nu construiește nimic.
+- user: |
+    Am primit o recenzie de 2 stele pe Google: „Wi-Fi-ul pică din oră în oră și prizele de la geam nu merg. Pentru un loc care se numește Priza, e ironic.” Scrie-mi un răspuns public.
+  domain: text-rewrite
+  assistant: |
+    Iată un răspuns public recomandat:
+
+    ---
+
+    **Răspuns:**
+
+    Bună ziua, și mulțumim că ne-ați avertizat – aveți perfectă dreptate, iar ironia nu ne scapă: o cafenea numită „Priza” trebuie să țină curentul, în toate sensurile.
+
+    Am verificat ambele probleme: routerul a fost resetat și am adăugat un punct de acces suplimentar pentru zona de la geam, iar prizele defecte de acolo au fost înlocuite. De acum înainte, verificăm săptămânal toate prizele și viteza Wi-Fi, ca să nu se mai repete.
+
+    Ne pare rău că v-am stricat sesiunea de învățat – la Priza, asta e exact opusul a ceea ce vrem să facem. Vă invităm să ne dați o a doua șansă: prima cafea e din partea casei, ca să testați dacă totul merge cum trebuie. Spuneți la bar că veniți din partea răspunsului de pe Google.
+
+    Ne cerem scuze pentru disconfort și sperăm să vă revedem conectat la 100%.
+
+    Echipa Priza
+
+    ---
+
+    **De ce e scris așa:**
+
+    1. **Recunoaște problema direct**, fără scuze defensive sau justificări – recenzenții și cititorii simt diferența;
+    2. **Dă soluții concrete** (router, punct de acces, prize înlocuite) – arată că nu doar te scuzi, ci rezolvi;
+    3. **Folosește umorul cu măsură** – ironia recenziei e o oportunitate, iar un răspuns cu personalitate e citit de toți cei care ajung la pagina ta;
+    4. **Oferă ceva concret** (cafea gratuită) – transformă un client nemulțumit într-unul care poate reveni, iar publicul care citește vede că stai la dispoziție;
+    5. **Se termină pozitiv**, cu identitatea brandului.
+
+    **Un sfat practic:** înainte de a posta răspunsul, asigură-te că reparațiile chiar s-au făcut. Dacă recenzentul revine și prizele tot nu merg, al doilea răspuns va fi mult mai dur decât primul. Și verifică tu însuți Wi-Fi-ul la geam, cu laptopul, într-o zi de vârf – dacă pică din oră în oră, problema poate fi mai mare decât un router resetat.
+- user: |
+    Am un buget de marketing de 1.500 de lei pentru semestrul al doilea. Cum îl împart?
+  assistant: |
+    Cu 1.500 de lei pentru ~5 luni (octombrie–februarie, deci incluzând sesiunea și începutul semestrului al doilea), bugetul e mic, dar suficient dacă îl concentrezi pe canalele care merg la publicul tău. Iată o împărțire:
+
+    **1. Instagram/TikTok – 400 lei (promovare plătită)**
+
+    - 80–100 lei/lună pentru boostarea postărilor cheie: anunțul quiz-ului, ofertele de abonamente, „Noaptea Lungă de Studiu”;
+    - Țintește doar raza de 2–3 km în jurul cafenelei, vârsta 18–26. Bugetul mic e ok aici: 50 de lei bine țintiți bat 500 de lei împrăștiați;
+    - Promovează postările care merg deja bine organic, nu cele care nu funcționează.
+
+    **2. Flyere și materiale tipărite – 300 lei**
+
+    - 1.000 de flyere cu QR (reducere la primul abonament sau cafea gratuită la prima vizită), distribuite în cămine și la ieșirile din facultăți în săptămânile de început de semestru – astea sunt ferestrele de aur, când oamenii își caută locuri de studiu;
+    - 2–3 afișe A3 pentru panourile din facultăți (cere acordul asociațiilor studențești).
+
+    **3. Quiz-ul lunar – 250 lei (premii suplimentare)**
+
+    - Bugetul de premii pe care l-am stabilit (150–250 lei/seară) e deja acoperit parțial din taxele de participare; aici adaugi 50 lei/ediție pentru premiul surpriză și materiale;
+    - Quiz-ul e cel mai bun „reclamă” pe care o ai: fiecare participant aduce alții.
+
+    **4. Stickere și merch mic – 200 lei**
+
+    - 500 de stickere cu logo-ul și sloganul „Stai conectat. La cafea.” – se pun pe laptopuri și lucrează pentru tine în biblioteci;
+    - Câteva căni sau tricouri pentru concursuri pe Instagram („poza cu cel mai plin laptop din Priza câștigă...”).
+
+    **5. Rezervă de urgență – 350 lei**
+
+    - Nu-l atinge decât dacă apare ceva concret: un parteneriat cu o asociație care cere o contribuție, o ediție specială a quiz-ului cu temă mare, sau o lună slabă care are nevoie de un impuls.
+
+    **Ce NU cheltui:**
+
+    - Panouri publicitare, radio, presă locală – prea scumpe pentru publicul tău;
+    - Influenceri mari – un micro-influencer local (2.000–5.000 urmăritori, student) e altă poveste: o cafea gratuită + un mic bon pot fi suficiente, fără bani din buget.
+
+    **Regula de măsurare:** fiecare canal primește un cod sau o ofertă distinctă (flyer = „PRIZA10”, Instagram = link cu reducere). La finalul semestrului știi exact ce a adus clienți și unde pui banii în semestrul următor.
+
+    **Prioritatea absolută:** dacă trebuie să alegi un singur lucru, pune totul în primele 3 săptămâni de semestru – momentul în care studenții își aleg „locul lor” contează mai mult decât orice altceva în restul anului.
+- user: |
+    Fă-mi un rezumat al planului actualizat, cu toate deciziile noi.
+  assistant: |
+    Rezumatul planului actualizat pentru „Priza”:
+
+    **Concept și identitate**
+
+    - Study café lângă campusul Copou, Iași, strada Păcurari, cu zone separate pentru liniște și grupuri;
+    - Nume: **„Priza”**, slogan: **„Stai conectat. La cafea.”** – pe vitrină, pahare și stickere, cu font și culori consistente;
+    - Logo: ștecher stilizat din care iese abur de cafea.
+
+    **Locație și investiție**
+
+    - Spațiu de 68 mp, parter, vitrină mare;
+    - Chirie negociată: **1.650 €/lună, cu 3 luni de grație** pentru amenajare;
+    - Investiție estimată: 90.000–150.000 lei (echipamente + amenajare);
+    - Break-even: **~51–59 clienți pe zi** (la bon mediu 18–20 lei), ținte de confort la 70+.
+
+    **Furnizor de cafea**
+
+    - **Prăjitoria Nord**: 95 lei/kg, espressor cu 2 grupuri în comodat;
+    - Contract de comodat cu clauze clare: service în 48 h, ieșire fără penalizări cu preaviz de 30–60 zile, proces-verbal de predare cu poze, verificat de avocat.
+
+    **Meniu**
+
+    - 10 băuturi, prețuri student-friendly: espresso 7 lei, filtru 8 lei, cappuccino 10 lei, băuturile reci max 12 lei;
+    - Combo-uri (băutură + sandviș ~18 lei) pentru creșterea bonului; lapte vegetal +2 lei.
+
+    **Personal și program**
+
+    - 2 bariști cu jumătate de normă (~4.140 lei/lună total cu taxe) + tu;
+    - Programul dorit (7:30–22:00) e la limită – de decis înainte de deschidere: **al treilea barist cu jumătate de normă** sau **program scurtat** (8:00–21:00, duminică redus).
+
+    **Evenimente**
+
+    - **Seara de Quiz lunară** (ultimul joi): echipe de 2–5, taxa 10 lei cu băutură inclusă, 5 runde, premii 150–250 lei, teme lunare, parteneriate cu asociațiile studențești; țintă: 40 de participanți în 4–5 ediții.
+
+    **Autorizări**
+
+    - Ordinea: ONRC (CAEN 5630) → amenajare → DSVSA + ISU → autorizare primărie; plus atestate de manipulant, casă de marcat fiscală; durată estimată 1–3 luni, în paralel cu grația chiriei.
+
+    **Marketing – buget 1.500 lei/semestru**
+
+    - Instagram/TikTok plătit: 400 lei (raza 2–3 km, 18–26 ani);
+    - Flyere și afișe la început de semestru: 300 lei;
+    - Premii quiz suplimentare: 250 lei;
+    - Stickere și merch mic: 200 lei;
+    - Rezervă de urgență: 350 lei;
+    - Fiecare canal cu cod propriu de reducere, pentru măsurare; concentrare pe primele 3 săptămâni de semestru.
+
+    **Riscuri urmărite**
+
+    - Vara fără studenți (evenimente + clienți din cartier);
+    - Abonații care consumă peste medie (monitorizare lunară);
+    - Fluctuația personalului la salariu minim (posibil +300–400 lei/persoană);
+    - Reputația online: răspunsuri rapide și concrete la recenzii, cu reparații făcute înainte de răspuns.
+
+    **Următorii pași concreți:** semnarea contractului de închiriere și a comodului, pornirea autorizărilor, angajarea bariștilor, decizia finală despre program și al treilea angajat.
 questions:
-  - id: q1
-    type: semantic
-    prompt: |
-      Cât costa abonamentul Plus și ce includea?
-    gold:
-      - {turn: 2, quote: "**Plus – 149 lei/lună:**"}
-  - id: q2
-    type: semantic
-    prompt: |
-      De ce îmi recomandai numele „Priza”?
-    gold:
-      - {turn: 3, quote: "Preferatul meu e **„Priza”**"}
-  - id: q3
-    type: exact
-    prompt: |
-      Cât ziceai că ar costa râșnița?
-    gold:
-      - {turn: 5, quote: "**Râșniță pentru espresso:** 5.000–10.000 lei"}
-  - id: q4
-    type: ambiguous
-    prompt: |
-      și cu zgomotul cum rămăsese?
-    gold:
-      - {turn: 7, quote: "Împarte spațiul în zone, ca într-o bibliotecă"}
-  - id: q5
-    type: semantic
-    lang: en
-    prompt: |
-      What was the cheap launch idea with the grades?
-    gold:
-      - {turn: 4, quote: "**Săptămâna de deschidere „cafea pentru notă”**"}
-  - id: q6
-    type: semantic
-    prompt: |
-      Care era riscul cel mai mare pentru cafenea?
-    gold:
-      - {turn: 8, quote: "Cel mai periculos e primul: o cafenea care trăiește doar din studenți are două luni pe an aproape fără venituri."}
+- id: q1
+  type: semantic
+  prompt: |
+    Cât costa abonamentul Plus și ce includea?
+  gold:
+  - turn: 2
+    quote: '**Plus – 149 lei/lună:**'
+- id: q2
+  type: semantic
+  prompt: |
+    De ce îmi recomandai numele „Priza”?
+  gold:
+  - turn: 3
+    quote: Preferatul meu e **„Priza”**
+- id: q3
+  type: exact
+  prompt: |
+    Cât ziceai că ar costa râșnița?
+  gold:
+  - turn: 5
+    quote: '**Râșniță pentru espresso:** 5.000–10.000 lei'
+- id: q4
+  type: ambiguous
+  prompt: |
+    și cu zgomotul cum rămăsese?
+  gold:
+  - turn: 7
+    quote: Împarte spațiul în zone, ca într-o bibliotecă
+- id: q5
+  type: semantic
+  lang: en
+  prompt: |
+    What was the cheap launch idea with the grades?
+  gold:
+  - turn: 4
+    quote: '**Săptămâna de deschidere „cafea pentru notă”**'
+- id: q6
+  type: semantic
+  prompt: |
+    Care era riscul cel mai mare pentru cafenea?
+  gold:
+  - turn: 8
+    quote: 'Cel mai periculos e primul: o cafenea care trăiește doar din studenți are două luni pe an aproape fără venituri.'
+- id: q7
+  type: decision
+  prompt: |
+    Cât plătim chirie după negociere?
+  gold:
+  - turn: 12
+    quote: 'Chirie: 1.650 € ≈ 8.250 lei'
+  - turn: 28
+    quote: '- Break-even: **~51–59 clienți pe zi** (la bon mediu 18–20 lei), ținte de confort la 70+.'
+  outdated:
+  - turn: 11
+    quote: 1.900 €/lună (circa 9.500 lei) e o chirie serioasă pentru Iași
+- id: q8
+  type: decision
+  prompt: |
+    Cu ce prăjitorie am mers până la urmă și de ce?
+  gold:
+  - turn: 15
+    quote: Câteva clauze esențiale de pus în contractul de comodat
+  - turn: 14
+    quote: Pe hârtie, **Prăjitoria Nord** câștigă
+- id: q9
+  type: distractor
+  prompt: |
+    Cât costa kilogramul de cafea la Tostato?
+  gold:
+  - turn: 14
+    quote: '| Tostato | 82 lei | 6.560 lei | îl cumperi tu |'
+- id: q10
+  type: decision
+  prompt: |
+    Cât costă un cappuccino la noi?
+  gold:
+  - turn: 17
+    quote: '| 3 | **Cappuccino** | 10 lei |'
+  - turn: 28
+    quote: espresso 7 lei, filtru 8 lei, cappuccino 10 lei
+  outdated:
+  - turn: 16
+    quote: '| 3 | **Cappuccino** | 12 lei |'
+- id: q11
+  type: multi-hop
+  prompt: |
+    Ce slogan am ales pentru Priza?
+  gold:
+  - turn: 19
+    quote: 3. **„Stai conectat. La cafea.”**
+  - turn: 20
+    quote: „Stai conectat. La cafea.” cu logo-ul „Priza” deasupra
+  - turn: 28
+    quote: '- Nume: **„Priza”**, slogan: **„Stai conectat. La cafea.”** – pe vitrină, pahare și stickere, cu font și culor'
+  - turn: 27
+    quote: '- 500 de stickere cu logo-ul și sloganul „Stai conectat. La cafea.” – se pun pe laptopuri și lucrează pentru t'
+- id: q12
+  type: paraphrase
+  prompt: |
+    Ce hârtii îmi trebuie de la stat ca să pot deschide?
+  gold:
+  - turn: 21
+    quote: Autorizare sanitară pentru funcționare
+  - turn: 28
+    quote: '- Ordinea: ONRC (CAEN 5630) → amenajare → DSVSA + ISU → autorizare primărie; plus atestate de manipulant, casă'
+- id: q13
+  type: semantic
+  prompt: |
+    Cum am răspuns la recenzia cu Wi-Fi-ul care pica?
+  gold:
+  - turn: 26
+    quote: routerul a fost resetat și am adăugat un punct de acces suplimentar
+- id: q14
+  type: semantic
+  prompt: |
+    e realist programul cu doi baristi?
+  gold:
+  - turn: 23
+    quote: Pe hârtie e la limită; în practică, doar dacă lucrezi tu foarte mult.
+  - turn: 28
+    quote: '- Programul dorit (7:30–22:00) e la limită – de decis înainte de deschidere: **al treilea barist cu jumătate d'
+- id: q15
+  type: exact
+  prompt: |
+    Cât ieșea costul lunar total pentru cei doi bariști?
+  gold:
+  - turn: 22
+    quote: 'Total pentru 2 bariști: ~4.140 lei/lună'
+  - turn: 28
+    quote: '- Programul dorit (7:30–22:00) e la limită – de decis înainte de deschidere: **al treilea barist cu jumătate d'

@@ -1,0 +1,512 @@
+id: s13-scrisori-intentie
+category: text-rewrite
+lang: en
+turns:
+- user: |
+    I'm applying for a Junior Data Analyst role at Nordwind Analytics. Here's my draft cover letter, can you make it more professional?
+
+    Dear Nordwind team,
+
+    My name is Andrei and I want to apply for the junior data analyst job. I have been working for 2 years at TransCarpat, which is a logistics company in Cluj, and I do a lot of reports there. The thing I am most proud of is a Power BI dashboard I built for the operations team, which cut our weekly reporting time from 3 days to 4 hours, because before that everybody was copying numbers from Excel files by hand.
+
+    I know SQL quite well, I use it every day, mostly PostgreSQL, and I also know Python with pandas for cleaning data. I did a master's degree in data science at Babeș-Bolyai University, where my thesis was about predicting hospital readmissions with logistic regression.
+
+    I like your company because you work with renewable energy data and I think this is important for the future. I would be very happy to learn from your team and grow as an analyst.
+
+    Thank you for reading,
+    Andrei Mureșan
+  assistant: |
+    Here's a polished version:
+
+    ---
+
+    Dear Hiring Team at Nordwind Analytics,
+
+    I am writing to apply for the Junior Data Analyst position at Nordwind Analytics. With two years of hands-on analytics experience in the logistics sector and a master's degree in data science, I am eager to bring my skills in reporting, data modeling, and visualization to a company whose work in renewable energy data aligns with my own interest in impactful, future-oriented analytics.
+
+    In my current role at TransCarpat, a logistics company based in Cluj, I am responsible for building and maintaining operational reports. My most significant achievement to date is a Power BI dashboard I developed for the operations team, which reduced weekly reporting time from three days to four hours. Prior to this solution, the process relied on manually copying figures across Excel files, so the dashboard also improved data accuracy and freed the team to focus on analysis rather than data collection.
+
+    My technical toolkit includes advanced SQL (primarily PostgreSQL, which I use daily) and Python with pandas for data cleaning and transformation. During my master's studies at Babeș-Bolyai University, I deepened this foundation through my thesis on predicting hospital readmissions using logistic regression, which strengthened both my statistical modeling skills and my ability to communicate analytical findings to non-technical audiences.
+
+    I am particularly drawn to Nordwind Analytics because of your focus on renewable energy data — a field where rigorous analysis can directly support better decisions and a more sustainable future. As an early-career analyst, I am motivated to learn from experienced colleagues and to grow into a role where I can contribute measurable value to your clients and projects.
+
+    Thank you for considering my application. I would welcome the opportunity to discuss how my experience and enthusiasm could benefit your team.
+
+    Sincerely,
+    Andrei Mureșan
+
+    ---
+
+    **Main changes I made:**
+    - Replaced casual phrasing ("I do a lot of reports," "I know SQL quite well") with confident, professional language
+    - Added a strong opening that summarizes your value proposition
+    - Framed the dashboard achievement in terms of business impact (accuracy, efficiency)
+    - Connected your skills directly to the company's work
+    - Added a closing line inviting further conversation
+
+    One suggestion: if you know the hiring manager's name, replace "Dear Hiring Team" with it — it makes a noticeably better first impression.
+- user: |
+    Too formal now. Make it sound like a real person wrote it, and keep it under 250 words.
+  assistant: |
+    Here's a warmer version:
+
+    ---
+
+    Dear Nordwind team,
+
+    I'd like to apply for the Junior Data Analyst position at Nordwind Analytics. I've spent the last two years working in analytics at TransCarpat, a logistics company in Cluj, and I'm now looking for a role where I can keep growing — ideally in a field I care about, which is exactly what drew me to your renewable energy work.
+
+    The project I'm proudest of at TransCarpat is a Power BI dashboard I built for the operations team. Before it existed, everyone was manually copying numbers between Excel files, and weekly reporting took three days. After the dashboard, it took four hours — and the numbers were more reliable, too.
+
+    Day to day, I work mostly in SQL (PostgreSQL) and use Python with pandas for cleaning data. I also hold a master's in data science from Babeș-Bolyai University, where my thesis involved predicting hospital readmissions with logistic regression.
+
+    I'll be honest: I know I still have a lot to learn, and that's part of why Nordwind appeals to me. I'd rather join a team where I can learn from experienced analysts than pretend I already know everything. What I can promise is that I show up curious, I care about getting the numbers right, and I genuinely enjoy turning messy data into something useful.
+
+    Thank you for taking the time to read my application — I'd love the chance to talk further.
+
+    Best regards,
+    Andrei Mureșan
+
+    ---
+
+    This keeps your authentic voice (including the honest "still learning" angle, which works well for junior roles) while tightening the structure. It's about 230 words.
+- user: |
+    Add that I'm moving to Berlin in March, so I can work on site from then.
+  assistant: |
+    Add this sentence to the first paragraph, right after "which is exactly what drew me to your renewable energy work":
+
+    > I'm also relocating to Berlin this March, so I'd be able to work on site from then.
+
+    So the opening paragraph reads:
+
+    > I'd like to apply for the Junior Data Analyst position at Nordwind Analytics. I've spent the last two years working in analytics at TransCarpat, a logistics company in Cluj, and I'm now looking for a role where I can keep growing — ideally in a field I care about, which is exactly what drew me to your renewable energy work. I'm also relocating to Berlin this March, so I'd be able to work on site from then.
+
+    This keeps the total around 245 words. If you'd rather stay comfortably under 250, you could trim "I'll be honest:" from the fourth paragraph — the sentence works fine without it.
+- user: |
+    Now I need a different letter for Calder Health in London, a Healthcare Data Analyst role. Focus on the hospital readmission project from my thesis instead of the dashboard. This is the job ad:
+
+    Calder Health is looking for a Healthcare Data Analyst to join our population health team in London. You will analyse hospital activity data to find patients at risk of readmission and help clinical teams act early. Requirements: strong SQL, experience with R or Python, understanding of basic statistical modelling, clear communication with non-technical stakeholders. Experience with NHS data (HES, SUS) is a strong plus. Hybrid working, two days a week in our King's Cross office.
+  assistant: |
+    Here's a tailored letter for Calder Health:
+
+    ---
+
+    Dear Calder Health hiring team,
+
+    I'm applying for the Healthcare Data Analyst role in your population health team. The job description could almost have been written around my master's thesis: I spent a year building a model to predict hospital readmissions, and it's the work that convinced me I want to spend my career on exactly this kind of problem — using data to help clinical teams reach the right patients earlier.
+
+    For my thesis at Babeș-Bolyai University, I built a logistic regression model on patient records to identify readmission risk. That project taught me the full cycle: cleaning messy real-world data, choosing and validating a model, and — most importantly — translating statistical output into something clinicians and administrators could actually act on. I learned that a well-calibrated model is worthless if the people who need it can't understand what it's telling them.
+
+    In my two years since, at TransCarpat (a logistics company in Cluj), I've used SQL daily, mostly PostgreSQL, along with Python and pandas for data preparation. I've also built reporting tools that non-technical teams rely on, which sharpened the communication side the role calls for.
+
+    I haven't worked with NHS data like HES or SUS yet, but my thesis work with patient-level data is the closest possible foundation, and I'd come in ready to learn the specifics fast.
+
+    I'd be glad to discuss how I could contribute to your team — thank you for your time.
+
+    Best regards,
+    Andrei Mureșan
+
+    ---
+
+    About 240 words. Two notes:
+
+    1. **Location:** You mentioned you're moving to *Berlin* in March — this job is in *London*. If that's intentional (e.g., you're flexible or the move changed), no problem, but I left location out of this letter. If you're actually staying in the UK, let me know and I can add a line about being London-based.
+
+    2. I addressed the NHS data gap directly rather than hoping they don't notice — for junior roles, honesty about gaps paired with a relevant foundation usually lands better than silence.
+- user: |
+    I don't have any NHS data experience. How do I address that without sounding weak?
+  assistant: |
+    The key is to frame it as "adjacent experience + fast learning" rather than apologizing for a gap. A few principles:
+
+    **1. Never lead with the negative.** Don't open with "I don't have NHS experience." Lead with what you *do* have, and address the gap only if the ad explicitly requires it (yours says "strong plus," not required — so you can even skip it).
+
+    **2. Use the "closest equivalent" move.** Point to the most transferable thing you've done and let the reader draw the conclusion:
+
+    > "My thesis involved working with patient-level clinical data, including the quirks of real-world health records — coding inconsistencies, missing entries, and the ethical handling of sensitive information. I'd expect HES and SUS to have their own learning curve, but the fundamentals of messy clinical data are familiar territory."
+
+    This says "I've done something harder than learning a new dataset" without claiming expertise you don't have.
+
+    **3. Show you've already started.** Even a small step kills the weakness instantly:
+
+    > "I've started familiarizing myself with NHS data structures through the publicly available HES documentation and open datasets, and I'm looking forward to working with the real thing."
+
+    Only say this if you actually spend a weekend doing it — it's genuinely doable, since NHS Digital publishes documentation and sample data.
+
+    **4. Reframe what "junior" means.** For a junior role, they're hiring trajectory, not a finished product:
+
+    > "What I bring is a proven ability to get up to speed on new domains quickly — I went from logistics outsider to building the reporting tools the operations team depends on, and I'd expect to do the same with NHS data."
+
+    **What to avoid:**
+    - "Unfortunately, I don't have..." or "Although I lack..." — these words make the reader's brain file you under "weak"
+    - Over-explaining — one sentence on the gap, then move on
+    - Claiming familiarity you don't have — if interviewed, it'll unravel fast
+
+    Honestly, for your Calder Health letter, the current line ("I haven't worked with NHS data yet, but...") is already fine. If you want it stronger, swap in option 2 or 3 above.
+- user: |
+    Rewrite the Calder letter with that paragraph included.
+  assistant: |
+    Here's the updated Calder Health letter:
+
+    ---
+
+    Dear Calder Health hiring team,
+
+    I'm applying for the Healthcare Data Analyst role in your population health team. The job description could almost have been written around my master's thesis: I spent a year building a model to predict hospital readmissions, and it's the work that convinced me I want to spend my career on exactly this kind of problem — using data to help clinical teams reach the right patients earlier.
+
+    For my thesis at Babeș-Bolyai University, I built a logistic regression model on patient records to identify readmission risk. That project taught me the full cycle: cleaning messy real-world data, choosing and validating a model, and — most importantly — translating statistical output into something clinicians and administrators could actually act on. I learned that a well-calibrated model is worthless if the people who need it can't understand what it's telling them.
+
+    In my two years since, at TransCarpat (a logistics company in Cluj), I've used SQL daily, mostly PostgreSQL, along with Python and pandas for data preparation. I've also built reporting tools that non-technical teams rely on, which sharpened the communication side the role calls for.
+
+    While I haven't worked with HES or SUS data yet, my thesis gave me hands-on experience with patient-level clinical data — coding inconsistencies, missing entries, and the care required when handling sensitive health information. I'd expect NHS datasets to have their own learning curve, but the fundamentals of messy clinical data are familiar territory, and I got up to speed quickly at TransCarpat when I joined as a logistics outsider.
+
+    I'd be glad to discuss how I could contribute to your team — thank you for your time.
+
+    Best regards,
+    Andrei Mureșan
+
+    ---
+
+    About 260 words — slightly over, but the gap paragraph now does double duty: it addresses the NHS experience directly *and* ends on your proven ability to learn new domains fast. If you want it back under 250, cut "and the care required when handling sensitive health information" from that paragraph.
+- user: |
+    Back to the Nordwind letter: they replied that their application portal only accepts a short version, max 120 words. Shorten the latest version.
+  assistant: |
+    Here's a version that fits the portal limit (~110 words):
+
+    ---
+
+    Dear Nordwind team,
+
+    I'm applying for the Junior Data Analyst position. I've spent two years in analytics at TransCarpat, a logistics company in Cluj, where my proudest project is a Power BI dashboard that cut weekly reporting from three days to four hours. Day to day I work in SQL (PostgreSQL) and Python with pandas, and I hold a master's in data science from Babeș-Bolyai University.
+
+    I'm relocating to Berlin this March, so I could work on site from then. I know I still have plenty to learn — that's part of the appeal. I'd bring curiosity, care with numbers, and a genuine enjoyment of turning messy data into something useful.
+
+    Best regards,
+    Andrei Mureșan
+
+    ---
+
+    What I kept and cut:
+    - **Kept:** the dashboard result (your strongest proof), core tech stack, the Berlin relocation, and the honest "eager to learn" tone that made the longer version feel human
+    - **Cut:** the renewable energy motivation and the thesis detail — with only 120 words, concrete achievements beat general enthusiasm
+
+    If you'd rather keep the renewable energy mention instead of the "still learning" line, swap them — they're roughly the same length.
+- user: |
+    Write a LinkedIn message to the Nordwind recruiter, Jana Köhler, following up one week after I applied.
+  assistant: |
+    Here's a LinkedIn follow-up message:
+
+    ---
+
+    Hi Jana,
+
+    I applied for the Junior Data Analyst position at Nordwind Analytics last week and wanted to briefly reach out, as I'm genuinely excited about the role.
+
+    Quick background: I've spent two years in analytics at a logistics company in Cluj, where I built a Power BI dashboard that cut weekly reporting time from three days to four hours. I work daily in SQL and Python, and I'm relocating to Berlin in March, so I'd be available on site from then.
+
+    I'd love the chance to discuss how I could contribute to the team. Is there a good time to connect, or is there anything else you need from me for the application?
+
+    Thanks for your time!
+
+    Best,
+    Andrei Mureșan
+
+    ---
+
+    A few notes:
+
+    - **Kept it short** — recruiters skim LinkedIn messages, so this is ~100 words and scannable
+    - **Led with the dashboard number** — one concrete result is more memorable than a list of skills
+    - **Ended with a low-pressure ask** — "anything else you need" gives her an easy way to respond even if there's no news yet
+    - **No guilt-tripping** — I avoided phrases like "I wanted to check on the status of my application," which can read as impatient after only a week
+
+    If you know the recruiter handles many applicants, you could add one line about the renewable energy angle to stand out — but only if it doesn't push the message past what someone would actually read on mobile.
+- user: |
+    Less pushy, please. She doesn't owe me anything.
+  assistant: |
+    Here's a gentler version:
+
+    ---
+
+    Hi Jana,
+
+    I applied for the Junior Data Analyst position at Nordwind Analytics last week and wanted to say how interested I am in the role — the renewable energy work is exactly the kind of field I'd love to move into.
+
+    Briefly about me: two years in analytics at a logistics company in Cluj, where I built a Power BI dashboard that cut weekly reporting from three days to four hours. I work daily in SQL and Python, and I'm relocating to Berlin in March.
+
+    No response needed — I just wanted to put a face to the application. Thanks for the work you do connecting people with these roles, and I hope we get the chance to talk.
+
+    Best,
+    Andrei Mureșan
+
+    ---
+
+    What changed:
+    - **Removed the ask entirely** — no "can we connect" or "do you need anything from me." The message now just adds context and warmth without demanding anything
+    - **"No response needed"** — explicitly releases her from any obligation, which paradoxically often makes people *more* likely to reply
+    - **Added the renewable energy line** — since there's no ask anymore, this gives the message a reason to exist beyond "notice me"
+    - **Thanked her for her work** — acknowledges that she's a person doing a job, not a gatekeeper
+
+    It's still ~110 words, so it reads in one glance.
+- user: |
+    Calder invited me to an interview and it went well! Write a thank-you email to Dr. Hollis, who interviewed me. Mention our conversation about readmission rates going up in winter.
+  assistant: |
+    Congratulations on the interview! Here's a thank-you email:
+
+    ---
+
+    Subject: Thank you — Healthcare Data Analyst interview
+
+    Dear Dr. Hollis,
+
+    Thank you for taking the time to speak with me yesterday about the Healthcare Data Analyst role. I really enjoyed our conversation, and the discussion about readmission rates rising in winter particularly stayed with me — it's a perfect example of why the population health team's work matters, and it connects directly to what drew me to this role.
+
+    My thesis on predicting hospital readmissions gave me a strong appreciation for how seasonal patterns and patient-level risk factors interact, and I'd be excited to explore that further with real NHS data alongside your team.
+
+    Thank you again for your time and for the insight into the role. I look forward to hearing about the next steps.
+
+    Best regards,
+    Andrei Mureșan
+
+    ---
+
+    A few notes:
+
+    - **The winter detail does the heavy lifting** — referencing a specific moment from the conversation proves you were engaged, and it's the thing interviewers remember when deciding between similar candidates
+    - **Tied it back to your thesis** — one sentence connecting their problem to your expertise, without re-pitching yourself
+    - **Kept it short** — thank-you emails should take 30 seconds to read; longer ones start to feel like a second cover letter
+
+    One tip: if anything specific came up in the interview that you didn't have a good answer for at the time (a dataset, a method, a question), this email is also a good place to briefly follow up on it — e.g., "You mentioned X — I looked into it afterwards and..." That shows initiative. Happy to add a line like that if something comes to mind.
+- user: |
+    The subject line is boring. Give me three better ones.
+  assistant: |
+    Here are three options:
+
+    1. **Thank you — and winter readmissions**
+       Ties directly to your memorable conversation moment; she'll know instantly who this is from before even opening it.
+
+    2. **Enjoyed our conversation — Andrei Mureșan, Healthcare Data Analyst interview**
+       Warm but still identifiable; putting your name in the subject helps if she's interviewing multiple candidates.
+
+    3. **Thank you for yesterday — thinking about seasonal risk already**
+       The most distinctive of the three; "thinking about it already" signals genuine engagement, which is exactly the impression you want to leave.
+
+    My pick would be **#1** — it's specific, professional, and the winter readmissions reference is your strongest hook since it was a real moment from your conversation. Just avoid anything too clever or jokey; healthcare and a formal title like "Dr." call for keeping some polish.
+- user: |
+    Bad news: Nordwind rejected me. Help me write a gracious reply that asks for feedback.
+  assistant: |
+    Sorry to hear that — but asking for feedback is exactly the right move. Here's a reply:
+
+    ---
+
+    Subject: Re: Junior Data Analyst application
+
+    Dear Jana,
+
+    Thank you for letting me know, and for the time you and the team spent considering my application. While I'm naturally disappointed, I appreciate the opportunity to have applied to a company whose work I genuinely admire.
+
+    If you have a moment, I'd be grateful for any feedback on my application or interview — anything from technical skills to experience level would help me improve as I continue developing as an analyst.
+
+    I'll be following Nordwind's work with interest, and I hope our paths cross again.
+
+    Best regards,
+    Andrei Mureșan
+
+    ---
+
+    A few notes:
+
+    - **No bargaining** — don't ask them to reconsider or mention other open roles; it undermines the gracious tone and makes the feedback request feel like a tactic
+    - **One specific ask** — "any feedback" with a light hint of what kind keeps it easy for them to answer in two sentences
+    - **The door stays open** — junior roles turn over fast, and candidates who handle rejection well are the ones recruiters remember when a new position opens
+
+    Two practical tips:
+
+    1. **If you interviewed**, ask Dr.-equivalent feedback from the interviewer rather than the recruiter if possible — technical interviewers usually give more substantive answers than "we went with another candidate."
+    2. **If they do reply with feedback, just say thank you.** Don't argue with it, even if you disagree — that reply is also part of the impression you're leaving.
+- user: |
+    I found a similar role at a company called Brightloop in Munich. Rewrite my original Nordwind letter for them: same structure, swap the details.
+  assistant: |
+    Here's the Brightloop version — same structure as the Nordwind letter:
+
+    ---
+
+    Dear Brightloop team,
+
+    I'd like to apply for the Junior Data Analyst position at Brightloop. I've spent the last two years working in analytics at TransCarpat, a logistics company in Cluj, and I'm now looking for a role where I can keep growing — ideally in a field I care about, which is exactly what drew me to [Brightloop's focus/mission — e.g., "your work on sustainable supply chains"].
+
+    The project I'm proudest of at TransCarpat is a Power BI dashboard I built for the operations team. Before it existed, everyone was manually copying numbers between Excel files, and weekly reporting took three days. After the dashboard, it took four hours — and the numbers were more reliable, too.
+
+    Day to day, I work mostly in SQL (PostgreSQL) and use Python with pandas for cleaning data. I also hold a master's in data science from Babeș-Bolyai University, where my thesis involved predicting hospital readmissions with logistic regression.
+
+    I'll be honest: I know I still have a lot to learn, and that's part of why Brightloop appeals to me. I'd rather join a team where I can learn from experienced analysts than pretend I already know everything. What I can promise is that I show up curious, I care about getting the numbers right, and I genuinely enjoy turning messy data into something useful.
+
+    Thank you for taking the time to read my application — I'd love the chance to talk further.
+
+    Best regards,
+    Andrei Mureșan
+
+    ---
+
+    Two things I need from you (or flag for me):
+
+    1. **The placeholder in the first paragraph** — I don't know what Brightloop actually does. Tell me their industry or mission and I'll write that line properly. It matters: "I like your company because you work with renewable energy" was a genuine reason for Nordwind, and a vague swap will read as copy-paste.
+
+    2. **The relocation line** — I left out "moving to Berlin in March" since Munich is a different city. Are you actually relocating to Munich, or applying remotely? If you're moving there, I'd add: "I'm also relocating to Munich this March, so I'd be able to work on site from then." If not, better to say nothing than to have it contradict your Nordwind application.
+- user: |
+    Remove the part about moving to Berlin, it doesn't apply to Munich. Just say I'm open to relocating.
+  assistant: |
+    Here's the updated version:
+
+    ---
+
+    Dear Brightloop team,
+
+    I'd like to apply for the Junior Data Analyst position at Brightloop. I've spent the last two years working in analytics at TransCarpat, a logistics company in Cluj, and I'm now looking for a role where I can keep growing — ideally in a field I care about, which is exactly what drew me to [Brightloop's focus/mission].
+
+    The project I'm proudest of at TransCarpat is a Power BI dashboard I built for the operations team. Before it existed, everyone was manually copying numbers between Excel files, and weekly reporting took three days. After the dashboard, it took four hours — and the numbers were more reliable, too.
+
+    Day to day, I work mostly in SQL (PostgreSQL) and use Python with pandas for cleaning data. I also hold a master's in data science from Babeș-Bolyai University, where my thesis involved predicting hospital readmissions with logistic regression. I'm currently based in Cluj and fully open to relocating to Munich for the right role.
+
+    I'll be honest: I know I still have a lot to learn, and that's part of why Brightloop appeals to me. I'd rather join a team where I can learn from experienced analysts than pretend I already know everything. What I can promise is that I show up curious, I care about getting the numbers right, and I genuinely enjoy turning messy data into something useful.
+
+    Thank you for taking the time to read my application — I'd love the chance to talk further.
+
+    Best regards,
+    Andrei Mureșan
+
+    ---
+
+    I added the relocation line at the end of the third paragraph: *"I'm currently based in Cluj and fully open to relocating to Munich for the right role."* Stating where you are now plus your willingness to move reads as straightforward rather than evasive.
+
+    Still pending: the placeholder in the first paragraph. What does Brightloop actually do? One sentence from their website is all I need to finish that line.
+- user: |
+    Give me a final checklist I can use to proofread any cover letter before sending it.
+  assistant: |
+    Here's a checklist you can reuse for every cover letter:
+
+    ## Content
+
+    - [ ] **Company name spelled correctly** — the #1 cover letter killer. Check it appears correctly everywhere (Nordwind vs. Nordwind Analytics, etc.). Search-and-find the old company name if you adapted the letter from a previous one
+    - [ ] **Job title matches the ad exactly** — "Junior Data Analyst," not "Data Analyst" or "Junior Analytics Role"
+    - [ ] **The role's key requirements are addressed** — go back to the job ad and tick off the top 3–4 requirements against your letter
+    - [ ] **At least one concrete, quantified achievement** — a number, a timeframe, a result (e.g., "3 days to 4 hours")
+    - [ ] **No leftover placeholders** — search for brackets `[ ]`, "Company Name," "Hiring Manager," etc.
+    - [ ] **No contradictions with your CV or other applications** — dates, locations, skills
+    - [ ] **Location/relocation statement is accurate** for *this* job
+
+    ## Tone and language
+
+    - [ ] **Read it aloud once** — you'll catch awkward phrasing instantly
+    - [ ] **No clichés** — "I am writing to express my interest," "passionate about," "team player," "dynamic"
+    - [ ] **Every sentence earns its place** — cut anything that would also be true for 100 other applicants
+    - [ ] **Consistent voice** — not stiff in one paragraph and casual in the next
+    - [ ] **Confident but not arrogant** — no "I am the ideal candidate," but no apologizing either ("unfortunately," "I only," "just")
+
+    ## Mechanics
+
+    - [ ] **Word count within any stated limit** — check the portal or ad for requirements
+    - [ ] **Spelling and grammar check run** — but read it yourself too; tools miss "manger" for "manager"
+    - [ ] **Names spelled right** — company, hiring manager, your own name (check the signature!)
+    - [ ] **Correct title for the recipient** — Dr., Ms., Mr., or a safe neutral greeting if unsure
+    - [ ] **File named professionally** if attaching — `Andrei_Muresan_Cover_Letter.pdf`, not `letter_final_v3.pdf`
+    - [ ] **PDF format** unless they ask otherwise
+
+    ## Final checks
+
+    - [ ] **Attachment actually attached** — test by opening the sent draft or double-checking before hitting send
+    - [ ] **Recipient email address correct** — no autocomplete disasters
+    - [ ] **Subject line clear** if it's an email — include the role title
+    - [ ] **The 24-hour rule when possible** — if the deadline allows, sleep on it and reread once in the morning; you'll always find something
+
+    The three that catch the most errors in practice: **read aloud**, **search for the old company name**, and **check the attachment**. Those account for most cover letter embarrassments.
+- user: |
+    Translate the first paragraph of the Brightloop letter into German, just so I can see how it reads.
+  domain: translation
+  assistant: |
+    Here's the first paragraph in German:
+
+    ---
+
+    Sehr geehrtes Brightloop-Team,
+
+    ich möchte mich hiermit um die Position als Junior Data Analyst bei Brightloop bewerben. In den letzten zwei Jahren habe ich im Bereich Analytics bei TransCarpat gearbeitet, einem Logistikunternehmen in Cluj, und suche nun eine Rolle, in der ich mich weiterentwickeln kann — idealerweise in einem Bereich, der mir wichtig ist, weshalb mich [Brightloops Fokus/Mission] genau angesprochen hat.
+
+    ---
+
+    A few notes on the translation:
+
+    - **"Sehr geehrtes Brightloop-Team"** is the standard formal German greeting — German business culture is more formal than English, so this is the right register even though "Dear Brightloop team" felt slightly casual in English
+    - **The placeholder stays a placeholder** — once you tell me what Brightloop does, the German version would read more naturally as something like *"...weshalb mich eure Arbeit im Bereich [X] besonders angesprochen hat"*
+    - **Note the lowercase** after the em-dash (*"weshalb"*) — German capitalization rules differ from English here
+
+    Reading it back, the German actually sounds quite natural — the structure of your letter translates well. If Brightloop is a German company and you ever need the full letter in German, just say the word.
+questions:
+- id: q1
+  type: exact
+  prompt: |
+    How much did my dashboard cut the reporting time, exactly?
+  gold:
+  - turn: 1
+    quote: cut our weekly reporting time from 3 days to 4 hours
+  - turn: 9
+    quote: 'Briefly about me: two years in analytics at a logistics company in Cluj, where I built a Power BI dashboard th'
+  - turn: 2
+    quote: 'I''ll be honest: I know I still have a lot to learn, and that''s part of why Nordwind appeals to me. I''d rather'
+  - turn: 7
+    quote: I'm applying for the Junior Data Analyst position. I've spent two years in analytics at TransCarpat, a logisti
+  - turn: 13
+    quote: I'd like to apply for the Junior Data Analyst position at Brightloop. I've spent the last two years working in
+  - turn: 14
+    quote: 'I''ll be honest: I know I still have a lot to learn, and that''s part of why Brightloop appeals to me. I''d rathe'
+  - turn: 8
+    quote: 'Quick background: I''ve spent two years in analytics at a logistics company in Cluj, where I built a Power BI d'
+- id: q2
+  type: decision
+  prompt: |
+    What's the latest version of my Nordwind letter?
+  gold:
+  - turn: 7
+    quote: Here's a version that fits the portal limit (~110 words)
+  outdated:
+  - turn: 3
+    quote: I'm also relocating to Berlin this March, so I'd be able to work on site from then.
+- id: q3
+  type: multi-hop
+  prompt: |
+    How did we deal with the missing requirement in the Calder application?
+  gold:
+  - turn: 5
+    quote: The key is to frame it as "adjacent experience + fast learning" rather than apologizing for a gap.
+  - turn: 6
+    quote: 'About 260 words — slightly over, but the gap paragraph now does double duty: it addresses the NHS experience d'
+- id: q4
+  type: exact
+  prompt: |
+    What was the name of the recruiter at Nordwind?
+  gold:
+  - turn: 8
+    quote: Hi Jana,
+- id: q5
+  type: paraphrase
+  prompt: |
+    What did I write to the doctor after we talked?
+  gold:
+  - turn: 10
+    quote: the discussion about readmission rates rising in winter particularly stayed with me
+- id: q6
+  type: ambiguous
+  prompt: |
+    And the German version?
+  gold:
+  - turn: 16
+    quote: Sehr geehrtes Brightloop-Team,
+- id: q7
+  type: decision
+  prompt: |
+    What does the Munich letter say about where I'll live?
+  gold:
+  - turn: 14
+    quote: I'm currently based in Cluj and fully open to relocating to Munich for the right role
+  outdated:
+  - turn: 13
+    quote: I'm also relocating to Munich this March, so I'd be able to work on site from then

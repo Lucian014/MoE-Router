@@ -1,0 +1,54 @@
+id: mh05-festival-carte
+category: brainstorming
+lang: ro
+turns:
+  - user: |
+      Organizez în octombrie un festival de carte pentru copii în Brașov, trei zile, în curtea unei școli. Buget total 45.000 lei. Dă-mi idei de activități pentru copii între 6 și 12 ani.
+  - user: |
+      Îmi place ideea cu atelierul de ilustrație. Cine l-ar putea ține și cum îl organizez?
+  - user: |
+      Avem o problemă cu sponsorul principal, librăria Cărturia, care ne dădea 15.000 lei. Vor să le punem logo-ul pe toate materialele și să vindem doar cărțile lor la festival.
+  - user: |
+      Cum negociez asta fără să-i pierd? Celelalte edituri mici sunt motivul pentru care vin oamenii.
+  - user: |
+      Dă-mi idei de nume pentru festival.
+  - user: |
+      Mai am o grijă: prognoza pentru weekendul ăla dă ploi, iar totul era plănuit în aer liber.
+  - user: |
+      Directoarea școlii ne oferă sala de sport și două săli de clasă, dar sala de sport are doar 180 de locuri și vrem spectacolul de deschidere acolo.
+  - user: |
+      Ce activități pot face cu bugetul mic pentru adolescenți, ca să nu se plictisească frații mai mari?
+  - user: |
+      Scriitoarea invitată, Ilinca Dobre, a anunțat că nu mai poate veni în prima zi, doar în a treia.
+  - user: |
+      Programul era așa:
+
+      ```
+      Vineri 17:00  Deschidere + lectura „Dragonul din bibliotecă” (autoarea) – sala de sport
+      Vineri 18:30  Atelier de ilustrație
+      Sâmbătă 10:00 Târg de carte + ateliere
+      Sâmbătă 16:00 Teatru de păpuși
+      Duminică 11:00 Concurs de povești scrise de copii
+      Duminică 17:00 Închidere + premiere
+      ```
+
+      Cum îl rearanjez?
+  - user: |
+      Cum fac promovarea pe rețele cu buget aproape zero?
+  - user: |
+      Câți voluntari îmi trebuie și cum îi împart?
+  - user: |
+      Un părinte s-a oferit să facă un stand cu jocuri de societate. E o idee bună?
+  - user: |
+      Cum gestionez înscrierile la ateliere ca să nu vină 60 de copii la un atelier de 20?
+  - user: |
+      Fă-mi o listă cu ce poate merge prost în ziua festivalului și ce fac în fiecare caz.
+  - user: |
+      Ce întrebări pun în chestionarul de feedback pentru părinți?
+question_plan:
+  - {type: multi-hop, ask: "Cum am rezolvat cererile librăriei Cărturia?", gold_turn: 4, note: "Cărturia named in 3, negotiation in 4"}
+  - {type: multi-hop, ask: "Ce facem dacă plouă în weekendul festivalului?", gold_turn: 7, note: "rain in 6, indoor plan in 7 (also 6)"}
+  - {type: multi-hop, ask: "Unde mutăm deschiderea dacă vin mai mult de 180 de oameni?", gold_turn: 7, note: "capacity in 7"}
+  - {type: multi-hop, ask: "Când citește Ilinca Dobre în noul program?", gold_turn: 10, note: "Ilinca named in 9, program in 10 says only 'autoarea'"}
+  - {type: multi-hop, ask: "Ce s-a întâmplat cu lectura dragonului după ce autoarea a anulat vinerea?", gold_turn: 10, note: "book title in 10, the cancellation in 9"}
+  - {type: multi-hop, ask: "Ce am hotărât cu sponsorul care voia exclusivitate?", gold_turn: 4, note: "exclusivity in 3, answer in 4"}

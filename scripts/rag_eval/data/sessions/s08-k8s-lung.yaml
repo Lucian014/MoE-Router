@@ -2,286 +2,1136 @@ id: s08-k8s-lung
 category: coding
 lang: ro
 turns:
-  - user: |
-      Am un cluster k3s pe trei VM-uri și vreau să instalez Postgres pentru o aplicație. StatefulSet sau Deployment?
-    assistant: |
-      **StatefulSet.** Postgres are nevoie de o identitate stabilă și de un volum care îl urmează: un StatefulSet dă fiecărui pod un nume fix (`postgres-0`) și un PVC propriu prin `volumeClaimTemplates`, care nu se șterge când podul e recreat.
+- user: |
+    Am un cluster k3s pe trei VM-uri și vreau să instalez Postgres pentru o aplicație. StatefulSet sau Deployment?
+  assistant: |
+    **StatefulSet.** Postgres are nevoie de o identitate stabilă și de un volum care îl urmează: un StatefulSet dă fiecărui pod un nume fix (`postgres-0`) și un PVC propriu prin `volumeClaimTemplates`, care nu se șterge când podul e recreat.
 
-      Un Deployment ar putea porni temporar două poduri pe același volum în timpul unui rolling update, iar două procese Postgres pe același director de date corup baza. Dacă totuși folosești Deployment, pune `strategy: Recreate`.
+    Un Deployment ar putea porni temporar două poduri pe același volum în timpul unui rolling update, iar două procese Postgres pe același director de date corup baza. Dacă totuși folosești Deployment, pune `strategy: Recreate`.
 
-      Pe k3s, StorageClass-ul implicit e `local-path`: volumul stă pe disc, pe nodul unde a pornit podul prima dată, deci podul rămâne legat de acel nod.
-  - user: |
-      Cum îi dau parola fără s-o scriu în YAML?
-    assistant: |
-      Pune-o într-un Secret și citește-o prin `envFrom` sau `secretKeyRef`:
+    Pe k3s, StorageClass-ul implicit e `local-path`: volumul stă pe disc, pe nodul unde a pornit podul prima dată, deci podul rămâne legat de acel nod.
+- user: |
+    Cum îi dau parola fără s-o scriu în YAML?
+  assistant: |
+    Pune-o într-un Secret și citește-o prin `envFrom` sau `secretKeyRef`:
 
-      ```bash
-      kubectl create secret generic pg-auth \
-        --from-literal=POSTGRES_USER=app \
-        --from-literal=POSTGRES_PASSWORD="$(openssl rand -base64 24)"
-      ```
+    ```bash
+    kubectl create secret generic pg-auth \
+      --from-literal=POSTGRES_USER=app \
+      --from-literal=POSTGRES_PASSWORD="$(openssl rand -base64 24)"
+    ```
 
-      ```yaml
-      envFrom:
-        - secretRef:
-            name: pg-auth
-      ```
+    ```yaml
+    envFrom:
+      - secretRef:
+          name: pg-auth
+    ```
 
-      Secretul nu e criptat, doar codat base64; oricine are `get secrets` în namespace îl poate citi. Pentru un repo Git, folosește Sealed Secrets sau SOPS, ca să poți comite varianta criptată.
-  - user: |
-      Podul de Postgres stă în Pending de 10 minute.
-    assistant: |
-      Pending înseamnă că scheduler-ul nu-l poate pune pe niciun nod. Rulează:
+    Secretul nu e criptat, doar codat base64; oricine are `get secrets` în namespace îl poate citi. Pentru un repo Git, folosește Sealed Secrets sau SOPS, ca să poți comite varianta criptată.
+- user: |
+    Podul de Postgres stă în Pending de 10 minute.
+  assistant: |
+    Pending înseamnă că scheduler-ul nu-l poate pune pe niciun nod. Rulează:
 
-      ```bash
-      kubectl describe pod postgres-0
-      ```
+    ```bash
+    kubectl describe pod postgres-0
+    ```
 
-      și citește secțiunea **Events** de la final. Cauzele frecvente:
+    și citește secțiunea **Events** de la final. Cauzele frecvente:
 
-      - `0/3 nodes are available: 3 Insufficient memory` – ai cerut în `resources.requests` mai mult decât e liber;
-      - `pod has unbound immediate PersistentVolumeClaims` – PVC-ul nu are volum: verifică `kubectl get pvc` și dacă există o StorageClass implicită;
-      - `node(s) didn't match Pod's node affinity/selector` – ai un `nodeSelector` cu o etichetă pe care niciun nod n-o are.
-  - user: |
-      Events:
-        Warning  FailedScheduling  2m  default-scheduler  0/3 nodes are available: 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }, 2 node(s) didn't match Pod's node affinity/selector.
-    assistant: |
-      Două probleme în același mesaj:
+    - `0/3 nodes are available: 3 Insufficient memory` – ai cerut în `resources.requests` mai mult decât e liber;
+    - `pod has unbound immediate PersistentVolumeClaims` – PVC-ul nu are volum: verifică `kubectl get pvc` și dacă există o StorageClass implicită;
+    - `node(s) didn't match Pod's node affinity/selector` – ai un `nodeSelector` cu o etichetă pe care niciun nod n-o are.
+- user: |
+    Events:
+      Warning  FailedScheduling  2m  default-scheduler  0/3 nodes are available: 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }, 2 node(s) didn't match Pod's node affinity/selector.
+  assistant: |
+    Două probleme în același mesaj:
 
-      1. Nodul de control-plane are un taint, așa că nu primește poduri obișnuite; e normal și nu trebuie schimbat.
-      2. Pe celelalte două noduri nu se potrivește `nodeSelector`-ul tău.
+    1. Nodul de control-plane are un taint, așa că nu primește poduri obișnuite; e normal și nu trebuie schimbat.
+    2. Pe celelalte două noduri nu se potrivește `nodeSelector`-ul tău.
 
-      Verifică etichetele nodurilor:
+    Verifică etichetele nodurilor:
 
-      ```bash
-      kubectl get nodes --show-labels | tr ',' '\n' | grep hostname
-      ```
+    ```bash
+    kubectl get nodes --show-labels | tr ',' '\n' | grep hostname
+    ```
 
-      Cel mai probabil ai scris `kubernetes.io/hostname: infra`, iar nodul se numește de fapt `k8s-infra`. Fie corectezi valoarea în `nodeSelector`, fie pui o etichetă proprie pe nod:
+    Cel mai probabil ai scris `kubernetes.io/hostname: infra`, iar nodul se numește de fapt `k8s-infra`. Fie corectezi valoarea în `nodeSelector`, fie pui o etichetă proprie pe nod:
 
-      ```bash
-      kubectl label node k8s-infra role=database
-      ```
+    ```bash
+    kubectl label node k8s-infra role=database
+    ```
 
-      și folosești `nodeSelector: {role: database}`, care nu depinde de numele VM-ului.
-  - user: |
-      A pornit. Cum mă conectez din laptop la el?
-    assistant: |
-      Cel mai simplu, cu port-forward:
+    și folosești `nodeSelector: {role: database}`, care nu depinde de numele VM-ului.
+- user: |
+    A pornit. Cum mă conectez din laptop la el?
+  assistant: |
+    Cel mai simplu, cu port-forward:
 
-      ```bash
-      kubectl port-forward svc/postgres 5432:5432
-      psql -h localhost -U app -d app
-      ```
+    ```bash
+    kubectl port-forward svc/postgres 5432:5432
+    psql -h localhost -U app -d app
+    ```
 
-      Tunelul trăiește cât rulează comanda și nu expune nimic în afara laptopului tău. Nu folosi NodePort pentru o bază de date decât într-un lab izolat: ar deschide portul pe toate nodurile.
-  - user: |
-      Vreau backup zilnic.
-    assistant: |
-      Un CronJob care rulează `pg_dump` și scrie pe un volum separat sau într-un bucket S3:
+    Tunelul trăiește cât rulează comanda și nu expune nimic în afara laptopului tău. Nu folosi NodePort pentru o bază de date decât într-un lab izolat: ar deschide portul pe toate nodurile.
+- user: |
+    Vreau backup zilnic.
+  assistant: |
+    Un CronJob care rulează `pg_dump` și scrie pe un volum separat sau într-un bucket S3:
 
-      ```yaml
-      apiVersion: batch/v1
-      kind: CronJob
-      metadata:
-        name: pg-backup
-      spec:
-        schedule: "0 3 * * *"
-        jobTemplate:
-          spec:
-            template:
-              spec:
-                restartPolicy: OnFailure
-                containers:
-                  - name: dump
-                    image: postgres:16
-                    envFrom: [{secretRef: {name: pg-auth}}]
-                    command: ["sh", "-c", "pg_dump -h postgres -U $POSTGRES_USER -Fc app > /backup/app-$(date +%F).dump"]
-                    volumeMounts: [{name: backup, mountPath: /backup}]
-                volumes:
-                  - name: backup
-                    persistentVolumeClaim: {claimName: pg-backup}
-      ```
+    ```yaml
+    apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: pg-backup
+    spec:
+      schedule: "0 3 * * *"
+      jobTemplate:
+        spec:
+          template:
+            spec:
+              restartPolicy: OnFailure
+              containers:
+                - name: dump
+                  image: postgres:16
+                  envFrom: [{secretRef: {name: pg-auth}}]
+                  command: ["sh", "-c", "pg_dump -h postgres -U $POSTGRES_USER -Fc app > /backup/app-$(date +%F).dump"]
+                  volumeMounts: [{name: backup, mountPath: /backup}]
+              volumes:
+                - name: backup
+                  persistentVolumeClaim: {claimName: pg-backup}
+    ```
 
-      `-Fc` e formatul custom, comprimat, care se restaurează cu `pg_restore` și permite restaurarea doar a unor tabele. Testează periodic restaurarea: un backup nerestaurat niciodată nu e un backup.
-  - user: |
-      Acum aplicația. E un API în FastAPI, cum îl expun în afara clusterului?
-    assistant: |
-      Cu un Service de tip ClusterIP și un Ingress. k3s vine cu Traefik ca ingress controller:
+    `-Fc` e formatul custom, comprimat, care se restaurează cu `pg_restore` și permite restaurarea doar a unor tabele. Testează periodic restaurarea: un backup nerestaurat niciodată nu e un backup.
+- user: |
+    Acum aplicația. E un API în FastAPI, cum îl expun în afara clusterului?
+  assistant: |
+    Cu un Service de tip ClusterIP și un Ingress. k3s vine cu Traefik ca ingress controller:
 
-      ```yaml
-      apiVersion: networking.k8s.io/v1
-      kind: Ingress
-      metadata:
-        name: api
-      spec:
-        rules:
-          - host: api.lab.local
-            http:
-              paths:
-                - path: /
-                  pathType: Prefix
-                  backend:
-                    service: {name: api, port: {number: 8000}}
-      ```
+    ```yaml
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: api
+    spec:
+      rules:
+        - host: api.lab.local
+          http:
+            paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                  service: {name: api, port: {number: 8000}}
+    ```
 
-      Adaugă `api.lab.local` în `/etc/hosts` pe laptop, cu IP-ul unui nod.
-  - user: |
-      Primesc 404 de la Traefik.
-    assistant: |
-      404 de la Traefik înseamnă că nicio regulă nu se potrivește cu request-ul. Verifică:
+    Adaugă `api.lab.local` în `/etc/hosts` pe laptop, cu IP-ul unui nod.
+- user: |
+    Primesc 404 de la Traefik.
+  assistant: |
+    404 de la Traefik înseamnă că nicio regulă nu se potrivește cu request-ul. Verifică:
 
-      - dacă trimiți header-ul `Host` corect: `curl -H 'Host: api.lab.local' http://<ip-nod>/`;
-      - `kubectl get ingress` – coloana ADDRESS ar trebui să aibă IP-uri;
-      - dacă Service-ul are endpoint-uri: `kubectl get endpoints api` – dacă e gol, selectorul Service-ului nu se potrivește cu etichetele podurilor.
-  - user: |
-      Endpoints era gol, aveam app: api-server în selector și app: api pe pod.
-    assistant: |
-      Asta era. Selectorul Service-ului trebuie să fie identic cu etichetele din `template.metadata.labels` ale Deployment-ului. Corectează selectorul la `app: api` și endpoint-urile apar imediat, fără restart. Ca regulă, definește etichetele o singură dată, într-un helper Helm sau într-o ancoră YAML, ca să nu mai divergă.
-  - user: |
-      Cum fac rolling update fără downtime?
-    assistant: |
-      Trei lucruri:
+    - dacă trimiți header-ul `Host` corect: `curl -H 'Host: api.lab.local' http://<ip-nod>/`;
+    - `kubectl get ingress` – coloana ADDRESS ar trebui să aibă IP-uri;
+    - dacă Service-ul are endpoint-uri: `kubectl get endpoints api` – dacă e gol, selectorul Service-ului nu se potrivește cu etichetele podurilor.
+- user: |
+    Endpoints era gol, aveam app: api-server în selector și app: api pe pod.
+  assistant: |
+    Asta era. Selectorul Service-ului trebuie să fie identic cu etichetele din `template.metadata.labels` ale Deployment-ului. Corectează selectorul la `app: api` și endpoint-urile apar imediat, fără restart. Ca regulă, definește etichetele o singură dată, într-un helper Helm sau într-o ancoră YAML, ca să nu mai divergă.
+- user: |
+    Cum fac rolling update fără downtime?
+  assistant: |
+    Trei lucruri:
 
-      1. **readinessProbe**, ca podul nou să primească trafic doar după ce răspunde efectiv:
+    1. **readinessProbe**, ca podul nou să primească trafic doar după ce răspunde efectiv:
 
-      ```yaml
-      readinessProbe:
-        httpGet: {path: /health, port: 8000}
-        periodSeconds: 5
-      ```
+    ```yaml
+    readinessProbe:
+      httpGet: {path: /health, port: 8000}
+      periodSeconds: 5
+    ```
 
-      2. **Strategia**: `maxUnavailable: 0`, `maxSurge: 1` – întâi pornește un pod nou, apoi oprește unul vechi.
-      3. **Oprire grațioasă**: la SIGTERM, uvicorn termină request-urile în curs; pune `terminationGracePeriodSeconds` mai mare decât cel mai lung request și, opțional, un `preStop` cu `sleep 5`, ca podul să iasă din endpoint-uri înainte să se oprească.
-  - user: |
-      Ce diferență e între liveness și readiness?
-    assistant: |
-      - **readiness**: „pot primi trafic acum?” Dacă pică, podul e scos din endpoint-urile Service-ului, dar nu e repornit.
-      - **liveness**: „sunt blocat?” Dacă pică, kubelet repornește containerul.
+    2. **Strategia**: `maxUnavailable: 0`, `maxSurge: 1` – întâi pornește un pod nou, apoi oprește unul vechi.
+    3. **Oprire grațioasă**: la SIGTERM, uvicorn termină request-urile în curs; pune `terminationGracePeriodSeconds` mai mare decât cel mai lung request și, opțional, un `preStop` cu `sleep 5`, ca podul să iasă din endpoint-uri înainte să se oprească.
+- user: |
+    Ce diferență e între liveness și readiness?
+  assistant: |
+    - **readiness**: „pot primi trafic acum?” Dacă pică, podul e scos din endpoint-urile Service-ului, dar nu e repornit.
+    - **liveness**: „sunt blocat?” Dacă pică, kubelet repornește containerul.
 
-      Greșeala frecventă e un liveness care verifică dependențele (baza de date): când Postgres are o problemă, toate podurile API sunt repornite în buclă, iar problema se agravează. Liveness-ul ar trebui să verifice doar procesul însuși.
-  - user: |
-      Cum limitez resursele?
-    assistant: |
-      Cu `requests` (ce rezervă scheduler-ul) și `limits` (plafonul):
+    Greșeala frecventă e un liveness care verifică dependențele (baza de date): când Postgres are o problemă, toate podurile API sunt repornite în buclă, iar problema se agravează. Liveness-ul ar trebui să verifice doar procesul însuși.
+- user: |
+    Cum limitez resursele?
+  assistant: |
+    Cu `requests` (ce rezervă scheduler-ul) și `limits` (plafonul):
 
-      ```yaml
-      resources:
-        requests: {cpu: 100m, memory: 256Mi}
-        limits: {memory: 512Mi}
-      ```
+    ```yaml
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+      limits: {memory: 512Mi}
+    ```
 
-      Pentru memorie pune mereu limită: la depășire containerul e oprit cu `OOMKilled`. Pentru CPU, mulți preferă să nu pună limită, pentru că throttling-ul încetinește aplicația chiar când nodul are CPU liber.
-  - user: |
-      Podul API a primit OOMKilled.
-    assistant: |
-      Containerul a depășit `limits.memory`. Verifică întâi cât consumă efectiv: `kubectl top pod`, care necesită metrics-server (k3s îl are inclus). Cauze tipice la un API Python: prea mulți workeri uvicorn în același container, fiecare cu o copie a modelului sau a cache-ului, ori un endpoint care încarcă un fișier mare în memorie. Fie crești limita, fie reduci numărul de workeri și scalezi prin replici.
-  - user: |
-      Cum scalez automat?
-    assistant: |
-      HorizontalPodAutoscaler, pe CPU:
+    Pentru memorie pune mereu limită: la depășire containerul e oprit cu `OOMKilled`. Pentru CPU, mulți preferă să nu pună limită, pentru că throttling-ul încetinește aplicația chiar când nodul are CPU liber.
+- user: |
+    Podul API a primit OOMKilled.
+  assistant: |
+    Containerul a depășit `limits.memory`. Verifică întâi cât consumă efectiv: `kubectl top pod`, care necesită metrics-server (k3s îl are inclus). Cauze tipice la un API Python: prea mulți workeri uvicorn în același container, fiecare cu o copie a modelului sau a cache-ului, ori un endpoint care încarcă un fișier mare în memorie. Fie crești limita, fie reduci numărul de workeri și scalezi prin replici.
+- user: |
+    Cum scalez automat?
+  assistant: |
+    HorizontalPodAutoscaler, pe CPU:
 
-      ```bash
-      kubectl autoscale deployment api --cpu-percent=70 --min=2 --max=6
-      ```
+    ```bash
+    kubectl autoscale deployment api --cpu-percent=70 --min=2 --max=6
+    ```
 
-      HPA calculează procentul față de `requests.cpu`, deci fără requests nu funcționează. Pentru metrici precum lungimea unei cozi RabbitMQ, ai nevoie de KEDA.
-  - user: |
-      Ce e KEDA pe scurt?
-    assistant: |
-      KEDA e un operator care scalează poduri după surse externe de evenimente: lungimea unei cozi RabbitMQ sau Kafka, un query Prometheus, un cron. Poate scala și la zero replici când nu e nimic de procesat, ceea ce HPA nu poate. Îl instalezi cu Helm și definești un `ScaledObject` care indică Deployment-ul și sursa.
-  - user: |
-      Vreau să împachetez tot în Helm. De unde încep?
-    assistant: |
-      `helm create api` generează un schelet. Mută manifestele tale în `templates/`, înlocuiește valorile care diferă între medii (imagine, replici, resurse, host) cu `{{ .Values... }}` și pune valorile implicite în `values.yaml`. Verifică randarea cu `helm template . -f values-dev.yaml` înainte de `helm install`.
-  - user: |
-      Cum țin valori diferite pentru dev și producție?
-    assistant: |
-      Un `values.yaml` cu valorile implicite și câte un fișier per mediu, care conține doar diferențele:
+    HPA calculează procentul față de `requests.cpu`, deci fără requests nu funcționează. Pentru metrici precum lungimea unei cozi RabbitMQ, ai nevoie de KEDA.
+- user: |
+    Ce e KEDA pe scurt?
+  assistant: |
+    KEDA e un operator care scalează poduri după surse externe de evenimente: lungimea unei cozi RabbitMQ sau Kafka, un query Prometheus, un cron. Poate scala și la zero replici când nu e nimic de procesat, ceea ce HPA nu poate. Îl instalezi cu Helm și definești un `ScaledObject` care indică Deployment-ul și sursa.
+- user: |
+    Vreau să împachetez tot în Helm. De unde încep?
+  assistant: |
+    `helm create api` generează un schelet. Mută manifestele tale în `templates/`, înlocuiește valorile care diferă între medii (imagine, replici, resurse, host) cu `{{ .Values... }}` și pune valorile implicite în `values.yaml`. Verifică randarea cu `helm template . -f values-dev.yaml` înainte de `helm install`.
+- user: |
+    Cum țin valori diferite pentru dev și producție?
+  assistant: |
+    Un `values.yaml` cu valorile implicite și câte un fișier per mediu, care conține doar diferențele:
 
-      ```bash
-      helm upgrade --install api ./chart -f values-prod.yaml
-      ```
+    ```bash
+    helm upgrade --install api ./chart -f values-prod.yaml
+    ```
 
-      Fișierele se aplică în ordine și se suprascriu, iar `--set` câștigă peste toate. Secretele nu intră în aceste fișiere: le creezi separat și le referi prin nume.
-  - user: |
-      helm upgrade zice "another operation (install/upgrade/rollback) is in progress".
-    assistant: |
-      O operație anterioară a rămas blocată (de exemplu ai întrerupt-o cu Ctrl+C), iar release-ul a rămas în starea `pending-upgrade`. Vezi istoricul:
+    Fișierele se aplică în ordine și se suprascriu, iar `--set` câștigă peste toate. Secretele nu intră în aceste fișiere: le creezi separat și le referi prin nume.
+- user: |
+    helm upgrade zice "another operation (install/upgrade/rollback) is in progress".
+  assistant: |
+    O operație anterioară a rămas blocată (de exemplu ai întrerupt-o cu Ctrl+C), iar release-ul a rămas în starea `pending-upgrade`. Vezi istoricul:
 
-      ```bash
-      helm history api
-      ```
+    ```bash
+    helm history api
+    ```
 
-      Apoi revino la ultima revizie reușită cu `helm rollback api <revizie>`, după care upgrade-ul merge din nou.
-  - user: |
-      Cum rulez migrările de bază de date la upgrade?
-    assistant: |
-      Un Job marcat ca hook Helm, `pre-upgrade` și `pre-install`, care rulează `alembic upgrade head` înainte să pornească podurile noi. Alternativa e un Job obișnuit, cu aplicația așteptând schema în readiness. Hook-urile sunt mai simple, dar dacă Job-ul eșuează, upgrade-ul eșuează și el, ceea ce e de obicei ce vrei.
-  - user: |
-      Ce monitorizare îmi recomanzi pentru un cluster mic?
-    assistant: |
-      `kube-prometheus-stack` (Prometheus, Grafana, Alertmanager), cu retenție scurtă, 7 zile, ca să nu umple discul. Pentru loguri, Loki cu Promtail. Pe trei VM-uri, ține-le pe nodul de infrastructură și limitează-le memoria: Prometheus crește repede odată cu numărul de serii.
-  - user: |
-      Cum văd logurile unui pod care s-a restartat?
-    assistant: |
-      `kubectl logs <pod> --previous` arată logurile instanței anterioare a containerului, adică exact cea care a căzut. Fără `--previous` vezi doar instanța curentă, care de obicei abia a pornit.
-  - user: |
-      Ok, și cum șterg tot ce am instalat pentru test?
-    assistant: |
-      `helm uninstall api` șterge resursele release-ului. PVC-urile create de StatefulSet prin `volumeClaimTemplates` **nu** sunt șterse automat; le ștergi explicit cu `kubectl delete pvc -l app=postgres`, după ce te asiguri că nu mai ai nevoie de date.
-  - user: |
-      Mersi, ai fost de mare ajutor.
-    assistant: |
-      Cu plăcere! Am acoperit Postgres ca StatefulSet, Secret pentru parolă, depanarea podului în Pending, backup cu CronJob, Ingress cu Traefik, rolling update, probe, resurse și OOMKilled, HPA și KEDA, Helm cu valori pe medii și migrări ca hook, plus monitorizarea.
-  - user: |
-      Încă ceva: cum fac ca podul API să aștepte după Postgres la pornire?
-    assistant: |
-      Un initContainer care așteaptă până când Postgres acceptă conexiuni:
+    Apoi revino la ultima revizie reușită cu `helm rollback api <revizie>`, după care upgrade-ul merge din nou.
+- user: |
+    Cum rulez migrările de bază de date la upgrade?
+  assistant: |
+    Un Job marcat ca hook Helm, `pre-upgrade` și `pre-install`, care rulează `alembic upgrade head` înainte să pornească podurile noi. Alternativa e un Job obișnuit, cu aplicația așteptând schema în readiness. Hook-urile sunt mai simple, dar dacă Job-ul eșuează, upgrade-ul eșuează și el, ceea ce e de obicei ce vrei.
+- user: |
+    Ce monitorizare îmi recomanzi pentru un cluster mic?
+  assistant: |
+    `kube-prometheus-stack` (Prometheus, Grafana, Alertmanager), cu retenție scurtă, 7 zile, ca să nu umple discul. Pentru loguri, Loki cu Promtail. Pe trei VM-uri, ține-le pe nodul de infrastructură și limitează-le memoria: Prometheus crește repede odată cu numărul de serii.
+- user: |
+    Cum văd logurile unui pod care s-a restartat?
+  assistant: |
+    `kubectl logs <pod> --previous` arată logurile instanței anterioare a containerului, adică exact cea care a căzut. Fără `--previous` vezi doar instanța curentă, care de obicei abia a pornit.
+- user: |
+    Ok, și cum șterg tot ce am instalat pentru test?
+  assistant: |
+    `helm uninstall api` șterge resursele release-ului. PVC-urile create de StatefulSet prin `volumeClaimTemplates` **nu** sunt șterse automat; le ștergi explicit cu `kubectl delete pvc -l app=postgres`, după ce te asiguri că nu mai ai nevoie de date.
+- user: |
+    Mersi, ai fost de mare ajutor.
+  assistant: |
+    Cu plăcere! Am acoperit Postgres ca StatefulSet, Secret pentru parolă, depanarea podului în Pending, backup cu CronJob, Ingress cu Traefik, rolling update, probe, resurse și OOMKilled, HPA și KEDA, Helm cu valori pe medii și migrări ca hook, plus monitorizarea.
+- user: |
+    Încă ceva: cum fac ca podul API să aștepte după Postgres la pornire?
+  assistant: |
+    Un initContainer care așteaptă până când Postgres acceptă conexiuni:
 
-      ```yaml
-      initContainers:
-        - name: wait-db
-          image: postgres:16
-          command: ["sh", "-c", "until pg_isready -h postgres -p 5432; do sleep 2; done"]
-      ```
+    ```yaml
+    initContainers:
+      - name: wait-db
+        image: postgres:16
+        command: ["sh", "-c", "until pg_isready -h postgres -p 5432; do sleep 2; done"]
+    ```
 
-      Totuși, aplicația trebuie să reziste oricum la o bază de date care cade mai târziu: reîncercări la conexiune și readiness care pică temporar. initContainer-ul acoperă doar pornirea.
+    Totuși, aplicația trebuie să reziste oricum la o bază de date care cade mai târziu: reîncercări la conexiune și readiness care pică temporar. initContainer-ul acoperă doar pornirea.
+- user: |
+    Revin după o lună. Am actualizat k3s de la v1.29 la v1.31 și acum podul api stă în ImagePullBackOff:
+
+    ```
+    Events:
+      Type     Reason     Age                From     Message
+      ----     ------     ----               ----     -------
+      Normal   Pulling    2m (x4 over 4m)    kubelet  Pulling image "registry.intern.lan:5000/api:2.4.1"
+      Warning  Failed     2m (x4 over 4m)    kubelet  Failed to pull image "registry.intern.lan:5000/api:2.4.1": failed to do request: Head "https://registry.intern.lan:5000/v2/api/manifests/2.4.1": tls: failed to verify certificate: x509: certificate signed by unknown authority
+      Warning  Failed     2m (x4 over 4m)    kubelet  Error: ErrImagePull
+      Normal   BackOff    90s (x6 over 4m)   kubelet  Back-off pulling image "registry.intern.lan:5000/api:2.4.1"
+    ```
+  assistant: |
+    Certificatul registry-ului intern e semnat de CA-ul vostru, pe care nodurile nu-l au în trust store. Probabil aveai asta configurat înainte, iar upgrade-ul a resetat sau a invalidat configurația containerd.
+
+    Pune CA-ul în `/etc/rancher/k3s/registries.yaml` pe **fiecare nod**:
+
+    ```yaml
+    mirrors:
+      "registry.intern.lan:5000":
+        endpoint:
+          - "https://registry.intern.lan:5000"
+    configs:
+      "registry.intern.lan:5000":
+        tls:
+          ca_file: "/etc/ssl/certs/intern-ca.crt"
+    ```
+
+    Copiază fișierul CA la calea respectivă și repornește k3s:
+
+    ```bash
+    sudo systemctl restart k3s   # pe nodurile worker: k3s-agent
+    ```
+
+    Apoi șterge podul ca să forțezi un pull nou. Dacă e doar un lab și nu ai CA-ul la îndemână, poți pune `insecure_skip_verify: true` în loc de `ca_file`, dar nu în producție.
+
+    Un detaliu de care să ții cont: k3s 1.31 a trecut la containerd 2.x, care folosește un format nou de configurare (version 3). Dacă aveai un `config.toml.tmpl` personalizat, nu doar registries.yaml, verifică și el după upgrade.
+- user: |
+    Registry-ul e al nostru, cu certificat self-signed. Cum îl fac pe k3s să aibă încredere în el, pe toate cele trei noduri?
+  assistant: |
+    Două variante; recomandația e registries.yaml, pentru că e gestionată de k3s și supraviețuiește upgrade-urilor.
+
+    **1. Prin registries.yaml (recomandat)**
+
+    Salvează certificatul CA al registry-ului (doar CA-ul, nu certificatul serverului) la o cale fixă pe fiecare nod:
+
+    ```bash
+    # pe fiecare din cele 3 noduri
+    sudo mkdir -p /etc/rancher/k3s
+    sudo cp intern-ca.crt /etc/rancher/k3s/intern-ca.crt
+    ```
+
+    În `/etc/rancher/k3s/registries.yaml`, identic pe toate nodurile:
+
+    ```yaml
+    mirrors:
+      "registry.intern.lan:5000":
+        endpoint:
+          - "https://registry.intern.lan:5000"
+    configs:
+      "registry.intern.lan:5000":
+        tls:
+          ca_file: "/etc/rancher/k3s/intern-ca.crt"
+    ```
+
+    Apoi repornește k3s pe fiecare nod și verifică:
+
+    ```bash
+    sudo systemctl restart k3s        # sau k3s-agent pe workeri
+    sudo crictl info | grep -A3 registry   # opțional, verifică configurația
+    kubectl delete pod -l app=api     # forțează pull nou
+    ```
+
+    **2. Trust store de sistem**
+
+    Copie certificatul în `/usr/local/share/ca-certificates/intern-ca.crt` și rulează `sudo update-ca-certificates`, apoi repornește k3s. Funcționează, dar e mai greu de ținut sub control și containerd nu-l preia întotdeauna predictibil.
+
+    Cum ai doar 3 noduri, cel mai simplu e un mic script sau Ansible care distribuie ambele fișiere (CA + registries.yaml) și face restart, ca să nu divergă configurațiile. Dacă CA-ul se rotește la vreun moment dat, trebuie redistribuit pe noduri — ține cont de asta.
+- user: |
+    Am schimbat și imaginea de Postgres pe ultima versiune, iar acum podul postgres-0 e în CrashLoopBackOff. Logurile:
+
+    ```
+    2026-11-10 08:12:44.118 UTC [1] FATAL:  database files are incompatible with server
+    2026-11-10 08:12:44.118 UTC [1] DETAIL:  The data directory was initialized by PostgreSQL version 15, which is not compatible with this version 16.4.
+    ```
+  assistant: |
+    Nu poți trece direct de la 15 la 16: formatul fișierelor de date s-a schimbat, iar Postgres refuză să pornească pe un director inițializat de o versiune mai veche. Datele nu s-au pierdut, sunt intacte pe PVC.
+
+    **Pasul 1: revino imediat la imaginea veche**
+
+    ```yaml
+    image: postgres:15
+    ```
+
+    Podul pornește din nou și baza funcționează ca înainte. Nu șterge PVC-ul.
+
+    **Pasul 2: alege o strategie de upgrade**
+
+    Pentru o bază mică, cea mai simplă e dump & restore, iar tu deja ai backup-uri zilnice în format custom:
+
+    1. Pornește o instanță Postgres 16 **golită**, cu un PVC nou (schimbă numele PVC-ului sau namespace-ul).
+    2. Restaurează dump-ul în ea:
+
+    ```bash
+    kubectl exec -it postgres-16-0 -- sh -c \
+      'pg_restore -h postgres-16 -U app -d app --no-owner /backup/app-latest.dump'
+    ```
+
+    3. Verifică aplicația, apoi comută Service-ul pe noul StatefulSet și șterge vechiul (dar păstrează PVC-ul vechi câteva zile).
+
+    Alternativa nativă e `pg_upgrade --link`, care convertește directorul de date pe loc — mai rapid la baze mari, dar mai delicat: cere oprirea Postgres, rularea într-un pod cu ambele binare (15 și 16) montate pe același PVC, și nu ai cale de întoarcere ușoară. La dimensiunile unui API obișnuit, dump & restore e alegerea corectă.
+
+    Pe viitor, pentru upgrade-uri de versiune majoră, operatorul CloudNativePG automatizează exact acest proces (minor version upgrade e simplu, major e gestionat separat).
+- user: |
+    Cum fac corect upgrade-ul de la Postgres 15 la 16, cu datele existente?
+  assistant: |
+    Procedura completă, pas cu pas, cu dump & restore (cea mai sigură metodă la dimensiunile tale):
+
+    **1. Fă un dump proaspăt din instanța 15 care rulează**
+
+    ```bash
+    kubectl exec postgres-0 -- sh -c \
+      'pg_dump -U app -Fc app' > app-pre-upgrade.dump
+    ```
+
+    Verifică fișierul (`pg_restore --list app-pre-upgrade.dump | head`) înainte să continui.
+
+    **2. Pornește Postgres 16 cu un PVC nou**
+
+    Copiază StatefulSet-ul ca `postgres16`, schimbă imaginea în `postgres:16`, numele serviciului în `postgres16` și, esențial, dă un nume explicit PVC-ului ca să nu reutilizeze volumul vechi:
+
+    ```yaml
+    volumeClaimTemplates:
+      - metadata:
+          name: data16          # nume diferit de cel vechi
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources: {requests: {storage: 10Gi}}
+    ```
+
+    Aplică și așteaptă `postgres16-0` să fie Ready. Va porni cu un director de date gol, inițializat de 16.
+
+    **3. Restaurează dump-ul**
+
+    Copiază dump-ul în podul nou și restaurează:
+
+    ```bash
+    kubectl cp app-pre-upgrade.dump postgres16-0:/tmp/
+    kubectl exec -it postgres16-0 -- sh -c \
+      'pg_restore -U app -d app --no-owner --role=app /tmp/app-pre-upgrade.dump'
+    ```
+
+    Dacă ai și roluri/extensii custom, restaurează mai întâi obiectele globale dintr-un `pg_dumpall --globals-only`.
+
+    **4. Verifică**
+
+    ```bash
+    kubectl exec -it postgres16-0 -- psql -U app -d app -c '\dt'
+    ```
+
+    Compară numărul de rânduri din tabelele critice cu instanța veche, apoi pornește aplicația împotriva `postgres16` (schimbă temporar `PGHOST`/host-ul din Secret) și testează.
+
+    **5. Comută definitiv**
+
+    - Redenumește Service-ul vechi sau schimbă selectorul său pe noul StatefulSet, ca aplicația să revină la `postgres` fără modificări de configurare.
+    - Șterge StatefulSet-ul 15, dar **păstrează PVC-ul vechi** câteva zile, ca plasă de siguranță.
+    - Actualizează CronJob-ul de backup să pointeze spre instanța nouă și fă un backup imediat după comutare.
+
+    **Capcane de evitat:**
+
+    - Nu șterge PVC-ul vechi până nu ai confirmat că totul merge.
+    - Nu rula pg_restore cu `--jobs` pe o instanță mică fără să verifici memoria.
+    - Dacă aplicația scrie în baza veche în timpul migrării, pune-o în maintenance sau oprește-o între pasul 1 și 3, altfel pierzi scrierile făcute după dump.
+
+    Pentru viitor: CloudNativePG face upgrade-urile de versiune majoră aproape automat, cu un singur manifest, dacă vrei să scapi de administrarea manuală.
+- user: |
+    Am decis să rămânem pe 15 până la vară și să fixăm tag-ul exact al imaginii, ca să nu ne mai trezim cu upgrade-uri. Cum arată modificarea în values pentru Helm?
+  assistant: |
+    În `values.yaml` (sau în `values-prod.yaml`, dacă acolo suprascrii):
+
+    ```yaml
+    image:
+      repository: postgres
+      tag: "15.8"        # tag exact, nu "15" și nici "15-alpine"
+      pullPolicy: IfNotPresent
+    ```
+
+    Și în `templates/statefulset.yaml`:
+
+    ```yaml
+    image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+    ```
+
+    Două observații:
+
+    - Tag-ul `15` e un tag mobil: Docker Hub îl actualizează la fiecare minor release, deci un restart de pod poate aduce o versiune nouă fără să-ți dai seama. `15.8` e fix și rămâne neschimbat.
+    - `pullPolicy: IfNotPresent` e suficient cu tag fix; `Always` ar forța pull la fiecare restart, inutil pentru un tag care nu se schimbă niciodată.
+
+    Când vrei să treci la 15.9 vara asta, schimbi doar tag-ul în values și faci `helm upgrade` — podul va fi recreat cu noua imagine, iar datele rămân pe PVC, fiindcă e doar un upgrade minor, compatibil.
+- user: |
+    Grafana mi-a trimis alerta asta azi-noapte:
+
+    ```
+    [FIRING:1] KubePersistentVolumeFillingUp prod (data-postgres-0 critical)
+    The PersistentVolume claimed by data-postgres-0 in Namespace prod is only 7.3% free.
+    ```
+  assistant: |
+    Alerta spune că PVC-ul de date al lui Postgres e aproape plin. Nu ignora: când umple discul, Postgres se oprește și refuză scrieri.
+
+    **1. Vezi ce ocupă spațiul**
+
+    ```bash
+    kubectl exec postgres-0 -- df -h /var/lib/postgresql/data
+    kubectl exec postgres-0 -- psql -U app -d app -c \
+      "SELECT relname, pg_size_pretty(pg_total_relation_size(relid)) FROM pg_catalog.pg_statio_user_tables ORDER BY pg_total_relation_size(relid) DESC LIMIT 10;"
+    ```
+
+    Verifică și directorul WAL (`pg_wal`) și logurile — de multe ori vin de acolo, nu din tabele.
+
+    **2. Eliberează ce poți**
+
+    - tabele temporare, date de test, vechiul dump rămas în pod;
+    - dacă ai tabele foarte șterse, `VACUUM FULL` recâștigă spațiu, dar blochează tabela — mai bine `pg_repack` dacă e critic;
+    - rotește sau limitează logurile.
+
+    **3. Mărește PVC-ul, dacă StorageClass-ul permite**
+
+    ```bash
+    kubectl get storageclass   # caută allowVolumeExpansion: true
+    ```
+
+    Dacă da, e cea mai curată soluție, fără downtime:
+
+    ```bash
+    kubectl patch pvc data-postgres-0 -p '{"spec":{"resources":{"requests":{"storage":"20Gi"}}}}'
+    ```
+
+    local-path pe k3s suportă extindere. PVC-ul se redimensionează, podul nu trebuie recreat (uneori e nevoie de un restart ca filesystem-ul să se extindă).
+
+    Dacă `allowVolumeExpansion` e false, nu poți extinde un PVC existent: trebuie un volum nou + dump & restore, exact ca la upgrade-ul de versiune.
+
+    **4. Prevenție**
+
+    - adaugă o a doua alertă la 15% liber, ca warning, înainte de cea critical;
+    - dacă e vorba de creștere organică a datelor, programează extinderea din timp, nu când sune alerta;
+    - verifică și retenția backup-urilor: dacă CronJob-ul scrie pe același tip de volum fără rotire, umple și acolo.
+- user: |
+    Cum măresc PVC-ul lui Postgres de la 10Gi la 30Gi? Folosim storage class-ul local-path, cel implicit din k3s.
+  assistant: |
+    local-path suportă extindere, dar cu o particularitate: filesystem-ul se redimensionează de obicei doar după ce podul e repornit, deci planifică o scurtă întrerupere.
+
+    **1. Verifică că extinderea e permisă**
+
+    ```bash
+    kubectl get storageclass local-path -o jsonpath='{.allowVolumeExpansion}'
+    ```
+
+    Dacă e `false`, editează StorageClass-ul și pune `allowVolumeExpansion: true` (k3s-urile recente îl au deja activ).
+
+    **2. Mărește PVC-ul**
+
+    ```bash
+    kubectl patch pvc data-postgres-0 -p '{"spec":{"resources":{"requests":{"storage":"30Gi"}}}}'
+    ```
+
+    **3. Urmărește condiția**
+
+    ```bash
+    kubectl get pvc data-postgres-0 -w
+    ```
+
+    Vei vedea `Resizing`, apoi condiția `FileSystemResizePending`. La local-path, redimensionarea filesystem-ului se face de obicei doar când volumul nu e montat, deci:
+
+    **4. Repornește podul**
+
+    ```bash
+    kubectl delete pod postgres-0
+    ```
+
+    StatefulSet-ul îl recreează imediat, iar la montare kubelet termină extinderea. Verifică apoi în pod:
+
+    ```bash
+    kubectl exec postgres-0 -- df -h /var/lib/postgresql/data
+    ```
+
+    **Atenție la două lucruri:**
+
+    - Nu poți micșora un PVC. Dacă greșești valoarea în sus, rămâne așa.
+    - Fă un backup (`pg_dump`) înainte, ca la orice operație pe volum. Extinderea e de obicei sigură, dar nu strică.
+
+    Downtime-ul real e de câteva secunde, cât durează recrearea podului.
+- user: |
+    Backup-urile din pg_dump ocupă mult spațiu. Cât ar trebui să le păstrăm și unde?
+  assistant: |
+    Două întrebări separate: cât și unde. Răspunsul clasic e regula **3-2-1**: 3 copii ale datelor, pe 2 medii diferite, 1 în afara clusterului. Backup-urile tale acum stau pe un PVC din același cluster — dacă nodul sau PVC-ul se pierde, pierzi și datele și backup-urile.
+
+    **Cât păstrezi**
+
+    O schemă GFS (grandfather-father-son) rezonabilă pentru o aplicație de dimensiunea ta:
+
+    - zilnice: 7 zile
+    - săptămânale: 4-6 săptămâni
+    - lunare: 3-12 luni, în funcție de cerințe legale/comerciale
+
+    Dacă nu ai o cerință explicită de retenție, 7 zilnice + 4 săptămânale + 3 lunare e un punct de plecare bun. Important: retenția fără restaurare testată nu valorează nimic — adaugă un test de restore o dată pe lună, chiar manual.
+
+    **Unde**
+
+    Mută dump-urile în afara clusterului, cel mai simplu într-un bucket S3 (sau MinIO self-hosted pe altă VM):
+
+    ```bash
+    pg_dump -h postgres -U app -Fc app | \
+      s3cmd put - s3://backups/app-$(date +%F).dump
+    ```
+
+    sau cu `aws cli` / `rclone`, la alegere. Modifică CronJob-ul să încarce direct în bucket în loc să scrie pe PVC, și adaugă în același job o curățare:
+
+    ```bash
+    s3cmd ls s3://backups/ | awk '{print $4}' | \
+      awk -F'/' 'index($NF, "app-") {print}' | sort | head -n -7 | \
+      xargs -r -n1 s3cmd del
+    ```
+
+    (sau mai simplu, cu lifecycle rules pe bucket: S3 și MinIO suportă expirare automată pe prefix — pune retenția acolo și nu mai scrii deloc cod de ștergere).
+
+    **Bonus**: criptează dump-urile înainte de upload dacă conțin date personale (`gpg --encrypt` cu cheia ta), și ține cont că un dump în S3 e accesibil oricui are credențialele — securizează bucket-ul separat de cluster.
+- user: |
+    Am decis: păstrăm 7 backup-uri zilnice și 4 săptămânale, pe MinIO, nu pe disc local. Cum modific CronJob-ul de backup?
+  assistant: |
+    Iată CronJob-ul rescris cu `mc` (clientul MinIO). Credențialele le pui într-un Secret separat, nu în manifest:
+
+    ```bash
+    kubectl create secret generic backup-minio \
+      --from-literal=MINIO_ACCESS_KEY=backupuser \
+      --from-literal=MINIO_SECRET_KEY='...'
+    ```
+
+    ```yaml
+    apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: pg-backup
+    spec:
+      schedule: "0 3 * * *"
+      jobTemplate:
+        spec:
+          template:
+            spec:
+              restartPolicy: OnFailure
+              containers:
+                - name: dump
+                  image: postgres:15.8
+                  envFrom:
+                    - secretRef: {name: pg-auth}
+                    - secretRef: {name: backup-minio}
+                  command: ["sh", "-c", |
+                    set -e
+                    mc alias set minio "$MINIO_ENDPOINT" "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+                    DUMP=/tmp/app-$(date +%F).dump
+                    pg_dump -h postgres -U $POSTGRES_USER -Fc app > $DUMP
+                    if [ "$(date +%u)" = "7" ]; then
+                      mc cp $DUMP minio/pg-backups/weekly/
+                    else
+                      mc cp $DUMP minio/pg-backups/daily/
+                    fi
+                    # rotire: păstrează 7 zilnice, 4 săptămânale
+                    mc ls --json minio/pg-backups/daily/ | \
+                      jq -r '.key' | sort | head -n -7 | \
+                      xargs -r -I{} mc rm "minio/pg-backups/daily/{}"
+                    mc ls --json minio/pg-backups/weekly/ | \
+                      jq -r '.key' | sort | head -n -4 | \
+                      xargs -r -I{} mc rm "minio/pg-backups/weekly/{}"
+                    rm -f $DUMP
+                  ]
+    ```
+
+    Câteva observații:
+
+    - **`MINIO_ENDPOINT`** (de exemplu `http://minio.infra:9000`) pune-l în ConfigMap sau direct în env, nu e secret.
+    - Imaginea `postgres:15.8` nu conține `mc` și `jq`. Fie construiești o imagine proprie mică (Dockerfile cu `COPY --from=minio/mc /usr/bin/mc /usr/local/bin/` plus jq), fie folosești imaginea `minio/mc` și instalezi `pg_dump` — varianta cu imagine proprie e mai curată și o controlezi tu.
+    - **Rotirea cu `head -n -7`**: sortarea alfabetică pe nume `app-YYYY-MM-DD.dump` funcționează corect pentru că formatul datei e sortabil lexicografic.
+    - Alternativa mai simplă pentru rotire: **lifecycle rules pe bucket**, definite o dată în MinIO (`mc ilm rule add --expire-days 7 minio/pg-backups/daily/`), și atunci ștergi complet blocul de rotire din job. Recomand asta — codul de rotire e o sursă clasică de bug-uri.
+    - Dump-ul se scrie în `/tmp` al podului și se șterge la final, deci nu mai ai nevoie deloc de PVC-ul de backup — îl poți șterge după prima rulare reușită spre MinIO.
+    - Verifică la prima rulare că dump-ul ajunge în bucket: `mc ls minio/pg-backups/daily/`, și fă un test de restore din el, ca de obicei.
+- user: |
+    Primul backup pe MinIO a eșuat:
+
+    ```
+    pg_dump: error: connection to server at "postgres.prod.svc.cluster.local" (10.43.112.7), port 5432 failed: FATAL:  password authentication failed for user "backup"
+    ```
+  assistant: |
+    Autentificarea eșuează pentru utilizatorul `backup`, dar CronJob-ul tău folosește Secret-ul `pg-auth`, care conține credențialele lui `app`. Deci undeva e o nepotrivire: fie în comandă scrii `-U backup`, fie ai creat un utilizator dedicat `backup` în Postgres, dar parola din Secret nu corespunde cu cea cu care ai creat rolul.
+
+    Două variante, alege-o pe una:
+
+    **Varianta A: folosește utilizatorul `app`**
+
+    Simplu, dar backup-ul rulează cu drepturi de owner complet. Asigură-te că comanda e:
+
+    ```sh
+    pg_dump -h postgres -U app -Fc app
+    ```
+
+    **Varianta B: utilizator dedicat de backup (recomandat)**
+
+    Mai curat din punct de vedere al drepturilor — un rol read-only:
+
+    ```bash
+    kubectl exec -it postgres-0 -- psql -U app -d app -c "
+      CREATE ROLE backup WITH LOGIN PASSWORD 'parola-puternica';
+      GRANT CONNECT ON DATABASE app TO backup;
+      GRANT USAGE ON SCHEMA public TO backup;
+      GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO backup;
+    "
+    ```
+
+    Apoi un Secret separat pentru backup, cu aceeași parolă exactă:
+
+    ```bash
+    kubectl create secret generic pg-backup-auth \
+      --from-literal=PGUSER=backup \
+      --from-literal=PGPASSWORD='parola-puternica'
+    ```
+
+    și în CronJob înlocuiești `envFrom`-ul `pg-auth` cu acest Secret. `pg_dump` respectă variabilele `PGUSER`/`PGPASSWORD`, deci nu mai trebuie `-U` în comandă.
+
+    Pentru a verifica ce parola e corectă, direct din pod:
+
+    ```bash
+    kubectl exec -it postgres-0 -- psql -U backup -d app -c 'SELECT 1;'
+    ```
+
+    Dacă și asta dă `password authentication failed`, parola rolului în baza de date e alta decât cea din Secret — reseteaz-o cu `ALTER ROLE backup WITH PASSWORD '...'` ca să se potrivească.
+- user: |
+    Am rotit parola în secretul pg-auth, dar podul api încă se conectează cu parola veche. De ce, și cum fac să o ia pe cea nouă?
+  assistant: |
+    Variabilele de mediu din Secret sunt citite **doar la pornirea containerului**. Modificarea Secret-ului nu propagă nimic către podurile care rulează — kubelet nu actualizează env vars, spre deosebire de Secretele montate ca volume, care se sincronizează (cu o întârziere de până la un minut).
+
+    Deci podul API are parola veche „coaptă" în procesul care rulează. Soluția e un restart controlat:
+
+    ```bash
+    kubectl rollout restart deployment api
+    ```
+
+    Face un rolling update: poduri noi care citesc Secret-ul actualizat, fără downtime, exact ca la schimbarea imaginii.
+
+    **De verificat după:**
+
+    ```bash
+    kubectl rollout status deployment api
+    ```
+
+    **Două observații pentru viitor:**
+
+    - Dacă aplicația ar citi parola dintr-un fișier montat ca volum (`/var/run/secrets/...`), Secret-ul s-ar actualiza singur, dar aplicația ar trebui să reîncarce conexiunea la baza de date la schimbare — de obicei pool-urile de conexiuni țin parola în memorie oricum, deci în practică restart-ul rămâne calea sigură.
+    - Ordinea corectă la rotația parolelor ca să nu ai downtime: creează mai întâi noua parolă și în Postgres (`ALTER ROLE ... PASSWORD`), lasă o perioadă scurtă în care ambele funcționează dacă e posibil, apoi rotește Secret-ul și fă rollout. La o aplicație mică, simplul „schimbă în bază → schimbă Secret → rollout restart" e suficient.
+- user: |
+    Iar a crăpat podul API, deși am mărit limita de memorie de atunci:
+
+    ```
+    NAME                   READY   STATUS      RESTARTS      AGE
+    api-7d9f8c6b5-x2kq4    0/1     OOMKilled   5 (40s ago)   22m
+
+    Containers:
+      api:
+        Limits:
+          cpu:     500m
+          memory:  512Mi
+        Last State:  Terminated
+          Reason:    OOMKilled
+          Exit Code: 137
+    ```
+  assistant: |
+    Podul arată `Limits: memory: 512Mi` — deci **limita mărită nu a ajuns la cluster**. Dacă ar fi fost aplicată, ai vedea valoarea nouă aici. Podul are 22m și 5 restarturi, deci rulează cu configurația veche.
+
+    Verifică ce e efectiv în Deployment:
+
+    ```bash
+    kubectl get deployment api -o jsonpath='{.spec.template.spec.containers[0].resources}'
+    ```
+
+    Dacă arată tot 512Mi, cauza e una din:
+
+    - ai modificat `values-prod.yaml`, dar nu ai rulat `helm upgrade`;
+    - ai rulat upgrade, dar cu alt fișier de values sau alt namespace;
+    - ai editat manifestul direct, iar `helm upgrade` ulterior l-a suprascris înapoi.
+
+    După ce confirmi că values-ul e corect:
+
+    ```bash
+    helm upgrade api ./chart -f values-prod.yaml
+    kubectl rollout status deployment api
+    ```
+
+    Dacă după aplicare OOM-ul revine și la limita nouă, atunci nu mai e o problemă de configurare, ci consum real: `kubectl top pod` în timp ce rulează ca să vezi curba de memorie. Creștere lentă și constantă = leak (de obicei cache fără limită sau conexiuni care se acumulează); salt rapid la un anumit request = un endpoint care încarcă ceva mare în memorie.
+- user: |
+    Cum văd ce anume consumă memoria în procesul Python din pod, fără să opresc aplicația?
+  assistant: |
+    Cea mai bună unealtă e **py-spy**, care se atașează la procesul în rulare fără să-l oprească și fără instrumentare:
+
+    ```bash
+    # găsește PID-ul procesului Python
+    kubectl exec api-7d9f8c6b5-x2kq4 -- ps aux
+
+    # snapshot al stivei tuturor thread-urilor, cu alocări
+    kubectl exec api-7d9f8c6b5-x2kq4 -- py-spy dump --pid 1
+    ```
+
+    Problema: imaginea ta nu are py-spy. Două opțiuni:
+
+    **1. Pod ephemeral de debug** (nu atingi deployment-ul):
+
+    ```bash
+    kubectl debug -it api-7d9f8c6b5-x2kq4 --image=python:3.12 --target=api -- sh
+    # în containerul de debug:
+    pip install py-spy
+    py-spy dump --pid 1
+    ```
+
+    `--target=api` îți dă acces la procesul din containerul original prin namespace-ul de proces partajat. Necesită `shareProcessNamespace: true` în pod spec, sau k3s recent îl activează prin `kubectl debug` automat — dacă nu merge, adaugă în Deployment:
+
+    ```yaml
+    spec:
+      template:
+        spec:
+          shareProcessNamespace: true
+    ```
+
+    **2. Fără unelte externe**, direct din proces — dacă poți adăuga un endpoint de diagnostic temporar:
+
+    ```python
+    import tracemalloc, os
+    from fastapi import APIRouter
+    router = APIRouter()
+
+    @router.get("/debug/memory")
+    def memory():
+        if not tracemalloc.is_tracing():
+            tracemalloc.start(25)
+        current, peak = tracemalloc.get_traced_memory()
+        top = tracemalloc.take_snapshot().statistics("lineno")[:10]
+        return {
+            "rss_mb": int(open("/proc/self/status").read().split("VmRSS:")[1].split()[0]) // 1024,
+            "traced_mb": current // 1024**2,
+            "peak_mb": peak // 1024**2,
+            "top": [str(s) for s in top],
+        }
+    ```
+
+    `tracemalloc` are un overhead de ~2x pe alocări, deci nu-l lăsa activ permanent — activează-l doar pentru diagnostic.
+
+    **Interpretare rapidă:**
+
+    - RSS mare, dar `traced_mb` mic → memoria nu e în obiecte Python: e vorba de native extensions (numpy/pandas, bufferi C) sau de fragmentare;
+    - crește lent, constant, la fiecare request → leak clasic: obiecte ținute în cache global, liste care se acumulează, conexiuni neînchise;
+    - salt brusc la un endpoint anume → vezi în `py-spy dump` ce făcea procesul când a murit, sau corelează cu logurile de acces.
+
+    Dacă vrei profilare continuă în producție, **memray** sau py-spy în modul `record` pe o fereastră scurtă îți dau flacăra alocărilor, dar rulează-le pe un pod de staging cu trafic reprodus, nu pe producție.
+- user: |
+    Vreau un NetworkPolicy care să permită doar podului api să se conecteze la Postgres. Restul podurilor din namespace nu au voie.
+  assistant: |
+    ```yaml
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: postgres-allow-api
+      namespace: prod
+    spec:
+      podSelector:
+        matchLabels:
+          app: postgres
+      policyTypes: [Ingress]
+      ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                  app: api
+          ports:
+            - protocol: TCP
+              port: 5432
+    ```
+
+    Cum `policyTypes` conține Ingress și nu există nicio altă regulă, orice pod care nu are eticheta `app: api` e blocat, inclusiv din alte namespace-uri (podSelector-ul din `from` se aplică în același namespace). Dacă vrei să permiți explicit și dintr-un alt namespace (de exemplu un job de backup în `ops`):
+
+    ```yaml
+            - namespaceSelector:
+                matchLabels: {kubernetes.io/metadata.name: ops}
+              podSelector:
+                matchLabels: {app: pg-backup}
+    ```
+
+    **Atenție la o capcană importantă pe k3s**: CNI-ul implicit, flannel, **nu enforcează NetworkPolicy** — politica se aplică în API și pare activă, dar traficul trece necontrolat. Verifică ce CNI rulează:
+
+    ```bash
+    kubectl get pods -n kube-system | grep -E 'calico|kube-router|cilium'
+    ```
+
+    Dacă vezi doar flannel, ai două opțiuni: reinstalezi k3s cu `--flannel-backend=none --disable-network-policy=false` plus Calico/Cilium, sau (mai simplu pe un cluster mic) treci pe Cilium ca înlocuitor complet. Fără un CNI care implementează NetworkPolicy, manifestul de mai sus e doar decorativ.
+
+    Testează mereu după aplicare, dintr-un pod „străin":
+
+    ```bash
+    kubectl run test --rm -it --image=postgres:15.8 -- psql -h postgres -U app -c 'SELECT 1;'
+    ```
+
+    Ar trebui să timeout-uiască, nu să dea eroare de autentificare.
+- user: |
+    După ce am aplicat NetworkPolicy-urile, podul api nu mai pornește:
+
+    ```
+    sqlalchemy.exc.OperationalError: (psycopg.OperationalError) [Errno -3] Temporary failure in name resolution
+    ```
+  assistant: |
+    Eroarea e de **DNS**, nu de conexiune la Postgres: podul api nu mai poate rezolva `postgres.prod.svc.cluster.local`. Cel mai probabil ai aplicat o politică de tip default-deny pe egress pentru podurile api (sau pe tot namespace-ul), iar traficul spre CoreDNS e blocat — fără DNS, numele de servicii nu se mai rezolvă.
+
+    Verifică ce politici se aplică podului:
+
+    ```bash
+    kubectl get networkpolicy -n prod
+    kubectl describe networkpolicy <nume> -n prod
+    ```
+
+    **Repararea**: orice egress policy care restricționează podurile api trebuie să permită DNS explicit. Adaugă:
+
+    ```yaml
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-dns
+      namespace: prod
+    spec:
+      podSelector: {}          # toate podurile din namespace
+      policyTypes: [Egress]
+      egress:
+        - to:
+            - namespaceSelector:
+                matchLabels: {kubernetes.io/metadata.name: kube-system}
+          ports:
+            - protocol: UDP
+              port: 53
+            - protocol: TCP
+              port: 53
+    ```
+
+    Verifică eticheta namespace-ului kube-system — `kubernetes.io/metadata.name` e adăugat automat de la 1.21+, deci ar trebui să existe.
+
+    **Regula de reținut**: la orice egress policy, DNS e prima dependență de care se uită lumea și prima care crapă. Ordinea de verificare la un pod care nu se conectează după NetworkPolicy:
+
+    1. DNS (port 53 spre kube-system) — eroarea ta de acum;
+    2. portul efectiv al serviciului (5432);
+    3. selectorii — etichetele podurilor s-au schimbat între timp?
+
+    Dacă nu ai egress default-deny și ai doar politica de ingress pe Postgres de care vorbeam, atunci eroarea are altă cauză — dar mesajul „name resolution" indică aproape sigur o politică de egress pe api. Repară DNS-ul, apoi testăm mai departe dacă mai apare ceva.
+- user: |
+    Fă-mi un runbook scurt cu toate incidentele de până acum, cum le-am recunoscut și cum le-am rezolvat.
+  assistant: |
+    # Runbook — Cluster k3s (prod)
+
+    ## 1. Pod în Pending
+
+    **Recunoaștere:** `kubectl get pod` → STATUS `Pending` minute în șir.
+    **Diagnostic:** `kubectl describe pod <pod>` → secțiunea Events.
+    **Cauze și rezolvare:**
+    - `Insufficient memory` → reduce `resources.requests` sau eliberează nod;
+    - `unbound PersistentVolumeClaims` → verifică `kubectl get pvc` și StorageClass-ul implicit;
+    - `didn't match node affinity/selector` → corectează `nodeSelector` sau etichetează nodul (`kubectl label node <nod> role=database`);
+    - taint pe control-plane → normal, nu interveni.
+
+    ## 2. ImagePullBackOff — certificat registry intern
+
+    **Recunoaștere:** Events cu `x509: certificate signed by unknown authority`.
+    **Rezolvare:** CA-ul registry-ului în `/etc/rancher/k3s/registries.yaml` (`tls.ca_file`) pe **toate nodurile**, restart k3s/k3s-agent, șterge podul pentru pull nou. După upgrade k3s, reverifică registries.yaml și config.toml.tmpl.
+
+    ## 3. CrashLoopBackOff la Postgres — versiune incompatibilă
+
+    **Recunoaștere:** loguri `database files are incompatible with server`.
+    **Rezolvare:** revino imediat la imaginea veche (tag fix, ex. `15.8`). Upgrade de versiune majoră doar prin dump & restore: instanță nouă cu PVC nou → `pg_dump -Fc` din veche → `pg_restore --no-owner` în nouă → verificare → comutare Service → păstrează PVC-ul vechi câteva zile.
+
+    ## 4. OOMKilled la podul API
+
+    **Recunoaștere:** STATUS `OOMKilled`, Exit Code 137.
+    **Diagnostic:** `kubectl describe pod` — verifică dacă limita afișată e cea dorită (dacă nu: `helm upgrade` lipsă sau suprascris). `kubectl top pod` pentru curba de consum: creștere lentă = leak; salt la request = endpoint care încarcă mare.
+    **Profilare fără oprire:** `kubectl debug --target=api` + `py-spy dump --pid 1`.
+
+    ## 5. Traefik 404
+
+    **Recunoaștere:** 404 de la ingress, aplicația pare pornită.
+    **Diagnostic:** `curl -H 'Host: api.lab.local' http://<ip-nod>/`; `kubectl get ingress` (ADDRESS populat); `kubectl get endpoints <svc>` — **gol = selectorul Service-ului nu se potrivește cu etichetele podurilor** (cauză frecventă: `app: api-server` vs `app: api`).
+
+    ## 6. Rotire parolă — aplicația folosește parola veche
+
+    **Recunoaștere:** `password authentication failed` după schimbarea Secret-ului.
+    **Cauză:** env vars din Secret se citesc doar la pornirea containerului.
+    **Rezolvare:** `kubectl rollout restart deployment api`. Ordine corectă: `ALTER ROLE` în Postgres → actualizezi Secret → rollout.
+
+    ## 7. PVC aproape plin (alertă Grafana)
+
+    **Recunoaștere:** `KubePersistentVolumeFillingUp`, sub 10% liber.
+    **Rezolvare:** identifică marii consumatori (`pg_total_relation_size`, pg_wal, loguri); extinde PVC-ul:
+    ```bash
+    kubectl patch pvc data-postgres-0 -p '{"spec":{"resources":{"requests":{"storage":"30Gi"}}}}'
+    kubectl delete pod postgres-0   # local-path: resize-ul filesystem-ului la remontare
+    ```
+    Nu poți micșora PVC. Backup înainte.
+
+    ## 8. Podul API nu se conectează după NetworkPolicy
+
+    **Recunoaștere:** `Temporary failure in name resolution` = DNS blocat de egress policy.
+    **Rezolvare:** politică `allow-dns` (UDP/TCP 53 spre namespace `kube-system`). Ordine de verificare: DNS → port → selectori.
+    **Atenție:** flannel (CNI implicit k3s) **nu enforcează** NetworkPolicy — verifică ce CNI rulezi înainte să te bazezi pe politici.
+
+    ## 9. Helm: „another operation is in progress"
+
+    **Rezolvare:** `helm history <release>` → `helm rollback <release> <ultima-revizie-reușită>` → reia upgrade-ul.
+
+    ## 10. Backup eșuat — autentificare
+
+    **Recunoaștere:** `password authentication failed for user "backup"` în CronJob.
+    **Rezolvare:** aliniază Secret-ul (`pg-backup-auth`) cu rolul din baza de date; test direct: `kubectl exec postgres-0 -- psql -U backup -d app -c 'SELECT 1;'`.
+
+    ---
+
+    **Reguli generale:**
+    - Orice pod problemă: `describe` → Events, apoi `logs --previous`.
+    - Backup nerestaurat testat nu e backup — test de restore lunar.
+    - Tag-uri de imagine fixe (`15.8`), niciodată mobile (`15`, `latest`).
+    - După orice upgrade de k3s: verifică registries.yaml, CNI, StorageClass.
 questions:
-  - id: q1
-    type: semantic
-    prompt: |
-      De ce îmi recomandai StatefulSet pentru Postgres și nu Deployment?
-    gold:
-      - {turn: 1, quote: "Un Deployment ar putea porni temporar două poduri pe același volum"}
-  - id: q2
-    type: error-only
-    prompt: |
-      Warning  FailedScheduling  default-scheduler  0/3 nodes are available: 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }, 2 node(s) didn't match Pod's node affinity/selector.
-    gold:
-      - {turn: 4, quote: "kubectl label node k8s-infra role=database"}
-  - id: q3
-    type: exact
-    prompt: |
-      Cum arăta comanda pentru secretul pg-auth?
-    gold:
-      - {turn: 2, quote: "kubectl create secret generic pg-auth"}
-  - id: q4
-    type: semantic
-    lang: en
-    prompt: |
-      What did you say about exposing the database with a NodePort?
-    gold:
-      - {turn: 5, quote: "Nu folosi NodePort pentru o bază de date decât într-un lab izolat"}
-  - id: q5
-    type: ambiguous
-    prompt: |
-      și backup-ul, în ce format îl făceam?
-    gold:
-      - {turn: 6, quote: "`-Fc` e formatul custom, comprimat"}
-  - id: q6
-    type: semantic
-    prompt: |
-      Ce cauza 404-ul de la Traefik până la urmă?
-    gold:
-      - {turn: 9, quote: "Selectorul Service-ului trebuie să fie identic cu etichetele"}
+- id: q1
+  type: semantic
+  prompt: |
+    De ce îmi recomandai StatefulSet pentru Postgres și nu Deployment?
+  gold:
+  - turn: 1
+    quote: Un Deployment ar putea porni temporar două poduri pe același volum
+- id: q2
+  type: error-only
+  prompt: |
+    Warning  FailedScheduling  default-scheduler  0/3 nodes are available: 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }, 2 node(s) didn't match Pod's node affinity/selector.
+  gold:
+  - turn: 4
+    quote: kubectl label node k8s-infra role=database
+  - turn: 40
+    quote: '- `didn''t match node affinity/selector` → corectează `nodeSelector` sau etichetează nodul (`kubectl label node'
+- id: q3
+  type: exact
+  prompt: |
+    Cum arăta comanda pentru secretul pg-auth?
+  gold:
+  - turn: 2
+    quote: kubectl create secret generic pg-auth
+- id: q4
+  type: semantic
+  lang: en
+  prompt: |
+    What did you say about exposing the database with a NodePort?
+  gold:
+  - turn: 5
+    quote: Nu folosi NodePort pentru o bază de date decât într-un lab izolat
+- id: q5
+  type: ambiguous
+  prompt: |
+    și backup-ul, în ce format îl făceam?
+  gold:
+  - turn: 6
+    quote: '`-Fc` e formatul custom, comprimat'
+  - turn: 33
+    quote: mc alias set minio "$MINIO_ENDPOINT" "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+  - turn: 32
+    quote: sau cu `aws cli` / `rclone`, la alegere. Modifică CronJob-ul să încarce direct în bucket în loc să scrie pe PV
+  - turn: 27
+    quote: 'Pentru o bază mică, cea mai simplă e dump & restore, iar tu deja ai backup-uri zilnice în format custom:'
+- id: q6
+  type: semantic
+  prompt: |
+    Ce cauza 404-ul de la Traefik până la urmă?
+  gold:
+  - turn: 9
+    quote: Selectorul Service-ului trebuie să fie identic cu etichetele
+  - turn: 40
+    quote: '**Diagnostic:** `curl -H ''Host: api.lab.local'' http://<ip-nod>/`; `kubectl get ingress` (ADDRESS populat); `ku'
+- id: q7
+  type: error-only
+  prompt: |
+    Warning  Failed  kubelet  Failed to pull image "registry.intern.lan:5000/api:2.4.1": tls: failed to verify certificate: x509: certificate signed by unknown authority
+  gold:
+  - turn: 25
+    quote: 'x509: certificate signed by unknown authority'
+  - turn: 40
+    quote: ImagePullBackOff — certificat registry intern
+  - turn: 26
+    quote: 'ca_file: "/etc/rancher/k3s/intern-ca.crt"'
+- id: q8
+  type: exact
+  prompt: |
+    Cu ce versiune de Postgres fusese inițializat directorul de date?
+  gold:
+  - turn: 27
+    quote: The data directory was initialized by PostgreSQL version 15
+- id: q9
+  type: decision
+  prompt: |
+    Pe ce versiune de Postgres rămânem și cum ne asigurăm că nu se schimbă singură?
+  gold:
+  - turn: 29
+    quote: tag exact, nu "15" și nici "15-alpine"
+  outdated:
+  - turn: 28
+    quote: schimbă imaginea în `postgres:16`
+- id: q10
+  type: exact
+  prompt: |
+    Cât spațiu liber mai avea volumul lui Postgres când a venit alerta?
+  gold:
+  - turn: 30
+    quote: is only 7.3% free
+- id: q11
+  type: decision
+  prompt: |
+    Câte backup-uri păstrăm și unde le ținem?
+  gold:
+  - turn: 33
+    quote: Iată CronJob-ul rescris cu `mc` (clientul MinIO)
+- id: q12
+  type: distractor
+  prompt: |
+    Ce limită de memorie avea podul API când a primit OOMKilled a doua oară?
+  gold:
+  - turn: 36
+    quote: 'memory:  512Mi'
+- id: q13
+  type: multi-hop
+  prompt: |
+    De ce nu mai mergea DNS-ul în podul api după ce am restricționat traficul?
+  gold:
+  - turn: 39
+    quote: Eroarea e de **DNS**, nu de conexiune la Postgres
+  - turn: 40
+    quote: '**Rezolvare:** aliniază Secret-ul (`pg-backup-auth`) cu rolul din baza de date; test direct: `kubectl exec pos'
+- id: q14
+  type: paraphrase
+  prompt: |
+    După ce am schimbat credențialele bazei, de ce aplicația nu le vedea?
+  gold:
+  - turn: 35
+    quote: Variabilele de mediu din Secret sunt citite **doar la pornirea containerului**
+  - turn: 40
+    quote: '**Diagnostic:** `curl -H ''Host: api.lab.local'' http://<ip-nod>/`; `kubectl get ingress` (ADDRESS populat); `ku'
+- id: q15
+  type: error-only
+  prompt: |
+    FATAL:  password authentication failed for user "backup"
+  gold:
+  - turn: 34
+    quote: password authentication failed for user "backup"
+  - turn: 40
+    quote: '**Rezolvare:** aliniază Secret-ul (`pg-backup-auth`) cu rolul din baza de date; test direct: `kubectl exec pos'
+- id: q16
+  type: semantic
+  prompt: |
+    cum maresc volumul la postgres cu local-path?
+  gold:
+  - turn: 31
+    quote: kubectl patch pvc data-postgres-0
+  - turn: 40
+    quote: resize-ul filesystem-ului la remontare
+  outdated:
+  - turn: 30
+    quote: local-path pe k3s suportă extindere.
+- id: q17
+  type: semantic
+  prompt: |
+    Cum am făcut nodurile să aibă încredere în registry-ul nostru?
+  gold:
+  - turn: 26
+    quote: recomandația e registries.yaml
+  - turn: 40
+    quote: '**Rezolvare:** revino imediat la imaginea veche (tag fix, ex. `15.8`). Upgrade de versiune majoră doar prin du'
+  - turn: 25
+    quote: 'ca_file: "/etc/ssl/certs/intern-ca.crt"'
+- id: q18
+  type: semantic
+  prompt: |
+    Cu ce ne uitam la consumul de memorie al procesului Python?
+  gold:
+  - turn: 37
+    quote: Cea mai bună unealtă e **py-spy**

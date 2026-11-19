@@ -1,0 +1,73 @@
+id: mh04-mutare-olanda
+category: open-qa
+lang: en
+turns:
+  - user: |
+      I'm moving from Bucharest to Eindhoven in September for a job at a semiconductor company. My partner Ana is coming too, but she doesn't have a job there yet. What are the first things I need to sort out?
+  - user: |
+      What is the BSN and how do I get one?
+  - user: |
+      My employer mentioned the "30% ruling". What is it?
+  - user: |
+      HR sent me this, can you tell me if I qualify?
+
+      ```
+      Gross annual salary offered: EUR 58,000
+      Age at start: 31
+      Master's degree: yes (Politehnica Bucharest, 2018)
+      Lived within 150 km of the Dutch border in the last 24 months: no
+      Recruited from abroad: yes
+      ```
+  - user: |
+      How does health insurance work there? Is it like in Romania?
+  - user: |
+      Ana is a pharmacist with a Romanian diploma. Can she work as a pharmacist in the Netherlands?
+  - user: |
+      I found the official page, it says this:
+
+      ```
+      Holders of an EU pharmacy diploma listed in Annex V of Directive 2005/36/EC are recognised automatically. Registration in the BIG register is required before practising. Applicants must demonstrate Dutch language proficiency at level B2 for professions with patient contact; the BIG register may ask for a language certificate.
+      ```
+
+      She speaks no Dutch at all.
+  - user: |
+      Is it better to rent or buy in Eindhoven as a newcomer?
+  - user: |
+      We're looking at an apartment in Strijp-S for EUR 1,650 a month. The landlord wants three months' deposit plus one month "agency fee" paid to him directly.
+  - user: |
+      Here's a clause from the contract:
+
+      ```
+      Article 7. The tenant shall pay a one-time administration and mediation fee of EUR 1,650 (one month's rent) to the landlord upon signing.
+      Article 9. The deposit amounts to three (3) months' rent.
+      ```
+
+      Is this normal?
+  - user: |
+      What does a typical monthly budget look like for two people in Eindhoven?
+  - user: |
+      Do I need to exchange my Romanian driving licence?
+  - user: |
+      Our cat Mițu is coming with us. What do we need for her?
+  - user: |
+      The vet in Bucharest gave us this list, is anything missing?
+
+      ```
+      - microchip ISO 11784/11785: yes, implanted 2021
+      - rabies vaccine: 14 March 2026
+      - EU pet passport: yes
+      - deworming: not planned
+      ```
+  - user: |
+      How do Dutch taxes work for someone who arrives mid-year?
+  - user: |
+      What's DigiD and why does everyone keep mentioning it?
+  - user: |
+      Last question: any tips for making friends there, we don't know anyone.
+question_plan:
+  - {type: multi-hop, ask: "Do I qualify for the tax advantage HR mentioned?", gold_turn: 4, note: "30% ruling named in 3; 4 is the HR data"}
+  - {type: multi-hop, ask: "What does Ana need to do to work in her profession?", gold_turn: 7, note: "Ana a pharmacist in 6; requirements in 7"}
+  - {type: multi-hop, ask: "Was the deal for the Strijp-S apartment fair?", gold_turn: 10, note: "Strijp-S in 9, clauses in 10"}
+  - {type: multi-hop, ask: "Can the landlord legally charge us that extra fee?", gold_turn: 10, note: "agency fee in 9, analysed in 10"}
+  - {type: multi-hop, ask: "Is Mițu ready to travel?", gold_turn: 14, note: "cat named in 13; checklist in 14"}
+  - {type: multi-hop, ask: "What was missing for the cat's paperwork?", gold_turn: 14, note: "deworming / tapeworm rule in 14"}

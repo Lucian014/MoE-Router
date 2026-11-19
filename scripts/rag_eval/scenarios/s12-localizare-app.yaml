@@ -1,0 +1,111 @@
+id: s12-localizare-app
+category: translation
+lang: ro
+turns:
+  - user: |
+      Traduc o aplicație de fitness, PulsFit, din engleză în română. Hai să stabilim întâi un glosar: workout, streak, rest day, rep, set, check-in. Cum le-ai traduce?
+  - user: |
+      „Streak” tradus „serie” sună ciudat într-o aplicație. Ce alternative am?
+  - user: |
+      Ok, mergem pe „serie de zile” pentru streak. Și „check-in” rămâne „check-in” sau îl traducem?
+  - user: |
+      Tradu aceste stringuri din aplicație:
+
+      ```json
+      {
+        "onboarding.title": "Start your fitness journey",
+        "onboarding.subtitle": "Small steps every day add up to big changes.",
+        "onboarding.cta": "Let's go",
+        "workout.start": "Start workout",
+        "workout.rest_day": "Rest day: your muscles grow when you rest",
+        "workout.finished": "Great job! You finished {exercises} exercises in {minutes} minutes.",
+        "streak.current": "{days}-day streak",
+        "streak.lost": "You lost your streak. Start again today!",
+        "checkin.prompt": "How do you feel today?",
+        "paywall.title": "Unlock your full potential",
+        "paywall.trial": "Try PulsFit Pro free for 7 days",
+        "paywall.cancel": "Cancel anytime from your account settings.",
+        "settings.units": "Units (kg / lb)",
+        "settings.reminders": "Workout reminders"
+      }
+      ```
+  - user: |
+      Tutuim utilizatorul sau folosim „dumneavoastră”? Publicul e între 20 și 35 de ani.
+  - user: |
+      Ok, tutuim peste tot. Refă traducerea stringurilor cu tutuire, păstrând cheile.
+  - user: |
+      „Let's go” tradus „Hai să mergem” e prea literal pentru un buton. Ceva mai natural?
+  - user: |
+      Acum notificările push. Tradu-le, maximum 40 de caractere fiecare:
+
+      1. "Your workout is waiting. Just 15 minutes today?"
+      2. "Don't break your streak! Train before midnight."
+      3. "New personal record unlocked. You're getting stronger every single week!"
+      4. "Rest day today. Stretch a little and drink water."
+      5. "Your weekly summary is ready."
+      6. "3 days without training. Come back, we miss you!"
+  - user: |
+      A treia e tot prea lungă. Scurteaz-o fără să pierzi ideea de record personal.
+  - user: |
+      Cum traduc „PR” (personal record)? În comunitatea de sală de la noi se zice tot „PR”?
+  - user: |
+      Marketingul vrea ca „streak” să fie „șir de zile”, nu „serie de zile”. Refă toate stringurile și notificările care conțin streak.
+  - user: |
+      Pentru App Store, tradu descrierea:
+
+      PulsFit is the workout app for people who don't have time for workouts. Every plan is built around your schedule: tell us how many minutes you have, and we'll build a session that fits, from a quick 10-minute core routine to a full one-hour strength workout.
+
+      Track every rep and every set, and watch your progress in clear weekly charts. Hit a new personal record? PulsFit celebrates it with you. Missed a day? No guilt, the plan adapts.
+
+      With PulsFit Pro you get personalized plans that change as you get stronger, video guidance for more than 400 exercises, and offline mode for the gym basement with no signal. Try Pro free for 7 days and cancel anytime.
+
+      Your data stays yours: we never sell it, and you can export or delete it at any time from the settings.
+  - user: |
+      În descrierea în română au rămas prea multe anglicisme. Curăț-o, dar păstrează numele produselor.
+  - user: |
+      Ce înseamnă exact „no pain, no gain” și cum l-aș adapta în română fără să-l traduc literal? E pentru un banner motivațional.
+  - user: |
+      Vreau și o variantă în germană a titlului din App Store, doar ca să compar lungimea.
+  - user: |
+      Cum gestionez pluralele în română pentru „X zile”? Avem 1 zi, 2 zile, 20 de zile, 101 zile.
+    domain: coding
+  - user: |
+      Scrie-mi regula ICU MessageFormat pentru „{count} zile la rând”, cu toate formele de plural din română.
+    domain: coding
+  - user: |
+      Testerii zic că „Antrenament de recuperare” nu încape pe buton (maximum 16 caractere). Variante mai scurte?
+  - user: |
+      Tradu emailul de bun venit:
+
+      Subject: Welcome to PulsFit!
+
+      Hi {first_name},
+
+      Thanks for joining PulsFit. We're excited to help you build a habit that sticks.
+
+      Here's how to get the most out of your first week: set your available time in the plan settings, turn on workout reminders, and try at least three short sessions. Consistency beats intensity, especially at the start.
+
+      If you have any questions, just reply to this email. A real person from our team will answer, usually within one working day.
+
+      See you on the mat,
+      The PulsFit team
+  - user: |
+      Fă-l mai cald și mai puțin corporatist, păstrând informațiile.
+    domain: text-rewrite
+  - user: |
+      Recapitulează glosarul final, cu toate deciziile pe care le-am luat.
+question_plan:
+  - {id: q1, type: decision, turn: 11, outdated: [3], ask: "Cum traducem streak până la urmă?"}
+  - {id: q3, type: decision, turn: 6, ask: "Ne adresăm cu tu sau cu dumneavoastră în aplicație?"}
+  - {id: q4, type: semantic, turn: 17, ask: "Cum arăta regula ICU pentru zilele la rând?"}
+  - {id: q5, type: paraphrase, turn: 14, ask: "Ce facem cu expresia aia motivațională despre durere și câștig?"}
+  - {id: q6, type: ambiguous, turn: 15, ask: "Și varianta nemțească cum era?"}
+  - {id: q7, type: semantic, turn: 18, ask: "Cum am scurtat textul care nu încăpea pe buton?"}
+  - {id: q8, type: exact, turn: 9, ask: "Cum a ieșit notificarea despre record după ce ai scurtat-o?"}
+questions:
+  - id: q2
+    type: exact
+    prompt: |
+      Ce text în engleză avea cheia paywall.trial?
+    gold:
+      - {turn: 4, quote: "\"paywall.trial\": \"Try PulsFit Pro free for 7 days\""}

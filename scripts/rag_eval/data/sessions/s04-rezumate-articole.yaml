@@ -2,123 +2,431 @@ id: s04-rezumate-articole
 category: summarization
 lang: ro
 turns:
-  - user: |
-      Rezumă-mi articolul ăsta în 5 propoziții:
+- user: |
+    Rezumă-mi articolul ăsta în 5 propoziții:
 
-      Insulele de căldură urbane sunt zone ale orașelor în care temperatura aerului și a suprafețelor este semnificativ mai ridicată decât în împrejurimile rurale. Fenomenul apare pentru că asfaltul, betonul și acoperișurile închise la culoare absorb radiația solară în timpul zilei și o eliberează lent în timpul nopții. În marile orașe europene, diferența de temperatură față de zonele rurale poate ajunge la 5–7 grade Celsius în nopțile de vară, iar în cartierele dense, cu puțină vegetație, chiar mai mult.
+    Insulele de căldură urbane sunt zone ale orașelor în care temperatura aerului și a suprafețelor este semnificativ mai ridicată decât în împrejurimile rurale. Fenomenul apare pentru că asfaltul, betonul și acoperișurile închise la culoare absorb radiația solară în timpul zilei și o eliberează lent în timpul nopții. În marile orașe europene, diferența de temperatură față de zonele rurale poate ajunge la 5–7 grade Celsius în nopțile de vară, iar în cartierele dense, cu puțină vegetație, chiar mai mult.
 
-      Efectele nu sunt doar o chestiune de confort. În timpul valurilor de căldură, mortalitatea crește mai ales în rândul persoanelor vârstnice și al celor cu boli cardiovasculare, iar nopțile tropicale, în care temperatura nu scade sub 20 de grade, împiedică organismul să se refacă. Consumul de energie pentru aer condiționat crește și el, ceea ce încarcă rețeaua electrică exact în orele de vârf și, paradoxal, eliberează și mai multă căldură în aerul din oraș.
+    Efectele nu sunt doar o chestiune de confort. În timpul valurilor de căldură, mortalitatea crește mai ales în rândul persoanelor vârstnice și al celor cu boli cardiovasculare, iar nopțile tropicale, în care temperatura nu scade sub 20 de grade, împiedică organismul să se refacă. Consumul de energie pentru aer condiționat crește și el, ceea ce încarcă rețeaua electrică exact în orele de vârf și, paradoxal, eliberează și mai multă căldură în aerul din oraș.
 
-      Soluțiile cele mai eficiente sunt cunoscute de mult. Arborii maturi răcesc aerul prin umbră și evapotranspirație, iar un parc de câteva hectare poate fi cu 2–3 grade mai răcoros decât străzile din jur. Acoperișurile verzi și cele vopsite în culori deschise reflectă o parte din radiație. Pavajele permeabile permit apei să se infiltreze și să se evapore. Orașe precum Viena și Paris au planuri publice de „oaze de răcoare” care includ fântâni, curți de școli transformate în spații verzi și trasee umbrite pentru pietoni.
+    Soluțiile cele mai eficiente sunt cunoscute de mult. Arborii maturi răcesc aerul prin umbră și evapotranspirație, iar un parc de câteva hectare poate fi cu 2–3 grade mai răcoros decât străzile din jur. Acoperișurile verzi și cele vopsite în culori deschise reflectă o parte din radiație. Pavajele permeabile permit apei să se infiltreze și să se evapore. Orașe precum Viena și Paris au planuri publice de „oaze de răcoare” care includ fântâni, curți de școli transformate în spații verzi și trasee umbrite pentru pietoni.
 
-      Cea mai mare problemă rămâne timpul: un arbore plantat azi oferă umbră semnificativă abia peste 15–20 de ani. De aceea, specialiștii recomandă ca orașele să protejeze în primul rând arborii existenți, în loc să-i taie pentru parcări sau lărgiri de drumuri, și să combine plantările cu măsuri rapide, cum ar fi umbrarele temporare și acoperișurile reflectorizante.
-    assistant: |
-      Insulele de căldură urbane sunt zone ale orașului mai calde decât împrejurimile rurale, pentru că asfaltul și betonul absorb căldura ziua și o eliberează noaptea, iar diferența poate ajunge la 5–7 °C în nopțile de vară. Efectele sunt grave în valurile de căldură: crește mortalitatea în rândul vârstnicilor și al bolnavilor cardiovasculari, iar nopțile tropicale împiedică refacerea organismului. Aerul condiționat încarcă rețeaua electrică la orele de vârf și încălzește suplimentar aerul din oraș. Cele mai eficiente soluții sunt arborii maturi, parcurile, acoperișurile verzi sau deschise la culoare și pavajele permeabile, aplicate de exemplu în planurile de „oaze de răcoare” ale Vienei și Parisului. Pentru că un arbore nou dă umbră abia după 15–20 de ani, prioritatea e protejarea arborilor existenți, combinată cu măsuri rapide, precum umbrarele temporare.
-  - user: |
-      Acum fă-l în 3 bullet-uri, pentru un newsletter.
-    assistant: |
-      - **Problema:** orașele sunt cu până la 5–7 °C mai calde decât zonele rurale în nopțile de vară, din cauza asfaltului și a betonului care stochează căldura.
-      - **De ce contează:** valurile de căldură cresc mortalitatea în rândul vârstnicilor, iar aerul condiționat suprasolicită rețeaua și încălzește și mai mult orașul.
-      - **Ce funcționează:** arbori și parcuri, acoperișuri verzi sau reflectorizante, pavaje permeabile – dar primul pas e să păstrăm arborii pe care îi avem deja, pentru că unul nou dă umbră abia peste 15–20 de ani.
-  - user: |
-      Încă unul, despre baterii:
+    Cea mai mare problemă rămâne timpul: un arbore plantat azi oferă umbră semnificativă abia peste 15–20 de ani. De aceea, specialiștii recomandă ca orașele să protejeze în primul rând arborii existenți, în loc să-i taie pentru parcări sau lărgiri de drumuri, și să combine plantările cu măsuri rapide, cum ar fi umbrarele temporare și acoperișurile reflectorizante.
+  assistant: |
+    Insulele de căldură urbane sunt zone ale orașului mai calde decât împrejurimile rurale, pentru că asfaltul și betonul absorb căldura ziua și o eliberează noaptea, iar diferența poate ajunge la 5–7 °C în nopțile de vară. Efectele sunt grave în valurile de căldură: crește mortalitatea în rândul vârstnicilor și al bolnavilor cardiovasculari, iar nopțile tropicale împiedică refacerea organismului. Aerul condiționat încarcă rețeaua electrică la orele de vârf și încălzește suplimentar aerul din oraș. Cele mai eficiente soluții sunt arborii maturi, parcurile, acoperișurile verzi sau deschise la culoare și pavajele permeabile, aplicate de exemplu în planurile de „oaze de răcoare” ale Vienei și Parisului. Pentru că un arbore nou dă umbră abia după 15–20 de ani, prioritatea e protejarea arborilor existenți, combinată cu măsuri rapide, precum umbrarele temporare.
+- user: |
+    Acum fă-l în 3 bullet-uri, pentru un newsletter.
+  assistant: |
+    - **Problema:** orașele sunt cu până la 5–7 °C mai calde decât zonele rurale în nopțile de vară, din cauza asfaltului și a betonului care stochează căldura.
+    - **De ce contează:** valurile de căldură cresc mortalitatea în rândul vârstnicilor, iar aerul condiționat suprasolicită rețeaua și încălzește și mai mult orașul.
+    - **Ce funcționează:** arbori și parcuri, acoperișuri verzi sau reflectorizante, pavaje permeabile – dar primul pas e să păstrăm arborii pe care îi avem deja, pentru că unul nou dă umbră abia peste 15–20 de ani.
+- user: |
+    Încă unul, despre baterii:
 
-      Stocarea energiei în baterii a devenit în ultimii ani piesa care lipsea tranziției către surse regenerabile. Panourile solare produc cel mai mult la prânz, când cererea nu este maximă, iar turbinele eoliene depind de vânt, nu de orele de consum. Fără stocare, o parte din energia produsă trebuie oprită, iar seara, la vârful de consum, rețeaua revine la centralele pe gaz.
+    Stocarea energiei în baterii a devenit în ultimii ani piesa care lipsea tranziției către surse regenerabile. Panourile solare produc cel mai mult la prânz, când cererea nu este maximă, iar turbinele eoliene depind de vânt, nu de orele de consum. Fără stocare, o parte din energia produsă trebuie oprită, iar seara, la vârful de consum, rețeaua revine la centralele pe gaz.
 
-      Bateriile litiu-ion domină piața pentru stocarea pe termen scurt, de la una la patru ore. Prețul lor a scăzut cu aproape 90% în ultimul deceniu, în mare parte datorită producției de masă pentru mașinile electrice. Un parc de baterii poate răspunde în câteva milisecunde, ceea ce îl face ideal pentru stabilizarea frecvenței rețelei, un serviciu pentru care operatorii plătesc separat.
+    Bateriile litiu-ion domină piața pentru stocarea pe termen scurt, de la una la patru ore. Prețul lor a scăzut cu aproape 90% în ultimul deceniu, în mare parte datorită producției de masă pentru mașinile electrice. Un parc de baterii poate răspunde în câteva milisecunde, ceea ce îl face ideal pentru stabilizarea frecvenței rețelei, un serviciu pentru care operatorii plătesc separat.
 
-      Pentru stocarea pe durate mai lungi, de zile sau săptămâni, litiu-ionul devine prea scump. Aici se testează alternative: baterii cu flux pe bază de vanadiu, care pot funcționa zeci de ani fără să se degradeze, baterii fier-aer, mult mai ieftine pe kilowatt-oră, dar lente, și hidrocentrale cu acumulare prin pompaj, care există de un secol, dar au nevoie de un relief potrivit.
+    Pentru stocarea pe durate mai lungi, de zile sau săptămâni, litiu-ionul devine prea scump. Aici se testează alternative: baterii cu flux pe bază de vanadiu, care pot funcționa zeci de ani fără să se degradeze, baterii fier-aer, mult mai ieftine pe kilowatt-oră, dar lente, și hidrocentrale cu acumulare prin pompaj, care există de un secol, dar au nevoie de un relief potrivit.
 
-      Problemele rămase sunt legate de materii prime și de reciclare. Extracția litiului și a cobaltului are costuri de mediu și sociale importante, iar infrastructura de reciclare este abia la început. Chimiile noi, precum litiu-fier-fosfat (LFP), renunță la cobalt și sunt mai stabile termic, motiv pentru care sunt preferate tot mai des în parcurile de stocare staționare.
-    assistant: |
-      Bateriile au devenit esențiale pentru energia regenerabilă, pentru că producția solară și eoliană nu coincide cu orele de consum, iar fără stocare surplusul se pierde și seara se revine la gaz. Litiu-ionul domină stocarea de 1–4 ore, după o scădere a prețului de aproape 90% într-un deceniu datorită mașinilor electrice, și poate stabiliza frecvența rețelei în milisecunde. Pentru zile sau săptămâni se testează baterii cu flux pe bază de vanadiu, baterii fier-aer și hidrocentrale cu pompaj. Rămân problemele materiilor prime, precum litiul și cobaltul, și ale reciclării, motiv pentru care chimia LFP, fără cobalt și mai stabilă termic, câștigă teren în stocarea staționară.
-  - user: |
-      Care e diferența dintre cele două articole ca ton?
-    assistant: |
-      Primul articol, despre insulele de căldură, e mai **normativ** și mai apropiat de cititor: pornește de la efecte asupra sănătății (mortalitate, nopți tropicale), dă exemple de orașe și se încheie cu o recomandare clară („protejați arborii existenți”). Tonul e de advocacy blând, de politică publică.
+    Problemele rămase sunt legate de materii prime și de reciclare. Extracția litiului și a cobaltului are costuri de mediu și sociale importante, iar infrastructura de reciclare este abia la început. Chimiile noi, precum litiu-fier-fosfat (LFP), renunță la cobalt și sunt mai stabile termic, motiv pentru care sunt preferate tot mai des în parcurile de stocare staționare.
+  assistant: |
+    Bateriile au devenit esențiale pentru energia regenerabilă, pentru că producția solară și eoliană nu coincide cu orele de consum, iar fără stocare surplusul se pierde și seara se revine la gaz. Litiu-ionul domină stocarea de 1–4 ore, după o scădere a prețului de aproape 90% într-un deceniu datorită mașinilor electrice, și poate stabiliza frecvența rețelei în milisecunde. Pentru zile sau săptămâni se testează baterii cu flux pe bază de vanadiu, baterii fier-aer și hidrocentrale cu pompaj. Rămân problemele materiilor prime, precum litiul și cobaltul, și ale reciclării, motiv pentru care chimia LFP, fără cobalt și mai stabilă termic, câștigă teren în stocarea staționară.
+- user: |
+    Care e diferența dintre cele două articole ca ton?
+  assistant: |
+    Primul articol, despre insulele de căldură, e mai **normativ** și mai apropiat de cititor: pornește de la efecte asupra sănătății (mortalitate, nopți tropicale), dă exemple de orașe și se încheie cu o recomandare clară („protejați arborii existenți”). Tonul e de advocacy blând, de politică publică.
 
-      Al doilea, despre baterii, e mai **tehnic și neutru**: explică rolul stocării în sistemul energetic, compară tehnologii după durată și cost și menționează problemele fără să ia o poziție fermă. Termenii sunt mai specializați (stabilizarea frecvenței, LFP, baterii cu flux), deci presupune un cititor cu ceva cultură tehnică.
+    Al doilea, despre baterii, e mai **tehnic și neutru**: explică rolul stocării în sistemul energetic, compară tehnologii după durată și cost și menționează problemele fără să ia o poziție fermă. Termenii sunt mai specializați (stabilizarea frecvenței, LFP, baterii cu flux), deci presupune un cititor cu ceva cultură tehnică.
 
-      Amândouă urmează aceeași structură: problemă, soluții, limite. Diferența e că primul se adresează cetățeanului și administrației locale, iar al doilea mai degrabă unui public interesat de energie și investiții.
-  - user: |
-      Scrie un titlu bun pentru fiecare.
-    assistant: |
-      Pentru articolul despre insulele de căldură:
+    Amândouă urmează aceeași structură: problemă, soluții, limite. Diferența e că primul se adresează cetățeanului și administrației locale, iar al doilea mai degrabă unui public interesat de energie și investiții.
+- user: |
+    Scrie un titlu bun pentru fiecare.
+  assistant: |
+    Pentru articolul despre insulele de căldură:
 
-      1. „Orașul care nu se mai răcește noaptea: cum ne apără copacii de valurile de căldură”
-      2. „Cu 7 grade mai cald decât la țară: soluțiile pentru insulele de căldură urbane”
+    1. „Orașul care nu se mai răcește noaptea: cum ne apără copacii de valurile de căldură”
+    2. „Cu 7 grade mai cald decât la țară: soluțiile pentru insulele de căldură urbane”
 
-      Pentru articolul despre baterii:
+    Pentru articolul despre baterii:
 
-      1. „Piesa care lipsea: cum fac bateriile energia verde disponibilă și seara”
-      2. „De la litiu la vanadiu: cursa pentru stocarea energiei pe termen lung”
+    1. „Piesa care lipsea: cum fac bateriile energia verde disponibilă și seara”
+    2. „De la litiu la vanadiu: cursa pentru stocarea energiei pe termen lung”
 
-      Eu aș alege primul titlu din fiecare pereche: sunt concrete, au o imagine ușor de reținut și nu promit mai mult decât spune articolul.
-  - user: |
-      Ok. Acum rezumă-mi și asta, e mai lung, pentru o prezentare de 2 minute:
+    Eu aș alege primul titlu din fiecare pereche: sunt concrete, au o imagine ușor de reținut și nu promit mai mult decât spune articolul.
+- user: |
+    Ok. Acum rezumă-mi și asta, e mai lung, pentru o prezentare de 2 minute:
 
-      Munca hibridă a devenit norma în multe companii după pandemie, dar studiile arată rezultate amestecate. Angajații apreciază timpul economisit pe navetă, în medie aproape o oră pe zi în marile orașe, și flexibilitatea de a-și organiza programul. Cei mai mulți declară că ar accepta un salariu ușor mai mic în schimbul a două-trei zile de lucru de acasă pe săptămână.
+    Munca hibridă a devenit norma în multe companii după pandemie, dar studiile arată rezultate amestecate. Angajații apreciază timpul economisit pe navetă, în medie aproape o oră pe zi în marile orașe, și flexibilitatea de a-și organiza programul. Cei mai mulți declară că ar accepta un salariu ușor mai mic în schimbul a două-trei zile de lucru de acasă pe săptămână.
 
-      Managerii sunt mai rezervați. Ei invocă dificultatea de a integra angajații noi, care învață mult din observarea colegilor, și scăderea colaborării spontane, a discuțiilor de pe hol în care apar idei. Unele companii mari au cerut întoarcerea la birou cinci zile pe săptămână, dar au pierdut o parte din angajații cei mai căutați, care au găsit ușor alte locuri de muncă flexibile.
+    Managerii sunt mai rezervați. Ei invocă dificultatea de a integra angajații noi, care învață mult din observarea colegilor, și scăderea colaborării spontane, a discuțiilor de pe hol în care apar idei. Unele companii mari au cerut întoarcerea la birou cinci zile pe săptămână, dar au pierdut o parte din angajații cei mai căutați, care au găsit ușor alte locuri de muncă flexibile.
 
-      Datele despre productivitate sunt contradictorii pentru că depind de tipul muncii. Sarcinile care cer concentrare individuală, precum programarea sau scrisul, ies adesea mai bine de acasă. Activitățile creative de grup și mentoratul au de câștigat din prezența fizică. Un studiu pe o companie de turism a arătat că un program cu două zile acasă nu a schimbat productivitatea, dar a redus demisiile cu o treime.
+    Datele despre productivitate sunt contradictorii pentru că depind de tipul muncii. Sarcinile care cer concentrare individuală, precum programarea sau scrisul, ies adesea mai bine de acasă. Activitățile creative de grup și mentoratul au de câștigat din prezența fizică. Un studiu pe o companie de turism a arătat că un program cu două zile acasă nu a schimbat productivitatea, dar a redus demisiile cu o treime.
 
-      Concluzia tot mai multor cercetători este că nu există o formulă universală. Funcționează cel mai bine aranjamentele în care echipele stabilesc împreună zilele de birou, astfel încât oamenii să se întâlnească efectiv când vin, iar biroul să fie folosit pentru ce nu se poate face online: întâlniri de planificare, ateliere și integrarea colegilor noi. Un birou în care fiecare vine în altă zi și stă pe videoconferințe nu aduce niciun avantaj.
-    assistant: |
-      Pentru o prezentare de două minute, aș structura rezumatul așa:
+    Concluzia tot mai multor cercetători este că nu există o formulă universală. Funcționează cel mai bine aranjamentele în care echipele stabilesc împreună zilele de birou, astfel încât oamenii să se întâlnească efectiv când vin, iar biroul să fie folosit pentru ce nu se poate face online: întâlniri de planificare, ateliere și integrarea colegilor noi. Un birou în care fiecare vine în altă zi și stă pe videoconferințe nu aduce niciun avantaj.
+  assistant: |
+    Pentru o prezentare de două minute, aș structura rezumatul așa:
 
-      **Ce câștigă angajații.** Aproape o oră pe zi economisită pe navetă și flexibilitate; mulți ar accepta chiar un salariu puțin mai mic pentru două-trei zile de lucru de acasă.
+    **Ce câștigă angajații.** Aproape o oră pe zi economisită pe navetă și flexibilitate; mulți ar accepta chiar un salariu puțin mai mic pentru două-trei zile de lucru de acasă.
 
-      **Ce îi îngrijorează pe manageri.** Integrarea angajaților noi și pierderea colaborării spontane. Companiile care au impus cinci zile la birou au pierdut o parte din oamenii cei mai căutați.
+    **Ce îi îngrijorează pe manageri.** Integrarea angajaților noi și pierderea colaborării spontane. Companiile care au impus cinci zile la birou au pierdut o parte din oamenii cei mai căutați.
 
-      **Ce spun datele.** Productivitatea depinde de tipul muncii: munca de concentrare merge bine de acasă, mentoratul și creativitatea de grup au nevoie de prezență. Într-un studiu, două zile acasă n-au schimbat productivitatea, dar au redus demisiile cu o treime.
+    **Ce spun datele.** Productivitatea depinde de tipul muncii: munca de concentrare merge bine de acasă, mentoratul și creativitatea de grup au nevoie de prezență. Într-un studiu, două zile acasă n-au schimbat productivitatea, dar au redus demisiile cu o treime.
 
-      **Concluzia.** Nu există o formulă universală. Funcționează echipele care își aleg împreună zilele de birou și folosesc biroul pentru ce nu se poate face online: planificare, ateliere, integrare. Un birou în care fiecare vine în altă zi și stă pe videoconferințe nu aduce niciun avantaj.
-  - user: |
-      Dă-mi și trei întrebări pe care le-ar putea pune publicul.
-    assistant: |
-      1. „Cum măsurați productivitatea la munca de acasă, dacă depinde atât de mult de tipul sarcinilor?” – poți răspunde că studiile folosesc indicatori specifici fiecărui rol (cod livrat, tichete rezolvate, vânzări), nu ore lucrate.
-      2. „Ce faceți cu angajații noi, care au nevoie de mentorat?” – aici argumentul articolului e clar: zilele de birou comune ale echipei sunt exact momentul pentru integrare.
-      3. „Dacă oamenii acceptă un salariu mai mic pentru flexibilitate, nu e asta o reducere de costuri ascunsă?” – o întrebare incomodă; răspunsul onest e că depinde de cum e negociat, dar rata mai mică a demisiilor are și ea o valoare financiară reală.
-  - user: |
-      Mersi, atât pentru azi.
-    assistant: |
-      Cu plăcere! Recapitulând, azi am lucrat pe trei texte: insulele de căldură urbane (rezumat, bullet-uri pentru newsletter și titluri), stocarea energiei în baterii (rezumat, comparația de ton și titluri) și munca hibridă (rezumat pentru o prezentare de două minute și trei întrebări din public). Spor la prezentare!
+    **Concluzia.** Nu există o formulă universală. Funcționează echipele care își aleg împreună zilele de birou și folosesc biroul pentru ce nu se poate face online: planificare, ateliere, integrare. Un birou în care fiecare vine în altă zi și stă pe videoconferințe nu aduce niciun avantaj.
+- user: |
+    Dă-mi și trei întrebări pe care le-ar putea pune publicul.
+  assistant: |
+    1. „Cum măsurați productivitatea la munca de acasă, dacă depinde atât de mult de tipul sarcinilor?” – poți răspunde că studiile folosesc indicatori specifici fiecărui rol (cod livrat, tichete rezolvate, vânzări), nu ore lucrate.
+    2. „Ce faceți cu angajații noi, care au nevoie de mentorat?” – aici argumentul articolului e clar: zilele de birou comune ale echipei sunt exact momentul pentru integrare.
+    3. „Dacă oamenii acceptă un salariu mai mic pentru flexibilitate, nu e asta o reducere de costuri ascunsă?” – o întrebare incomodă; răspunsul onest e că depinde de cum e negociat, dar rata mai mică a demisiilor are și ea o valoare financiară reală.
+- user: |
+    Mersi, atât pentru azi.
+  assistant: |
+    Cu plăcere! Recapitulând, azi am lucrat pe trei texte: insulele de căldură urbane (rezumat, bullet-uri pentru newsletter și titluri), stocarea energiei în baterii (rezumat, comparația de ton și titluri) și munca hibridă (rezumat pentru o prezentare de două minute și trei întrebări din public). Spor la prezentare!
+- user: |
+    Revin cu articolele pentru newsletter-ul asociației. Rezumă-mi-l pe ăsta în 5 propoziții:
+
+    Pompele de căldură au fost multă vreme considerate o soluție pentru case, nu pentru blocuri. Un proiect-pilot derulat în ultimii doi ani la Cluj-Napoca arată că lucrurile se pot schimba. În cartierul Mănăștur, 120 de apartamente dintr-un bloc construit în 1978 au fost trecute de pe centrala de cvartal pe pompe de căldură aer-apă, montate pe acoperiș și conectate la instalația existentă de calorifere. Inginerii au fost nevoiți să mărească suprafața unor calorifere, pentru că pompele lucrează eficient la temperaturi mai mici ale agentului termic, de 45–50 °C în loc de 70–80 °C. Coeficientul de performanță mediu pe sezonul rece, COP, a fost de 3,2, ceea ce înseamnă că pentru fiecare kilowatt-oră de electricitate consumată blocul a primit în medie 3,2 kilowați-oră de căldură. În lunile cele mai reci, cu temperaturi sub minus 10 °C, COP-ul a scăzut la 2,1, iar o rezistență electrică de rezervă a intrat în funcțiune în 9 zile din toată iarna. Factura medie la încălzire a scăzut cu 38% față de iarna dinaintea proiectului, deși prețul energiei electrice a crescut în aceeași perioadă. Investiția totală a fost de 2,1 milioane de lei, finanțată în proporție de 60% din fonduri europene, iar restul de asociația de proprietari, printr-un credit pe 10 ani. Autorii studiului avertizează că rezultatele nu se pot generaliza automat: blocul fusese anvelopat cu cinci ani înainte, iar fără izolație termică pierderile ar fi făcut pompele mult mai puțin eficiente. Primăria analizează acum extinderea programului la alte 14 blocuri din cartier.
+  assistant: |
+    Pompele de căldură, considerate multă vreme potrivite doar pentru case, au fost testate cu succes pe un bloc din 1978 din cartierul Mănăștur din Cluj-Napoca, unde 120 de apartamente au fost trecute de pe centrala de cvartal pe pompe aer-apă montate pe acoperiș. Inginerii au mărit suprafața unor calorifere, pentru că pompele funcționează eficient la temperaturi mai scăzute ale agentului termic (45–50 °C față de 70–80 °C). Performanța a fost bună: un COP mediu de 3,2 pe sezonul rece, care a scăzut la 2,1 în zilele sub minus 10 °C, când a fost nevoie de rezistența electrică de rezervă în doar 9 zile din iarnă. Factura la încălzire a scăzut cu 38%, în ciuda creșterii prețului la electricitate, iar investiția de 2,1 milioane de lei a fost acoperită 60% din fonduri europene, restul printr-un credit al asociației pe 10 ani. Rezultatele nu se pot însă generaliza automat, pentru că blocul fusese anvelopat cu cinci ani înainte, iar primăria analizează extinderea programului la alte 14 blocuri.
+- user: |
+    Extrage toate cifrele din articolul despre pompele de căldură într-un tabel: cifra și ce înseamnă.
+  assistant: |
+    | Cifra | Ce înseamnă |
+    |---|---|
+    | 120 | apartamente din blocul pilot din Mănăștur, trecute pe pompe de căldură |
+    | 1978 | anul construirii blocului |
+    | 45–50 °C | temperatura agentului termic la care lucrează eficient pompele de căldură |
+    | 70–80 °C | temperatura agentului termic la vechea centrală de cvartal |
+    | 3,2 | COP-ul mediu pe sezonul rece (kWh de căldură per kWh de electricitate) |
+    | 2,1 | COP-ul în lunile cu temperaturi sub minus 10 °C |
+    | minus 10 °C | pragul de temperatură sub care performanța pompei scade semnificativ |
+    | 9 | numărul de zile din iarnă în care a funcționat rezistența electrică de rezervă |
+    | 38% | scăderea facturii medii la încălzire față de iarna anterioară |
+    | 2,1 milioane lei | investiția totală în proiect |
+    | 60% | ponderea finanțării din fonduri europene |
+    | 10 ani | durata creditului luat de asociația de proprietari pentru coplata |
+    | 5 ani | cât timp înainte fusese anvelopat blocul |
+    | 14 | numărul de blocuri în care primăria analizează extinderea programului |
+    | 2 ani | durata proiectului-pilot |
+- user: |
+    Pentru newsletter am stabilit un format fix: un titlu de maximum 8 cuvinte, 3 bullet-uri și o cifră-cheie la final. Refă rezumatul despre pompele de căldură în formatul ăsta.
+  assistant: |
+    **Pompe de căldură pe bloc, testate cu succes la Cluj**
+
+    - 120 de apartamente dintr-un bloc din 1978 din Mănăștur au fost trecute de pe centrala de cvartal pe pompe aer-apă montate pe acoperiș, cu mici adaptări la calorifere.
+    - Factura la încălzire a scăzut cu 38%, iar rezistența electrică de rezervă a fost necesară doar în 9 zile din iarnă.
+    - Investiția de 2,1 milioane de lei a fost acoperită 60% din fonduri europene, dar succesul depinde de izolația blocului, anvelopat cu cinci ani înainte.
+
+    **Cifra-cheie: 3,2** – kilowați-oră de căldură obținuți pentru fiecare kilowatt-oră de electricitate consumată, în medie pe sezonul rece.
+- user: |
+    Refă în același format și articolul despre baterii, de la început.
+  assistant: |
+    **Bateriile, piesa care lipsea din tranziția energetică**
+
+    - Panourile solare produc cel mai mult la prânz, iar turbinele eoliene depind de vânt; fără stocare, surplusul se pierde, iar seara se revine la centralele pe gaz.
+    - Litiu-ionul domină stocarea de 1–4 ore, după o scădere a prețurilor de aproape 90% într-un deceniu, datorită producției de masă pentru mașinile electrice.
+    - Pentru stocarea pe zile sau săptămâni se testează alternative: baterii cu flux pe vanadiu, baterii fier-aer și hidrocentrale cu pompaj, iar chimia LFP, fără cobalt, câștigă teren.
+
+    **Cifra-cheie: 90%** – cât au scăzut prețurile bateriilor litiu-ion în ultimul deceniu.
+- user: |
+    Încă un articol, pune-l direct în formatul de newsletter:
+
+    Acoperișurile verzi sunt prezentate tot mai des ca o soluție împotriva încălzirii orașelor, dar datele concrete erau până acum puține. Un studiu realizat la Rotterdam pe 42 de clădiri, timp de trei veri consecutive, aduce primele cifre solide pentru climatul din vestul Europei. În zilele caniculare, temperatura suprafeței acoperișurilor cu vegetație a fost cu până la 30 °C mai mică decât cea a acoperișurilor cu membrană bituminoasă neagră. Efectul asupra aerului din stradă a fost însă mult mai modest: o scădere de 0,3–0,8 °C la nivelul pietonilor, măsurabilă doar în zonele unde cel puțin o treime din acoperișuri erau verzi. Beneficiul cel mai mare s-a văzut în interior: la ultimul etaj, temperatura din apartamente a fost cu 2–3 °C mai mică, iar consumul de energie pentru aer condiționat a scăzut cu 18%. Acoperișurile verzi au reținut și 60% din apa ploilor torențiale, reducând presiunea pe canalizare. Costul de amenajare a fost între 60 și 110 euro pe metru pătrat, în funcție de grosimea stratului de substrat, iar întreținerea a cerut două intervenții pe an. Autorii recomandă ca orașele să nu promită scăderi spectaculoase ale temperaturii în stradă, ci să prezinte acoperișurile verzi mai ales ca o măsură pentru confortul locuitorilor de la ultimele etaje și pentru gestionarea apei pluviale.
+  assistant: |
+    **Acoperișuri verzi: ce spun cifrele reale din Rotterdam**
+
+    - Un studiu pe 42 de clădiri, pe parcursul a trei veri, arată că suprafața acoperișurilor verzi e cu până la 30 °C mai rece decât cea a celor bituminoase în zilele caniculare.
+    - Efectul în stradă e modest (0,3–0,8 °C), dar la ultimul etaj apartamentele sunt cu 2–3 °C mai răcoroase, iar consumul de aer condiționat scade cu 18%.
+    - Acoperișurile verzi rețin 60% din apa ploilor torențiale, dar costă 60–110 euro pe metru pătrat și cer două intervenții de întreținere pe an.
+
+    **Cifra-cheie: 18%** – cât scade consumul de energie pentru aer condiționat la ultimul etaj al clădirilor cu acoperiș verde.
+- user: |
+    Contrazice în vreun fel articolul ăsta primul articol, cel despre insulele de căldură?
+  assistant: |
+    Nu direct, dar îl nuanțează. Iată de ce:
+
+    - **Ce spun în comun:** ambele prezintă acoperișurile verzi ca parte din soluția pentru orașele calde și ambele insistă pe măsuri cu beneficii măsurabile, nu pe promisiuni.
+    - **Punctul de tensiune:** primul articol include acoperișurile verzi printre soluțiile „cele mai eficiente" pentru răcirea orașului, fără să distingă între efectul asupra clădirii și cel asupra străzii. Studiul din Rotterdam arată că efectul în stradă e mic (0,3–0,8 °C) și apare doar unde cel puțin o treime din acoperișuri sunt verzi.
+    - **De ce nu e o contradicție reală:** primul articol atribuie răcirea străzilor mai ales arborilor și parcurilor (2–3 °C), nu acoperișurilor. Studiul confirmă de fapt ierarhia asta: vegetația la nivelul solului răcește aerul, acoperișurile verzi ajută mai ales la interior (2–3 °C la ultimul etaj) și la gestionarea apei.
+
+    Deci, dacă le publici împreună în newsletter, mesajul coerent ar fi: acoperișurile verzi sunt o soluție bună, dar pentru confortul locuitorilor și pentru apa pluvială, nu pentru răcirea străzilor – acolo rămân arborii campioni.
+- user: |
+    Scrie un tweet de maximum 280 de caractere despre acoperișurile verzi.
+  assistant: |
+    Studiu pe 42 de clădiri din Rotterdam: acoperișurile verzi răcesc apartamentele de la ultimul etaj cu 2–3 °C, taie 18% din consumul de aer condiționat și rețin 60% din apa ploilor torențiale. În stradă însă, efectul e mic. Sunt o soluție pentru locuitori, nu pentru bulevarde. 🌱🏙️
+- user: |
+    Tradu în engleză rezumatul de newsletter despre acoperișurile verzi, pentru partenerii din Olanda.
+  domain: translation
+  assistant: |
+    **Green roofs: what the real numbers from Rotterdam show**
+
+    - A study of 42 buildings over three summers shows that green roof surfaces are up to 30 °C cooler than bituminous ones on scorching days.
+    - The street-level effect is modest (0.3–0.8 °C), but on the top floor apartments are 2–3 °C cooler, and air conditioning consumption drops by 18%.
+    - Green roofs retain 60% of heavy rainfall, but cost €60–110 per square meter and require two maintenance interventions per year.
+
+    **Key figure: 18%** – the reduction in air conditioning energy consumption on the top floor of buildings with a green roof.
+- user: |
+    Șefa zice că bullet-urile sunt prea lungi. Regula nouă: maximum 15 cuvinte pe bullet. Refă toate cele trei rezumate în format de newsletter cu regula asta.
+  assistant: |
+    **Pompe de căldură pe bloc, testate cu succes la Cluj**
+
+    - 120 de apartamente dintr-un bloc din 1978, trecute pe pompe aer-apă montate pe acoperiș.
+    - Factura la încălzire a scăzut cu 38%; rezistența de rezervă a funcționat doar 9 zile.
+    - Investiție de 2,1 milioane lei, 60% din fonduri europene; succesul depinde de izolație.
+
+    **Cifra-cheie: 3,2** – kilowați-oră de căldură obținuți pentru fiecare kilowatt-oră de electricitate, în medie pe sezonul rece.
+
+    **Bateriile, piesa care lipsea din tranziția energetică**
+
+    - Solarul produce la prânz, eolianul depinde de vânt; fără stocare, surplusul se pierde.
+    - Litiu-ionul domină stocarea de 1–4 ore, după o scădere masivă a prețurilor.
+    - Pentru zile sau săptămâni se testează vanadiu, fier-aer și pompaj; LFP câștigă teren.
+
+    **Cifra-cheie: 90%** – cât au scăzut prețurile bateriilor litiu-ion în ultimul deceniu.
+
+    **Acoperișuri verzi: ce spun cifrele reale din Rotterdam**
+
+    - Suprafața acoperișurilor verzi e cu până la 30 °C mai rece decât cea bituminoasă.
+    - În stradă efectul e mic, dar la ultimul etaj apartamentele sunt cu 2–3 °C mai răcoroase.
+    - Rețin 60% din apa ploilor torențiale, dar costă 60–110 euro pe metru pătrat.
+
+    **Cifra-cheie: 18%** – cât scade consumul de aer condiționat la ultimul etaj.
+- user: |
+    Rezumă-l și pe ăsta în 5 propoziții:
+
+    Săptămâna de lucru de patru zile a trecut de la experiment la politică de firmă în majoritatea companiilor care au testat-o într-un pilot desfășurat în Cluj și Iași. Timp de șase luni, 27 de firme, cu aproximativ 1.400 de angajați în total, au redus programul la 32 de ore pe săptămână, fără tăieri de salariu, cu condiția ca productivitatea să rămână la același nivel. La finalul pilotului, 23 dintre cele 27 de firme au decis să continue, iar 9 au făcut schimbarea permanentă în contractele de muncă. Cifra de afaceri a firmelor participante a crescut în medie cu 4% față de aceeași perioadă a anului anterior, o creștere comparabilă cu cea a firmelor din același sector care nu au participat. Concediile medicale au scăzut cu 31%, iar numărul de demisii cu aproape jumătate. Nu toate firmele au avut același succes: cele patru care au renunțat lucrau în relația directă cu clienții, în special în suport tehnic și vânzări, unde ziua liberă comună a creat goluri greu de acoperit. Cercetătorii care au coordonat pilotul recunosc că firmele s-au înscris voluntar, deci erau probabil deja deschise la schimbare, și că șase luni sunt prea puține pentru a măsura efectele pe termen lung asupra carierei angajaților.
+  assistant: |
+    Săptămâna de lucru de patru zile a fost testată în România într-un pilot de șase luni, la care au participat 27 de firme din Cluj și Iași, cu circa 1.400 de angajați, care au redus programul la 32 de ore pe săptămână fără tăieri de salariu. La final, 23 dintre firme au continuat programul, iar 9 l-au făcut permanent în contractele de muncă. Cifra de afaceri a crescut în medie cu 4%, comparabil cu firmele similare care nu au participat, în timp ce concediile medicale au scăzut cu 31%, iar demisiile cu aproape jumătate. Cele patru firme care au renunțat lucrau în relația directă cu clienții, unde ziua liberă comună a creat goluri greu de acoperit. Cercetătorii avertizează însă că participanții s-au înscris voluntar, deci erau deja deschiși la schimbare, și că șase luni sunt prea puține pentru efectele pe termen lung.
+- user: |
+    Pune-l lângă articolul despre munca hibridă: ce concluzii comune au cele două?
+  assistant: |
+    Cele două articole se completează surprinzător de bine. Iată concluziile comune:
+
+    - **Nu există o formulă universală.** Articolul despre muncă hibridă spune asta explicit, iar pilotul de patru zile o confirmă: firmele din relația directă cu clienții au eșuat, celelalte au reușit. Soluția depinde de tipul muncii, nu e o regulă generală.
+    - **Flexibilitatea reține oamenii.** În articolul despre hibrid, două zile de acasă au redus demisiile cu o treime; în pilotul de patru zile, demisiile au scăzut cu aproape jumătate. E cel mai consistent efect comun al celor două.
+    - **Productivitatea nu scade automat.** Studiul din compania de turism n-a găsit nicio schimbare de productivitate, iar pilotul a arătat chiar o creștere de 4% a cifrei de afaceri, comparabilă cu sectorul. Temerea clasică a managerilor nu e susținută de date.
+    - **Efectele pe termen lung rămân incerte.** Ambele recunosc limite: studiul hibrid e pe o singură companie, pilotul a durat doar șase luni și participanții erau voluntari, deci deja deschiși la schimbare.
+
+    **Diferența de nuanță:** articolul despre hibrid subliniază că prezența fizică are beneficii greu de înlocuit (mentorat, integrarea colegilor noi), deci flexibilitatea are un plafon. Pilotul de patru zile nu abordează problema asta, dar e de așteptat ca ea să apară și acolo pe termen lung.
+
+    Pentru newsletter, mesajul combinat ar fi: flexibilitatea (hibridă sau comprimată) păstrează angajații fără să coste productivitate, dar funcționează doar adaptată la tipul muncii și cu zile de prezență bine gândite.
+- user: |
+    Dă-mi 3 întrebări critice despre metodologia studiului cu săptămâna de patru zile, ca un recenzent sceptic.
+  assistant: |
+    1. **Efect de selecție.** Firmele s-au înscris voluntar, deci erau deja convine de idee și probabil bine pregătite organizațional. Compararea lor cu firmele care nu au participat nu elimină asta: poate reușita lor se explică prin cultura internă, nu prin programul de 32 de ore. Un design mai solid ar fi randomizat firmele sau ar fi inclus un grup de control ales, nu doar voluntari.
+
+    2. **Perioadă de șase luni, prea scurtă pentru efectele reale.** În primele luni, angajații lucrează adesea mai intens pentru a demonstra că programul funcționează (efect de novitate și de suprasolicitare ascunsă). Demisiile scăzute cu jumătate pot fi un efect pe termen scurt; epuizarea, blocarea angajărilor sau presiunea pe cei rămași apar abia după un an sau doi. Pilotul nu poate distinge între aceste scenarii.
+
+    3. **Comparația cifrei de afaceri e fragilă.** O creștere de 4% „comparabilă cu firmele din același sector" nu spune nimic fără detalii: câte firme de comparație, cum au fost alese, ce dimensiuni aveau, cât de volatil e sectorul? Cu 27 de firme, media e foarte sensibilă la valori extreme – o singură firmă cu un contract mare poate trage media în sus. Plus că cifra de afaceri nu măsoară profitabilitatea: firmele puteau crește veniturile cu costuri mai mari pe angajat.
+
+    Bonus, ca recenzent răutăcios: cum s-a definit „productivitatea a rămas la același nivel"? Dacă fiecare firmă și-a ales singură indicatorii, condiția din pilot nu e o condiție, ci o autoevaluare.
+- user: |
+    Scrie un paragraf de opinie de 120 de cuvinte în favoarea săptămânii de patru zile, folosind doar cifre din articol.
+  domain: creative-writing
+  assistant: |
+    Pilotul din Cluj și Iași arată că săptămâna de patru zile nu e un lux, ci o decizie de business. 27 de firme au redus programul la 32 de ore, fără tăieri de salariu, iar 23 au continuat după pilot; 9 au făcut schimbarea permanentă. Cifra de afaceri a crescut cu 4%, la fel ca la firmele comparabile din sector – deci nu s-a plătit niciun preț economic. În schimb, câștigurile umane sunt clare: concediile medicale au scăzut cu 31%, iar demisiile cu aproape jumătate. Fiecare demisie evitată înseamnă recrutare și formare economisite. Da, modelul nu se potrivește tuturor: cele 4 firme din suport tehnic și vânzări au renunțat. Dar când 23 din 27 aleg să continue, povara argumentului trece de la susținători la sceptici.
+- user: |
+    Ultimul articol pentru luna asta, rezumat în format de newsletter:
+
+    Bateriile cu ioni de sodiu ies din laborator și intră în producția de serie. Primul mare producător european a anunțat că fabrica sa din Suedia va livra din primăvară celule pentru stocare staționară, cu o capacitate inițială de 2 GWh pe an. Avantajul principal este că sodiul este abundent și ieftin, iar celulele nu folosesc litiu, cobalt sau nichel, metale ale căror prețuri au fost foarte volatile în ultimii ani. Densitatea energetică a celulelor este de aproximativ 140 Wh/kg, sub cea a bateriilor LFP, care ajung la 160–180 Wh/kg, ceea ce le face mai puțin potrivite pentru mașini electrice cu autonomie mare, dar suficiente pentru stocarea energiei în rețea, unde greutatea contează puțin. Producătorul estimează un cost cu 20–30% mai mic decât al bateriilor LFP odată ce producția ajunge la scară. Celulele funcționează bine și la frig: la minus 20 °C păstrează aproximativ 90% din capacitate, față de 70–75% în cazul bateriilor cu litiu. Durata de viață anunțată este de 5.000 de cicluri, comparabilă cu a celor LFP. Analiștii avertizează totuși că prețurile litiului au scăzut puternic în ultimul an, ceea ce reduce avantajul de cost, și că lanțul de aprovizionare pentru sodiu-ion este încă la început.
+  assistant: |
+    **Bateriile sodiu-ion intră în producția de serie**
+
+    - Primul producător european va livra din primăvară celule pentru stocare staționară, 2 GWh pe an.
+    - Fără litiu, cobalt sau nichel; cost estimat cu 20–30% sub cel al LFP.
+    - La minus 20 °C păstrează 90% din capacitate, față de 70–75% la litiu.
+
+    **Cifra-cheie: 5.000** – cicluri de viață anunțate, comparabile cu bateriile LFP.
+- user: |
+    Care e diferența dintre bateriile din articolul ăsta și cele din articolul de la început despre stocare? Fă-mi un tabel.
+  assistant: |
+    | Aspect | Articolul despre stocare (general) | Articolul despre sodiu-ion |
+    |---|---|---|
+    | Tehnologia dominantă | Litiu-ion, pentru stocare de 1–4 ore | Sodiu-ion, abia intră în producție de serie |
+    | Materii prime | Litiu și cobalt, cu costuri de mediu și sociale importante; LFP renunță la cobalt | Sodiu, abundent și ieftin; fără litiu, cobalt sau nichel |
+    | Densitate energetică | LFP: 160–180 Wh/kg (menționat în articolul nou ca referință) | ~140 Wh/kg, sub LFP |
+    | Potrivire pentru mașini electrice | Litiu-ion domină, inclusiv datorită mașinilor electrice | Mai puțin potrivite pentru autonomie mare; bune pentru rețea |
+    | Performanță la frig | Nu e menționată | 90% din capacitate la minus 20 °C, față de 70–75% la litiu |
+    | Durată de viață | Bateriile cu flux pe vanadiu: zeci de ani fără degradare | 5.000 de cicluri, comparabile cu LFP |
+    | Cost | Litiu-ion scump pentru stocare lungă; alternative în testare | Estimat cu 20–30% sub LFP la scară |
+    | Riscuri menționate | Reciclarea abia la început; extracția litiului costisitoare | Prețul litiului a scăzut, erodând avantajul de cost; lanț de aprovizionare la început |
+
+    Pe scurt: articolul de la început descrie peisajul general al stocării, dominat de litiu-ion, iar articolul de acum aduce exact tipul de alternativă de care vorbea primul – o chimie fără metale volatile, mai ieftină și mai potrivită pentru stocare staționară decât pentru mașini.
+- user: |
+    Un coleg a scris rezumatul ăsta pentru același articol. E vreo eroare față de text?
+
+    ```text
+    Bateriile cu ioni de sodiu intră în producție de serie în Suedia, cu 2 GWh pe an.
+    Nu folosesc litiu, cobalt sau nichel și costă cu 50% mai puțin decât cele LFP.
+    Au o densitate de 140 Wh/kg și păstrează 90% din capacitate la minus 20 °C.
+    ```
+  assistant: |
+    Da, e o eroare factuală: articolul spune că costul va fi cu **20–30%** mai mic decât al bateriilor LFP, nu cu 50%. Colegul tău a exagerat avantajul de cost.
+
+    Restul cifrelor sunt corecte:
+    - 2 GWh pe an ✓
+    - fără litiu, cobalt sau nichel ✓
+    - 140 Wh/kg ✓
+    - 90% din capacitate la minus 20 °C ✓
+
+    O observație minoră: „costă cu 20–30% mai puțin" e o estimare a producătorului valabilă **odată ce producția ajunge la scară**, nu un preț actual – rezumatul ar câștiga dacă ar păstra nuanța asta, mai ales că articolul menționează și că scăderea prețurilor litiului erodează avantajul.
+- user: |
+    Fă-mi un cuprins pentru newsletter-ul lunii, cu toate articolele de azi, în ordinea în care le-ai pune.
+  assistant: |
+    **Cuprins – Newsletter [luna]**
+
+    **Orașe și climă**
+    1. Insulele de căldură urbane: de ce orașul nu se mai răcește noaptea
+    2. Acoperișuri verzi la Rotterdam: ce spun cifrele reale
+
+    **Energie și stocare**
+    3. Bateriile, piesa care lipsea din tranziția energetică
+    4. Baterii sodiu-ion: fără litiu, în producție de serie
+    5. Pompe de căldură pe bloc, testate cu succes la Cluj
+
+    **Muncă**
+    6. Munca hibridă: ce spun datele, fără mituri
+    7. Săptămâna de patru zile: rezultatele pilotului din Cluj și Iași
+
+    Am grupat articolele pe teme, ca cititorul să vadă imediat ce îl interesează, și am pus energia înaintea muncii pentru că cele două articole despre baterii se leagă natural unul de celălalt. Ordinea din interiorul secțiunilor urmează logica „problema → soluții concrete": mai întâi contextul general, apoi studiile și pilotele. Dacă preferi ordinea cronologică în care le-ai trimis, spune-mi și refac lista.
+- user: |
+    Mersi, ne auzim luna viitoare.
+  assistant: |
+    Cu plăcere! Luna asta am lucrat pe șapte articole: insulele de căldură, baterii (de două ori – general și sodiu-ion), pompe de căldură, acoperișuri verzi, munca hibridă și săptămâna de patru zile, plus cuprinsul, titluri, tweet-uri, întrebări critice și comparații între ele. Formatul de newsletter e acum stabilit: titlu de maximum 8 cuvinte, 3 bullet-uri de maximum 15 cuvinte și o cifră-cheie. Ne auzim luna viitoare, spor la numere!
 questions:
-  - id: q1
-    type: semantic
-    prompt: |
-      Cu cât e mai cald în oraș față de zonele rurale, conform primului articol?
-    gold:
-      - {turn: 1, quote: "diferența de temperatură față de zonele rurale poate ajunge la 5–7 grade Celsius în nopțile de vară"}
-  - id: q2
-    type: exact
-    prompt: |
-      Ce spunea articolul despre bateriile cu vanadiu?
-    gold:
-      - {turn: 3, quote: "baterii cu flux pe bază de vanadiu, care pot funcționa zeci de ani fără să se degradeze"}
-  - id: q3
-    type: semantic
-    prompt: |
-      Ce rezultat avea studiul despre compania de turism?
-    gold:
-      - {turn: 6, quote: "un program cu două zile acasă nu a schimbat productivitatea, dar a redus demisiile cu o treime"}
-  - id: q4
-    type: ambiguous
-    prompt: |
-      și titlurile pe care le-ai propus pentru primul?
-    gold:
-      - {turn: 5, quote: "„Orașul care nu se mai răcește noaptea: cum ne apără copacii de valurile de căldură”"}
-  - id: q5
-    type: semantic
-    lang: en
-    prompt: |
-      Why is LFP preferred for stationary storage?
-    gold:
-      - {turn: 3, quote: "Chimiile noi, precum litiu-fier-fosfat (LFP), renunță la cobalt și sunt mai stabile termic"}
-  - id: q6
-    type: semantic
-    prompt: |
-      Cum comparai tonul celor două articole?
-    gold:
-      - {turn: 4, quote: "Primul articol, despre insulele de căldură, e mai **normativ**"}
+- id: q1
+  type: semantic
+  prompt: |
+    Cu cât e mai cald în oraș față de zonele rurale, conform primului articol?
+  gold:
+  - turn: 1
+    quote: diferența de temperatură față de zonele rurale poate ajunge la 5–7 grade Celsius în nopțile de vară
+  - turn: 2
+    quote: orașele sunt cu până la 5–7 °C mai calde decât zonele rurale
+- id: q2
+  type: exact
+  prompt: |
+    Ce spunea articolul despre bateriile cu vanadiu?
+  gold:
+  - turn: 3
+    quote: baterii cu flux pe bază de vanadiu, care pot funcționa zeci de ani fără să se degradeze
+- id: q3
+  type: semantic
+  prompt: |
+    Ce rezultat avea studiul despre compania de turism?
+  gold:
+  - turn: 6
+    quote: un program cu două zile acasă nu a schimbat productivitatea, dar a redus demisiile cu o treime
+- id: q4
+  type: ambiguous
+  prompt: |
+    și titlurile pe care le-ai propus pentru primul?
+  gold:
+  - turn: 5
+    quote: '„Orașul care nu se mai răcește noaptea: cum ne apără copacii de valurile de căldură”'
+- id: q5
+  type: semantic
+  lang: en
+  prompt: |
+    Why is LFP preferred for stationary storage?
+  gold:
+  - turn: 3
+    quote: Chimiile noi, precum litiu-fier-fosfat (LFP), renunță la cobalt și sunt mai stabile termic
+- id: q6
+  type: semantic
+  prompt: |
+    Cum comparai tonul celor două articole?
+  gold:
+  - turn: 4
+    quote: Primul articol, despre insulele de căldură, e mai **normativ**
+- id: q7
+  type: distractor
+  prompt: |
+    Cu cât scădea temperatura aerului din stradă datorită acoperișurilor verzi?
+  gold:
+  - turn: 13
+    quote: o scădere de 0,3–0,8 °C la nivelul pietonilor
+  - turn: 16
+    quote: '- The street-level effect is modest (0.3–0.8 °C), but on the top floor apartments are 2–3 °C cooler, and air c'
+  - turn: 14
+    quote: '- **Punctul de tensiune:** primul articol include acoperișurile verzi printre soluțiile „cele mai eficiente" p'
+- id: q8
+  type: exact
+  prompt: |
+    Ce COP au avut pompele de căldură din pilotul de la Cluj?
+  gold:
+  - turn: 9
+    quote: Coeficientul de performanță mediu pe sezonul rece, COP, a fost de 3,2
+  - turn: 10
+    quote: '| 45–50 °C | temperatura agentului termic la care lucrează eficient pompele de căldură |'
+  - turn: 11
+    quote: '**Cifra-cheie: 3,2** – kilowați-oră de căldură obținuți pentru fiecare kilowatt-oră de electricitate consumată'
+  - turn: 17
+    quote: '**Cifra-cheie: 3,2** – kilowați-oră de căldură obținuți pentru fiecare kilowatt-oră de electricitate, în medie'
+- id: q9
+  type: decision
+  prompt: |
+    Cât de lung poate fi un bullet în newsletter acum?
+  gold:
+  - turn: 17
+    quote: Factura la încălzire a scăzut cu 38%; rezistența de rezervă a funcționat doar 9 zile.
+  - turn: 26
+    quote: 'Cu plăcere! Luna asta am lucrat pe șapte articole: insulele de căldură, baterii (de două ori – general și sodi'
+  outdated:
+  - turn: 11
+    quote: Factura la încălzire a scăzut cu 38%, iar rezistența electrică de rezervă a fost necesară doar în 9 zile din iarnă.
+- id: q10
+  type: distractor
+  prompt: |
+    Ce densitate energetică aveau bateriile cu sodiu, comparativ cu LFP?
+  gold:
+  - turn: 22
+    quote: Densitatea energetică a celulelor este de aproximativ 140 Wh/kg
+  - turn: 23
+    quote: '| Riscuri menționate | Reciclarea abia la început; extracția litiului costisitoare | Prețul litiului a scăzut,'
+- id: q11
+  type: semantic
+  prompt: |
+    Ce greșise colegul în rezumatul despre bateriile cu sodiu?
+  gold:
+  - turn: 24
+    quote: articolul spune că costul va fi cu **20–30%** mai mic decât al bateriilor LFP, nu cu 50%
+- id: q12
+  type: paraphrase
+  prompt: |
+    Ce aveau în comun cele două cercetări despre felul în care se lucrează după pandemie?
+  gold:
+  - turn: 19
+    quote: Nu există o formulă universală.
+- id: q13
+  type: ambiguous
+  prompt: |
+    și varianta pentru partenerii olandezi?
+  gold:
+  - turn: 16
+    quote: 'Green roofs: what the real numbers from Rotterdam show'
+- id: q14
+  type: exact
+  prompt: |
+    cate firme au continuat saptamana de 4 zile dupa pilot?
+  gold:
+  - turn: 18
+    quote: 23 dintre cele 27 de firme au decis să continue
+  - turn: 21
+    quote: Pilotul din Cluj și Iași arată că săptămâna de patru zile nu e un lux, ci o decizie de business. 27 de firme a
+- id: q15
+  type: semantic
+  prompt: |
+    Se bat cap în cap studiul de la Rotterdam și primul articol despre căldura din orașe?
+  gold:
+  - turn: 14
+    quote: Nu direct, dar îl nuanțează.
+- id: q16
+  type: exact
+  prompt: |
+    Mai arată-mi tweet-ul despre acoperișurile verzi.
+  gold:
+  - turn: 15
+    quote: 'Studiu pe 42 de clădiri din Rotterdam: acoperișurile verzi răcesc apartamentele de la ultimul etaj cu 2–3 °C'

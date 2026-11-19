@@ -1,0 +1,1331 @@
+id: s10-statistica-licenta
+category: math
+lang: ro
+turns:
+- user: |
+    Fac lucrarea de licență: am două grupe de studenți, una folosește o aplicație de organizare a timpului, cealaltă nu. Am măsurat orele de studiu pe săptămână. Ce test statistic folosesc ca să compar grupele?
+  assistant: |
+    Pentru comparația dintre două grupuri independente (cu aplicație vs. fără aplicație), testul standard este **testul t pentru eșantioane independente** (testul t Student).
+
+    ## Pașii recomandați
+
+    **1. Verifică precondițiile:**
+    - **Normalitatea distribuției** în fiecare grup → testul Shapiro-Wilk (sau vizual, histogramă/Q-Q plot)
+    - **Omogenitatea varianțelor** → testul Levene
+
+    **2. Alege testul în funcție de rezultate:**
+    - Dacă datele sunt aproximativ normale → **testul t pentru eșantioane independente** (folosește varianta Welch dacă varianțele nu sunt egale)
+    - Dacă datele nu sunt normale sau ai eșantioane foarte mici → **testul U Mann-Whitney** (alternativa neparametrică)
+
+    **3. Raportează și mărimea efectului**, nu doar p-ul:
+    - **Cohen's d** pentru testul t (convenție: 0.2 mic, 0.5 mediu, 0.8 mare)
+
+    ## Exemplu în R
+
+    ```r
+    # Normalitate
+    shapiro.test(ore[grupa == "cu_aplicatie"])
+    shapiro.test(ore[grupa == "fara_aplicatie"])
+
+    # Omogenitatea varianțelor
+    library(car)
+    leveneTest(ore ~ grupa)
+
+    # Testul t (Welch, implicit în R)
+    t.test(ore ~ grupa)
+
+    # Mărimea efectului
+    library(effectsize)
+    cohens_d(ore ~ grupa)
+    ```
+
+    ## Exemplu în Python
+
+    ```python
+    from scipy import stats
+
+    t_stat, p_value = stats.ttest_ind(grupa_cu_aplicatie, grupa_fara, equal_var=False)
+    ```
+
+    Un detaliu util pentru licență: dacă ai măsurat orele de studiu **înainte și după** introducerea aplicației în aceiași studenți, atunci nu mai e testul t independent, ci **testul t pentru eșantioane pereche** (sau Wilcoxon signed-rank ca alternativă neparametrică). Spune-mi cum ai colectat datele și te ajut să alegi varianta corectă.
+- user: |
+    Grupul de control: n = 32, media 11.4 ore, abaterea standard 3.1. Grupul cu aplicația: n = 35, media 13.2 ore, abaterea standard 3.6. Calculează-mi testul t pas cu pas.
+  assistant: |
+    Sigur! Hai să calculăm pas cu pas. Voi folosi testul t Student cu varianțe reunite (pooled), iar la final îți arăt și varianta Welch.
+
+    ## Pasul 0: Datele
+
+    | | Grup control | Grup cu aplicație |
+    |---|---|---|
+    | n | 32 | 35 |
+    | Media (M) | 11.4 | 13.2 |
+    | SD | 3.1 | 3.6 |
+
+    ## Pasul 1: Varianța reunită (pooled variance)
+
+    $$s_p^2 = \frac{(n_1-1)s_1^2 + (n_2-1)s_2^2}{n_1 + n_2 - 2} = \frac{31 \cdot 3.1^2 + 34 \cdot 3.6^2}{65}$$
+
+    $$s_p^2 = \frac{31 \cdot 9.61 + 34 \cdot 12.96}{65} = \frac{297.91 + 440.64}{65} = \frac{738.55}{65} = 11.36$$
+
+    Deci $s_p = \sqrt{11.36} = 3.37$
+
+    ## Pasul 2: Eroarea standard a diferenței
+
+    $$SE = s_p \sqrt{\frac{1}{n_1} + \frac{1}{n_2}} = 3.37 \cdot \sqrt{\frac{1}{32} + \frac{1}{35}} = 3.37 \cdot \sqrt{0.0598} = 3.37 \cdot 0.2446 = 0.824$$
+
+    ## Pasul 3: Statistica t
+
+    $$t = \frac{M_2 - M_1}{SE} = \frac{13.2 - 11.4}{0.824} = \frac{1.8}{0.824} = 2.18$$
+
+    ## Pasul 4: Gradele de libertate
+
+    $$df = n_1 + n_2 - 2 = 32 + 35 - 2 = 65$$
+
+    ## Pasul 5: Valoarea p
+
+    Pentru t = 2.18 cu df = 65 (test bilateral): **p ≈ 0.033**
+
+    Deoarece p = 0.033 < 0.05, diferența este **statistic semnificativă**.
+
+    ## Pasul 6: Mărimea efectului (Cohen's d)
+
+    $$d = \frac{M_2 - M_1}{s_p} = \frac{1.8}{3.37} = 0.53$$
+
+    Un efect **mediu** — studenții cu aplicația studiază cu ~1.8 ore mai mult pe săptămână.
+
+    ## Verificare cu varianta Welch (mai sigură, recomandată implicit)
+
+    $$SE = \sqrt{\frac{3.1^2}{32} + \frac{3.6^2}{35}} = \sqrt{0.300 + 0.370} = 0.819$$
+
+    $$t = \frac{1.8}{0.819} = 2.20, \quad df \approx 64.8, \quad p \approx 0.031$$
+
+    Concluzia rămâne aceeași. ✅
+
+    ## Cum raportezi în licență
+
+    > „Studenții care au folosit aplicația de organizare a timpului au raportat mai multe ore de studiu pe săptămână (M = 13.2, SD = 3.6) decât grupul de control (M = 11.4, SD = 3.1), t(65) = 2.18, p = .033, d = 0.53."
+
+    Vrei să-ți arăt și codul în R/Python care reproduce aceste calcule, sau cum să faci verificarea normalității înainte de test?
+- user: |
+    Ce înseamnă p-ul ăsta în cuvinte, pentru concluzie?
+  assistant: |
+    Foarte bună întrebare — p-ul e cel mai des interpretat greșit concept din statistica aplicată, deci merită clarificat înainte să-l pui în concluzie.
+
+    ## Ce spune p = 0.033 în cuvinte
+
+    > **Dacă aplicația nu ar avea niciun efect** (adică dacă diferența reală dintre grupe ar fi zero), **probabilitatea de a obține o diferență de cel puțin 1.8 ore între medii, doar din întâmplare, ar fi de 3.3%.**
+
+    Cu alte cuvinte: diferența observată e destul de mare încât să fie **puțin probabil să fie doar noroc** — e sub pragul convențional de 5%.
+
+    ## Ce NU înseamnă p-ul (greșeli frecvente în licențe)
+
+    - ❌ „Există o probabilitate de 96.7% că aplicația funcționează" — nu, p-ul nu e probabilitatea ca ipoteza să fie adevărată
+    - ❌ „Aplicația cauzează creșterea orelor de studiu" — p-ul nu spune nimic despre cauzalitate; asta depinde de designul studiului (randomizare etc.)
+    - ❌ „Diferența e importantă practic" — pentru asta ai Cohen's d (0.53, efect mediu), nu p-ul
+
+    ## Cum ar suna în concluzia licenței
+
+    > „Diferența dintre grupe este statistic semnificativă (p = .033 < .05), ceea ce indică faptul că diferența observată de 1.8 ore pe săptămână este puțin probabil să fie rezultatul întâmplării. Având în vedere mărimea efectului medie (d = 0.53), rezultatele sugerează că utilizarea aplicației de organizare a timpului este asociată cu o creștere moderată a orelor de studiu."
+
+    Observă formularea prudentă — „asociată cu", nu „cauzează" — mai ales dacă nu ai randomizat studenții în grupe. Dacă repartizarea a fost aleatorie, poți fi mai ferm și folosi limbaj cauzal.
+
+    Un ultim detaliu util: p = 0.033 e semnificativ, dar nu „foarte" semnificativ (nu e sub 0.01), deci în discuție merită să menționezi că rezultatul e convingător, dar ar merita replicat pe un eșantion mai mare.
+- user: |
+    Coordonatorul zice să folosesc testul Welch, nu testul t clasic. De ce? Refă calculul cu Welch.
+  assistant: |
+    Coordonatorul are dreptate — și e o cerință foarte actuală. Iată de ce, apoi calculul refăcut.
+
+    ## De ce Welch în loc de testul t clasic?
+
+    **1. Varianțele grupelor tale nu sunt egale.** Grupul cu aplicația are SD = 3.6, cel de control SD = 3.1. Testul t clasic (pooled) presupune varianțe egale; când această presupunere e încălcată, testul clasic dă valori p distorsionate.
+
+    **2. Grupele tale au dimensiuni diferite** (32 vs. 35). Combinația „varianțe inegale + n inegale" e exact situația în care testul clasic greșește cel mai mult.
+
+    **3. Cercetările recente recomandă Welch ca implicit.** Studii de simulare (Delacre, Lakens & Leys, 2017 — un articol frecvent citat, poți să-l referențiezi în licență) arată că Welch funcționează aproape la fel de bine ca testul clasic când varianțele **sunt** egale, și mult mai bine când **nu sunt**. De aceea R, de exemplu, folosește Welch ca opțiune implicită în `t.test()`.
+
+    Pe scurt: Welch e alegerea sigură care nu-ți costă nimic.
+
+    ## Calculul Welch, pas cu pas
+
+    **Pasul 1: Eroarea standard** (fără varianță reunită — fiecare grup contribuie cu propria varianță)
+
+    $$SE = \sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}} = \sqrt{\frac{3.1^2}{32} + \frac{3.6^2}{35}} = \sqrt{0.3003 + 0.3703} = \sqrt{0.6706} = 0.819$$
+
+    **Pasul 2: Statistica t**
+
+    $$t = \frac{13.2 - 11.4}{0.819} = \frac{1.8}{0.819} = 2.20$$
+
+    **Pasul 3: Gradele de libertate (formula Welch–Satterthwaite)**
+
+    $$df = \frac{\left(\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}\right)^2}{\frac{(s_1^2/n_1)^2}{n_1-1} + \frac{(s_2^2/n_2)^2}{n_2-1}} = \frac{0.6706^2}{\frac{0.3003^2}{31} + \frac{0.3703^2}{34}} = \frac{0.4497}{0.00291 + 0.00403} = \frac{0.4497}{0.00694} = 64.8$$
+
+    Observă: df nu mai e număr întreg (64.8, nu 65) — asta e normal la Welch.
+
+    **Pasul 4: Valoarea p**
+
+    Pentru t = 2.20 cu df = 64.8 (test bilateral): **p ≈ 0.031**
+
+    **Pasul 5: Mărimea efectului** — neschimbată, Cohen's d se calculează tot cu SD reunit:
+
+    $$d = \frac{1.8}{3.37} = 0.53$$
+
+    ## Comparație
+
+    | | Test clasic | Welch |
+    |---|---|---|
+    | t | 2.18 | 2.20 |
+    | df | 65 | 64.8 |
+    | p | 0.033 | 0.031 |
+
+    Rezultatele sunt aproape identice pentru că varianțele și n-urile tale nu diferă foarte mult — dar Welch e metodologic mai corect.
+
+    ## Raportarea în licență
+
+    > „Studenții care au folosit aplicația au raportat mai multe ore de studiu pe săptămână (M = 13.2, SD = 3.6) decât grupul de control (M = 11.4, SD = 3.1); testul t Welch, t(64.8) = 2.20, p = .031, d = 0.53."
+
+    Vrei și codul în R sau Python care face testul Welch direct, ca să-l poți pune în anexa metodologică?
+- user: |
+    Cum calculez intervalul de încredere de 95% pentru diferența mediilor?
+  assistant: |
+    Excelentă idee — intervalul de încredere e o completare valoroasă la testul t și coordonatorii apreciază din ce în ce mai mult raportarea lui. Hai să-l calculăm pas cu pas, continuând cu valorile Welch.
+
+    ## Formula
+
+    $$IC_{95\%} = (M_2 - M_1) \pm t_{crit} \cdot SE$$
+
+    unde SE este aceeași eroare standard Welch de la testul t.
+
+    ## Pasul 1: Diferența mediilor
+
+    $$M_2 - M_1 = 13.2 - 11.4 = 1.8 \text{ ore}$$
+
+    ## Pasul 2: Eroarea standard (deja calculată la Welch)
+
+    $$SE = \sqrt{\frac{3.1^2}{32} + \frac{3.6^2}{35}} = 0.819$$
+
+    ## Pasul 3: Valoarea critică t
+
+    Pentru un interval de 95% cu df = 64.8 (rotunjit, 65):
+
+    $$t_{crit} \approx 2.00$$
+
+    (Găsești valoarea în tabelul t la df = 65, α = 0.05 bilateral, sau în software cu `qt(0.975, df = 64.8)`.)
+
+    ## Pasul 4: Marja de eroare
+
+    $$ME = 2.00 \cdot 0.819 = 1.64$$
+
+    ## Pasul 5: Intervalul
+
+    $$IC_{95\%} = 1.8 \pm 1.64 = [0.16, \ 3.44]$$
+
+    ## Interpretare în cuvinte
+
+    > **„Suntem încrezători în proporție de 95% că diferența reală dintre medii se află între 0.16 și 3.44 ore pe săptămână, în favoarea grupului cu aplicația."**
+
+    Detalii importante pentru concluzie:
+
+    - **Intervalul nu conține 0** → consistent cu rezultatul semnificativ al testului (p = .031). Cele două metode spun același lucru, dar din unghiuri diferite.
+    - **Limita inferioară e foarte aproape de 0** (0.16 ore ≈ 10 minute pe săptămână) → asta confirmă observația de mai devreme: efectul e real, dar plauzibil și de dimensiune mică în cel mai pesimist scenariu. Merită menționat în discuție.
+    - Intervalul îți dă **o plajă de valori plauzibile**, nu doar un verdict da/nu — exact de asta e mai informativ decât p-ul singur.
+
+    ## Raportarea în licență
+
+    > „Testul t Welch a indicat o diferență semnificativă între grupe, t(64.8) = 2.20, p = .031, d = 0.53, IC 95% [0.16, 3.44]."
+
+    ## Verificare în software
+
+    ```r
+    t.test(ore ~ grupa)   # afișează automat IC 95% în output
+    ```
+
+    ```python
+    from scipy import stats
+    res = stats.ttest_ind(cu_aplicatie, control, equal_var=False)
+    ci = res.confidence_interval(0.95)   # scipy >= 1.10
+    ```
+
+    Un sfat pentru apărare: dacă te întreabă „de ce 95%?", răspunsul e că e convenția dominantă în domeniul tău — dar poți menționa că un interval de 90% ar fi fost mai îngust, iar unul de 99% mai larg, alegerea reflectând nivelul de risc pe care ți-l asumi. Vrei să-ți arăt și cum să reprezinți grafic intervalul (error bars) pentru partea de rezultate?
+- user: |
+    Și mărimea efectului? Calculează Cohen's d.
+  assistant: |
+    Cu plăcere — mărimea efectului e probabil cel mai valoros număr din analiza ta, pentru că nu depinde de dimensiunea eșantionului (spre deosebire de p). Hai să-l calculăm riguros.
+
+    ## Pasul 1: SD reunit (pooled SD)
+
+    Cohen's d se calculează cu abaterea standard reunită a celor două grupe (aceeași de la testul t clasic):
+
+    $$s_p = \sqrt{\frac{(n_1-1)s_1^2 + (n_2-1)s_2^2}{n_1+n_2-2}} = \sqrt{\frac{31 \cdot 9.61 + 34 \cdot 12.96}{65}} = \sqrt{11.36} = 3.37$$
+
+    ## Pasul 2: Formula lui Cohen
+
+    $$d = \frac{M_2 - M_1}{s_p} = \frac{13.2 - 11.4}{3.37} = \frac{1.8}{3.37} = 0.53$$
+
+    ## Pasul 3: Interpretare
+
+    Convențiile lui Cohen (1988):
+
+    | d | Mărimea efectului |
+    |---|---|
+    | 0.2 | mic |
+    | 0.5 | mediu |
+    | 0.8 | mare |
+
+    **d = 0.53 → efect mediu.** Interpretare practică: diferența de 1.8 ore reprezintă cam jumătate de abatere standard — un student „tipic" din grupul cu aplicația studiază mai mult decât aproximativ **70%** dintre studenții din grupul de control.
+
+    ## Pasul 4 (bonus): Corecția Hedges' g
+
+    Pentru eșantioane mici (< 50), d tinde să supraestimeze ușor efectul. Corecția lui Hedges:
+
+    $$g = d \cdot \left(1 - \frac{3}{4(n_1+n_2)-9}\right) = 0.53 \cdot \left(1 - \frac{3}{251}\right) = 0.53 \cdot 0.988 = 0.52$$
+
+    Practic identic (0.52 vs. 0.53), dar menționarea lui arată rigoare — poți raporta ambele sau doar pe g.
+
+    ## Pasul 5 (bonus): IC 95% pentru d
+
+    $$SE_d \approx \sqrt{\frac{n_1+n_2}{n_1 n_2} + \frac{d^2}{2(n_1+n_2)}} = \sqrt{\frac{67}{1120} + \frac{0.28}{134}} = \sqrt{0.0598 + 0.0021} = 0.249$$
+
+    $$IC_{95\%} = 0.53 \pm 1.96 \cdot 0.249 = [0.04, \ 1.02]$$
+
+    Observă: limita inferioară e aproape de 0 — la fel ca la IC-ul diferenței mediilor. Efectul e mediu în estimarea punctuală, dar datele tale sunt compatibile și cu un efect foarte mic. Asta e o observație excelentă pentru secțiunea de discuție (limitări → eșantion mai mare în cercetări viitoare).
+
+    ## Raportarea în licență
+
+    > „Mărimea efectului a fost medie, Cohen's d = 0.53 (Hedges' g = 0.52), IC 95% [0.04, 1.02], indicând o diferență substanțială între grupe, dar cu incertitudine considerabilă dată de dimensiunea eșantionului."
+
+    ## Verificare în software
+
+    ```r
+    library(effectsize)
+    cohens_d(ore ~ grupa)          # d cu IC 95% automat
+    hedges_g(ore ~ grupa)          # varianta corectată
+    ```
+
+    ```python
+    from scipy import stats
+    res = stats.ttest_ind(cu_aplicatie, control, equal_var=False)
+    d = (13.2 - 11.4) / 3.37   # sau calculezi sp din datele brute
+    ```
+
+    Cu asta ai setul complet pentru capitolul de rezultate: t Welch, p, IC pentru diferență, d și IC pentru d. Vrei să-ți ajut să structurezi secțiunea „Rezultate" — cum să ordonezi aceste raportări și ce tabel să incluzi?
+- user: |
+    Cum interpretez un d de mărimea asta? E mult sau puțin?
+  assistant: |
+    Foarte bună întrebare — și exact cea pe care ți-o vor pune la apărare. Răspunsul sincer: **0.53 e „mediu" după convenții, dar adevărata interpretare depinde de context.** Iată cum să gândești asta pe straturi.
+
+    ## 1. Interpretarea convențională (Cohen, 1988)
+
+    | d | Convenție |
+    |---|---|
+    | 0.2 | mic |
+    | 0.5 | mediu |
+    | 0.8 | mare |
+
+    d = 0.53 → **efect mediu**. Dar atenție: Cohen însuși a spus că aceste praguri sunt arbitrare, gândite pentru psihologia aplicată în general, nu ca legi. Nu te opri aici în licență.
+
+    ## 2. Ce înseamnă 0.53 în termeni concreți (mai convingător)
+
+    **a) Suprapunerea distribuțiilor.** Două distribuții cu d = 0.53 se suprapun în proporție de ~**67%**. Deci grupele diferă vizibil, dar un student dintr-o grupă poate arăta la fel ca unul din cealaltă — efectul nu e „evident cu ochiul liber".
+
+    **b) Probabilitatea de superioritate (CLES).** Dacă alegi la întâmplare câte un student din fiecare grupă, există o probabilitate de **~65%** ca cel cu aplicația să studieze mai mult. (La d = 0, probabilitatea ar fi 50% — aruncarea cu banul.)
+
+    **c) Indexul U₃.** Un student „mediu" din grupul cu aplicația studiază mai mult decât **~70%** din grupul de control.
+
+    Aceste trei traduceri sunt excelente pentru apărare, pentru că transformă un număr abstract în ceva pe care oricine îl înțelege.
+
+    ## 3. Contextul practic — cel mai important criteriu
+
+    Întoarce-te la ce măsori: **1.8 ore pe săptămână**. Întreabă-te:
+
+    - E mult în raport cu media grupului de control (11.4 ore)? E o creștere de **~16%** — substanțială.
+    - Are semnificație practică? 1.8 ore/săptămână ≈ **2 ore și jumătate de studiu în plus la două săptămâni** — pe un semestru, asta înseamnă zeci de ore în plus. Pentru un student, e o diferență care contează.
+    - Care e „costul"? Dacă aplicația e gratuită și ușor de folosit, un efect mediu cu cost aproape zero e un rezultat **foarte bun**. Același d = 0.53 pentru un intervenție scumpă sau invazivă ar fi mai puțin impresionant.
+
+    ## 4. Puncte de referină din literatură
+
+    Pentru a argumenta că 0.53 e respectabil, compară cu domeniu:
+
+    - În **cercetarea educațională**, intervențiile au de obicei efecte mici: meta-analize mari (de ex. Hattie, 2009) arată că efectul mediu al intervențiilor educaționale e în jur de **d = 0.4**. Intervenția ta e peste această medie.
+    - În **psihologia socială**, efectul mediu al studiilor publicate e ~d = 0.4; în **medicină**, multe tratamente aprobate au efecte mai mici.
+
+    ## 5. Nu uita incertitudinea
+
+    IC-ul tău pentru d e [0.04, 1.02] — larg. Deci cel mai onest răspuns la „e mult sau puțin?" este:
+
+    > „Estimarea noastră punctuală e un efect mediu (d = 0.53), peste media intervențiilor educaționale, dar datele sunt compatibile și cu un efect foarte mic. Cu eșantion mai mare, intervalul s-ar îngusta și am putea fi mai categorici."
+
+    ## Formulare recomandată pentru discuție
+
+    > „Mărimea efectului (d = 0.53) corespunde unei diferențe medii după convențiile lui Cohen și depășește efectul mediu raportat în meta-analizele din domeniul educațional (~0.4). În termeni practici, aceasta înseamnă o creștere de aproximativ 16% a orelor de studiu săptămânale și o probabilitate de 65% ca un student utilizator al aplicației să studieze mai mult decât un student ales aleator din grupul de control. Totuși, intervalul de încredere larg al estimării recomandă prudență și replicare."
+
+    Vrei să-ți arăt cum să calculezi rapid CLES, U₃ și suprapunerea în R (pachetul `effectsize` le are gata făcute)?
+- user: |
+    Vreau să verific și normalitatea datelor. Ce test folosesc?
+  assistant: |
+    Pentru dimensiunile grupelor tale (n = 32 și n = 35), testul recomandat este **Shapiro-Wilk** — e cel mai puternic test de normalitate pentru eșantioane mici și medii (funcționează bine până la n ≈ 2000).
+
+    ## Testul Shapiro-Wilk
+
+    **Ipotezele:**
+    - H₀: datele provin dintr-o distribuție normală
+    - H₁: datele NU provin dintr-o distribuție normală
+
+    **Regula de decizie:** dacă **p > 0.05**, nu respingi H₀ → poți presupune normalitatea (bine ✅). Dacă **p < 0.05**, datele deviază semnificativ de la normalitate.
+
+    ⚠️ Atenție la direcție — e invers față de testul t: aici **îți dorești un p mare**.
+
+    ## Cod în R
+
+    ```r
+    # Per grup
+    shapiro.test(ore[grupa == "control"])
+    shapiro.test(ore[grupa == "cu_aplicatie"])
+
+    # Vizual — obligatoriu de raportat
+    qqnorm(ore[grupa == "control"]); qqline(ore[grupa == "control"])
+    qqnorm(ore[grupa == "cu_aplicatie"]); qqline(ore[grupa == "cu_aplicatie"])
+    ```
+
+    ## Cod în Python
+
+    ```python
+    from scipy import stats
+
+    stats.shapiro(ore_control)      # (W, p)
+    stats.shapiro(ore_aplicatie)
+    ```
+
+    ## Cum raportezi în licență
+
+    > „Normalitatea distribuției orelor de studiu a fost verificată cu testul Shapiro-Wilk, atât în grupul de control (W = ..., p = ...), cât și în grupul cu aplicația (W = ..., p = ...). Deoarece ambele valori p au depășit pragul de 0.05, ipoteza normalității nu a fost respinsă, justificând utilizarea testului t Welch."
+
+    ## Trei sfaturi importante
+
+    **1. Nu te baza doar pe test — folosește și grafice.** Testele Shapiro-Wilk sunt sensibile la n: la eșantioane mici (ca al tău) pot să nu detecteze deviații reale, iar la eșantioane mari semnalează deviații minore, fără importanță practică. De aceea buna practică e **test + Q-Q plot + asimetrie/curtosis**. La Q-Q plot, punctele ar trebui să stea aproximativ pe linia diagonală.
+
+    **2. Verifică și asimetria (skewness) și curtosisul.** Valori în intervalul ±1 (unii autori acceptă ±2) sunt considerate acceptabile pentru testul t:
+
+    ```r
+    library(psych)
+    describe(ore ~ grupa)   # coloanele skew și kurtosis
+    ```
+
+    **3. Dacă normalitatea e încălcată**, ai două opțiuni corecte:
+    - **Testul U Mann-Whitney** (alternativa neparametrică) — dar raportează-l cu mediana, nu doar medie
+    - Sau păstrezi testul t, argumentând că e **robust** la deviații moderate de la normalitate când n ≥ 30 pe grup (teorema limitei centrale + literatură clasică, de ex. Lumley et al., 2002)
+
+    Un detaliu pentru metodologie: normalitatea se verifică **pe fiecare grup separat**, nu pe totalul eșantionului — dacă le combini, poți obține o distribuție normală din două grupe cu medii diferite, ceea ce ar invalida verificarea.
+
+    Vrei să-ți arăt și cum să verifici omogenitatea varianțelor (testul Levene), ca să ai setul complet de precondiții pentru capitolul metodologic?
+- user: |
+    Pentru grupul de control, Shapiro-Wilk dă W = 0.91, p = 0.011. Pentru grupul cu aplicația, W = 0.97, p = 0.43. Ce fac acum?
+  assistant: |
+    Situația clasică: un grup trece, celălalt nu. Nu e un dezastru — ai mai multe opțiuni corecte, iată-le în ordinea recomandărilor.
+
+    ## Pasul 1: Înainte de a panica, investighează
+
+    Un W = 0.91 la control poate însemna două lucruri foarte diferite:
+
+    - **Outlieri** — unul-doi studenți cu valori extreme (de ex. 2 ore sau 25 de ore pe săptămână)
+    - **Asimetrie reală** — distribuția e înclinată sistematic
+
+    **Verifică Q-Q plot-ul și boxplot-ul pentru grupul de control:**
+
+    ```r
+    qqnorm(ore[grupa == "control"]); qqline(ore[grupa == "control"])
+    boxplot(ore ~ grupa)
+    ```
+
+    Dacă vezi 1-2 puncte izolate extreme, acestea trag W-ul în jos. Dacă punctele deviază sistematic de pe diagonală (formă de „S" sau curbă), e o abatere reală de la normalitate.
+
+    ## Pasul 2: Alege una din cele trei căi legitime
+
+    **Opțiunea A: Testul U Mann-Whitney (cea mai sigură)**
+
+    ```r
+    wilcox.test(ore ~ grupa)
+    ```
+
+    - Avantaj: nu presupune normalitate, e apărabil 100% la apărare
+    - Dezavantaj: testează diferența de **distribuții/ranguri**, nu strict de medii — raportează medianele în locul mediilor (sau pe lângă ele)
+    - Cu n = 32 și 35, puterea testului e bună
+
+    **Opțiunea B: Păstrezi testul t Welch, cu justificare de robustețe**
+
+    Argumentul: testul t e notoriu de robust la deviații moderate de la normalitate când ambele grupuri au n ≥ 30 (teorema limitei centrale; Lumley et al., 2002; Blanca et al., 2017). Shapiro-Wilk la n = 32 e sensibil și poate semnala deviații fără importanță practică pentru testul t.
+
+    - Avantaj: păstrezi media, Cohen's d și IC-ul pe care i-ai calculat deja
+    - Condiție: **trebuie** să arăți Q-Q plot-ul și să argumentezi că deviația e moderată (asimetrie în ±2, fără outlieri extremi)
+
+    **Opțiunea C: Faci ambele (cea mai solidă pentru licență)**
+
+    Raportezi Mann-Whitney ca test principal și menționezi că testul t Welch dă aceeași concluzie — sau invers. Dacă ambele teste sunt semnificative, concluzia ta e robustă la alegerea metodei, iar comisia nu are ce să-ți reproșeze.
+
+    ## Pasul 3: Ce NU să faci
+
+    - ❌ Să excluzi outlieri doar pentru că „strică" testul — exclusiv dacă ai justificare substanțială (eroare de măsurare, de ex.) și o raportezi transparent
+    - ❌ Să verifici normalitatea doar pe grupul care trece și să taci despre celălalt
+    - ❌ Transformarea datelor (log etc.) — la n-urile tale complică interpretarea fără beneficiu real; o poți menționa ca alternativă, dar nu merită
+
+    ## Cum ar arăta raportarea (Opțiunea C)
+
+    > „Testul Shapiro-Wilk a indicat o abatere de la normalitate în grupul de control (W = 0.91, p = .011), dar nu în grupul cu aplicația (W = 0.97, p = .43). Deoarece testul t este considerat robust la deviații moderate de la normalitate la dimensiuni ale eșantionului de peste 30 (Lumley et al., 2002), am raportat atât testul t Welch, t(64.8) = 2.20, p = .031, d = 0.53, IC 95% [0.16, 3.44], cât și testul neparametric U Mann-Whitney ca verificare a robusteței: U = ..., p = ... . Ambele teste indică o diferență semnificativă între grupe."
+
+    ## Un detaliu care te poate salva
+
+    Dacă Mann-Whitney dă p < 0.05 (foarte probabil, având în vedere că t a fost semnificativ), ai o poveste curată: **concluzia nu depinde de presupunerea de normalitate**. Asta e un punct forte la apărare, nu o slăbiciune — arată că ai înțeles limitele datelor tale și ai verificat concluzia prin două metode independente.
+
+    Rulează `wilcox.test(ore ~ grupa)` și spune-mi ce valori obții — te ajut să interpretezi rezultatul și să-l integrezi în secțiunea de rezultate.
+- user: |
+    Ok, fac și Mann-Whitney ca test robust. Mi-a ieșit U = 381. Cum îl raportez și ce concluzie trag?
+  assistant: |
+    Foarte bine — și vestea bună e că U = 381 confirmă rezultatul testului t. Hai să-l interpretăm și să-l raportăm corect.
+
+    ## Pasul 1: Verifică sensul rezultatului
+
+    Sub H₀, valoarea așteptată a lui U este:
+
+    $$E(U) = \frac{n_1 \cdot n_2}{2} = \frac{32 \cdot 35}{2} = 560$$
+
+    U-ul tău (381) e **sub** 560, deci grupul pentru care R a raportat U are ranguri mai mici — adică valori mai mici. Verifică în output care grupă e: aproape sigur e grupul de **control** (R raportează U pentru prima grupă în ordine alfabetică). Asta e consistent cu concluzia ta: grupul cu aplicația are valori mai mari. ✅
+
+    (U-ul complementar e 1120 − 381 = 739 pentru grupul cu aplicația.)
+
+    ## Pasul 2: Valoarea p
+
+    R ți-a dat-o în output, dar iată calculul de verificare (aproximarea normală, corectată pentru legături):
+
+    $$\sigma_U = \sqrt{\frac{n_1 n_2 (n_1+n_2+1)}{12}} = \sqrt{\frac{1120 \cdot 68}{12}} = 79.7$$
+
+    $$z = \frac{381 - 560}{79.7} = -2.25 \quad \Rightarrow \quad p \approx 0.024 \text{ (bilateral)}$$
+
+    **p = 0.024 < 0.05 → semnificativ.** ✅
+
+    ## Pasul 3: Mărimea efectului (obligatoriu la Mann-Whitney)
+
+    Pentru Mann-Whitney nu se folosește Cohen's d, ci **r = z/√N**:
+
+    $$r = \frac{2.25}{\sqrt{67}} = \frac{2.25}{8.19} = 0.27$$
+
+    Interpretare (Cohen): 0.1 mic, 0.3 mediu, 0.5 mare → **efect mediu-mic**, în linie mare cu d = 0.53 (cele două scale nu sunt identice, dar spun același lucru calitativ).
+
+    Alternativ, poți raporta corelația rank-biserial: r_rb = 1 − 2U/(n₁n₂) = 1 − 762/1120 = **0.32**.
+
+    ## Pasul 4: Raportarea în licență
+
+    > „Ca verificare a robusteței, s-a efectuat testul U Mann-Whitney, care a confirmat diferența semnificativă între grupe: U = 381, z = −2.25, p = .024, r = 0.27. Studenții din grupul cu aplicația au avut ranguri semnificativ mai ridicate decât grupul de control. Acest rezultat este concordant cu testul t Welch, indicând faptul că concluzia nu depinde de presupunerea normalității."
+
+    ## Concluzia pe care o tragi
+
+    **Ambele teste converg:** diferența de ~1.8 ore/săptămână e statistic semnificativă (p = .031 la t Welch; p = .024 la Mann-Whitney), cu o mărime a efectului medie. Pentru discuție:
+
+    > „Rezultatele indică faptul că utilizarea aplicației de organizare a timpului este asociată cu mai multe ore de studiu săptămânal, concluzie susținută atât de testul parametric, cât și de cel neparametric, ceea ce îi conferă robustețe."
+
+    ## Două detalii practice
+
+    1. **Raportează și medianele** la Mann-Whitney (testul e despre ranguri/distribuții): `median(ore[grupa == "control"])` și `median(ore[grupa == "cu_aplicatie"])` — de ex. „Mediana grupului de control a fost de X ore, față de Y ore în grupul cu aplicația."
+    2. **Verifică dacă R a dat un warning despre ties** („cannot compute exact p-value with ties"). Dacă da, e normal — p-ul e calculat prin aproximarea normală, exact ce am făcut mai sus; poți menționa asta într-o notă.
+
+    Cu asta ai analiza completă: precondiții, test principal, test de robusteță, mărimi de efect și intervale de încredere. Vrei să te ajut să asamblezi totul într-un tabel rezumat pentru secțiunea de Rezultate?
+- user: |
+    Scrie-mi paragraful de rezultate în stil APA, cu toate valorile de până acum.
+  assistant: |
+    Iată paragraful de rezultate în stil APA (ediția a 7-a), adaptat în română, cu toate valorile calculate:
+
+    ---
+
+    ## Rezultate
+
+    Statisticile descriptive au indicat că studenții din grupul cu aplicația au raportat mai multe ore de studiu săptămânal (M = 13.2, SD = 3.6) decât studenții din grupul de control (M = 11.4, SD = 3.1). Înainte de analiza principală, normalitatea distribuției a fost verificată cu testul Shapiro-Wilk, separat pentru fiecare grup. Rezultatele au indicat o abatere semnificativă de la normalitate în grupul de control (W = 0.91, p = .011), dar nu și în grupul cu aplicația (W = 0.97, p = .43). Având în vedere că testul t este considerat robust la deviații moderate de la normalitate la dimensiuni ale eșantionului de peste 30 de participanți pe grup (Lumley et al., 2002), s-a efectuat testul t pentru eșantioane independente cu corecția Welch. Analiza a indicat o diferență statistic semnificativă între grupe, t(64.8) = 2.20, p = .031, cu o diferență medie de 1.80 ore pe săptămână în favoarea grupului cu aplicația, IC 95% [0.16, 3.44]. Mărimea efectului a fost medie, Cohen's d = 0.53 (Hedges' g = 0.52), IC 95% [0.04, 1.02]. Pentru a verifica robustețea rezultatului în condițiile abaterii de la normalitate, s-a efectuat și testul neparametric U Mann-Whitney, care a confirmat diferența semnificativă între grupe, U = 381, z = −2.25, p = .024, r = 0.27. În ansamblu, rezultatele indică faptul că studenții care au utilizat aplicația de organizare a timpului au raportat semnificativ mai multe ore de studiu săptămânal decât cei din grupul de control, concluzie susținută atât de testul parametric, cât și de cel neparametric.
+
+    ---
+
+    ## Tabel rezumat (opțional, dar recomandat)
+
+    **Tabel 1**
+    *Comparația orelor de studiu săptămânal între grupe*
+
+    | Statistic | Valoare | IC 95% |
+    |---|---|---|
+    | Diferența mediilor | 1.80 | [0.16, 3.44] |
+    | t Welch (df = 64.8) | 2.20 | — |
+    | p | .031 | — |
+    | Cohen's d | 0.53 | [0.04, 1.02] |
+    | Hedges' g | 0.52 | — |
+    | U Mann-Whitney | 381 | — |
+    | r (efect MW) | 0.27 | — |
+
+    *Notă.* N = 67 (control n = 32; aplicație n = 35). Testele sunt bilaterale.
+
+    ## Câteva observații de stil APA
+
+    - **p se scrie fără zero** (.031, nu 0.031) și italic: *p*, *t*, *d*, *U*, *W*, *r*, *M*, *SD*, *N*, *n*, *df*, *IC* — în Word/LaTeX pune-le în italice
+    - **Valorile p exacte** se raportează până la trei zecimale; dacă ai p < .001, scrii „p < .001", nu „p = 0.000"
+    - **Referința pentru Lumley et al. (2002)** trebuie să apară în bibliografie: *Lumley, T., Diehr, P., Emerson, S., & Chen, L. (2002). The importance of the normality assumption in large public health data sets. Annual Review of Public Health, 23, 151–169.*
+    - Dacă folosești tabelul, valorile se pot elimina din text (APA preferă să nu dublezi informația) — poți scurta paragraful menționând doar „vezi Tabelul 1"
+
+    Vrei să-ți scriu și intrarea completă de bibliografie pentru Lumley et al. în format APA, sau paragraful de interpretare pentru secțiunea de Discuție?
+- user: |
+    Coordonatorul vrea pragul de semnificație 0.01, nu 0.05, pentru toată lucrarea. Se schimbă vreo concluzie?
+  assistant: |
+    Da, se schimbă concluzia principală — și e important să înțelegi exact cum, ca să o raportezi onest.
+
+    ## Ce se întâmplă cu valorile tale la α = 0.01
+
+    | Test | p | La α = .05 | La α = .01 |
+    |---|---|---|---|
+    | t Welch | .031 | semnificativ ✅ | **nesemnificativ** ❌ |
+    | U Mann-Whitney | .024 | semnificativ ✅ | **nesemnificativ** ❌ |
+    | Shapiro-Wilk (control) | .011 | semnificativ | **nesemnificativ** (normalitate „acceptată") |
+
+    Ambele teste principale rămân sub 0.05, dar **nu mai trec pragul de 0.01**. Concluzia se schimbă din „diferență statistic semnificativă" în „diferență nu este statistic semnificativă la pragul de 0.01".
+
+    ## Ce NU se schimbă
+
+    - **Mărimile de efect**: d = 0.53, r = 0.27 — nu depind de pragul α. Efectul mediu rămâne efect mediu.
+    - **Intervalul de încredere**: IC 95% [0.16, 3.44] nu conține 0 — și asta e o informație care rămâne valabilă și relevantă.
+    - **Diferența observată**: 1.8 ore/săptămână, în favoarea grupului cu aplicația.
+
+    ## Cum se raportează onest la α = 0.01
+
+    > „Testul t Welch a indicat o diferență de 1.80 ore pe săptămână între grupe, t(64.8) = 2.20, p = .031, IC 95% [0.16, 3.44]. Cu toate acestea, la pragul de semnificație stabilit la α = .01, diferența nu atinge semnificația statistică. Rezultatul testului U Mann-Whitney a fost concordant (U = 381, p = .024). Mărimea efectului a fost medie (d = 0.53), iar intervalul de încredere al diferenței nu a inclus valoarea zero, sugerând că efectul este probabil real, dar că dimensiunea eșantionului nu a fost suficientă pentru a-l confirma la pragul de 0.01."
+
+    Formularea din urmă e cheia: **p = .031 nu înseamnă „nu există efect"** — înseamnă „dovezile nu sunt suficient de puternice pentru standardul strict cerut". Diferența dintre „am dovedit că nu e efect" și „nu am putut dovedi că e efect" e fundamentală și merită explicată în Discuție.
+
+    ## O observație de adus în discuție cu coordonatorul
+
+    Pragul de 0.01 e neobișnuit ca implicit pentru un studiu cu **o singură comparație**. El se justifică de obicei când:
+    - faci **multe teste** (corecții de tip Bonferroni),
+    - lucrezi în domenii cu consecințe costisitoare ale erorilor de tip I (medicină, fizică de particule),
+    - sau vrei să fii explicit conservator.
+
+    Dacă coordonatorul are un motiv (de ex. v-ați gândit la corecția pentru teste multiple), perfect — menționează-l în Metodologie. Dacă nu, merită să întrebi politesc care e raționamentul, pentru că la apărare comisia te va întreba de ce 0.01. Dacă pragul rămâne 0.01, o consecință secundară în favoarea ta: Shapiro-Wilk pentru grupul de control (p = .011) nu mai semnalează abatere de la normalitate, deci precondițiile testului t devin formal îndeplinite — povestea metodologică se simplifică.
+
+    ## Consecință practică: puterea testului
+
+    Cu d = 0.53 și α = 0.01, pentru putere de 80% ai avea nevoie de **~105 participanți pe grup**, față de ~55 la α = 0.05. Eșantionul tău (32-35 pe grup) e subdimensionat pentru pragul strict — asta e o limitare onestă de menționat și un argument excelent pentru secțiunea „Direcții viitoare": replicare cu eșantion mai mare.
+
+    Vrei să-ți rescriu paragraful de Rezultate complet, adaptat la pragul de 0.01, ca să-l ai gata pentru lucrare?
+- user: |
+    Am și date înainte/după pentru grupul cu aplicația: aceiași 35 de studenți, media înainte 10.9 ore, după 13.2 ore, abaterea standard a diferențelor 2.8. Ce test folosesc și cât iese?
+  assistant: |
+    Acum ai o întrebare de cercetare diferită: **schimbarea în timp în cadrul aceluiași grup**. Pentru date pereche (aceiași studenți măsurați de două ori) folosești **testul t pentru eșantioane pereche** (paired t-test).
+
+    ## Pasul 1: Diferențele individuale
+
+    Pentru fiecare student calculezi dᵢ = după − înainte. Media diferențelor:
+
+    $$\bar{d} = 13.2 - 10.9 = 2.3 \text{ ore}$$
+
+    ## Pasul 2: Eroarea standard a diferențelor
+
+    $$SE = \frac{s_d}{\sqrt{n}} = \frac{2.8}{\sqrt{35}} = \frac{2.8}{5.916} = 0.473$$
+
+    ## Pasul 3: Statistica t
+
+    $$t = \frac{\bar{d}}{SE} = \frac{2.3}{0.473} = 4.86$$
+
+    ## Pasul 4: Gradele de libertate și valoarea p
+
+    $$df = n - 1 = 34$$
+
+    Pentru t = 4.86 cu df = 34: **p < .001** (exact ≈ 0.00003).
+
+    **Semnificativ chiar și la pragul strict de 0.01 al coordonatorului** ✅ — aici nu mai ai problema de la comparația între grupe.
+
+    ## Pasul 5: IC 95% pentru diferență
+
+    $$t_{crit}(34) \approx 2.032, \quad ME = 2.032 \cdot 0.473 = 0.96$$
+
+    $$IC_{95\%} = 2.3 \pm 0.96 = [1.34, \ 3.26]$$
+
+    ## Pasul 6: Mărimea efectului
+
+    Pentru teste pereche se folosește **d_z** (cu SD-ul diferențelor):
+
+    $$d_z = \frac{\bar{d}}{s_d} = \frac{2.3}{2.8} = 0.82$$
+
+    → **efect mare** (pragul pentru „mare" e 0.8). Alternativ, d_av (împărțit la SD-ul mediu al celor două măsurători) ar fi ceva mai mic, dar d_z e raportarea standard.
+
+    ## Verificarea normalității
+
+    Aplici Shapiro-Wilk pe **diferențe**, nu pe cele două măsurători:
+
+    ```r
+    diff <- dupa - inainte
+    shapiro.test(diff)
+    t.test(dupa, inainte, paired = TRUE)
+    ```
+
+    Dacă diferențele nu sunt normale, alternativa neparametrică e **testul Wilcoxon signed-rank** (`wilcox.test(dupa, inainte, paired = TRUE)`) — la fel ca strategia de robustețe de mai devreme.
+
+    ## Raportare APA
+
+    > „În grupul cu aplicația, orele de studiu săptămânal au crescut semnificativ de la prima la a doua măsurătoare, t(34) = 4.86, p < .001, d_z = 0.82, IC 95% [1.34, 3.26], cu o creștere medie de 2.30 ore."
+
+    ## ⚠️ Un avertisment metodologic esențial pentru Discuție
+
+    Cele două analize răspund la **întrebări diferite** și nu trebuie confundate:
+
+    1. **Testul pereche** arată că grupul cu aplicația a crescut în timp. Dar fără grup de control măsurat de două ori, **nu poți atribui creșterea aplicației** — ar putea fi efectul de testare (studienții știu că sunt observați), maturarea (apropierea de sesiune), sau alte factori de timp.
+    2. **Comparația între grupe** (t Welch) rămâne singura care controlează parțial pentru acești factori — și ea nu a trecut pragul de 0.01.
+
+    Formularea onestă:
+
+    > „Deși creșterea în cadrul grupului cu aplicația a fost semnificativă la pragul de 0.01, absența unei măsurători post-intervenție pentru grupul de control limitează posibilitatea atribuirii cauzale a acestei creșteri aplicației."
+
+    Dacă ai și datele „înainte" pentru grupul de control, ai putea face o analiză mult mai puternică (ANOVA mixtă sau compararea schimbărilor între grupe — testul t pe diferențe între grupe). Ai și acele date?
+- user: |
+    Care e diferența dintre testul de la început și ăsta? Explică-mi simplu, ca să pot răspunde la susținere.
+  assistant: |
+    Excelent că te pregătești pentru asta — e o întrebare aproape sigură la susținere. Iată explicația simplă, apoi varianta „de repetat" pentru apărare.
+
+    ## Explicația simplă
+
+    **Totul depinde de CINE e măsurat.**
+
+    **Testul 1 — grupe diferite de oameni (independent):**
+    Compari **32 de studenți** cu **alți 35 de studenți**. Nicio persoană nu apare în ambele grupe. Fiecare student contribuie cu o singură valoare.
+
+    > Întrebarea: „Studenții cu aplicația studiază mai mult decât studenții fără aplicație?"
+
+    **Testul 2 — aceiași oameni, de două ori (pereche):**
+    Compari **aceiași 35 de studenți** înainte și după. Fiecare student contribuie cu **două** valori, iar tu analizezi de fapt **diferența** fiecăruia (după − înainte).
+
+    > Întrebarea: „Grupul cu aplicația a crescut în timp?"
+
+    ## De ce contează asta la calcul?
+
+    Pentru că în testul pereche cele două măsurători ale aceluiași student **nu sunt independente** — studentul care studia mult înainte studiază probabil mult și după. Testul pereche **exploatează** această legătură: lucrează pe diferențele individuale, care elimină variația dintre persoane. De aceea:
+
+    - Eroarea standard e mai mică (0.473 vs. 0.819)
+    - Testul pereche e **mai puternic** — de aceea el a ieșit semnificativ la p < .001, în timp ce comparația între grupe a ieșit doar p = .031, deși diferențele medii sunt aproape la fel (2.3 vs. 1.8 ore)
+
+    **Analogie utilă pentru apărare:** compararea greutății înainte/după o dietă la **aceiași** oameni e mai precisă decât compararea unor oameni care țin dietă cu alții care nu țin — pentru că fiecare persoană e propriul ei punct de referință.
+
+    ## Tabel de memorat
+
+    | | Test t independent | Test t pereche |
+    |---|---|---|
+    | Cine | Grupe diferite | Aceiași oameni, de 2 ori |
+    | Ce compară | Media grupei 1 vs. media grupei 2 | Diferențele individuale față de 0 |
+    | df | n₁ + n₂ − 2 = 64.8 (Welch) | n − 1 = 34 |
+    | Ipoteza cheie | Observații independente între grupe | Diferențele normal distribuite |
+    | Alternativa neparametrică | U Mann-Whitney | Wilcoxon signed-rank |
+
+    ## Răspunsul „de repetat" pentru susținere
+
+    > „Primul test compară două grupe de studenți **diferiți** — cei cu aplicația și cei fără — și verifică dacă mediile lor diferă. Al doilea test compară **aceiași studenți** înainte și după intervenție și verifică dacă media diferențelor individuale diferă de zero. Alegerea depinde de designul studiului: date independente vs. date pereche. Testul pereche e mai puternic statistic, pentru că fiecare participant își servește drept control propriu, eliminând variația dintre persoane."
+
+    ## Bonus: întrebarea-capcană probabilă
+
+    Dacă comisia te întreabă **„de ce testul pereche a ieșit mai semnificativ dacă diferențele sunt asemănătoare?"**, răspunsul e: pentru că în designul pereche sursa principală de zgomot — diferențele dintre studenți (unii studiază 5 ore, alții 20) — este eliminată din start. În comparația între grupe, acest zgomot rămâne în calcul și diluează diferența.
+
+    Și o precizare care arată maturitate metodologică: dacă menționezi că testul pereche, deși mai puternic, **nu poate singur dovedi cauzalitatea** (ai nevoie de grup de control măsurat de două ori), ești cu un pas în fața întrebărilor comisiei. Vrei să exersăm și alte întrebări probabile de la comisie pe baza analizei tale?
+- user: |
+    Pentru metodologie: câți participanți mi-ar fi trebuit pe grupă ca să detectez un efect d = 0.5 cu putere 0.8?
+  assistant: |
+    Întrebare excelentă pentru Metodologie — analiza de putere (a priori) e din ce în ce mai cerută în lucrări. Hai să calculăm, cu ambele praguri, pentru că ai α = 0.01 în lucrare.
+
+    ## Formula
+
+    Pentru testul t cu eșantioane independente, n pe grupă:
+
+    $$n \approx \frac{2(z_{1-\alpha/2} + z_{1-\beta})^2}{d^2}$$
+
+    unde β = 1 − putere.
+
+    ## Cazul 1: α = 0.05, putere = 0.80, d = 0.5 (test bilateral)
+
+    - z₀.₉₇₅ = 1.96
+    - z₀.₈₀ = 0.84
+
+    $$n = \frac{2 \cdot (1.96 + 0.84)^2}{0.5^2} = \frac{2 \cdot 7.84}{0.25} = 62.7 \approx 63$$
+
+    Cu corecția pentru testul t exact (nu aproximarea normală): **n ≈ 64 pe grupă**, deci **~128 participanți în total**.
+
+    ## Cazul 2: α = 0.01 (pragul coordonatorului), putere = 0.80, d = 0.5
+
+    - z₀.₉₉₅ = 2.576
+
+    $$n = \frac{2 \cdot (2.576 + 0.84)^2}{0.25} = \frac{2 \cdot 11.67}{0.25} = 93.4$$
+
+    Cu corecția: **n ≈ 86–90 pe grupă**, deci **~180 participanți în total**.
+
+    ## Verificare în R (metoda exactă, recomandată)
+
+    ```r
+    library(pwr)
+
+    # α = 0.05
+    pwr.t.test(d = 0.5, sig.level = 0.05, power = 0.80,
+               type = "two.sample", alternative = "two.sided")
+    # n = 63.77 -> 64 pe grupă
+
+    # α = 0.01
+    pwr.t.test(d = 0.5, sig.level = 0.01, power = 0.80,
+               type = "two.sample", alternative = "two.sided")
+    # n = 86.6 -> 87 pe grupă
+    ```
+
+    În Python:
+
+    ```python
+    from statsmodels.stats.power import TTestIndPower
+    analysis = TTestIndPower()
+    n = analysis.solve_power(effect_size=0.5, alpha=0.01, power=0.80)
+    # ≈ 86.6
+    ```
+
+    ## Ce înseamnă asta pentru lucrarea ta
+
+    | Prag | n necesar/grupă | Ai tu | Verdict |
+    |---|---|---|---|
+    | α = .05 | 64 | 32–35 | subdimensionat (~jumătate) |
+    | α = .01 | 87 | 32–35 | subdimensionat (~40%) |
+
+    **Consecința directă:** cu n = 32–35 pe grupă și α = 0.01, puterea ta de a detecta un efect mediu (d = 0.5) e de doar **~35–40%**. Adică: chiar dacă aplicația are un efect mediu real, ai avea sub 40% șanse să-l confirmi la acest prag. Asta explică de ce p = .031 nu a trecut de 0.01 — nu pentru că efectul lipsește, ci pentru că studiul nu avea puterea necesară.
+
+    ## Cum o raportezi în Metodologie
+
+    > „Analiza de putere a priori (G*Power / pwr, R) a indicat că, pentru a detecta un efect mediu (d = 0.5) cu o putere de 0.80 la pragul de semnificație α = .01, ar fi fost necesari aproximativ 87 de participanți pe grupă. Dimensiunea eșantionului actual (n = 32–35 pe grupă) oferă putere suboptimă, ceea ce constituie o limitare a studiului și justifică replicarea pe un eșantion mai mare."
+
+    ## Două nuanțe pentru apărare
+
+    1. **De ce d = 0.5?** Trebuie să justifici mărimea efectului anticipată — de obicei din literatură (meta-analize din domeniu) sau dintr-un studiu pilot. Nu alege d-ul post-hoc ca să „ieși bine".
+    2. **Evită analiza de putere post-hoc pe efectul tău observat** (calcularea puterii cu d = 0.53 după ce ai văzut rezultatele) — e o practică criticată metodologic (Hoenig & Heisey, 2001). Formularea corectă e cea de mai sus: analiză a priori + limitare recunoscută.
+
+    Dacă vrei, pot să-ți calculez și ce efect ai putea detecta cu putere 0.80 la n-urile tale actuale (puterea inversă — „sensibilitatea" studiului), e o cifră utilă pentru secțiunea de limitări.
+- user: |
+    Și dacă vreau putere 0.9?
+  assistant: |
+    Bună întrebare — puterea de 0.90 e alegerea mai conservatoare (îți scade riscul de a rata un efect real la 10%). Iată calculele, tot pentru d = 0.5.
+
+    ## Formula (aceeași, se schimbă doar z₀.₉₀)
+
+    $$n \approx \frac{2(z_{1-\alpha/2} + z_{1-\beta})^2}{d^2}, \quad z_{0.90} = 1.282$$
+
+    ## Cazul 1: α = 0.05, putere = 0.90, d = 0.5
+
+    $$n = \frac{2 \cdot (1.96 + 1.282)^2}{0.25} = \frac{2 \cdot 10.51}{0.25} = 84.1$$
+
+    → **~85–86 participanți pe grupă** (≈ 170 în total).
+
+    ## Cazul 2: α = 0.01 (pragul coordonatorului), putere = 0.90, d = 0.5
+
+    $$n = \frac{2 \cdot (2.576 + 1.282)^2}{0.25} = \frac{2 \cdot 14.88}{0.25} = 119.1$$
+
+    → **~120–121 participanți pe grupă** (≈ 240 în total).
+
+    ## Verificare exactă în R
+
+    ```r
+    library(pwr)
+
+    pwr.t.test(d = 0.5, sig.level = 0.05, power = 0.90,
+               type = "two.sample")
+    # n = 85.7 -> 86 pe grupă
+
+    pwr.t.test(d = 0.5, sig.level = 0.01, power = 0.90,
+               type = "two.sample")
+    # n = 120.4 -> 121 pe grupă
+    ```
+
+    ## Tabel rezumat (comod pentru Metodologie)
+
+    | Prag | Putere 0.80 | Putere 0.90 |
+    |---|---|---|
+    | α = .05 | 64/grupă | 86/grupă |
+    | α = .01 | 87/grupă | 121/grupă |
+
+    Observă „costul" rigorii: trecerea de la putere 0.80 la 0.90 îți adaugă ~35% participanți, iar combinarea cu α = 0.01 aproape **dublează** eșantionul necesar față de scenariul clasic (64 → 121). E un trade-off pe care îl poți explica explicit în lucrare — comisia apreciază că înțelegi de ce ai ales ce ai ales.
+
+    ## Bonus: ce ai putea detecta tu acum (sensibilitatea studiului)
+
+    Inversând formula cu n-ul tău real (~33.5 medie pe grupă), la α = 0.01 și putere 0.90 ai putea detecta doar:
+
+    $$d \approx \frac{2.576 + 1.282}{\sqrt{33.5/2}} = \frac{3.858}{4.09} \approx 0.94$$
+
+    Adică **doar efecte mari** (d ≈ 0.9+). Efectul tău observat (d = 0.53) e sub acest prag — de aceea p = .031 nu a ajuns la 0.01. Asta e exact cifra de pus în Limitări:
+
+    > „Cu dimensiunea actuală a eșantionului, studiul ar fi putut detecta cu o putere de 0.90 doar efecte mari (d ≥ 0.94) la pragul α = .01; detectarea efectelor medii ar fi necesitat aproximativ 121 de participanți pe grupă."
+
+    Vrei să-ți fac un mic tabel complet de planificare (d × α × putere) pe care să-l poți pune în anexa metodologică?
+- user: |
+    Am și nota la examen. Vreau să văd dacă orele de studiu corelează cu nota: r = 0.42, n = 67. E semnificativ?
+  assistant: |
+    Da, e semnificativ — și destul de clar, chiar și la pragul strict de 0.01 al coordonatorului. Hai să verificăm pas cu pas.
+
+    ## Pasul 1: Statistica t pentru corelație
+
+    $$t = \frac{r\sqrt{n-2}}{\sqrt{1-r^2}} = \frac{0.42 \cdot \sqrt{65}}{\sqrt{1-0.1764}} = \frac{0.42 \cdot 8.062}{\sqrt{0.8236}} = \frac{3.386}{0.9075} = 3.73$$
+
+    ## Pasul 2: Grade de libertate și valoarea p
+
+    $$df = n - 2 = 65$$
+
+    Pentru t = 3.73 cu df = 65 (test bilateral): **p ≈ 0.0004**, deci **p < .001**. ✅
+
+    Semnificativ la α = .01, cu multă margine — prima ta analiză care trece confortabil pragul strict.
+
+    ## Pasul 3: IC 95% pentru r (transformarea Fisher)
+
+    Transformarea z a lui Fisher: z = arctanh(0.42) = 0.447, cu SE = 1/√(n−3) = 1/8 = 0.125.
+
+    $$IC_z = 0.447 \pm 1.96 \cdot 0.125 = [0.202, \ 0.692]$$
+
+    Reconvertind înapoi (tanh): **IC 95% pentru r = [0.20, 0.60]** — nu conține 0, consistent cu p < .001.
+
+    ## Pasul 4: Interpretarea mărimii
+
+    Convențiile lui Cohen pentru r: 0.10 mic, 0.30 mediu, 0.50 mare.
+
+    **r = 0.42 → efect mediu**, orientat spre mare. În plus:
+
+    - **r² = 0.18** → orele de studiu „explică" aproximativ **18% din variația notei** la examen. Asta e o cifră foarte bună de raportat — 82% rămâne explicat de alți factori (motivație, inteligență, context, zgomot de măsurare), ceea ce e onest de menționat.
+
+    ## Raportare APA
+
+    > „S-a constatat o corelație pozitivă semnificativă între numărul de ore de studiu săptămânal și nota la examen, r(65) = .42, p < .001, IC 95% [.20, .60], explicând aproximativ 18% din variația notei (r² = .18)."
+
+    ## ⚠️ Două precizări pentru apărare
+
+    **1. Corelație ≠ cauzalitate.** Dacă cineva din comisie te întreabă „deci studiul mai mult duce la note mai mari?", răspunsul corect: corelația arată o **asociere**, nu cauzalitate. Posibile explicații alternative: studenții mai motivați studiază mai mult ȘI iau note mai mari (variabilă confundată), sau notele anticipate influențează cât studiază.
+
+    **2. Corelația nu depinde de grupare.** Ai calculat-o pe totalul eșantionului (n = 67). Atenție la un fenomen subtil: dacă grupul cu aplicația are și mai multe ore ȘI note mai mari, corelația totală poate fi umflată de diferența dintre grupe. Merită verificat **r-ul în fiecare grup separat**:
+
+    ```r
+    cor.test(ore, nota, data = subset(df, grupa == "control"))
+    cor.test(ore, nota, data = subset(df, grupa == "cu_aplicatie"))
+    ```
+
+    Dacă r-ul rămâne pozitiv în ambele grupe, concluzia e robustă. Dacă dispare în interiorul grupelor, asociera e explicată de apartenența la grup, nu de ore în sine — o nuanță valoroasă pentru Discuție.
+
+    Cu asta ai trei analize complete în lucrare: comparația între grupe, schimbarea în timp și corelația. Vrei să-ți ajut să le integrezi coerent într-o structură unică de Rezultate, ca să nu pară trei analize izolate?
+- user: |
+    Cum testez dacă corelația e diferită între cele două grupe? La control r = 0.31 (n = 32), la grupul cu aplicația r = 0.55 (n = 35).
+  assistant: |
+    Foarte bună verificare — exact ce ți-am sugerat. Testul standard e **comparația a două corelații independente cu transformarea Fisher**. Hai să-l calculăm pas cu pas.
+
+    ## Pasul 1: Transformarea Fisher a fiecărui r
+
+    $$z = \frac{1}{2}\ln\frac{1+r}{1-r} = \text{arctanh}(r)$$
+
+    - Grup control: z₁ = arctanh(0.31) = **0.320**
+    - Grup cu aplicația: z₂ = arctanh(0.55) = **0.618**
+
+    ## Pasul 2: Eroarea standard a diferenței
+
+    $$SE = \sqrt{\frac{1}{n_1-3} + \frac{1}{n_2-3}} = \sqrt{\frac{1}{29} + \frac{1}{32}} = \sqrt{0.0345 + 0.0313} = \sqrt{0.0657} = 0.256$$
+
+    ## Pasul 3: Statistica de test
+
+    $$Z = \frac{z_2 - z_1}{SE} = \frac{0.618 - 0.320}{0.256} = \frac{0.298}{0.256} = 1.16$$
+
+    ## Pasul 4: Valoarea p
+
+    Z urmează o distribuție normală standard (test bilateral):
+
+    **p ≈ 0.245** → **nesemnificativ**, chiar și la α = .05, darămite la .01.
+
+    ## Concluzia onestă
+
+    Deși r = 0.55 „pare" mai mare decât r = 0.31, **diferența dintre ele nu e statistic semnificativă**. Cu n-urile tale (32 și 35), puterea de a detecta o diferență de 0.24 între corelații e foarte mică — ai avea nevoie de sute de participanți pe grupă pentru o astfel de comparație.
+
+    **Ce poți spune:** corelația e pozitivă în ambele grupe, iar diferența aparentă dintre ele nu e semnificativă statistic. **Ce NU poți spune:** „corelația e mai puternică la grupul cu aplicația" — asta ar fi o concluzie pe care datele tale nu o susțin.
+
+    ## Raportare APA
+
+    > „Pentru a verifica dacă asociera dintre orele de studiu și notă diferă între grupe, s-a comparat coeficientul de corelație al grupului de control (r = .31, n = 32) cu cel al grupului cu aplicația (r = .55, n = 35) prin transformarea Fisher. Diferența nu a fost statistic semnificativă, Z = 1.16, p = .245, sugerând că forța asocierii este comparabilă în cele două grupe. Corelația pozitivă între orele de studiu și notă pare deci să caracterizeze eșantionul în ansamblu, nu doar unul dintre grupuri."
+
+    ## Cod în R
+
+    ```r
+    library(psych)
+    r.test(n1 = 32, n2 = 35, r12 = 0.31, r34 = 0.55)
+    # sau cu datele brute, separat pe grupe
+    ```
+
+    ## De ce e totuși un rezultat valoros pentru lucrare
+
+    Asta e o analiză care pare „negativă", dar întărește lucrarea:
+
+    1. **Răspunde la o explicație alternativă.** Cineva ar putea spune: „corelația totală (r = .42) e doar artefact al diferenței dintre grupe". Compararea intra-grupă arată că asociera există în ambele grupe — concluzia ta principală rămâne în picioare.
+    2. **Demonstrează rigoare.** Ai testat o ipoteză suplimentară și ai raportat onest un rezultat nesemnificativ — exact comportamentul metodologic pe care comisiile îl apreciază.
+    3. **Oferă material pentru Limitări/Direcții viitoare:** „diferența aparentă dintre corelațiile celor două grupe merită investigată pe un eșantion mai mare, având în vedere puterea redusă a testului la dimensiunile actuale."
+
+    Un detaliu de formulare: spune „diferența nu a atins semnificația statistică", nu „corelațiile sunt egale" — absența dovezii nu e dovada absenței. Cu asta ai un capitol de Rezultate foarte complet: descriptive, precondiții, comparație între grupe, schimbare în timp, corelație și comparația corelațiilor. Vrei să te ajut să le aranjezi într-o structură finală coerentă, cu ordinea logică a subsecțiunilor?
+- user: |
+    Explică-mi transformarea Fisher pas cu pas, cu formulele.
+  assistant: |
+    ## De ce avem nevoie de ea?
+
+    Distribuția lui r **nu e normală**: e asimetrică, mai ales la valori mari ale lui r sau la eșantioane mici — r e „strâns" între −1 și +1. Pentru a construi intervale de încredere sau a compara două corelații, avem nevoie de o statistică normal distribuită. Fisher a propus transformarea:
+
+    $$z = \frac{1}{2}\ln\left(\frac{1+r}{1-r}\right) = \text{arctanh}(r)$$
+
+    Care **dăunează asimetriei**: z variază de la −∞ la +∞ și e aproximativ normal, cu eroare standard cunoscută:
+
+    $$SE = \frac{1}{\sqrt{n-3}}$$
+
+    ## Pasul 1: Transformă r în z
+
+    Exemplu cu r = 0.42:
+
+    $$z = \frac{1}{2}\ln\left(\frac{1.42}{0.58}\right) = \frac{1}{2}\ln(2.448) = \frac{1}{2} \cdot 0.895 = 0.447$$
+
+    ## Pasul 2: Lucrează în spațiul z (aici e normalitatea)
+
+    **IC 95%:**
+
+    $$z \pm 1.96 \cdot SE = 0.447 \pm 1.96 \cdot \frac{1}{\sqrt{64}} = 0.447 \pm 0.245 = [0.202, \ 0.692]$$
+
+    **Comparația a două corelații independente** (r₁ = 0.31, r₂ = 0.55):
+
+    $$Z = \frac{z_2 - z_1}{\sqrt{\frac{1}{n_1-3} + \frac{1}{n_2-3}}} = \frac{0.618 - 0.320}{0.256} = 1.16$$
+
+    Z e comparat cu distribuția normală standard → p ≈ 0.245.
+
+    ## Pasul 3: Reconvertiți înapoi în r
+
+    Rezultatele din spațiul z se transformă înapoi cu funcția inversă:
+
+    $$r = \tanh(z) = \frac{e^{2z}-1}{e^{2z}+1}$$
+
+    De exemplu: tanh(0.202) = 0.20, tanh(0.692) = 0.60 → IC 95% pentru r = [0.20, 0.60].
+
+    Observă: intervalul e **asimetric în jurul lui r** (0.42 e mai aproape de 0.20 decât de 0.60) — exact corecția de asimetrie pentru care există transformarea. Un IC simetric naiv (0.42 ± 0.19) ar fi fost incorect.
+
+    ## Rezumat pentru apărare
+
+    > „Transformarea Fisher convertesc corelația într-o statistică aproximativ normală (arctanh), ceea ce îmi permite să construiesc intervale de încredere și să compar corelații, apoi reconvertesc rezultatele înapoi cu tanh."
+
+    În R totul e automat: `cor.test()` folosește Fisher implicit pentru IC-ul lui r.
+- user: |
+    Am rulat și o regresie, nota în funcție de ore și de grup. Rezultatul:
+
+    ```
+                coef    std err      t     P>|t|
+    Intercept   4.12      0.61    6.75    0.000
+    ore         0.19      0.04    4.75    0.000
+    grup_app    0.48      0.22    2.18    0.033
+    R-squared: 0.31    Adj. R-squared: 0.29    N = 67
+    ```
+
+    Cum interpretez coeficienții?
+  assistant: |
+    Excelentă mișcare — regresia e pasul natural după corelație și îți dă o imagine mai nuanțată. Hai să decodificăm fiecare element.
+
+    ## Ecuația modelului
+
+    $$\text{nota} = 4.12 + 0.19 \cdot \text{ore} + 0.48 \cdot \text{grup\_app}$$
+
+    unde `grup_app` e o variabilă dummy: 1 = cu aplicația, 0 = control.
+
+    ## Interpretarea fiecărui coeficient
+
+    **Intercept (4.12):** nota estimată a unui student din **grupul de control** care studiază **0 ore** pe săptămână. E o valoare teoretică (0 ore e în afara domeniului real al datelor), deci nu o interpretezi substanțial — e doar punctul de plecare al dreptei.
+
+    **ore (0.19):** pentru **fiecare oră suplimentară de studiu pe săptămână**, nota crește în medie cu **0.19 puncte**, menținând grupul constant. Practic: +5 ore/săptămână → +0.95 puncte, în medie. p < .001 → semnificativ și la α = .01. ✅
+
+    **grup_app (0.48):** un student cu aplicație are o notă mai mare cu **0.48 puncte decât un student de control cu ACEEAȘI cantitate de studiu**. p = .033 → semnificativ la .05, dar **nu la .01** (același p ca la testul t — nu e coincidență, vezi mai jos). ⚠️
+
+    **R² = 0.31:** modelul explică 31% din variația notei; restul de 69% rămâne neexplicat. Adj. R² = 0.29 penalizează pentru numărul de predictori — faptul că e aproape de R² arată că ambii predictori merită locul în model.
+
+    ## ⚠️ Observația cea mai importantă: 0.48 vs. 1.8
+
+    Compară cu analiza de la început: diferența brută între grupe era **1.8 ore de studiu**, iar acum coeficientul grupului e doar **0.48 puncte la notă**. Ce s-a întâmplat?
+
+    Regresia **ajustează pentru orele de studiu**. Din diferența totală dintre grupe la notă, o parte e explicată de faptul că grupul cu aplicația pur și simplu **studiază mai mult** (mecanismul: aplicație → mai multe ore → notă mai mare). Coeficientul de 0.48 e doar **efectul rezidual** al apartenenței la grup, peste și dincolo de ore.
+
+    Interpretarea substanțială (excelentă pentru Discuție):
+
+    > „Efectul aplicației asupra notei este în mare parte **mediat** de orele de studiu: odată controlat numărul de ore, apartenența la grup mai adaugă doar 0.48 puncte, care nu mai sunt semnificative la pragul de 0.01."
+
+    Asta sugerează un **model de mediere**: aplicația → mai multe ore → notă mai mare. Nu poți dovedi formal medierea cu acest design, dar e o ipoteză frumoasă de formulat.
+
+    ## De ce p-ul grupului e identic cu cel al testului t (0.033)?
+
+    Pentru că un model de regresie cu un predictor continuu (ore) și unul dummy (grup) este **echivalent statistic** cu o analiză a covarianței (ANCOVA). Fără predictorul „ore", coeficientul dummy ar fi fost exact testul t de la început. Coordonatorul ar putea să-ți semnaleze asta — acum ești pregătit.
+
+    ## Raportare APA
+
+    > „Pentru a examina contribuția independentă a orelor de studiu și a apartenenței la grup asupra notei la examen, s-a estimat o regresie liniară multiplă. Numărul orelor de studiu a prezis semnificativ nota (b = 0.19, SE = 0.04, t = 4.75, p < .001), fiecare oră săptămânală fiind asociată cu o creștere de 0.19 puncte. Apartenența la grupul cu aplicația a fost asociată cu o creștere suplimentară de 0.48 puncte (b = 0.48, SE = 0.22, t = 2.18, p = .033), semnificativă la pragul de .05, dar nu la .01. Modelul a explicat 31% din variația notei, F(2, 64) = ..., p < .001, R² = .31."
+
+    (Lipsește F-ul din output — rulează `summary(model)` în R sau `model.f_test([0,0])` în statsmodels și completează.)
+
+    ## Două verificări de rigoare înainte de a-l pune în lucrare
+
+    1. **Diagnostice de regresie:** reziduuri normal distribuite (Shapiro pe reziduuri), omoscedasticitate (plot reziduuri × valori prezise), fără puncte influente puternice (Cook's distance). În R: `plot(model)`.
+    2. **Colinearitate:** aici nu e problemă (doar 2 predictori), dar verifică VIF dacă adaugi alți predictori.
+
+    Vrei să-ți arăt cum să testezi formal medierea (de ex. cu pachetul `mediation` sau pașii Baron & Kenny) ca ipoteză pentru Discuție, sau e suficient formularea calitativă?
+- user: |
+    Ce înseamnă concret R² = 0.31 aici? E mic?
+  assistant: |
+    Foarte bună întrebare — și una probabilă la susținere. Răspunsul scurt: **R² = 0.31 e un rezultat foarte bun pentru domeniul tău.** Hai să vedem de ce, concret.
+
+    ## Ce înseamnă, concret
+
+    **31% din variația notei la examen este explicată de cele două variabile din model** (orele de studiu + apartenența la grup). Restul de 69% e explicat de factori pe care nu i-ai măsurat.
+
+    Concret, ce e în acel 69%? Factori precum:
+
+    - motivația și conștiințiozitatea studentului
+    - abilitatea/inteligența anterioară
+    - calitatea învățării (nu doar cantitatea — 3 ore de studiu concentrat ≠ 3 ore cu telefonul în mână)
+    - dificultatea percepută a materiei, stresul, somnul
+    - zgomotul de măsurare (nota la examen are o componentă de hazard)
+
+    Deci modelul tău explică aproape o treime din ce determină nota — cu doar **două variabile**, dintre care una e un simplu da/nu.
+
+    ## E mic? Depinde de domeniul de referință
+
+    | Domeniu | R² tipic |
+    |---|---|
+    | Științe exacte (fizică, chimie) | 0.70+ |
+    | Biologie / agricultură | 0.40–0.60 |
+    | **Psihologie / educație / științe sociale** | **0.10–0.30** |
+    | Predicția comportamentului uman individual | 0.05–0.15 |
+
+    Comportamentul uman e extrem de multifațetat — nota la examen nu are „o cauză", ci zeci. În acest context:
+
+    - **R² = 0.31 e peste medie** pentru cercetarea educațională
+    - Pentru comparație: multe meta-analize din psihologie găsesc că predictorii „clasici" individuali explică mult mai puțin — de exemplu, corelația dintre motivație și performanță academică (ρ ≈ 0.27) dă R² ≈ 0.07
+
+    ## Traducere în termeni de corelație
+
+    $$R = \sqrt{0.31} = 0.56$$
+
+    Modelul tău echivalează cu o corelație multiplă de 0.56 între nota reală și nota „prezisă" de model — o asociere substanțială.
+
+    ## O interpretare practică frumoasă pentru apărare
+
+    Dacă ar fi să prezici notele a doi studenți aleși aleator, modelul tău îți spune care are nota mai mare în **~65–70% din cazuri** (aproximare pentru R ≈ 0.56, prin analogie cu CLES) — față de 50% dacă ghiceai la întâmplare.
+
+    ## ⚠️ Ce să NU faci
+
+    - ❌ „R² = 0.31 e mic, deci rezultatele nu contează" — fals; vezi contextul de mai sus
+    - ❌ „R² = 0.31 înseamnă că modelul e corect în 31% din cazuri" — fals; nu e o rată de predicție, e proporția din **variație** explicată
+    - ❌ Să extrapolezi R² dincolo de eșantion — cu N = 67 și 2 predictori, R² are un bias pozitiv mic; de asta raportezi și **Adj. R² = 0.29**, care e cifra onestă
+
+    ## Formulare pentru Discuție
+
+    > „Modelul de regresie a explicat 31% din variația notei la examen (R² = .31, R² ajustat = .29), o proporție substanțială pentru cercetarea din domeniul educațional, unde predictorii individuali explică de regulă sub 10% din varianță. Rămâne însă de explorat ceilalți factori — precum motivația, strategiile de învățare și variabilele de context — care ar putea atât să îmbunătățească puterea predictivă a modelului, cât și să clarifice mecanismele prin care aplicația influențează performanța."
+
+    Un detaliu fin pentru comisie: dacă te întreabă „de ce Adj. R² e mai mic?", răspunsul e că R² crește **mereu** când adaugi predictori, chiar și inutili; Adj. R² penalizează pentru fiecare predictor și arată contribuția reală. Faptul că la tine diferența e minusculă (0.31 → 0.29) arată că ambii predictori sunt utili.
+
+    Vrei să-ți arăt cum să calculezi și IC-ul pentru R² sau cum să compare modelul tău cu un model doar cu ore (test F pentru contribuția incrementală a grupului)?
+- user: |
+    Comisia o să mă întrebe de ce n-am randomizat studenții în grupe. Ce argumente am și ce limite recunosc?
+  domain: brainstorming
+  assistant: |
+    Întrebare aproape sigură la susținere — și vestea bună e că ai un răspuns solid, dacă e onest. Iată structura completă: argumente, limite recunoscute și cum le-ai atenuat parțial.
+
+    ## Argumentele tale (ce poți spune în apărare)
+
+    **1. Randomizarea era impracticabilă în context real.**
+    Aplicația de organizare a timpului se poate folosi doar **voluntar și constant** — un student randomizat să o folosească, dar care nu vrea, o abandonează în două săptămâni. Ai avea non-complianță masivă, care distruge randomizarea oricum. Studiul tău reflectă **utilizare reală**, nu obligație impusă.
+
+    **2. Validitate ecologică mai mare.**
+    Grupele tale sunt „naturale": cei cu aplicația chiar au ales-o. Rezultatele descriu ce se întâmplă în lumea reală, nu într-un experiment artificial. Comisia apreciază distincția: **randomizarea cumpără cauzalitate, dar pierde realism; tu ai ales realism.**
+
+    **3. Considerente etice.**
+    Nu poți (și nu trebuie) să **interzici** unui student să folosească o aplicație gratuită — ar fi o restricție nejustificată. Randomizarea ar fi însemnat să controlezi comportamentul de studiu al studenților, ceea ce ridică probleme etice reale.
+
+    **4. Ai tratat problema metodologic, nu ai ignorat-o.**
+    Asta e cel mai puternic argument — ai făcut analize care **parțial compensează** lipsa randomizării:
+    - **Regresia cu ajustare pentru ore** — ai controlat mecanismul principal prin care grupele ar putea diferi
+    - **Comparația corelațiilor intra-grup** — ai arătat că asociera ore–notă există în ambele grupe
+    - **Teste de robusteță** (Mann-Whitney) — concluzia nu depinde de metoda aleasă
+
+    ## Limitele pe care le recunoști (fără să te aperi excesiv)
+
+    **1. Auto-selecția (selection bias) — limita principală.**
+    Studenții care aleg o aplicație de organizare a timpului sunt probabil **sistematic diferiți**: mai motivați, mai conștiincioși, mai organizați. Aceste trăsături cauzează atât utilizarea aplicației, cât și mai mult studiu și note mai mari. **Nu poți exclude că diferența observată e explicată de motivație, nu de aplicație.**
+
+    **2. Variabile confundatoare nemăsurate.**
+    Motivația, conștiințiozitatea, situația financiară (un job part-time reduce orele disponibile) — toate pot diferenția grupele și pot afecta rezultatul.
+
+    **3. Fără măsurătoare „înainte" pentru grupul de control.**
+    Ai arătat că grupul cu aplicația a crescut (t pereche, p < .001), dar nu știi dacă grupul de control **nu** a crescut la fel — de exemplu din cauza apropierii de sesiune. Asta limitează interpretarea creșterii.
+
+    **4. Auto-raportarea orelor de studiu.**
+    Studenții care folosesc aplicația își măsoară orele mai precis (aplicația le contorizează!), iar cei din control estimează — posibil eronat. Diferența de 1.8 ore ar putea conține și o diferență de **precizie de măsurare**, nu doar de comportament. Asta e o observație foarte fină care impresionează comisiile.
+
+    ## Cum formulezi la susținere
+
+    > „Studiul are un design **quasi-experimental**: repartizarea în grupe nu a fost randomizată, ci reflectă utilizarea voluntară a aplicației. Aceasta a fost o decizie conștientă, determinată de impracticabilitatea și etica impunerii utilizării, și de dorința de a studia comportament real, nu impus. Consecința principală este riscul de auto-selecție: studenții care aleg o astfel de aplicație pot fi mai motivați, iar diferențele observate pot reflecta parțial aceste diferențe preexistente. Am atenuat parțial riscul prin ajustarea statistică pentru orele de studiu în regresie și prin verificări de robusteță, dar recunosc că nu pot exclude complet explicația alternativă a auto-selecției. De aceea concluziile sunt formulate în termeni de **asociere**, nu de cauzalitate, iar randomizarea pe un eșantion mai mare constituie direcția principală pentru cercetări viitoare."
+
+    ## De ce această formulare câștigă
+
+    Comisia nu sancționează limita — sancționează **necunoașterea** ei. Un student care spune „da, e quasi-experimental, iată riscul, iată ce am făcut, iată ce nu pot afirma" e mai convingător decât unul care pretinde că are un experiment adevărat. Distingerea **design experimental vs. quasi-experimental** și formularea prudentă („asociat cu", nu „cauzează") arată exact maturitatea metodologică pe care o caută.
+
+    Un detaliu bonus: dacă te întreabă „cum ai randomizat atunci?", răspunsul corect e să explici ce **ar** implica randomizarea corectă — randomizarea la nivel individual cu verificarea complianței, sau măcar la nivel de grupă/clasă — ca să arăți că știi cum ar arăta designul ideal, chiar dacă nu l-ai putut implementa.
+
+    Vrei să exersăm împreună 2-3 scenarii de întrebări dificile de la comisie, cu răspunsuri model?
+- user: |
+    Fă-mi un tabel cu toate testele făcute și rezultatele lor, pentru anexă.
+  assistant: |
+    Iată tabelul complet pentru anexă, cu toate analizele din lucrare:
+
+    ---
+
+    **Tabel A1**
+    *Rezumatul analizelor statistice efectuate*
+
+    | # | Analiză / Test | Statistică | df | p | Mărimea efectului | IC 95% | Concluzie la α = .01 |
+    |---|---|---|---|---|---|---|---|
+    | 1 | Shapiro-Wilk — grup control | W = 0.91 | 32 | .011 | — | — | Normalitate neatinsă la α = .01 |
+    | 2 | Shapiro-Wilk — grup cu aplicația | W = 0.97 | 35 | .43 | — | — | Normalitate acceptată |
+    | 3 | Test t Welch (comparație între grupe) | t = 2.20 | 64.8 | .031 | d = 0.53; g = 0.52 | Δ = 1.80 ore [0.16, 3.44] | Nesemnificativ |
+    | 4 | U Mann-Whitney (verificare robusteță) | U = 381; z = −2.25 | — | .024 | r = 0.27 | — | Nesemnificativ |
+    | 5 | Test t pereche (grup cu aplicația, înainte/după) | t = 4.86 | 34 | < .001 | d_z = 0.82 | Δ = 2.30 ore [1.34, 3.26] | **Semnificativ** |
+    | 6 | Corelație ore–notă (eșantion total) | r = .42 | 65 | < .001 | r² = .18 | [.20, .60] | **Semnificativ** |
+    | 7 | Comparație corelații între grupe (Fisher) | Z = 1.16 | — | .245 | — | — | Nesemnificativ |
+    | 8 | Regresie liniară: notă ~ ore + grup | ore: t = 4.75; grup: t = 2.18 | 64 | < .001; .033 | R² = .31 (adj. .29) | — | ore: semnificativ; grup: nesemnificativ |
+    | 9 | Analiză de putere (a priori, d = 0.5, putere .80) | n necesar = 87/grupă | — | — | — | — | Eșantion subdimensionat |
+
+    *Notă.* N = 67 (control n = 32; aplicație n = 35). Toate testele sunt bilaterale. Pragul de semnificație utilizat în lucrare: α = .01. Analizele 3 și 4 testează aceeași ipoteză prin metode parametrică și neparametrică. Analiza 5 se referă la schimbarea în cadrul grupului cu aplicația și nu permite inferență cauzală în absența măsurătorii post-intervenție pentru grupul de control. Analiza 9: dimensiunea eșantionului actual oferă putere de aproximativ 35–40% pentru detectarea unui efect mediu la α = .01.
+
+    ---
+
+    ## Câteva observații de utilizare
+
+    **1. Colțurile „Nesemnificativ" nu sunt puncte slabe.** Tabelul arată onest imaginea completă: două rezultate puternice (creșterea în timp, corelația ore–notă), unul moderat (diferența între grupe, sub pragul strict), iar restul verificări de precondiții și robustețe. Asta e o anatomie metodologică sănătoasă, nu o colecție de eșecuri.
+
+    **2. Coerență între text și tabel.** Dacă pui tabelul în anexă, în textul principal raportezi detaliat doar analizele 3, 5, 6 și 8 (cele substanțiale), iar pentru restul faci trimiteri: „(vezi Tabelul A1)".
+
+    **3. Formatare APA:** titlul tabelului în italic deasupra, nota (*Notă.*) sub tabel, statisticile (W, t, U, r, Z, p, d, R²) în italic în text. Valorile p fără zero inițial.
+
+    **4. O mică decizie de luat:** la analiza 1, Shapiro-Wilk pentru control dă p = .011 — la α = .05 ar fi semnalat abatere de la normalitate, la α = .01 nu. Dacă în text ai explicat ambele situații (cum am discutat), tabelul e consecvent cu pragul de .01. Dacă vrei să eviți confuzia, poți adăuga în notă: „La pragul convențional α = .05, analiza 1 ar fi indicat o abatere de la normalitate în grupul de control; acest aspect a fost tratat prin verificarea robusteței (analiza 4)."
+
+    Vrei și o variantă a tabelului cu valorile descriptive complete (M, SD, mediane pe grupe, înainte/după) ca Tabel A2, sau cu asta ai tot ce trebuie pentru anexă?
+- user: |
+    Ultima: cum scriu în LaTeX formula statisticii t și a gradelor de libertate pentru testul Welch?
+  assistant: |
+    Iată codul LaTeX pentru ambele formule, gata de pus în lucrare (necesită `\usepackage{amsmath}` în preambul):
+
+    ## Statistica t (Welch)
+
+    ```latex
+    \begin{equation}
+        t = \frac{\bar{X}_1 - \bar{X}_2}{\sqrt{\dfrac{s_1^2}{n_1} + \dfrac{s_2^2}{n_2}}}
+        \label{eq:welch-t}
+    \end{equation}
+    ```
+
+    Rezultat:
+
+    $$t = \frac{\bar{X}_1 - \bar{X}_2}{\sqrt{\dfrac{s_1^2}{n_1} + \dfrac{s_2^2}{n_2}}}$$
+
+    ## Gradele de libertate (Welch–Satterthwaite)
+
+    ```latex
+    \begin{equation}
+        df = \frac{\left( \dfrac{s_1^2}{n_1} + \dfrac{s_2^2}{n_2} \right)^{2}}
+        {\dfrac{\left( s_1^2 / n_1 \right)^{2}}{n_1 - 1} + \dfrac{\left( s_2^2 / n_2 \right)^{2}}{n_2 - 1}}
+        \label{eq:welch-df}
+    \end{equation}
+    ```
+
+    Rezultat:
+
+    $$df = \frac{\left( \dfrac{s_1^2}{n_1} + \dfrac{s_2^2}{n_2} \right)^{2}}{\dfrac{\left( s_1^2 / n_1 \right)^{2}}{n_1 - 1} + \dfrac{\left( s_2^2 / n_2 \right)^{2}}{n_2 - 1}}$$
+
+    ## Detalii utile
+
+    - **`\dfrac` în loc de `\frac`** — forțează fracții în mărime completă (display style) chiar și în interiorul altor fracții sau rădăcini; fără el, fracțiile imbricate devin mici și greu de citit.
+    - **`\left( ... \right)`** — paranteze care se dimensionează automat la conținut; esențial la fracțiile imbricate din formula df.
+    - **`\bar{X}`** pentru medii; dacă folosești notația cu M (stil APA), scrie `M_1 - M_2` — în APA se raportează cu M și SD, dar în formule e acceptată ambele notații, atâta timp cât ești consecvent.
+    - **`\label{}` + `\eqref{}`** — referințele în text se fac cu `~\eqref{eq:welch-t}`, care produce „(1)" cu paranteze automate (necesită amsmath).
+
+    ## Varianta compactă pentru text (inline)
+
+    ```latex
+    statistica $t = (\bar{X}_1 - \bar{X}_2) / \sqrt{s_1^2/n_1 + s_2^2/n_2}$ cu
+    grade de libertate Welch--Satterthwaite
+    ```
+
+    ## Bonus: cu valorile tale, ca exemplu numerotat
+
+    ```latex
+    \begin{equation}
+        t = \frac{13.2 - 11.4}{\sqrt{\dfrac{3.1^2}{32} + \dfrac{3.6^2}{35}}} = 2.20, \quad
+        df = 64.8, \quad p = .031
+    \end{equation}
+    ```
+
+    Un sfat de formatare: în lucrări de licență în stil APA, formulele importante se numerotează la dreapta (opțiunea `\usepackage[leqno]{amsmath}` sau setarea clasei de document), iar simbolurile statistice din text (*t*, *p*, *df*, *n*) se pun în italic — în LaTeX asta e automat pentru literele din modul matematic, dar în textul obișnuit scrie `\textit{t}`(64.8) = 2.20.
+
+    Cu asta ai tot: analize, interpretări, raportare APA, tabel de anexă și formule LaTeX. Mult succes la susținere! 🎓
+questions:
+- id: q1
+  type: decision
+  prompt: |
+    Ce variantă de test t am folosit până la urmă pentru cele două grupe?
+  gold:
+  - turn: 4
+    quote: De ce Welch în loc de testul t clasic?
+  - turn: 9
+    quote: 'Argumentul: testul t e notoriu de robust la deviații moderate de la normalitate când ambele grupuri au n ≥ 30'
+  outdated:
+  - turn: 2
+    quote: Voi folosi testul t Student cu varianțe reunite (pooled)
+- id: q2
+  type: exact
+  prompt: |
+    Cât ieșise Cohen's d?
+  gold:
+  - turn: 6
+    quote: d = 0.53 → efect mediu.
+  - turn: 11
+    quote: Mărimea efectului a fost medie, Cohen's d = 0.53 (Hedges' g = 0.52), IC 95% [0.04, 1.02]. Pentru a verifica ro
+- id: q3
+  type: decision
+  prompt: |
+    Ce prag de semnificație folosim în lucrare?
+  gold:
+  - turn: 12
+    quote: Ce se întâmplă cu valorile tale la α = 0.01
+  - turn: 23
+    quote: '*Notă.* N = 67 (control n = 32; aplicație n = 35). Toate testele sunt bilaterale. Pragul de semnificație utili'
+- id: q4
+  type: paraphrase
+  prompt: |
+    Câți studenți ar fi trebuit să am în fiecare grupă ca să prind un efect mediu?
+  gold:
+  - turn: 15
+    quote: '**n ≈ 64 pe grupă**, deci **~128 participanți în total**'
+- id: q5
+  type: multi-hop
+  prompt: |
+    Ce am făcut după ce testul de normalitate a ieșit prost la una din grupe?
+  gold:
+  - turn: 10
+    quote: vestea bună e că U = 381 confirmă rezultatul testului t
+  - turn: 9
+    quote: Dacă vezi 1-2 puncte izolate extreme, acestea trag W-ul în jos. Dacă punctele deviază sistematic de pe diagona
+  - turn: 23
+    quote: '| 8 | Regresie liniară: notă ~ ore + grup | ore: t = 4.75; grup: t = 2.18 | 64 | < .001; .033 | R² = .31 (adj.'
+- id: q6
+  type: semantic
+  prompt: |
+    Cum compar corelațiile dintre cele două grupe?
+  gold:
+  - turn: 18
+    quote: comparația a două corelații independente cu transformarea Fisher
+- id: q7
+  type: ambiguous
+  prompt: |
+    Și pentru puterea mai mare câți ieșeau?
+  gold:
+  - turn: 16
+    quote: ~85–86 participanți pe grupă
+- id: q8
+  type: exact
+  prompt: |
+    Ce coeficient avea variabila de grup în regresie și era semnificativă?
+  gold:
+  - turn: 20
+    quote: grup_app    0.48      0.22    2.18    0.033

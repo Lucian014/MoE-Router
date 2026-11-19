@@ -26,6 +26,7 @@ class ChunkCandidate:
     content_hash: str
     terms: list[str]
     distance: float | None      # cosine distance to the query, None when dense search is off
+    source: str = "response"    # prompt | response
 
 
 @dataclass(frozen=True)
@@ -65,6 +66,11 @@ class ChunkRepository:
         """Before reindexing a turn with another chunker version or embedding model."""
         await self._session.execute(delete(Chunk).where(Chunk.turn_id == turn_id))
 
+    async def set_terms(self, chunk_id: int, terms: list[str], chunker_version: str) -> None:
+        """The BM25 analyzer changed but the chunks did not: new terms, same content and vectors."""
+        stmt = update(Chunk).where(Chunk.id == chunk_id).values(terms=terms, chunker_version=chunker_version)
+        await self._session.execute(stmt)
+
     async def set_context(self, chunk_id: int, context: str, terms_ctx: list[str],
                           embedding_ctx: list[float], context_model: str) -> None:
         """V3+: store the LLM-generated context and the representations computed from it."""
@@ -98,7 +104,7 @@ class ChunkRepository:
         )
         stmt = (
             select(Chunk.id, Chunk.turn, Chunk.ord, Chunk.kind, Chunk.tokens, Chunk.content_hash,
-                   terms_col, distance)
+                   terms_col, distance, Chunk.source)
             .where(Chunk.session_id == session_id, Chunk.turn < before_turn)
             .order_by(Chunk.turn, Chunk.ord)
         )
@@ -109,7 +115,7 @@ class ChunkRepository:
         rows = (await self._session.execute(stmt)).all()
         return [
             ChunkCandidate(id=r[0], turn=r[1], ord=r[2], kind=r[3], tokens=r[4], content_hash=r[5],
-                           terms=list(r[6] or []), distance=None if r[7] is None else float(r[7]))
+                           terms=list(r[6] or []), distance=None if r[7] is None else float(r[7]), source=r[8])
             for r in rows
         ]
 

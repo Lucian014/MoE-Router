@@ -1,0 +1,731 @@
+id: mh02-ab-test-checkout
+category: math
+lang: en
+turns:
+- user: |
+    I'm analysing A/B tests for an e-commerce company. First one: we tested a one-page checkout ("Variant B") against the current three-step checkout. Here are the numbers after 14 days:
+
+    ```
+    variant   visitors   orders
+    A         48,210     1,687
+    B         47,955     1,822
+    ```
+
+    Is the difference in conversion rate significant?
+  assistant: |
+    Yes — the difference is statistically significant at the conventional 5% level.
+
+    **The numbers**
+
+    - A: 1,687 / 48,210 = **3.50%** conversion
+    - B: 1,822 / 47,955 = **3.80%** conversion
+    - Relative lift: **+8.6%** (+0.30 percentage points)
+
+    **Two-proportion z-test**
+
+    - Pooled conversion rate: p̂ = 3,509 / 96,165 = 3.649%
+    - Standard error: √(p̂(1−p̂)(1/n_A + 1/n_B)) ≈ 0.00121
+    - z = 0.0030 / 0.00121 ≈ **2.48**
+    - Two-tailed p-value ≈ **0.013**
+
+    So there's about a 1.3% chance of seeing a lift this large (or larger) if the checkouts actually performed identically. The 95% confidence interval for the difference is roughly **+0.06 to +0.54 pp**, which excludes zero.
+
+    **Caveats worth checking before you ship it**
+
+    1. **Peeking / test duration**: If you checked significance daily and stopped the moment it crossed 0.05, the effective error rate is inflated. If this was a fixed 14-day run, you're fine.
+    2. **Segment the results**: One-page checkouts often help mobile users much more than desktop. If the lift is concentrated on mobile, that's a useful (and more robust) finding.
+    3. **Guardrail metrics**: Check average order value, refund/cancellation rates, and payment errors. A faster checkout can sometimes pull in lower-intent orders.
+    4. **Novelty effects** are less of a concern here since checkout is a one-time funnel, but a week or two of post-launch monitoring is still cheap insurance.
+
+    Bottom line: B looks like a genuine winner, pending the guardrail checks.
+- user: |
+    My manager says we should have stopped it on day 4, when B was already ahead by 12%. Here's what the dashboard showed every day:
+
+    ```
+    day  A_conv  B_conv  p_value
+    1    3.31%   3.92%   0.21
+    2    3.40%   3.88%   0.09
+    3    3.37%   3.81%   0.06
+    4    3.36%   3.77%   0.04
+    5    3.45%   3.71%   0.11
+    6    3.49%   3.79%   0.07
+    ```
+
+    Was he right?
+  assistant: |
+    No — stopping on day 4 would have been a textbook case of **peeking**, and the dashboard itself shows why.
+
+    **The problem with stopping at day 4**
+
+    The p-value on day 4 (0.04) crossed the 0.05 threshold, so it *looks* significant. But look at what happens next: it bounces back to 0.11 on day 5 and 0.07 on day 6. That's exactly the pattern that makes peeking dangerous — if you stop the moment p < 0.05, you're systematically harvesting random early fluctuations, and your real false-positive rate balloons. With daily checks, the effective error rate can climb from 5% to 20–30% or more, depending on traffic and how long you're willing to wait.
+
+    Intuition: over 14 days you get 14 chances to cross the threshold. Each crossing event is likely to happen during a random upward wiggle of B's conversion rate, so "first time p < 0.05" is a biased estimator of the true effect.
+
+    **Does it matter here?**
+
+    Practically, no — the test ran the full 14 days and ended at p ≈ 0.013, so the conclusion is valid. Your manager's *instinct* (B is winning) was right, but his *method* (stop when the dashboard says so) would have been wrong. If you'd stopped on day 4, you'd be reporting a result you couldn't trust, and it might have been a mirage — the day 5–6 bounce suggests the early lift was partly noise.
+
+    **What to do going forward**
+
+    1. **Fix the sample size / duration in advance** and don't look at significance until then (or look, but agree not to act).
+    2. If you need the flexibility to stop early, use a proper **sequential testing** method: group-sequential boundaries (O'Brien-Fleming), an alpha-spending approach, or always-valid inference (e.g., mSPRT — tools like GrowthBook support this natively).
+    3. Hide the p-value column from the daily dashboard, or replace it with a sequential-test statistic that's valid to monitor continuously.
+
+    So: right conclusion, wrong reason. Worth a friendly conversation about process before the next test.
+- user: |
+    What's the difference between a one-sided and a two-sided test, and which one should we use?
+  assistant: |
+    **The difference**
+
+    - **Two-sided test**: asks "is there *any* difference between A and B?" The alternative hypothesis is that B is either better or worse. You split your significance level (α = 5%) across both tails — 2.5% for "B is better" and 2.5% for "B is worse."
+    - **One-sided test**: asks only "is B *better* than A?" All 5% of α goes into one tail, so it's easier to reach significance — but only in the direction you pre-committed to.
+
+    For your checkout test, the two-sided p-value was 0.013. The one-sided p-value is exactly half: **0.0065**. Same data, different question.
+
+    **Which should you use?**
+
+    For A/B testing, use **two-sided**, for three reasons:
+
+    1. **You rarely have a genuine directional prior strong enough to justify it.** A one-sided test is only legitimate if you'd have ignored a result in the opposite direction — and you wouldn't. If the one-page checkout had *hurt* conversion by 12%, you'd absolutely want to know and report that. A test that can't detect harm in the direction you care about is the wrong tool.
+
+    2. **It's the industry and statistical software default.** Most A/B testing platforms (Optimizely, VWO, GrowthBook, Statsig) report two-sided p-values. Using one-sided numbers on a dashboard that others read as two-sided silently halves your p-values and inflates your false-positive rate.
+
+    3. **Stakeholder trust.** "We used a one-sided test" sounds like we changed the rules to get significance — even when it's justified. Two-sided results are harder to argue with.
+
+    **When one-sided *is* appropriate**
+
+    - You genuinely only care about one direction and would ship nothing / ignore the result otherwise (e.g., a non-inferiority check: "is the cheaper vendor at least as good?").
+    - It's declared *before* the test runs, not chosen after seeing the data.
+
+    **Practical note**: the choice matters much less than the peeking issue we discussed. A one-sided vs. two-sided decision shifts your p-value by a factor of 2; peeking can inflate your false-positive rate by 5x. If you fix only one process issue, fix the peeking — and default to two-sided for everything else.
+- user: |
+    Second test, owned by Ioana from the growth team: free shipping threshold lowered from 200 to 150 lei. She reports that average order value went DOWN, from 231 to 219 lei, and wants to roll it back.
+  assistant: |
+    Hold on — a drop in AOV is *expected* here, and by itself it's not a reason to roll back. The question isn't "did AOV go down?" but "did **profit per visitor** go up or down?"
+
+    **Why AOV almost had to fall**
+
+    Lowering the threshold changes two behaviors at once:
+
+    1. **More people qualify for free shipping** → conversion goes up, and the *new* orders are disproportionately small ones (people who were at 120–199 lei and previously paid shipping). Small orders dilute the average.
+    2. **Some people stop padding their cart** → customers who used to add an extra item to cross 200 lei now stop at 155 lei.
+
+    Both effects push AOV down *mechanically*. A stable-or-lower AOV is the predicted outcome of this test, not a red flag. Judging it on AOV alone is like judging the checkout test on time-to-purchase and ignoring conversion.
+
+    **What to actually measure**
+
+    The metric that captures the full trade-off is **revenue per visitor** (or better, **contribution margin per visitor**):
+
+    - RPV = conversion rate × AOV
+    - Old: suppose CR was 3.5% → 0.035 × 231 = **8.09 lei/visitor**
+    - New: if conversion rose to, say, 4.0% → 0.040 × 219 = **8.76 lei/visitor** — a win despite the AOV drop
+
+    Ask Ioana for the conversion rates from both arms. If conversion rose enough to offset the AOV decline, the test is positive. If RPV fell, *then* rollback is on the table.
+
+    **Also check, before deciding:**
+
+    1. **Margin, not just revenue.** Free shipping on a 155 lei order costs you the same as on a 155 lei order that used to pay shipping — but you've lost the shipping fee revenue. Compute profit per visitor including shipping costs and product margin. Thin-margin orders that only exist because of the threshold can be unprofitable.
+    2. **Statistical significance of the AOV drop.** AOV distributions are heavy-tailed; a 12 lei difference may or may not be significant. Use a t-test or bootstrap — and note the peeking rules apply here too.
+    3. **Segment by order size.** Did big-basket shoppers change behavior, or is the whole effect from small orders joining? That tells you whether you could tune the threshold (e.g., 175 lei) to keep the conversion lift while limiting margin erosion.
+    4. **Test duration and seasonality** — same standards as the checkout test: pre-registered duration, no peeking.
+
+    **Bottom line**: don't roll back yet. Get conversion rates and margin data from Ioana, compute profit per visitor, and make the call on that. If the growth team's goal was more orders and the economics hold, this may be a win wearing an AOV decline as a disguise.
+- user: |
+    I split her data by customer type:
+
+    ```
+    segment      variant  orders  avg_order_value
+    new          control  1,240   176
+    new          test     2,010   171
+    returning    control  2,860   255
+    returning    test     2,190   259
+    ```
+
+    What's going on here?
+  assistant: |
+    Now the picture changes completely — two separate things are going on, and one of them is a genuine red flag.
+
+    **1. The AOV drop is a mix effect, not a behavior change (Simpson's paradox in action)**
+
+    Within each segment, AOV barely moved:
+
+    - New: 176 → 171 (−5 lei)
+    - Returning: 255 → 259 (+4 lei)
+
+    But the *composition* shifted: new customers (low AOV) went from 30% of orders to 48%. Since the overall average blends the two, overall AOV fell from 231 to ~219 even though almost no individual customer spent less per order. Ioana's rollback argument mostly evaporates — the AOV "decline" is arithmetic, not behavior.
+
+    **2. The real problem: returning customers' orders dropped 23%**
+
+    - New: 1,240 → 2,010 (**+62%**) — the lower threshold clearly unlocked first-time buyers with smaller baskets. Great.
+    - Returning: 2,860 → 2,190 (**−23%**) — this is hard to explain behaviorally. Lowering a threshold from 200 to 150 makes free shipping *easier* to reach; there's no good reason existing customers would order less.
+
+    Before interpreting this as a real effect, check for **Sample Ratio Mismatch (SRM)**:
+
+    1. **Visitor counts by segment × variant.** You've shown orders, but if the test arm happened to receive fewer *returning visitors* (bad randomization, redirect lag, a targeting rule that skewed allocation), the order drop is mechanical, not behavioral. Compute orders-per-visitor per cell.
+    2. **Instrumentation.** Did returning customers in the test arm get tracked correctly? A 23% drop is the size of a bug, not a nudge.
+    3. **Experience differences.** Did test-arm returning customers lose something — e.g., the test replaced an existing loyalty perk, or promo codes stopped stacking with the new threshold?
+
+    **If the data is clean**, the story is: the new threshold is a strong acquisition lever (new customers +62%) but somehow suppresses returning-customer purchases — perhaps they now place smaller, more frequent orders instead of consolidating (check order frequency, not just order counts), or margin per returning order changed.
+
+    **What to bring to Ioana:**
+
+    - The rollback decision should be based on **profit per visitor, per segment**, not overall AOV.
+    - The new-customer lift has long-term value (LTV of acquired customers) that a 14-day window doesn't capture — a slight revenue dip on returning customers could still be net-positive if acquisition is the goal.
+    - But first: verify the returning-customer drop is real. If SRM checks fail, the test results are invalid and you may need to re-run.
+
+    The headline finding: her AOV metric was hiding that this test is a big win with new customers and a possible problem with returning ones — two different decisions, not one.
+- user: |
+    How do I compute a confidence interval for a difference in means when the data is very skewed?
+  assistant: |
+    Good question — and it's exactly the right worry for AOV data, which is typically right-skewed with a heavy tail (a few 5,000-lei baskets drag the mean around).
+
+    **First: the plain t-interval is more robust than people think**
+
+    The Welch t-interval for the difference in means relies on the CLT, not normality of the data. With your sample sizes (thousands of orders per arm), it's usually fine even for quite skewed data. The failure mode is small samples + heavy tails, not large samples + skew. A quick sanity check: compute the t-interval and a bootstrap interval; if they roughly agree, stop worrying.
+
+    **Option 1: Bootstrap (my default recommendation)**
+
+    Resample each group independently with replacement, compute the difference in means each time, take percentiles:
+
+    ```python
+    import numpy as np
+
+    rng = np.random.default_rng(42)
+
+    def boot_ci_diff_means(x, y, n_boot=10_000, alpha=0.05):
+        diffs = np.empty(n_boot)
+        for i in range(n_boot):
+            rx = rng.choice(x, size=len(x), replace=True)
+            ry = rng.choice(y, size=len(y), replace=True)
+            diffs[i] = ry.mean() - rx.mean()
+        lo, hi = np.percentile(diffs, [100*alpha/2, 100*(1-alpha/2)])
+        return lo, hi
+    ```
+
+    For better small-sample accuracy, use the **BCa** interval (`scipy.stats.bootstrap` with `method='BCa'`, or the `arch` / `bootstrap` packages) rather than the plain percentile method.
+
+    One caveat: bootstrapping the *mean* of heavy-tailed data inherits the mean's instability — with extreme outliers (e.g., one 50,000-lei order), bootstrap intervals can be erratic. Check max values and consider whether outliers are even real (fraud, B2B bulk orders, data errors).
+
+    **Option 2: Trimmed means / Yuen's test**
+
+    Compare means of the middle 80–90% of the distribution (trim the tails). This is much more robust to outliers and heavy tails, and `scipy.stats.ttest_ind(..., trim=...)` implements Yuen's test directly. The trade-off: you're no longer estimating the difference in true means, but in trimmed means — fine for decisions, but be precise about what you report.
+
+    **Option 3: Transform, test, back-transform**
+
+    Log-transform AOV, compute the CI for the difference in log-means, and exponentiate. You then get a CI for the *ratio of geometric means*, not the difference in arithmetic means — a different (and often more decision-relevant) quantity, but don't present it as a difference in means.
+
+    **Option 4: If n is small, go nonparametric**
+
+    Mann-Whitney U on the raw data tests stochastic dominance, not the difference in means — useful as a robustness check, but it answers a different question.
+
+    **Practical recipe for your AOV comparisons**
+
+    1. Plot the distributions first (histograms + a few quantiles per arm).
+    2. Compute Welch's t-interval as the baseline.
+    3. Confirm with a BCa bootstrap.
+    4. If they disagree, or outliers dominate, switch to trimmed means (Yuen) and say so explicitly in the writeup.
+
+    One last note: for the *decision* (roll back the shipping threshold or not), what matters is profit per visitor — which is per-*visitor*, not per-*order*, and is often much better behaved than AOV because averaging over visitors smooths the heavy tail. That's another reason to prefer RPV as the primary metric.
+- user: |
+    What sample size do I need to detect a 0.3 percentage point lift on a 3.5% baseline, with 80% power?
+  assistant: |
+    **Short answer: about 61,000–62,000 visitors per arm, so ~123,000 total.**
+
+    **The calculation**
+
+    For a two-sided test at α = 0.05, power = 80%, baseline p₁ = 0.035, expected p₂ = 0.038 (Δ = 0.003):
+
+    $$n_{\text{per arm}} = \frac{\left(z_{\alpha/2}\sqrt{2\bar{p}\bar{q}} + z_\beta\sqrt{p_1q_1 + p_2q_2}\right)^2}{\Delta^2}$$
+
+    with p̄ = 0.0365, z_{α/2} = 1.96, z_β = 0.8416. Plugging in:
+
+    - Numerator: (1.96 × 0.2652 + 0.8416 × 0.2652)² = (0.743)² ≈ 0.552
+    - n = 0.552 / 0.003² ≈ **61,300 per arm**
+
+    **In Python:**
+
+    ```python
+    from statsmodels.stats.power import NormalIndPower
+    from statsmodels.stats.proportion import proportion_effectsize
+
+    effect = proportion_effectsize(0.038, 0.035)   # Cohen's h
+    n = NormalIndPower().solve_power(
+        effect_size=effect, alpha=0.05, power=0.80,
+        ratio=1, alternative='two-sided'
+    )
+    # ≈ 61,900 per arm
+    ```
+
+    **The uncomfortable implication for your checkout test**
+
+    You had ~48,000 per arm. At that sample size, the power to detect a 0.3 pp lift is only about **40–45%**. In other words, even if the one-page checkout really does give +0.3 pp, a test this size misses it more often than not. Your p = 0.013 result is valid, but it's worth knowing the test was underpowered for the effect size you cared about — that's partly why it took the full 14 days and why the daily p-values were so jumpy.
+
+    **Practical notes**
+
+    1. **Pick the MDE before the test, not after.** The 0.3 pp should be the smallest lift that's *worth implementing* — powering for anything smaller wastes traffic; anything larger risks shipping on noise.
+    2. **If you use sequential testing** (which we discussed re: peeking), inflate the sample size ~10–20% to compensate for the spending of alpha over interim looks.
+    3. **Runtime**: at your traffic rate (~3,400 visitors/arm/day per the first test), 62k per arm means roughly **18 days**. If that's too slow, your options are: accept a larger MDE, use a one-sided test (if genuinely justified), or reduce variance with a better metric (e.g., RPV with pre-test covariates — CUPED — which can cut required sample size by 20–40%).
+    4. **Unequal allocation is fine** if needed: `ratio` in the code above handles it, though equal arms maximize power for a fixed total.
+
+    Rule of thumb to sanity-check: near small conversion rates, required n per arm ≈ 16 × p̄(1−p̄) / Δ² — here 16 × 0.0365 × 0.9635 / 0.000009 ≈ 62,600. Close enough for back-of-envelope planning.
+- user: |
+    The third test is about product recommendations on the cart page. The PM, Mihai, says the new algorithm increased clicks on recommendations by 40%.
+  assistant: |
+    Mihai's metric is a **proxy metric**, and the 40% number by itself doesn't tell you whether the test won. Clicks on recommendations measure engagement with the feature, not value to the business. The chain you actually care about is:
+
+    **click → add-to-cart from recommendation → purchase → revenue/profit**
+
+    A 40% click lift could mean anything from "genuinely better recommendations" to "we made the widget bigger and shinier."
+
+    **Questions to ask Mihai, in order:**
+
+    1. **What happened downstream?** Did revenue per visitor, AOV, or attach rate (share of orders containing a recommended item) move? If clicks went up 40% and RPV didn't move, users are clicking and bouncing — the algorithm is generating curiosity, not sales. If RPV moved, *that's* the headline number, not clicks.
+    2. **Was the change purely the algorithm, or also the UI?** If the new version also changed layout, size, position, or number of recommendations shown, the click lift is confounded. You'd be shipping "more prominent widget," not "better algorithm." Check the test design.
+    3. **Is 40% even significant?** Clicks-per-visitor is a ratio metric (clicks / visitors), often overdispersed. Ask for the per-visitor analysis with a proper test — and whether the peeking rules were followed. A 40% lift on a low-base metric can still be noise if traffic was small.
+    4. **Novelty effect.** Anything new on a page gets clicked more for the first week or two. If the test ran <2–3 weeks, part of that 40% is "it's new," not "it's better." Check whether the lift is decaying day over day.
+    5. **Cannibalization.** Recommendations can shift *which* products people buy (toward popular items the algorithm favors) without changing *how much* they buy. Check whether overall conversion and category mix changed, not just recommendation clicks.
+
+    **The structural issue**
+
+    This is the same pattern as Ioana's test: a team reporting the metric that flatters their work. Clicks are the metric the recommendations team directly controls; RPV is the metric the company cares about. Neither Mihai nor Ioana is necessarily gaming it — people gravitate to the metric nearest their lever — but your job as the analyst is to insist on the **primary metric being a business outcome** (RPV or profit per visitor), with clicks as a secondary/diagnostic metric.
+
+    **Practical suggestion**: ask Mihai for the full funnel table — visitors, recommendation clickers, recommendation-driven add-to-carts, recommendation-attributed orders, and RPV, per arm. If clicks rose 40% but the click→purchase rate collapsed, you'll see it immediately, and you'll have a much more interesting conversation than "40% more clicks."
+- user: |
+    I looked at the event logs and something is off:
+
+    ```
+    variant   sessions  rec_impressions  rec_clicks  sessions_with_click  orders
+    control   61,420    184,260          5,527       4,912               2,149
+    test      60,980    365,880          7,742       4,958               2,131
+    ```
+
+    The test variant shows 6 recommendations instead of 3.
+  assistant: |
+    This table dismantles the 40% claim. Look at the numbers carefully:
+
+    **1. The click lift is purely mechanical — more slots, more clicks**
+
+    The test shows **6 recommendations instead of 3**, so impressions doubled (184k → 366k). Clicks went up 40% (5,527 → 7,742) — *less than* proportionally. Click-through **per impression** actually fell:
+
+    - Control: 5,527 / 184,260 = **3.00%**
+    - Test: 7,742 / 365,880 = **2.12%**
+
+    The new setup is *worse* at generating clicks per item shown. The total went up only because there were twice as many items to click. This is the classic "more slots = more engagement" illusion.
+
+    **2. The human-level metric is flat**
+
+    Sessions with at least one click: 4,912 → 4,958 (**+0.9%**, almost certainly not significant). The same ~8% of sessions engage with recommendations in both arms. No individual user is more interested in recommendations than before — the widget just offers more things to click per person.
+
+    **3. Downstream: nothing**
+
+    Orders: 2,149 → 2,131 (**−0.8%**). Conversion per session: 3.50% → 3.49%. Whatever the new algorithm is doing, it isn't producing more purchases. If anything, doubling the recommendation real estate on the cart page slightly *hurt* — possibly distracting users from checkout.
+
+    **What this means**
+
+    - Mihai's 40% was **impressions × slots**, not algorithm quality. The test is confounded by design: algorithm + layout changed together, and the layout change alone explains the entire click lift.
+    - The honest summary: "We doubled the number of recommendations shown, got the same number of engaged users, a lower click-through rate per item, and no change in orders."
+    - There may still be a real algorithm improvement hiding in here — but this test can't detect it. To measure the algorithm fairly, you'd need to hold the number of slots constant (3 vs. 3, or 6 vs. 6) and change only the ranking.
+
+    **Recommendation to bring to Mihai:**
+
+    1. Don't ship on this result — there's no evidence of benefit, and a hint of conversion dilution.
+    2. Re-run with slots held constant so the algorithm is the only variable.
+    3. Pre-register the primary metric as **orders per session** or **RPV** (recommendation-attributed revenue as secondary), with clicks-per-*engaged-session* as a diagnostic — not total clicks, which any UI change can inflate for free.
+
+    One more diagnostic worth pulling: revenue *per recommendation click* in each arm. If the test arm's clicks convert worse (people clicking through a longer list of less relevant items), that's direct evidence the ranking quality dropped when the algorithm had to fill six slots instead of three.
+- user: |
+    Explain the difference between Bayesian and frequentist A/B testing in simple words.
+  assistant: |
+    **The core difference in one sentence**: frequentists ask "how surprising is this data if there's no real difference?" while Bayesians ask "given this data, what's the probability B is better?"
+
+    **Frequentist (what you've been doing)**
+
+    - You compute a **p-value**: the probability of seeing a lift this big or bigger *if A and B were actually identical*.
+    - The conclusion is framed around the data: "the data would be unlikely under no difference."
+    - You can **never** say "there's a 95% chance B is better" — that sentence is meaningless in this framework, even though stakeholders say it constantly.
+    - Decisions are controlled by pre-set rules: α = 5%, fixed sample size, no peeking (as we saw with the day-4 stop).
+
+    **Bayesian**
+
+    - You start with a **prior** (what you believed before the test — e.g., "most checkout changes do nothing, some help a little") and update it with the data to get a **posterior** distribution.
+    - From the posterior you can say directly: "**There's a 96% probability B is better than A**, and there's a 90% chance the lift is at least 0.1 pp."
+    - You can also compute **expected loss**: "if we ship B and it's actually worse, we expect to lose 0.05 pp." That's often the most decision-useful number of all.
+    - No fixed sample size required — you can check the results every day and stop whenever the probability of B being better is high enough. **Peeking is not a sin** in Bayesian testing; the framework handles it naturally.
+
+    **Simple analogy**
+
+    Frequentist: a courtroom — "innocent until proven guilty beyond reasonable doubt." The p-value is the strength of evidence against innocence. You can't convict on 90% certainty; you need the pre-agreed threshold.
+
+    Bayesian: a doctor — "based on the test results and everything else I know, I'm 96% sure it's X, so let's treat for X." Beliefs get updated continuously; there's no sacred threshold, just a decision about whether you're confident enough to act.
+
+    **Practical trade-offs for your team**
+
+    | | Frequentist | Bayesian |
+    |---|---|---|
+    | What you report | p-value, CI | P(B better), credible interval, expected loss |
+    | Stopping rule | Fixed (or sequential corrections) | Flexible — monitor anytime |
+    | Misunderstanding risk | High (p-values are misread constantly — even by your manager on day 4) | Lower ("96% chance B wins" is intuitive) |
+    | Prior needed | No | Yes (can be weak/neutral) |
+    | Tooling | statsmodels, any platform | GrowthBook, VWO, Statsig, PyMC |
+
+    **My take for your situation**: the biggest problem in your team isn't the statistical philosophy — it's that p-values get misinterpreted (stopping at p < 0.05 on day 4, celebrating proxy metrics). Bayesian outputs are harder to misuse because "96% chance B is better" means what people think it means. If your organization would benefit from plain-language, decision-oriented numbers and the freedom to monitor tests continuously, Bayesian is worth adopting. If you keep frequentist, the discipline (pre-registered duration, fixed α) has to come from process instead.
+
+    Either way, the metrics matter more than the math: no framework rescues a test whose primary metric is clicks or AOV.
+- user: |
+    How should I correct for testing several metrics at once?
+  assistant: |
+    **The short answer for A/B testing**: don't blanket-correct everything — instead, designate **one primary metric** before the test, and treat the rest as secondary or guardrail metrics with different rules. Full-blown corrections across all metrics are usually the wrong tool here.
+
+    **Why it matters**
+
+    If you test 10 metrics at α = 0.05 and they're all truly null, there's a ~40% chance at least one shows "significance" by luck. That's the multiple comparisons problem. But correcting all 10 to α = 0.005 throws away most of your power and punishes you for measuring things — which is exactly what a good test should do.
+
+    **The standard A/B testing hierarchy**
+
+    1. **One primary metric** (decided *before* the test): the single number that determines ship/no-ship. Test at α = 0.05, no correction — because there's only one decision.
+    2. **Guardrail metrics** (a small, fixed set — 3 to 5): things that must not get worse (latency, error rate, refund rate, AOV for Ioana's test). Test each at a stricter level, e.g., α = 0.01, or use a simple correction across just these.
+    3. **Diagnostic/secondary metrics** (everything else): used to build the story and generate hypotheses, but explicitly *not* for ship decisions. No formal thresholds — you expect some noise among them and that's fine.
+
+    The discipline that replaces the math is the **pre-registration**: write down which metric is which before looking at results. Then "we found a significant lift in clicks" can't quietly become the headline when the primary metric was flat (Mihai's test, exactly).
+
+    **If you do want formal corrections**
+
+    - **Bonferroni**: divide α by the number of tests (α = 0.05/10 = 0.005 each). Simple, valid, conservative — fine for a handful of guardrails, wasteful for many metrics.
+    - **Holm–Bonferroni**: step-down version — sort p-values, compare the smallest to α/k, next to α/(k−1), etc. Strictly more powerful than Bonferroni, still controls family-wise error. Good default for guardrail sets.
+    - **Benjamini–Hochberg**: controls the *false discovery rate* instead — among the metrics you call significant, expect ~5% to be false. Much more powerful when testing many metrics (dozens+), standard in exploratory work. Too loose for a single ship decision.
+
+    ```python
+    from statsmodels.stats.multitest import multipletests
+
+    # p-values from your 5 guardrail metrics
+    reject, p_adj, _, _ = multipletests(pvals, alpha=0.05, method='holm')
+    ```
+
+    **Two subtleties**
+
+    1. **Metrics are correlated.** Conversion, orders, and RPV move together, so they're not 10 independent chances to fool you — Bonferroni is extra conservative on correlated metrics. Another reason the primary-metric approach beats mechanical correction.
+    2. **The same problem exists across tests, not just metrics.** Your team is running multiple *tests* (checkout, shipping threshold, recommendations). If each ships at α = 0.05, some wins will be false across the portfolio. This is an argument for Bayesian expected-loss framing or for tracking long-term win rates — not for making every individual test harder to pass.
+
+    **Bottom line**: pre-register one primary metric per test, protect a few guardrails with Holm, and let diagnostics be diagnostics. The correction problem is mostly a symptom of deciding after the fact which metric to believe — fix that, and the statistics become simple.
+- user: |
+    Back to the first test: the data team found that bots were not filtered on day 1 and 2 of the checkout experiment. Roughly 3,100 visitors in A and 2,950 in B on those days were bots, with zero orders.
+  assistant: |
+    Good catch from the data team — but the good news is this barely changes the conclusion. Let's redo the numbers.
+
+    **Corrected numbers**
+
+    | | visitors (clean) | orders | conversion |
+    |---|---|---|---|
+    | A | 48,210 − 3,100 = 45,110 | 1,687 | **3.74%** |
+    | B | 47,955 − 2,950 = 45,005 | 1,822 | **4.05%** |
+
+    **Re-running the test**
+
+    - Pooled p̂ = 3,509 / 90,115 = 3.894%
+    - SE ≈ 0.00129
+    - z ≈ 2.40, two-sided **p ≈ 0.016**
+    - 95% CI for the difference: **+0.06 to +0.56 pp**
+
+    Still significant at α = 0.05. The relative lift is +8.3% (vs. +8.6% before). The conclusion survives.
+
+    **Why the impact was so small — and when it wouldn't be**
+
+    1. **Bots hit both arms almost equally** (3,100 vs. 2,950, ~6.4% vs. ~6.2% of traffic). Since bots convert at zero in both arms, they deflate both conversion rates by roughly the same proportion and barely touch the *difference*. A/B comparisons are robust to noise that's symmetric across arms.
+    2. **The danger case is asymmetric contamination**: if bots had landed 5% in A but 15% in B, the comparison would be badly biased. So the check to run isn't just "were there bots?" but "**was bot contamination balanced across arms?**" Here it was — and as a bonus, the cleaned visitor counts (45,110 vs. 45,005) pass the SRM check nicely.
+    3. **Absolute rates shifted**: the "true" conversion is ~3.74%/4.05%, not 3.50%/3.80%. If anyone is using these numbers for revenue forecasting or as a baseline for future sample-size calculations, use the cleaned figures.
+
+    **Follow-ups worth doing**
+
+    1. **Check the other two tests.** If the bot filter was missing on those days site-wide, Ioana's shipping-threshold test and Mihai's recommendation test (if they overlapped) have the same contamination. Same logic applies: check balance across arms, not just presence.
+    2. **Fix the pipeline, not just this dataset.** Bot filtering should happen *before* assignment or at least before any analysis — ideally bots shouldn't even enter the experiment (they can also distort randomization and server-side latency guardrails).
+    3. **Re-examine the day 1–2 dashboard values.** The early p-values your manager used in the peeking debate were computed on bot-inflated data. It doesn't change the lesson (day 4 was still a peek), but the historical numbers in that table are slightly wrong.
+    4. **Add a data-quality guardrail** to future tests: daily bot-rate by arm, with an alert if it exceeds a threshold or diverges between arms. Cheap to implement, and it would have caught this on day 1 instead of after the fact.
+
+    **Bottom line**: the checkout result stands — B is still the winner, p ≈ 0.016 — but update the absolute conversion rates, verify the other concurrent tests for the same issue, and get bot filtering into the pipeline before the next experiment starts.
+- user: |
+    Recompute it with those removed.
+  assistant: |
+    Here's the full recomputation on cleaned data:
+
+    **Cleaned counts**
+
+    | | visitors | orders | conversion |
+    |---|---|---|---|
+    | A | 48,210 − 3,100 = **45,110** | 1,687 | 1,687 / 45,110 = **3.740%** |
+    | B | 47,955 − 2,950 = **45,005** | 1,822 | 1,822 / 45,005 = **4.048%** |
+
+    **Difference and lift**
+
+    - Absolute: 4.048% − 3.740% = **+0.309 pp**
+    - Relative: 0.309 / 3.740 = **+8.25%**
+
+    **Two-proportion z-test**
+
+    - Pooled rate: p̂ = 3,509 / 90,115 = 3.894%
+    - SE = √(p̂(1−p̂)(1/n_A + 1/n_B)) = √(0.03894 × 0.96106 × (1/45,110 + 1/45,005)) ≈ **0.001289**
+    - z = 0.00309 / 0.001289 ≈ **2.40**
+    - Two-sided **p ≈ 0.017**
+
+    **95% confidence interval** (unpooled SE ≈ 0.001289, essentially identical):
+
+    $$0.309\text{ pp} \pm 1.96 \times 0.1289\text{ pp} \;\Rightarrow\; \textbf{+0.06 to +0.56 pp}$$
+
+    **Verification in Python:**
+
+    ```python
+    from statsmodels.stats.proportion import proportions_ztest, confint_proportions_2indep
+
+    count = [1687, 1822]
+    nobs  = [45110, 45005]
+
+    z, p = proportions_ztest(count, nobs)          # z ≈ 2.40, p ≈ 0.017
+    ci = confint_proportions_2indep(1822, 45005, 1687, 45110, compare='diff')
+    # (0.00056, 0.00561)
+    ```
+
+    **Summary of what changed vs. the raw numbers**
+
+    | | raw | cleaned |
+    |---|---|---|
+    | A conversion | 3.50% | 3.74% |
+    | B conversion | 3.80% | 4.05% |
+    | p-value | 0.013 | 0.017 |
+    | 95% CI | +0.06 to +0.54 pp | +0.06 to +0.56 pp |
+    | Relative lift | +8.6% | +8.3% |
+
+    The decision is unchanged: B wins, significant at α = 0.05. The main practical update is the **absolute conversion rates** — use 3.74% / 4.05% as your new baseline for future sample-size calculations and revenue forecasts, not the bot-inflated 3.50% / 3.80%.
+- user: |
+    What is a sample ratio mismatch and how do I check for it?
+  assistant: |
+    **What it is**
+
+    A Sample Ratio Mismatch is when your experiment's actual traffic split deviates from the intended split, beyond what random chance allows. If you assigned 50/50 and ended up with 48,210 vs. 47,955, that's fine. If you ended up with 48,210 vs. 41,000, something is broken — and worse, **the whole experiment is invalid**, even if the p-value looks great.
+
+    **Why it's so dangerous**
+
+    Randomization is the foundation of A/B testing: it guarantees (in expectation) that both arms are comparable on everything — user type, device, intent, seasonality. SRM means randomization failed somewhere, so the arms may differ systematically in ways that bias your metric. A 60/40 split can easily produce a fake "significant" lift. And SRM is insidious because the results still *look* normal — the p-value machinery doesn't know anything is wrong.
+
+    **How to check: a chi-square goodness-of-fit test**
+
+    Compare observed counts against expected counts under the planned ratio:
+
+    ```python
+    from scipy.stats import chisquare
+
+    # intended 50/50, observed visitors
+    observed = [45110, 45005]
+    expected_ratio = [0.5, 0.5]
+
+    total = sum(observed)
+    expected = [total * r for r in expected_ratio]
+
+    chi2, p = chisquare(observed, f_exp=expected)
+    # p ≈ 0.72 → no mismatch
+    ```
+
+    - **p < 0.001** (not 0.05!) → declare SRM. Use a very strict threshold because with ~100k visitors you have high power, and you'd rather investigate a few false alarms than miss a real one.
+    - **p ≥ 0.001** → pass, proceed with analysis.
+
+    For your checkout test: 45,110 vs. 45,005 against a 50/50 plan gives p ≈ 0.72 — healthy. For Ioana's test, the segment table hinted at a possible issue: new customers went 1,240 vs. 2,010 orders. That's not itself SRM (orders ≠ visitors), but it's exactly the kind of asymmetry that made me say "check visitor counts by segment × variant" — if *returning visitors* were split 55/45 when they should be 50/50, her returning-customer order drop could be an artifact.
+
+    **Common causes (what to look for when the check fails)**
+
+    1. **Bots / crawler filtering applied differently** — e.g., a filter that removes traffic from one arm only.
+    2. **Redirect latency** — if one arm loads via a slow redirect, users (and bots) abandon before being counted.
+    3. **Instrumentation bugs** — one arm's tracking pixel blocked, an ad blocker pattern hitting one variant's URL, duplicate event firing.
+    4. **Assignment bugs** — hashing errors, sticky sessions re-randomized, cache serving one variant more.
+    5. **Uneven ramp-out** — one arm throttled for capacity or safety reasons.
+    6. **Triggering/eligibility differences** — users qualify for the experiment at different rates by arm (e.g., the feature itself changes who reaches the analysis point). This is the subtle one: check SRM on *triggered* users, and make sure the trigger event isn't affected by the treatment.
+
+    **Practical rules for your team**
+
+    1. **Run the SRM check before looking at any metric** — make it the first line of every test report. Many platforms (GrowthBook, Statsig, Eppo) do it automatically and flag it.
+    2. **Check it at every level you'll analyze**: overall, and by segment, device, and day. A test can pass overall and fail within a segment (that's the Ioana scenario).
+    3. **If SRM fires, don't just re-randomize and move on** — find the root cause. The bias that caused the mismatch usually also biases the metrics.
+    4. **Never "fix" SRM by reweighting** the arms to the planned ratio — that doesn't restore randomization; it just hides the symptom.
+
+    One-line summary: SRM is when the arms didn't get the traffic split you designed, it invalidates the experiment regardless of how good the results look, and it's caught with a trivial chi-square test that should be step one of every analysis.
+- user: |
+    In one of our tests the split came out like this: 50,812 in control, 48,394 in test, with a 50/50 configuration. Is that a problem?
+  assistant: |
+    **Yes — that's a clear SRM. Do not trust this test's results until you find the cause.**
+
+    **The check**
+
+    - Total: 50,812 + 48,394 = 99,206
+    - Expected under 50/50: 49,603 per arm
+    - Observed split: **51.2% / 48.8%** (a gap of 1,209 visitors)
+
+    ```python
+    from scipy.stats import chisquare
+
+    chi2, p = chisquare([50812, 48394], f_exp=[49603, 49603])
+    # chi2 ≈ 58.9, p ≈ 2e-14
+    ```
+
+    p ≈ 2×10⁻¹⁴ — astronomically below the 0.001 threshold. With ~99k visitors, a 51.2/48.8 split should happen by chance roughly once in a quadrillion experiments. This is not bad luck; something is systematically diverting traffic.
+
+    **Why it matters even though the split "looks" close**
+
+    1.2% might seem trivial, but the size of the mismatch isn't the issue — the *cause* is. Whatever mechanism removed or redirected ~1,200 visitors from the test arm almost certainly didn't remove them at random. If, say, a redirect lag or a tracking bug disproportionately dropped slow devices or a specific browser from the test arm, your comparison is biased in ways that can easily swamp a small true effect. The mismatch is a symptom; the bias is the disease.
+
+    **How to investigate**
+
+    1. **Break the counts down** — by day, device, browser, country, logged-in status. The dimension where the imbalance concentrates points at the cause:
+       - Imbalance appears on day 1 only → deployment/ramp issue.
+       - Concentrated in one browser → redirect or rendering bug in that browser.
+       - Concentrated in bots/crawlers → differential bot filtering.
+       - Grows steadily over time → cache or cookie-related assignment drift.
+    2. **Check the assignment mechanism**: hashing function, bucketing logic, sticky sessions, any server-side throttling or kill switches that fired mid-test.
+    3. **Check for redirect latency** on the test arm — the classic cause of test-arm undercounting.
+    4. **Check event loss**: compare pageview counts vs. assignment counts per arm; if the test arm loses more events between assignment and measurement, it's instrumentation.
+
+    **What to do with the test**
+
+    - **Don't ship based on it**, even if the result was significant and favorable. A biased experiment can "prove" anything.
+    - **Don't reweight** the arms to 50/50 and recompute — that fixes the counts, not the randomization.
+    - If the root cause turns out to be *benign and random* (rare, but it happens — e.g., a one-time crash that dropped a random subset of sessions), you can sometimes salvage the test with a documented justification. That call should be explicit and written down, not implicit.
+    - Most likely outcome: **fix the bug and re-run.** Annoying, but far cheaper than shipping on a false positive — or killing a genuinely good idea because the broken test showed a false negative.
+
+    **Process fix**: make the SRM chi-square the *first* row of every test report, before any metric is shown. It takes one line of code and would have caught this before anyone spent time interpreting the results.
+- user: |
+    The engineers say the redirect to the test page fails on old Android browsers, those users silently land back on control.
+  assistant: |
+    That's the worst-case version of SRM — not just missing traffic, but **misassigned traffic**. Here's why this is more serious than users simply dropping out:
+
+    **The bias mechanism**
+
+    The failed redirect doesn't remove old-Android users from the experiment — it **moves them into control**. So:
+
+    - **Test arm**: undercounts old-Android users → test results reflect only modern browsers.
+    - **Control arm**: overcounts old-Android users → control's conversion rate is dragged by a device mix that test no longer has.
+
+    If old-Android users convert differently (they almost always convert *worse* — older devices, slower pages, lower income demographics in many markets), control's conversion is artificially deflated. That means the test **looks better than it is**: any measured lift is inflated by a device-mix difference, not by the treatment.
+
+    Direction of bias: if old-Android users convert below average, your measured lift is **overstated**. If they convert above average, it's understated. Either way, the comparison is invalid — you're no longer comparing treatment vs. control, you're comparing "modern browsers + treatment" vs. "everything."
+
+    **How to quantify the damage**
+
+    1. Get the old-Android share of traffic (check analytics: often 5–15% in e-commerce, higher in some markets).
+    2. Compute conversion by device class. If old-Android converts at, say, 2% vs. 4% overall, and they're ~8% of traffic, control's blended rate is depressed by roughly 0.16 pp — which is on the same order as the lifts you've been detecting (0.3 pp). This bias can manufacture or destroy a "significant" result entirely.
+    3. Sanity check: does the measured lift shrink when you restrict the analysis to modern browsers only?
+
+    **Can you salvage the test?**
+
+    Only if you can cleanly identify and exclude the affected population:
+
+    - **Restrict the analysis to non-old-Android browsers** in both arms. This is valid *only if* the redirect failure is strictly determined by browser version (deterministic, observable, and identical in both arms' eligibility). Then both arms are comparable within the restricted population — it's effectively a redefined experiment.
+    - You must also confirm the exclusion rule is precise: which exact browser versions failed? Was it consistent across the whole test period? Any users on the boundary?
+    - Document this as a post-hoc analysis decision — it was driven by a discovered bug, so it should be labeled as such in the writeup, ideally with a pre-registered-style justification of the exclusion criteria *before* looking at the treatment effect in the restricted set.
+
+    If the failure was flaky (partial, time-varying, or entangled with network conditions), you **cannot** cleanly separate affected from unaffected users — re-run the test.
+
+    **The re-run checklist**
+
+    1. Fix the redirect — ideally eliminate it: serve the test experience server-side or via same-page rendering instead of a redirect. Redirects cost you conversions *and* create exactly this failure mode.
+    2. Add an SRM check per device/browser segment as a daily guardrail, not just overall.
+    3. Add a **redirect-success monitor**: log redirect attempts vs. completions per browser, alert on any gap.
+    4. Re-run the full test duration on the fixed setup. Don't reuse the old data.
+
+    **One more thing**: this bug also means your *current* production experience may be losing conversions — if the redirect fails for old-Android users today, some intended-test users are getting a broken journey. Worth checking whether the failure mode has any user-visible cost (extra load time, flicker) even when it "succeeds," since redirect-based testing infrastructure silently taxes the test arm in every experiment you run with it.
+
+    Bottom line: the engineers found the root cause, but the test's results are untrustworthy — the bias runs in the direction of inflating the test arm's apparent performance. Salvage only via a documented, browser-restricted analysis if the failure was strictly deterministic; otherwise fix and re-run.
+- user: |
+    Write a short checklist for the analysts on what to check before reporting any test result.
+  assistant: |
+    **Pre-Reporting Checklist for A/B Test Results**
+
+    **1. Test design (before looking at any metric)**
+    - [ ] Primary metric pre-registered (one metric decides ship/no-ship)
+    - [ ] Guardrail metrics defined (3–5, e.g., AOV, refund rate, latency)
+    - [ ] Planned sample size / duration met — no early stopping on a dashboard glance
+    - [ ] Randomization unit and analysis unit match (user vs. session vs. order)
+
+    **2. Data validity**
+    - [ ] **SRM check passed** — chi-square on visitor counts vs. planned split, threshold p < 0.001 (overall *and* by device, browser, segment, day)
+    - [ ] Bot filtering applied consistently to both arms; bot rate balanced across arms
+    - [ ] No instrumentation gaps: assignment events vs. pageviews vs. orders reconcile per arm
+    - [ ] Test period free of known incidents (deploys, outages, sales, tracking bugs)
+
+    **3. Statistical checks**
+    - [ ] Correct test for the metric (proportions z-test, Welch t / bootstrap for means, sequential method if interim looks were made)
+    - [ ] Two-sided by default; one-sided only if pre-declared and justified
+    - [ ] Multiple metrics: primary at α = 0.05, guardrails corrected (Holm); diagnostics labeled as such
+    - [ ] Segment analyses: check for Simpson's paradox — overall effect consistent with segments
+    - [ ] Effect size reported with CI, not just p-value
+
+    **4. Interpretation**
+    - [ ] Metric is a business outcome (RPV, profit per visitor), not a proxy (clicks, impressions)
+    - [ ] Mechanical effects accounted for (more slots, lower thresholds, mix shifts)
+    - [ ] Novelty effect considered (lift stable over time, not decaying?)
+    - [ ] Guardrails not violated (no significant harm on any guardrail metric)
+    - [ ] Absolute numbers updated for data corrections (bots removed, etc.)
+
+    **5. Reporting**
+    - [ ] SRM result stated first, before any metric
+    - [ ] Report: lift with CI, p-value (or P(B better)), sample sizes, test duration, cleaned conversion rates
+    - [ ] Caveats disclosed: underpowered? confounded changes (algorithm + UI)? post-hoc exclusions documented?
+    - [ ] Recommendation is explicit: ship / don't ship / re-run — with the reason
+
+    **Rule of thumb**: if you can't tick the SRM box and the primary-metric box, the result doesn't get reported — it gets investigated.
+question_plan:
+- type: multi-hop
+  ask: Should we have stopped the one-page checkout test early, as the manager wanted?
+  gold_turn: 2
+  note: the test is named in 1; turn 2 only shows daily p-values
+- type: multi-hop
+  ask: Why did Ioana see average order value drop?
+  gold_turn: 5
+  note: Ioana in 4, Simpson-like split in 5
+- type: multi-hop
+  ask: Did the new recommendation algorithm really increase clicks by 40%?
+  gold_turn: 9
+  note: claim in 8, per-session analysis in 9
+- type: multi-hop
+  ask: What was Mihai's claim missing?
+  gold_turn: 9
+  note: Mihai named only in 8
+- type: multi-hop
+  ask: After removing the bots, was the one-page checkout still significantly better?
+  gold_turn: 13
+  note: bots in 12, recomputation in 13, test from 1
+- type: multi-hop
+  ask: What caused the uneven split between control and test?
+  gold_turn: 16
+  note: SRM numbers in 15, cause in 16
+questions:
+- id: q1
+  type: multi-hop
+  prompt: |
+    Should we have stopped the one-page checkout test early, as the manager wanted?
+  gold:
+  - turn: 2
+    quote: No — stopping on day 4 would have been a textbook case of **peeking**
+- id: q2
+  type: multi-hop
+  prompt: |
+    Why did Ioana see average order value drop?
+  gold:
+  - turn: 5
+    quote: '**1. The AOV drop is a mix effect, not a behavior change (Simpson''s paradox in action)**'
+- id: q3
+  type: multi-hop
+  prompt: |
+    Was the new recommendation algorithm on the cart page actually better?
+  gold:
+  - turn: 9
+    quote: '**1. The click lift is purely mechanical — more slots, more clicks**'
+- id: q4
+  type: multi-hop
+  prompt: |
+    After removing the bots, was the one-page checkout still significantly better?
+  gold:
+  - turn: 13
+    quote: 'The decision is unchanged: B wins, significant at α = 0.05.'
+- id: q5
+  type: multi-hop
+  prompt: |
+    What caused the uneven split between control and test?
+  gold:
+  - turn: 16
+    quote: That's the worst-case version of SRM — not just missing traffic, but **misassigned traffic**

@@ -2,301 +2,1210 @@ id: s02-pandas-sales
 category: coding
 lang: en
 turns:
-  - user: |
-      I have a CSV export of sales (about 2 million rows) and I need to clean it with pandas. Columns: order_id, order_date, customer_email, country, amount, currency. Where do I start?
-    assistant: |
-      Start by loading it efficiently and looking at what's actually in it before cleaning anything.
+- user: |
+    I have a CSV export of sales (about 2 million rows) and I need to clean it with pandas. Columns: order_id, order_date, customer_email, country, amount, currency. Where do I start?
+  assistant: |
+    Start by loading it efficiently and looking at what's actually in it before cleaning anything.
 
-      ```python
-      import pandas as pd
+    ```python
+    import pandas as pd
 
-      dtypes = {
-          "order_id": "string",
-          "customer_email": "string",
-          "country": "category",
-          "currency": "category",
-      }
-      df = pd.read_csv("sales.csv", dtype=dtypes, parse_dates=["order_date"])
-      df.info(memory_usage="deep")
-      df.describe(include="all")
-      ```
+    dtypes = {
+        "order_id": "string",
+        "customer_email": "string",
+        "country": "category",
+        "currency": "category",
+    }
+    df = pd.read_csv("sales.csv", dtype=dtypes, parse_dates=["order_date"])
+    df.info(memory_usage="deep")
+    df.describe(include="all")
+    ```
 
-      Declaring `country` and `currency` as `category` cuts memory a lot: two million repeated strings become small integer codes plus one lookup table. On a file this size that is often the difference between 1.5 GB and 300 MB.
+    Declaring `country` and `currency` as `category` cuts memory a lot: two million repeated strings become small integer codes plus one lookup table. On a file this size that is often the difference between 1.5 GB and 300 MB.
 
-      Then check the usual problems:
+    Then check the usual problems:
 
-      - `df.isna().sum()` – missing values per column;
-      - `df.duplicated("order_id").sum()` – repeated orders;
-      - `df["amount"].describe()` – negative amounts or absurd outliers;
-      - `df["country"].value_counts().head(30)` – spelling variants such as "RO", "Romania", "romania".
-  - user: |
-      read_csv crashed with this:
+    - `df.isna().sum()` – missing values per column;
+    - `df.duplicated("order_id").sum()` – repeated orders;
+    - `df["amount"].describe()` – negative amounts or absurd outliers;
+    - `df["country"].value_counts().head(30)` – spelling variants such as "RO", "Romania", "romania".
+- user: |
+    read_csv crashed with this:
 
-      Traceback (most recent call last):
-        File "clean.py", line 9, in <module>
-          df = pd.read_csv("sales.csv", dtype=dtypes, parse_dates=["order_date"])
-        File "pandas/_libs/parsers.pyx", line 2061, in pandas._libs.parsers.raise_parser_error
-      pandas.errors.ParserError: Error tokenizing data. C error: Expected 6 fields in line 184233, saw 7
-    assistant: |
-      Line 184233 has one field more than the header. In exports like this the cause is almost always an unquoted comma inside a value, typically in an address or a product name, or a currency formatted as `1,299.00`.
+    Traceback (most recent call last):
+      File "clean.py", line 9, in <module>
+        df = pd.read_csv("sales.csv", dtype=dtypes, parse_dates=["order_date"])
+      File "pandas/_libs/parsers.pyx", line 2061, in pandas._libs.parsers.raise_parser_error
+    pandas.errors.ParserError: Error tokenizing data. C error: Expected 6 fields in line 184233, saw 7
+  assistant: |
+    Line 184233 has one field more than the header. In exports like this the cause is almost always an unquoted comma inside a value, typically in an address or a product name, or a currency formatted as `1,299.00`.
 
-      First look at the line itself:
+    First look at the line itself:
 
-      ```bash
-      sed -n '184232,184234p' sales.csv
-      ```
+    ```bash
+    sed -n '184232,184234p' sales.csv
+    ```
 
-      Then pick a fix:
+    Then pick a fix:
 
-      1. If the values are quoted correctly but the file uses a different quote character, pass `quotechar`.
-      2. If a few lines are just broken, skip them and keep a record of which ones:
+    1. If the values are quoted correctly but the file uses a different quote character, pass `quotechar`.
+    2. If a few lines are just broken, skip them and keep a record of which ones:
 
-      ```python
-      bad_lines = []
-      df = pd.read_csv(
-          "sales.csv", dtype=dtypes, parse_dates=["order_date"],
-          on_bad_lines=lambda fields: bad_lines.append(fields) or None,
-          engine="python",
-      )
-      print(f"skipped {len(bad_lines)} malformed lines")
-      ```
+    ```python
+    bad_lines = []
+    df = pd.read_csv(
+        "sales.csv", dtype=dtypes, parse_dates=["order_date"],
+        on_bad_lines=lambda fields: bad_lines.append(fields) or None,
+        engine="python",
+    )
+    print(f"skipped {len(bad_lines)} malformed lines")
+    ```
 
-      A callable for `on_bad_lines` requires `engine="python"`, which is slower; on 2 million rows expect a minute or two. Never silently drop rows in a sales dataset: save `bad_lines` to a file so someone can check them later.
-  - user: |
-      Ok, it loads now. How do I normalise the country column? I see "RO", "Romania", "ROMANIA", "România" and so on.
-    assistant: |
-      Map every variant to an ISO 3166 alpha-2 code. Normalise case, accents and whitespace first, so the mapping table stays small:
+    A callable for `on_bad_lines` requires `engine="python"`, which is slower; on 2 million rows expect a minute or two. Never silently drop rows in a sales dataset: save `bad_lines` to a file so someone can check them later.
+- user: |
+    Ok, it loads now. How do I normalise the country column? I see "RO", "Romania", "ROMANIA", "România" and so on.
+  assistant: |
+    Map every variant to an ISO 3166 alpha-2 code. Normalise case, accents and whitespace first, so the mapping table stays small:
 
-      ```python
-      import unicodedata
+    ```python
+    import unicodedata
 
-      def _key(value: str) -> str:
-          value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
-          return value.strip().lower()
+    def _key(value: str) -> str:
+        value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
+        return value.strip().lower()
 
-      COUNTRY_ALIASES = {
-          "ro": "RO", "romania": "RO", "rou": "RO",
-          "de": "DE", "germany": "DE", "deutschland": "DE",
-          "uk": "GB", "gb": "GB", "united kingdom": "GB", "great britain": "GB",
-      }
+    COUNTRY_ALIASES = {
+        "ro": "RO", "romania": "RO", "rou": "RO",
+        "de": "DE", "germany": "DE", "deutschland": "DE",
+        "uk": "GB", "gb": "GB", "united kingdom": "GB", "great britain": "GB",
+    }
 
-      keys = df["country"].astype("string").map(_key, na_action="ignore")
-      df["country_code"] = keys.map(COUNTRY_ALIASES).astype("category")
-      unmapped = keys[df["country_code"].isna() & keys.notna()].value_counts()
-      print(unmapped.head(20))
-      ```
+    keys = df["country"].astype("string").map(_key, na_action="ignore")
+    df["country_code"] = keys.map(COUNTRY_ALIASES).astype("category")
+    unmapped = keys[df["country_code"].isna() & keys.notna()].value_counts()
+    print(unmapped.head(20))
+    ```
 
-      `unmapped` shows what the table doesn't cover yet; extend `COUNTRY_ALIASES` until it is empty or only has junk. If there are many countries, the `pycountry` package can resolve names with `pycountry.countries.lookup(name)`, but it doesn't know local spellings like "Deutschland", so you still need a small alias table.
-  - user: |
-      Some amounts are in EUR, some in RON and USD. I want everything in EUR, using the exchange rate of the order date.
-    assistant: |
-      Get daily rates into a DataFrame and join on (date, currency) with `merge_asof`, so weekends and holidays use the last published rate:
+    `unmapped` shows what the table doesn't cover yet; extend `COUNTRY_ALIASES` until it is empty or only has junk. If there are many countries, the `pycountry` package can resolve names with `pycountry.countries.lookup(name)`, but it doesn't know local spellings like "Deutschland", so you still need a small alias table.
+- user: |
+    Some amounts are in EUR, some in RON and USD. I want everything in EUR, using the exchange rate of the order date.
+  assistant: |
+    Get daily rates into a DataFrame and join on (date, currency) with `merge_asof`, so weekends and holidays use the last published rate:
 
-      ```python
-      rates = pd.read_csv("ecb_rates.csv", parse_dates=["date"])   # columns: date, currency, rate_to_eur
-      rates = rates.sort_values("date")
+    ```python
+    rates = pd.read_csv("ecb_rates.csv", parse_dates=["date"])   # columns: date, currency, rate_to_eur
+    rates = rates.sort_values("date")
 
-      df = df.sort_values("order_date")
-      df = pd.merge_asof(
-          df, rates,
-          left_on="order_date", right_on="date",
-          by="currency", direction="backward",
-      )
-      df.loc[df["currency"] == "EUR", "rate_to_eur"] = 1.0
-      df["amount_eur"] = (df["amount"] * df["rate_to_eur"]).round(2)
-      ```
+    df = df.sort_values("order_date")
+    df = pd.merge_asof(
+        df, rates,
+        left_on="order_date", right_on="date",
+        by="currency", direction="backward",
+    )
+    df.loc[df["currency"] == "EUR", "rate_to_eur"] = 1.0
+    df["amount_eur"] = (df["amount"] * df["rate_to_eur"]).round(2)
+    ```
 
-      `merge_asof` needs both frames sorted on the join key. `direction="backward"` takes the most recent rate on or before the order date, which is how accounting usually does it. After the join, check `df["rate_to_eur"].isna().sum()`: a missing rate means a currency code not present in your rates file.
-  - user: |
-      How do I find duplicate orders? Some order_ids appear twice but with slightly different timestamps.
-    assistant: |
-      Exact duplicates are easy: `df.duplicated("order_id", keep=False)` marks every row whose id appears more than once. For your case, look at the groups first:
+    `merge_asof` needs both frames sorted on the join key. `direction="backward"` takes the most recent rate on or before the order date, which is how accounting usually does it. After the join, check `df["rate_to_eur"].isna().sum()`: a missing rate means a currency code not present in your rates file.
+- user: |
+    How do I find duplicate orders? Some order_ids appear twice but with slightly different timestamps.
+  assistant: |
+    Exact duplicates are easy: `df.duplicated("order_id", keep=False)` marks every row whose id appears more than once. For your case, look at the groups first:
 
-      ```python
-      dups = df[df.duplicated("order_id", keep=False)].sort_values(["order_id", "order_date"])
-      spread = dups.groupby("order_id")["order_date"].agg(lambda s: s.max() - s.min())
-      print(spread.describe())
-      ```
+    ```python
+    dups = df[df.duplicated("order_id", keep=False)].sort_values(["order_id", "order_date"])
+    spread = dups.groupby("order_id")["order_date"].agg(lambda s: s.max() - s.min())
+    print(spread.describe())
+    ```
 
-      If the timestamps differ by seconds and everything else is identical, it's the same order exported twice (a retry, or an export window that overlapped). Keep the first occurrence:
+    If the timestamps differ by seconds and everything else is identical, it's the same order exported twice (a retry, or an export window that overlapped). Keep the first occurrence:
 
-      ```python
-      df = df.sort_values("order_date").drop_duplicates(subset=["order_id"], keep="first")
-      ```
+    ```python
+    df = df.sort_values("order_date").drop_duplicates(subset=["order_id"], keep="first")
+    ```
 
-      If the amounts differ too, it may be a correction (a refund or an edited order). Then don't drop anything blindly: keep the latest version with `keep="last"` and log the ids so the business side can confirm.
-  - user: |
-      The script is slow. Any quick wins?
-    assistant: |
-      Quick wins, roughly in order of impact:
+    If the amounts differ too, it may be a correction (a refund or an edited order). Then don't drop anything blindly: keep the latest version with `keep="last"` and log the ids so the business side can confirm.
+- user: |
+    The script is slow. Any quick wins?
+  assistant: |
+    Quick wins, roughly in order of impact:
 
-      1. **Avoid `apply` with a Python function on rows.** `df.apply(f, axis=1)` runs Python code two million times. Use vectorised operations (`df["a"] * df["b"]`, `.str` methods, `np.where`).
-      2. **`map` on unique values only.** For the country normalisation, compute `_key` on `df["country"].unique()` (a few hundred values), build a dict, then `map` the column. That is often 100× faster than mapping every row.
-      3. **Categoricals** for low-cardinality text columns, which you already have.
-      4. **Read only the columns you need** with `usecols=`.
-      5. **Parquet instead of CSV** for intermediate results: `df.to_parquet("sales_clean.parquet")` loads in seconds and keeps dtypes.
+    1. **Avoid `apply` with a Python function on rows.** `df.apply(f, axis=1)` runs Python code two million times. Use vectorised operations (`df["a"] * df["b"]`, `.str` methods, `np.where`).
+    2. **`map` on unique values only.** For the country normalisation, compute `_key` on `df["country"].unique()` (a few hundred values), build a dict, then `map` the column. That is often 100× faster than mapping every row.
+    3. **Categoricals** for low-cardinality text columns, which you already have.
+    4. **Read only the columns you need** with `usecols=`.
+    5. **Parquet instead of CSV** for intermediate results: `df.to_parquet("sales_clean.parquet")` loads in seconds and keeps dtypes.
 
-      Measure before changing anything: `%timeit` in a notebook, or wrap the steps with `time.perf_counter()` and print the duration of each one.
-  - user: |
-      Now I need monthly revenue per country, in EUR.
-    assistant: |
-      Group by a monthly period and the country code:
+    Measure before changing anything: `%timeit` in a notebook, or wrap the steps with `time.perf_counter()` and print the duration of each one.
+- user: |
+    Now I need monthly revenue per country, in EUR.
+  assistant: |
+    Group by a monthly period and the country code:
 
-      ```python
-      monthly = (
-          df.assign(month=df["order_date"].dt.to_period("M"))
-            .groupby(["month", "country_code"], observed=True)["amount_eur"]
-            .sum()
-            .unstack("country_code", fill_value=0)
-            .round(2)
-      )
-      monthly.to_csv("monthly_revenue_eur.csv")
-      ```
+    ```python
+    monthly = (
+        df.assign(month=df["order_date"].dt.to_period("M"))
+          .groupby(["month", "country_code"], observed=True)["amount_eur"]
+          .sum()
+          .unstack("country_code", fill_value=0)
+          .round(2)
+    )
+    monthly.to_csv("monthly_revenue_eur.csv")
+    ```
 
-      `observed=True` matters with categoricals: without it, pandas creates a row for every combination of month and every category, even countries with no sales that month. The result has one row per month and one column per country. If you'd rather keep a long format for a BI tool, drop the `unstack` and call `reset_index()`.
-  - user: |
-      I got this warning, should I care?
+    `observed=True` matters with categoricals: without it, pandas creates a row for every combination of month and every category, even countries with no sales that month. The result has one row per month and one column per country. If you'd rather keep a long format for a BI tool, drop the `unstack` and call `reset_index()`.
+- user: |
+    I got this warning, should I care?
 
-      /home/dan/clean.py:41: SettingWithCopyWarning:
-      A value is trying to be set on a copy of a slice from a DataFrame.
-      Try using .loc[row_indexer,col_indexer] = value instead
-        eu_orders["amount_eur"] = eu_orders["amount"] * eu_orders["rate_to_eur"]
-    assistant: |
-      Yes. `eu_orders` was created by filtering `df` (something like `eu_orders = df[df["country_code"].isin(EU)]`), and pandas can't tell whether it's a view or a copy. Your assignment may or may not reach `df`, and it may silently do nothing.
-
-      Make the intent explicit. If you want an independent frame:
-
-      ```python
-      eu_orders = df[df["country_code"].isin(EU)].copy()
+    /home/dan/clean.py:41: SettingWithCopyWarning:
+    A value is trying to be set on a copy of a slice from a DataFrame.
+    Try using .loc[row_indexer,col_indexer] = value instead
       eu_orders["amount_eur"] = eu_orders["amount"] * eu_orders["rate_to_eur"]
-      ```
+  assistant: |
+    Yes. `eu_orders` was created by filtering `df` (something like `eu_orders = df[df["country_code"].isin(EU)]`), and pandas can't tell whether it's a view or a copy. Your assignment may or may not reach `df`, and it may silently do nothing.
 
-      If you want to modify `df` itself, assign through `.loc` on the original:
+    Make the intent explicit. If you want an independent frame:
 
-      ```python
-      mask = df["country_code"].isin(EU)
-      df.loc[mask, "amount_eur"] = df.loc[mask, "amount"] * df.loc[mask, "rate_to_eur"]
-      ```
+    ```python
+    eu_orders = df[df["country_code"].isin(EU)].copy()
+    eu_orders["amount_eur"] = eu_orders["amount"] * eu_orders["rate_to_eur"]
+    ```
 
-      With pandas 2.x you can also turn on copy-on-write (`pd.options.mode.copy_on_write = True`), which makes the behaviour predictable and the warning goes away; it will be the default in pandas 3.
-  - user: |
-      How do I validate the cleaned data before sending it to finance?
-    assistant: |
-      Write the rules down as checks that fail loudly. With plain pandas:
+    If you want to modify `df` itself, assign through `.loc` on the original:
 
-      ```python
-      def validate(df: pd.DataFrame) -> list[str]:
-          problems = []
-          if df["order_id"].duplicated().any():
-              problems.append("duplicate order_id")
-          if (df["amount_eur"] < 0).any():
-              problems.append("negative amount_eur")
-          if df["country_code"].isna().any():
-              problems.append("unmapped country")
-          if df["rate_to_eur"].isna().any():
-              problems.append("missing exchange rate")
-          if df["order_date"].max() > pd.Timestamp.now():
-              problems.append("orders in the future")
-          return problems
-      ```
+    ```python
+    mask = df["country_code"].isin(EU)
+    df.loc[mask, "amount_eur"] = df.loc[mask, "amount"] * df.loc[mask, "rate_to_eur"]
+    ```
 
-      Run it at the end of the script and exit with an error if the list isn't empty. For something more formal, `pandera` lets you declare a schema (types, ranges, uniqueness) and validates a DataFrame against it, with a readable report of the failing rows.
+    With pandas 2.x you can also turn on copy-on-write (`pd.options.mode.copy_on_write = True`), which makes the behaviour predictable and the warning goes away; it will be the default in pandas 3.
+- user: |
+    How do I validate the cleaned data before sending it to finance?
+  assistant: |
+    Write the rules down as checks that fail loudly. With plain pandas:
 
-      Also compare totals with the source system: the sum of `amount_eur` per month should match the finance report within rounding. That single check catches most join and duplicate mistakes.
-  - user: |
-      Thanks. Can you also suggest how to schedule this every night?
-    assistant: |
-      The simplest robust setup:
+    ```python
+    def validate(df: pd.DataFrame) -> list[str]:
+        problems = []
+        if df["order_id"].duplicated().any():
+            problems.append("duplicate order_id")
+        if (df["amount_eur"] < 0).any():
+            problems.append("negative amount_eur")
+        if df["country_code"].isna().any():
+            problems.append("unmapped country")
+        if df["rate_to_eur"].isna().any():
+            problems.append("missing exchange rate")
+        if df["order_date"].max() > pd.Timestamp.now():
+            problems.append("orders in the future")
+        return problems
+    ```
 
-      1. Turn the notebook into a script with a `main()` and clear exit codes: 0 on success, 1 when `validate` finds problems.
-      2. Run it with **cron** on a server, or a **Kubernetes CronJob** if you already have a cluster:
+    Run it at the end of the script and exit with an error if the list isn't empty. For something more formal, `pandera` lets you declare a schema (types, ranges, uniqueness) and validates a DataFrame against it, with a readable report of the failing rows.
 
-      ```yaml
-      apiVersion: batch/v1
-      kind: CronJob
-      metadata:
-        name: sales-clean
-      spec:
-        schedule: "30 2 * * *"
-        concurrencyPolicy: Forbid
-        jobTemplate:
-          spec:
-            backoffLimit: 2
-            template:
-              spec:
-                restartPolicy: Never
-                containers:
-                  - name: clean
-                    image: registry.example.com/sales-clean:1.4
-                    args: ["python", "clean.py", "--date", "yesterday"]
-      ```
+    Also compare totals with the source system: the sum of `amount_eur` per month should match the finance report within rounding. That single check catches most join and duplicate mistakes.
+- user: |
+    Thanks. Can you also suggest how to schedule this every night?
+  assistant: |
+    The simplest robust setup:
 
-      `concurrencyPolicy: Forbid` prevents two runs overlapping if one is slow. Send yourself a notification on failure: most teams pipe the exit code to Slack or email. If the pipeline grows to several dependent steps, that's when Airflow or Prefect start to pay off.
-  - user: |
-      Last thing: the finance team wants an Excel file with one sheet per country.
-    assistant: |
-      Use `ExcelWriter` with the `openpyxl` engine and write one sheet per group:
+    1. Turn the notebook into a script with a `main()` and clear exit codes: 0 on success, 1 when `validate` finds problems.
+    2. Run it with **cron** on a server, or a **Kubernetes CronJob** if you already have a cluster:
 
-      ```python
-      with pd.ExcelWriter("revenue_by_country.xlsx", engine="openpyxl") as writer:
-          for code, part in df.groupby("country_code", observed=True):
-              (part.assign(month=part["order_date"].dt.to_period("M").astype(str))
-                   .groupby("month")["amount_eur"].sum().round(2)
-                   .to_frame("revenue_eur")
-                   .to_excel(writer, sheet_name=str(code)))
-      ```
+    ```yaml
+    apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: sales-clean
+    spec:
+      schedule: "30 2 * * *"
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          backoffLimit: 2
+          template:
+            spec:
+              restartPolicy: Never
+              containers:
+                - name: clean
+                  image: registry.example.com/sales-clean:1.4
+                  args: ["python", "clean.py", "--date", "yesterday"]
+    ```
 
-      Sheet names are limited to 31 characters and can't contain `[]:*?/\`, which is another reason to use country codes rather than names. If the file is big, `xlsxwriter` is faster than `openpyxl` for writing, and it lets you add number formats such as `#,##0.00 €`.
-  - user: |
-      Great, it all works now.
-    assistant: |
-      Glad it works. To recap the pipeline:
+    `concurrencyPolicy: Forbid` prevents two runs overlapping if one is slow. Send yourself a notification on failure: most teams pipe the exit code to Slack or email. If the pipeline grows to several dependent steps, that's when Airflow or Prefect start to pay off.
+- user: |
+    Last thing: the finance team wants an Excel file with one sheet per country.
+  assistant: |
+    Use `ExcelWriter` with the `openpyxl` engine and write one sheet per group:
 
-      1. `read_csv` with explicit dtypes and categories, malformed lines saved to a file instead of dropped silently;
-      2. country normalisation through `_key` and an alias table, mapped on unique values;
-      3. conversion to EUR with `merge_asof` on the order date;
-      4. duplicate orders removed, keeping the first export;
-      5. monthly revenue per country with `observed=True`;
-      6. `validate()` before anything leaves the script;
-      7. a nightly CronJob, and the Excel export with one sheet per country.
+    ```python
+    with pd.ExcelWriter("revenue_by_country.xlsx", engine="openpyxl") as writer:
+        for code, part in df.groupby("country_code", observed=True):
+            (part.assign(month=part["order_date"].dt.to_period("M").astype(str))
+                 .groupby("month")["amount_eur"].sum().round(2)
+                 .to_frame("revenue_eur")
+                 .to_excel(writer, sheet_name=str(code)))
+    ```
+
+    Sheet names are limited to 31 characters and can't contain `[]:*?/\`, which is another reason to use country codes rather than names. If the file is big, `xlsxwriter` is faster than `openpyxl` for writing, and it lets you add number formats such as `#,##0.00 €`.
+- user: |
+    Great, it all works now.
+  assistant: |
+    Glad it works. To recap the pipeline:
+
+    1. `read_csv` with explicit dtypes and categories, malformed lines saved to a file instead of dropped silently;
+    2. country normalisation through `_key` and an alias table, mapped on unique values;
+    3. conversion to EUR with `merge_asof` on the order date;
+    4. duplicate orders removed, keeping the first export;
+    5. monthly revenue per country with `observed=True`;
+    6. `validate()` before anything leaves the script;
+    7. a nightly CronJob, and the Excel export with one sheet per country.
+- user: |
+    New month, new problem. Finance now also sends a second export, from our Shopify store, with different column names:
+
+    ```
+    Name,Created at,Email,Billing Country,Total,Currency,Financial Status,Refunded Amount,Lineitem sku,Lineitem quantity
+    #10482,2026-02-03 14:22:10 +0200,ana.pop@example.com,RO,349.90,RON,paid,0.00,TSH-BLK-M,2
+    ```
+
+    How do I map it to the schema of our first export, so the rest of the pipeline works unchanged?
+  assistant: |
+    Write a small adapter that renames and reshapes, so the rest of the pipeline sees the same schema:
+
+    ```python
+    def load_shopify(path: str) -> pd.DataFrame:
+        df = pd.read_csv(path, dtype={"Name": "string", "Email": "string",
+                                      "Billing Country": "string", "Currency": "category"})
+        out = pd.DataFrame({
+            "order_id":        "SHOPIFY-" + df["Name"].str.lstrip("#"),
+            "order_date":      pd.to_datetime(df["Created at"], format="mixed", utc=True)
+                                 .dt.tz_localize(None),
+            "customer_email":  df["Email"].str.strip().str.lower(),
+            "country":         df["Billing Country"],
+            "amount":          df["Total"],
+            "currency":        df["Currency"],
+        })
+        return out
+    ```
+
+    Three things need care beyond the rename:
+
+    1. **Order ids collide** with the first export (`#10482` vs `10482`), hence the `SHOPIFY-` prefix. Keep the original id in a separate column if finance wants to look orders up in Shopify.
+    2. **Timestamps carry a timezone offset** (`+0200`). Decide on one convention — I converted to UTC then dropped the tz, so both exports are comparable; adjust if your first export is in local time.
+    3. **One order spans several rows** (one per line item), so `Total` repeats and `drop_duplicates("order_id")` would collapse it correctly — but check first that `Total` is really constant within an order, and not a per-line amount.
+
+    Also decide with finance what to do about `Financial Status` and `Refunded Amount`: filtering to `paid` only, or subtracting refunds, changes revenue. That's a business rule, not a technical one — get it in writing.
+- user: |
+    I lowercased the columns first, then applied your rename map, and got:
+
+    ```
+    Traceback (most recent call last):
+      File "clean_shopify.py", line 22, in <module>
+        df["country"] = df["Billing Country"].map(normalise_country)
+      File "pandas/core/frame.py", line 4102, in __getitem__
+        indexer = self.columns.get_loc(key)
+    KeyError: 'Billing Country'
+    ```
+  assistant: |
+    The lowercasing renamed the column to `"billing country"` — lowercase, but the space is still there. Your rename map looks for `"Billing Country"`, which no longer exists.
+
+    Pick one convention and normalise to it before the rename. Snake case is the usual choice:
+
+    ```python
+    df.columns = (
+        df.columns.str.strip().str.lower().str.replace(" ", "_")
+    )
+    # "Billing Country" -> "billing_country"
+    ```
+
+    Then use `"billing_country"` in the rename map. The general rule: normalise column names once, at load time, and write every downstream reference against the normalised names — that way the two exports converge on the same schema and you never mix `"Billing Country"` and `"billing_country"` in the same script.
+- user: |
+    Some Shopify orders have Financial Status "refunded" or "partially_refunded". How should those count in the monthly revenue?
+  assistant: |
+    The standard treatment, and what finance will usually expect:
+
+    - **`paid` / `partially_paid`** → count, minus the refunded amount;
+    - **`refunded`** → exclude entirely (net revenue is zero);
+    - **`pending` / `voided` / `authorized`** → exclude; the money isn't settled, and it will appear in a later export once paid.
+
+    So revenue is net of refunds, not gross:
+
+    ```python
+    status = df["financial_status"].str.lower()
+    df["amount_net"] = df["amount"].where(status != "refunded", 0.0) - df["refunded_amount"].fillna(0)
+    ```
+
+    Two things to check before trusting `refunded_amount`:
+
+    1. Whether it's per order or per line item — if the export has one row per line item, the refund may be repeated on each row and you'd subtract it twice. Verify on a known refunded order.
+    2. Timing: a refund usually lands in a different month than the sale. If finance reports revenue when the sale happened, subtract the refund in the sale's month (what the code above does); if they report cash flow, it belongs in the refund's month. Ask which one they want — it changes the monthly numbers, and it's their call, not yours.
+
+    Whatever you decide, record it in `validate()` as an assertion (e.g. no negative `amount_net`) so a data change can't silently break the rule.
+- user: |
+    Finance decided: fully refunded orders are excluded, partially refunded ones count as Total minus Refunded Amount. Update the code.
+  assistant: |
+    ```python
+    status = df["financial_status"].str.lower()
+
+    # fully refunded: excluded from revenue entirely
+    refunded_ids = df.loc[status == "refunded", "order_id"].unique()
+    df = df[~df["order_id"].isin(refunded_ids)].copy()
+
+    # everything else: Total minus Refunded Amount
+    df["amount_net"] = df["amount"] - df["refunded_amount"].fillna(0)
+    ```
+
+    Filtering by `order_id` rather than by status matters: a partially refunded order often has one row with status `partially_refunded` and others still `paid`, so filtering rows by status would drop only some of them. Excluding by id removes the whole order.
+
+    Then feed `amount_net` into the pipeline in place of `amount` — the currency conversion becomes `df["amount_eur"] = df["amount_net"] * df["rate_to_eur"]`, and the monthly aggregation groups on `amount_eur` as before.
+
+    Add the agreed rule to `validate()` so it can't regress:
+
+    ```python
+    if (df["amount_net"] < 0).any():
+        problems.append("negative amount_net (refund larger than total?)")
+    if df.loc[df["financial_status"].str.lower() == "refunded", "order_id"].isin(df["order_id"]).any():
+        problems.append("refunded order still present")
+    ```
+
+    The first check also catches the double-subtraction case from before: if `refunded_amount` is repeated across line items, `amount_net` goes negative and validation fails loudly instead of quietly understating revenue.
+- user: |
+    It works on this month's file, but on the January export:
+
+    ```
+    Traceback (most recent call last):
+      File "clean_shopify.py", line 31, in <module>
+        df["net_total"] = df["total"] - df["refunded_amount"]
+      File "pandas/core/frame.py", line 4102, in __getitem__
+        indexer = self.columns.get_loc(key)
+    KeyError: 'refunded_amount'
+    ```
+
+    The exports before March don't have the Refunded Amount column at all.
+  assistant: |
+    Handle the missing column explicitly at load time:
+
+    ```python
+    if "refunded_amount" not in df.columns:
+        df["refunded_amount"] = 0.0
+    if "financial_status" not in df.columns:
+        df["financial_status"] = "paid"   # or whatever the old export uses
+    ```
+
+    Put this right after the column normalisation, before any logic touches `refunded_amount`. The rest of the script then works unchanged on both formats.
+
+    But before you trust `0.0`, check how the old export records refunds — a column that doesn't exist doesn't mean refunds didn't happen in January. Two common possibilities:
+
+    1. Refunded orders appear with `Financial Status` = `refunded` but no amount column. Your exclusion-by-id logic still works, and `amount_net` is irrelevant for them since they're filtered out. Partially refunded orders, though, would count at full `Total` — silently overstating January revenue.
+    2. Refunds are separate rows with negative totals. Then `Total - 0` is fine, but check for negative amounts: `df.loc[df["total"] < 0]`.
+
+    Quick way to tell: look at a few `refunded` / `partially_refunded` rows in the January file and compare their `Total` with the same order in the Shopify admin. If partially refunded orders show the original total, you have gap 1 — and it's worth telling finance that January's partial refunds can't be netted from this export, rather than letting the number be quietly wrong.
+- user: |
+    Now I need to merge the two sources without double counting. Some orders appear in both, and the only way to match them is customer email + order date + total.
+  assistant: |
+    Match on normalised keys with a small tolerance, and treat the result as a review list rather than an automatic truth:
+
+    ```python
+    def norm_email(s: pd.Series) -> pd.Series:
+        return s.str.strip().str.lower()
+
+    a = erp.assign(_email=norm_email(erp["customer_email"]),
+                   _day=erp["order_date"].dt.normalize())
+    b = shop.assign(_email=norm_email(shop["customer_email"]),
+                    _day=shop["order_date"].dt.normalize())
+
+    matched = a.merge(
+        b[["_email", "_day", "amount_net", "order_id"]]
+          .rename(columns={"order_id": "shopify_order_id"}),
+        left_on=["_email", "_day"], right_on=["_email", "_day"],
+        suffixes=("", "_shopify"),
+    )
+    matched = matched[
+        (matched["amount_net"] - matched["amount_net_shopify"]).abs() <= 0.01
+    ]
+    ```
+
+    Then decide which side wins and drop the other:
+
+    ```python
+    dup_ids = matched["order_id"]          # ids in the ERP export that exist in Shopify
+    merged = pd.concat([erp[~erp["order_id"].isin(dup_ids)], shop], ignore_index=True)
+    merged["source"] = ...
+    ```
+
+    Things that will bite you if skipped:
+
+    1. **Timezone.** You normalised Shopify timestamps to UTC earlier; if the ERP export is in local time, the same order can land on different days. Compare after converting both to the same zone, and if matches look sparse, widen `_day` to a ±1-day window before assuming orders are unique.
+    2. **Currency.** `Total` in Shopify is in the shop currency; if the ERP stores EUR, compare `amount_eur` on both sides instead of raw amounts.
+    3. **Line items.** If the Shopify export has one row per line item, aggregate it to one row per order first (`groupby("order_id").agg(...)`), otherwise the ERP order matches several Shopify rows and you'd drop the ERP order once but keep three Shopify copies.
+    4. **Amount tolerance.** `<= 0.01` assumes both are in the same currency and rounded the same way; check `matched` by eye on a sample before trusting it.
+
+    Export `matched` to a CSV for finance the first time you run it — email + date + total is a heuristic, and a customer who orders twice in one day for the same amount will false-positive. Once the rules are confirmed, fold this into `validate()`: after the merge, no `order_id` should appear in both sources.
+- user: |
+    The merge blew up:
+
+    ```
+    numpy.core._exceptions._ArrayMemoryError: Unable to allocate 11.2 GiB for an array with shape (1503238, 1000) and data type float64
+    ```
+
+    The server has 16 GB of RAM.
+  assistant: |
+    That shape is the giveaway: the merge produced a cross product. Some key combination — almost certainly an empty or null email — appears ~1000 times on one side, so every one of those rows matched every one of the other side's rows. Check:
+
+    ```python
+    print(a["_email"].isna().sum(), (a["_email"] == "").sum())
+    print(a.groupby(["_email", "_day"]).size().sort_values(ascending=False).head(10))
+    ```
+
+    You'll likely find blank emails (test orders, guest checkouts) or one customer with hundreds of same-day orders. Fix it before merging:
+
+    ```python
+    a = a[a["_email"].notna() & (a["_email"] != "")]
+    b = b[b["_email"].notna() & (b["_email"] != "")]
+    ```
+
+    Then reduce each side to one row per key so the merge can't multiply:
+
+    ```python
+    b_one = (b.sort_values("order_date")
+               .groupby(["_email", "_day"], as_index=False)
+               .agg(amount_net=("amount_net", "sum"),
+                    shopify_order_id=("order_id", "first")))
+    ```
+
+    If the ERP side can also have several rows per email+day, aggregate it the same way first. After that, the merge is one-to-one and memory drops from gigabytes to a few hundred MB.
+
+    The blank-email rows you filtered out aren't lost: keep them as unmatched, and if finance needs them matched, they'll have to be joined on order id or amount+date alone — a much weaker key, so treat those as a manual review list, not an automatic merge.
+- user: |
+    Would DuckDB or polars help here? I'd rather not rewrite the whole pipeline.
+  assistant: |
+    Yes, and you can adopt either surgically — just for the merge — without touching the rest of the pipeline.
+
+    **DuckDB** is the least invasive. It queries pandas DataFrames directly and handles the join out-of-core, so even a bad key ratio won't allocate 11 GiB in RAM:
+
+    ```python
+    import duckdb
+
+    con = duckdb.connect()
+    matched = con.execute("""
+        SELECT a.*, b.order_id AS shopify_order_id, b.amount_net AS amount_net_shopify
+        FROM a JOIN b
+          ON a._email = b._email AND a._day = b._day
+         AND abs(a.amount_net - b.amount_net) <= 0.01
+    """).df()
+    ```
+
+    It also gives you a free sanity check on the key ratio before joining:
+
+    ```sql
+    SELECT _email, _day, count(*) FROM b GROUP BY 1, 2 ORDER BY 2 DESC LIMIT 10
+    ```
+
+    **Polars** would also work — its join with `engine="streaming"` spills to disk — but it means converting frames in and out (`pl.from_pandas(...)` / `.to_pandas()`), which copies data and adds a second API to the codebase. Worth it only if you later want to move the whole pipeline over.
+
+    My suggestion: keep pandas for everything you have, use DuckDB for this merge and for any future heavy joins or aggregations on the combined data. The two interoperate well — DuckDB can also read the Parquet files you're already writing, and the result comes back as a normal DataFrame that feeds `validate()` and the Excel export unchanged.
+
+    One caveat: DuckDB won't fix a wrong key. If blank emails slip through, the SQL join will still match garbage to garbage — just without running out of memory. Keep the filtering and the review list from before.
+- user: |
+    We went with DuckDB only for the merge step, pandas for everything else. The merge now takes 40 seconds instead of 14 minutes. Show me how to hand the result back to pandas cleanly.
+  assistant: |
+    The `.df()` call returns a plain pandas DataFrame, but the dtypes won't match what the rest of your pipeline expects — DuckDB returns object columns for strings and int64 for everything numeric. Restore them explicitly right after:
+
+    ```python
+    matched = con.execute("""
+        SELECT a.*, b.order_id AS shopify_order_id, b.amount_net AS amount_net_shopify
+        FROM a JOIN b
+          ON a._email = b._email AND a._day = b._day
+         AND abs(a.amount_net - b.amount_net) <= 0.01
+    """).df()
+
+    # restore the dtypes the pipeline expects
+    matched["order_id"] = matched["order_id"].astype("string")
+    matched["customer_email"] = matched["customer_email"].astype("string")
+    matched["country_code"] = matched["country_code"].astype("category")
+    matched["currency"] = matched["currency"].astype("category")
+    matched["order_date"] = pd.to_datetime(matched["order_date"])
+    ```
+
+    Two details worth knowing:
+
+    1. **The helper columns.** `_email` and `_day` were merge scaffolding; drop them so they don't leak into `validate()` or the Excel export: `matched = matched.drop(columns=["_email", "_day"])`.
+    2. **The index.** `.df()` always returns a fresh `RangeIndex`, which is actually what you want after a join — but if any downstream code relied on the ERP's original index, it will silently misbehave. Nothing in your pipeline does, since everything works positionally or on `order_id`, so you're fine.
+
+    If you do this in more than one place, wrap it in a small function so the dtype restoration lives in one spot:
+
+    ```python
+    def duck_to_pandas(con: duckdb.DuckDBPyConnection, sql: str) -> pd.DataFrame:
+        df = con.execute(sql).df()
+        for col in ("order_id", "customer_email"):
+            if col in df:
+                df[col] = df[col].astype("string")
+        for col in ("country_code", "currency"):
+            if col in df:
+                df[col] = df[col].astype("category")
+        return df
+    ```
+
+    From there, `validate()` and the rest run unchanged — that was the point of the surgical adoption.
+- user: |
+    Our exchange-rate file ecb_rates_2026.csv has no rates for 1 January and 6 January, they were bank holidays. Orders from those days get NaN in amount_eur. What do we do?
+  assistant: |
+    `merge_asof` with `direction="backward"` already handles this: if there's no rate on 1 January, it takes the last published rate before that date. So a NaN means something else — almost certainly that your file starts at the first publication of 2026 (2 January), leaving the 1 January orders with no earlier rate to fall back on.
+
+    Check:
+
+    ```python
+    print(rates["date"].min(), rates["date"].max())
+    print(df.loc[df["rate_to_eur"].isna(), "order_date"].min())
+    ```
+
+    If the first NaN order is on 1 January and the first rate is on 2 January, that's the whole story. Fix: load the previous year's file too, so there's always history before the first order:
+
+    ```python
+    rates = pd.concat(
+        [pd.read_csv("ecb_rates_2025.csv", parse_dates=["date"]),
+         pd.read_csv("ecb_rates_2026.csv", parse_dates=["date"])],
+        ignore_index=True,
+    ).sort_values("date")
+    ```
+
+    This is also the ECB's own convention — no rate is published on TARGET holidays, and the last published rate carries forward, which is exactly what `backward` does once history exists.
+
+    Two related checks while you're there:
+
+    1. If NaNs appear on dates that *do* have rates, the currency code is missing from the file (a new currency, or a typo like "GPB"). `df.loc[df["rate_to_eur"].isna(), "currency"].value_counts()` will show it.
+    2. Your `validate()` already fails on missing rates — keep that. The rule "every order must have a rate" is what turned this from a silent revenue understatement into a caught error.
+- user: |
+    Write pytest tests for the convert_to_eur function, including the holiday and weekend cases.
+  assistant: |
+    First, extract the logic into a testable function — right now it's inline in the script:
+
+    ```python
+    # convert.py
+    import pandas as pd
+
+    def convert_to_eur(orders: pd.DataFrame, rates: pd.DataFrame) -> pd.DataFrame:
+        """Convert order amounts to EUR using the last published rate
+        on or before the order date. Rates: columns date, currency, rate_to_eur."""
+        rates = rates.sort_values("date")
+        orders = orders.sort_values("order_date")
+        out = pd.merge_asof(
+            orders, rates,
+            left_on="order_date", right_on="date",
+            by="currency", direction="backward",
+        )
+        out.loc[out["currency"] == "EUR", "rate_to_eur"] = 1.0
+        out["amount_eur"] = (out["amount"] * out["rate_to_eur"]).round(2)
+        return out
+    ```
+
+    And the tests:
+
+    ```python
+    # test_convert.py
+    import pandas as pd
+    import pytest
+    from convert import convert_to_eur
+
+    @pytest.fixture
+    def rates():
+        # 2026-01-01 and 01-06 are TARGET holidays: no rate published
+        return pd.DataFrame({
+            "date":        pd.to_datetime(["2025-12-31", "2026-01-02",
+                                           "2026-01-05", "2026-01-07"]),
+            "currency":    ["RON", "RON", "RON", "RON"],
+            "rate_to_eur": [4.97, 4.98, 4.98, 4.99],
+        })
+
+    def orders_on(*dates):
+        return pd.DataFrame({
+            "order_id":   [f"o{i}" for i in range(len(dates))],
+            "order_date": pd.to_datetime(list(dates)),
+            "amount":     [100.0] * len(dates),
+            "currency":   ["RON"] * len(dates),
+        })
+
+    def test_holiday_uses_last_published_rate(rates):
+        # 1 Jan: no rate that day -> falls back to 31 Dec (4.97)
+        df = convert_to_eur(orders_on("2026-01-01"), rates)
+        assert df.loc[0, "rate_to_eur"] == 4.97
+        assert df.loc[0, "amount_eur"] == 497.00
+
+    def test_weekend_uses_friday_rate(rates):
+        # 2026-01-03/04 is a weekend; 05 Jan is a Monday with its own rate
+        df = convert_to_eur(orders_on("2026-01-03", "2026-01-05"), rates)
+        assert df.loc[0, "rate_to_eur"] == 4.98   # Friday's rate
+        assert df.loc[1, "rate_to_eur"] == 4.98   # Monday's own rate
+
+    def test_rate_on_the_day_itself_is_used(rates):
+        df = convert_to_eur(orders_on("2026-01-02"), rates)
+        assert df.loc[0, "rate_to_eur"] == 4.98
+
+    def test_eur_orders_get_rate_one(rates):
+        df = convert_to_eur(orders_on("2026-01-01"), rates).assign(currency="EUR")
+        df = convert_to_eur(df[["order_date", "amount", "currency"]], rates)
+        assert (df["rate_to_eur"] == 1.0).all()
+        assert (df["amount_eur"] == 100.0).all()
+
+    def test_missing_history_leaves_nan(rates):
+        # order before the first published rate: no fallback exists
+        df = convert_to_eur(orders_on("2025-12-30"), rates)
+        assert pd.isna(df.loc[0, "rate_to_eur"])
+        assert pd.isna(df.loc[0, "amount_eur"])
+
+    def test_unknown_currency_leaves_nan(rates):
+        df = convert_to_eur(orders_on("2026-01-05")).assign(currency="GPB")
+        df = convert_to_eur(df[["order_date", "amount", "currency"]], rates)
+        assert pd.isna(df.loc[0, "rate_to_eur"])
+
+    def test_result_not_mutated(rates):
+        src = orders_on("2026-01-05")
+        convert_to_eur(src, rates)
+        assert "amount_eur" not in src.columns      # caller's frame untouched
+    ```
+
+    Run with `pytest test_convert.py -v`.
+
+    Notes on the design:
+
+    - The fixture encodes the real ECB calendar: 1 and 6 January 2026 have no rows, so the holiday case is tested against realistic data rather than a contrived gap.
+    - `test_missing_history_leaves_nan` is the January bug you actually hit — it pins the contract that a NaN, not a wrong number, is what happens when there's no prior rate. Your `validate()` then catches it.
+    - `test_result_not_mutated` guards a classic pandas trap: `merge_asof` returns a new frame, but the `.loc` assignment pattern can bite if someone later "optimises" the function to operate in place.
+
+    One thing the tests deliberately don't cover: rounding. If finance ever specifies banker's rounding vs. half-up, that's a separate decision — `round(2)` uses banker's rounding, and it's worth an explicit test the day someone complains about a 1-cent difference.
+- user: |
+    One test fails:
+
+    ```
+    FAILED tests/test_convert.py::test_ron_to_eur_rounding - AssertionError: assert 41.37 == 41.38
+     +  where 41.37 = convert_to_eur(205.83, 'RON', datetime.date(2026, 2, 3))
+    ```
+  assistant: |
+    This is the rounding convention I flagged in the test notes — the product lands exactly on a half-cent (205.83 RON at ~4.975 gives 41.375), and pandas' `.round()` uses banker's rounding (half to even), so 41.375 → 41.37 instead of the 41.38 finance expects. Binary float representation makes it worse: the value is often stored as 41.37499…, so even "half to even" isn't reliably what you get.
+
+    Finance almost certainly wants **half-up** (that's what accountants and Excel's `ROUND` do). Fix the function, not the test:
+
+    ```python
+    import numpy as np
+
+    def convert_to_eur(orders: pd.DataFrame, rates: pd.DataFrame) -> pd.DataFrame:
+        ...
+        raw = orders["amount"] * orders["rate_to_eur"]
+        cents = raw * 100
+        orders["amount_eur"] = (
+            np.sign(cents) * np.floor(np.abs(cents) + 0.5) / 100
+        ).round(2)
+        return orders
+    ```
+
+    The `np.sign` wrapper matters because you have refunds: plain `floor(x + 0.5)` would round −41.375 to −41.37, while half-away-from-zero gives −41.38. Check with finance which they want for negative amounts — half-up-toward-positive and half-away-from-zero differ, and refunds are exactly where it shows up.
+
+    Pin the convention with tests so it can't drift:
+
+    ```python
+    def test_rounding_half_up():
+        # 41.375 exactly: half-up must give 41.38, banker's would give 41.37
+        df = convert_to_eur(orders_on("2026-02-03").assign(amount=[205.83],
+                                                            currency=["RON"]),
+                            rates_with_4_975())
+        assert df.loc[0, "amount_eur"] == 41.38
+
+    def test_rounding_negative_refund():
+        # -41.375: half away from zero
+        ...
+        assert df.loc[0, "amount_eur"] == -41.38
+    ```
+
+    One caveat: the `floor(x + 0.5)` trick can still be off by one cent in rare cases where `raw * 100` itself is inexact (e.g. `x.xx4999999` vs `x.xx5`). If finance ever audits cent-by-cent against a system that uses exact decimal arithmetic, the robust fix is computing with `Decimal` end-to-end — slower, so only do it if they actually ask.
+- user: |
+    Finance also wants the VAT split per country. Rates: Romania 21%, Germany 19%, France 20%, Hungary 27%. B2B orders with a valid VAT ID use reverse charge, so 0%. Add a vat_amount and a net_amount column.
+  assistant: |
+    Before the code, one question that changes everything: **is `amount_eur` inclusive or exclusive of VAT?** Shopify's `Total` includes tax, so if this export feeds the same column, the split is a division, not a multiplication. I'll assume gross (inclusive) — confirm with finance, because getting this backwards overstates both net and VAT.
+
+    ```python
+    VAT_RATES = {"RO": 0.21, "DE": 0.19, "FR": 0.20, "HU": 0.27}
+
+    def vat_rate(row) -> float:
+        if row["is_reverse_charge"]:          # B2B with valid VAT ID
+            return 0.0
+        return VAT_RATES.get(row["country_code"], 0.0)
+
+    # valid VAT ID: present and structurally plausible
+    df["is_reverse_charge"] = (
+        df["vat_id"].notna()
+        & df["vat_id"].str.match(r"^[A-Z]{2}[A-Z0-9]{8,12}$", na=False)
+    )
+
+    df["vat_rate"] = df.apply(vat_rate, axis=1)
+    df["net_amount"]  = (df["amount_eur"] / (1 + df["vat_rate"])).round(2)
+    df["vat_amount"]  = (df["amount_eur"] - df["net_amount"]).round(2)
+    ```
+
+    Computing `vat_amount` as the difference (rather than `amount_eur * rate / (1 + rate)`) guarantees `net + vat == gross` exactly, with no cent lost to independent rounding — finance will check that identity.
+
+    Three things to sort out:
+
+    1. **Where does `vat_id` come from?** Neither export has it in the schema you showed. If it lives in a third system (customer master), this is a join — and a missing join means orders silently taxed at 21% that should be reverse charge. Add to `validate()`: `if df["is_reverse_charge"].isna().any(): problems.append(...)`.
+    2. **Structural validation isn't real validation.** The regex accepts `RO12345678` whether or not it's registered. The `python-stdnum` package checks the checksum (`stdnum.eu.vat.is_valid("RO12345678")`), and for anything audit-relevant, VIES. Decide how hard you want to go — a checksum check is cheap and catches typos.
+    3. **Unknown countries** fall back to 0% in the code above, which is wrong for revenue purposes. Better to fail loudly:
+
+    ```python
+    unknown = ~df["country_code"].isin(VAT_RATES) & ~df["is_reverse_charge"]
+    if unknown.any():
+        problems.append(f"no VAT rate for: {df.loc[unknown, 'country_code'].unique()}")
+    ```
+
+    And add tests: a gross→net split for each rate, a reverse-charge order (vat 0, net == gross), and the identity `net_amount + vat_amount == amount_eur` on a sample — that last one is the invariant finance actually cares about.
+- user: |
+    How do I check that a VAT ID at least has the right format, without calling VIES for each of the 40,000 B2B orders?
+  assistant: |
+    Two levels, both offline:
+
+    **1. Regex per country** — each country has a fixed format (prefix + length, sometimes letters in fixed positions):
+
+    ```python
+    VAT_PATTERNS = {
+        "RO": r"^RO[0-9]{2,10}$",
+        "DE": r"^DE[0-9]{9}$",
+        "FR": r"^FR[A-Z0-9]{2}[0-9]{9}$",   # 2 chars can be letters
+        "HU": r"^HU[0-9]{8}$",
+    }
+
+    def vat_format_ok(vat_id: str, country: str) -> bool:
+        if pd.isna(vat_id):
+            return False
+        vat_id = vat_id.strip().upper().replace(" ", "")
+        pattern = VAT_PATTERNS.get(country)
+        return bool(pattern) and re.match(pattern, vat_id) is not None
+    ```
+
+    Note the cross-check: the ID's country prefix should match the billing country. `DE123456789` on a French order is suspicious even though the format is valid.
+
+    **2. Checksums via `python-stdnum`** — still offline, no network call, and catches transposed digits that pass the regex:
+
+    ```python
+    from stdnum import eu  # pip install python-stdnum
+
+    df["vat_valid"] = df["vat_id"].map(
+        lambda v: eu.vat.is_valid(v) if pd.notna(v) else False
+    )
+    ```
+
+    `is_valid` runs the country-specific checksum (Romania has one, Germany has two, etc.) plus the format check. It's pure computation — 40,000 IDs take seconds.
+
+    What this buys you: format and checksum errors (typos, missing digits, wrong country prefix) are caught locally. What it can't catch: a syntactically perfect ID belonging to a company that deregistered last month. For that you'd need VIES — so don't call it for all 40,000, call it only for the ones that matter:
+
+    - Cache aggressively: `stdnum.eu.vat` has a VIES client, but wrap it with your own cache keyed by VAT ID (a dict or SQLite table). Customers repeat; 40,000 orders are probably a few thousand distinct IDs.
+    - Or flip it around: validate offline monthly, and send finance a list of only the IDs that failed the checksum — those are the ones worth a manual VIES lookup.
+
+    Add to `validate()`: B2B orders (reverse charge) must have `vat_valid == True`, otherwise they're invoiced at 0% VAT on the strength of an invalid ID — exactly the kind of thing an audit flags.
+- user: |
+    After upgrading pandas I get this on the forward fill of the rates:
+
+    ```
+    /home/dan/clean.py:58: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead.
+      rates = rates.ffill()
+    ```
+  assistant: |
+    The warning means `rates` has `object`-dtype columns (strings or mixed types), and pandas is telling you that after `ffill` it will stop guessing better dtypes for you. It's not breaking today — but the result may silently have different dtypes after the next upgrade.
+
+    Fix the root cause: give the columns proper dtypes before the fill, so there's nothing to downcast:
+
+    ```python
+    rates = pd.read_csv(
+        "ecb_rates_2026.csv",
+        parse_dates=["date"],
+        dtype={"currency": "category", "rate_to_eur": "float64"},
+    )
+    rates = rates.ffill()
+    ```
+
+    If the object dtype comes from somewhere else (a concat of files with mismatched types, a manual construction), convert explicitly instead:
+
+    ```python
+    rates = rates.infer_objects(copy=False)
+    rates["rate_to_eur"] = pd.to_numeric(rates["rate_to_eur"], errors="raise")
+    rates = rates.ffill()
+    ```
+
+    `errors="raise"` is deliberate: if the rate column somehow contains a non-numeric value, you want the load to fail loudly, not to produce NaNs that later surface as missing `amount_eur`.
+
+    One thing to check while you're there: `rates.ffill()` fills *every* column, including `currency` — if a row is missing the currency but has a rate, you'd silently attach the previous row's currency to the wrong rate. If your file is long format (date, currency, rate), forward-filling across currency boundaries is a real bug risk. If you're wide format (one column per currency), it's exactly what you want. Given your `merge_asof` setup with `by="currency"`, you're long format — so either fill per currency group or, better, don't ffill at all and let `merge_asof(direction="backward")` do the carry-forward, which is what it's designed for and what your `convert_to_eur` already does.
+- user: |
+    The Excel file with one sheet per country is now 48 MB and the finance laptops freeze when they open it. What are my options?
+  assistant: |
+    A 48 MB xlsx means hundreds of thousands of cells with styles — Excel's practical limit is ~1M rows per sheet, and finance laptops choking is a sign you're near it. Options, from most to least recommended:
+
+    **1. Aggregate to what finance actually reads.** If the sheets contain order-level detail, ask whether they open it to look at monthly totals or to audit individual orders. If it's the former, write the monthly pivot per country — the file drops to a few hundred KB:
+
+    ```python
+    with pd.ExcelWriter("revenue_by_country.xlsx", engine="xlsxwriter") as writer:
+        for code, part in df.groupby("country_code", observed=True):
+            (part.assign(month=part["order_date"].dt.to_period("M").astype(str))
+                 .groupby("month")[["amount_eur", "net_amount", "vat_amount"]]
+                 .sum().round(2)
+                 .to_excel(writer, sheet_name=str(code)))
+    ```
+
+    **2. Split by month.** If they need detail, one file per month (`revenue_2026-01.xlsx`) keeps each file small and matches how finance works anyway — nobody audits January in June.
+
+    **3. CSV or Parquet for detail, xlsx for the summary.** Ship the small Excel file for humans, plus `detail.parquet` (or CSV per country) alongside it. If someone needs to drill in, they ask you — or you give them a DuckDB one-liner they can run:
+
+    ```python
+    import duckdb
+    duckdb.sql("SELECT * FROM 'detail.parquet' WHERE country_code = 'RO'").df()
+    ```
+
+    **4. Don't bother with:** switching engines or `write_only` mode — those speed up *writing* but barely shrink the file; the size is inherent to the cell count. And never zip-compress the xlsx and send it — it opens to the same problem.
+
+    The underlying question for finance: an Excel file is a *report*, not a *dataset*. The moment it's 48 MB, it's doing the second job badly. Keep the report small and the dataset in Parquet.
+- user: |
+    Finance agreed: from now on we send a Parquet file with all the rows plus a small Excel summary with one row per country and month. Write the export code.
+  assistant: |
+    ```python
+    def export_outputs(df: pd.DataFrame, out_dir: str = "out") -> None:
+        Path(out_dir).mkdir(exist_ok=True)
+
+        # 1. Full detail -> Parquet (keeps dtypes, ~10x smaller than CSV)
+        df.to_parquet(f"{out_dir}/sales_detail.parquet", index=False)
+
+        # 2. Summary -> Excel, one row per country and month
+        summary = (
+            df.assign(month=df["order_date"].dt.to_period("M").astype(str))
+              .groupby(["month", "country_code"], observed=True)
+              .agg(orders=("order_id", "nunique"),
+                   gross_eur=("amount_eur", "sum"),
+                   net_eur=("net_amount", "sum"),
+                   vat_eur=("vat_amount", "sum"))
+              .round(2)
+              .reset_index()
+              .sort_values(["month", "country_code"])
+        )
+        summary.to_excel(f"{out_dir}/revenue_summary.xlsx",
+                         engine="xlsxwriter", index=False)
+    ```
+
+    Details worth getting right:
+
+    1. **Validate before exporting, not after.** Call `validate(df)` at the top of the export function, or make the caller do it — the Parquet file is now the artifact of record, so a broken frame must not reach it.
+    2. **`index=False` on the Parquet write.** Your index is a meaningless `RangeIndex`; writing it adds a column that will confuse whoever reads the file later.
+    3. **`orders=("order_id", "nunique")`** — count distinct orders, not rows, or multi-line Shopify orders inflate the count. This is also why the Shopify aggregation to one row per order should happen *before* this export.
+    4. **Column names in the summary are finance-friendly** (`gross_eur`, not `amount_eur`) — small thing, but it's their file, not yours.
+
+    One more thing: Parquet dtypes survive the round trip, but `category` columns read back as `dictionary<string>` — pandas restores them as `category` automatically, so `validate()` and the merge keys keep working. Test it once:
+
+    ```python
+    def test_parquet_roundtrip(tmp_path):
+        df.to_parquet(p := tmp_path / "t.parquet", index=False)
+        back = pd.read_parquet(p)
+        assert back["country_code"].dtype == "category"
+        assert len(back) == len(df)
+    ```
+
+    If finance ever asks for the detail in Excel again, the answer is now "run this DuckDB query against the Parquet" — the data's there, the report just doesn't carry it.
+- user: |
+    Write a short README section that explains every step of the pipeline, for whoever takes it over after me.
+  assistant: |
+    ## Pipeline overview
+
+    This document explains what `clean.py` does, in order, and why. If you're here because something failed at 3 a.m., check the **Known failure modes** section first.
+
+    ### Inputs
+
+    | File | Source | Notes |
+    |---|---|---|
+    | `sales.csv` | ERP export, ~2M rows | Columns: `order_id, order_date, customer_email, country, amount, currency`. Malformed lines are captured, not dropped. |
+    | `shopify_*.csv` | Shopify export | Different column names; adapted by `load_shopify()`. Pre-March 2026 files lack `Refunded Amount` — handled at load. |
+    | `ecb_rates_YYYY.csv` | ECB daily rates | Long format: `date, currency, rate_to_eur`. Load the previous year's file too — orders on 1 January need a fallback rate. |
+
+    ### Steps, in order
+
+    1. **Load & normalise columns.** Both sources are renamed to snake_case at load time. Shopify order ids get a `SHOPIFY-` prefix to avoid collisions with ERP ids. Timestamps are converted to UTC, then tz-stripped, so both sources are comparable.
+
+    2. **Country normalisation.** Raw values ("Romania", "ROMANIA", "România") are mapped to ISO codes via `COUNTRY_ALIASES`. The mapping is applied to `unique()` values only, for speed. Anything unmapped shows up in `validate()` — extend the alias table, don't drop the rows.
+
+    3. **Currency conversion** (`convert_to_eur`). `merge_asof` with `direction="backward"`: each order gets the last published rate on or before its date, which handles weekends and TARGET holidays. EUR orders get rate 1.0. Rounding is half-up (not pandas' default banker's rounding) — finance requires this; see `test_rounding_half_up`.
+
+    4. **Refunds (business rule, agreed with finance 2026-03).** Fully refunded orders are excluded entirely. Partially refunded orders count as `Total − Refunded Amount`. Refunds are attributed to the *sale's* month, not the refund's month. If finance changes this rule, update `clean_shopify.py` and the tests together.
+
+    5. **Deduplication.** Same `order_id` with near-identical timestamps = export artifact; keep the first. If amounts differ, it's a correction — kept and logged, not dropped.
+
+    6. **Cross-source merge.** ERP and Shopify orders are matched on email + day + amount (±0.01) via DuckDB (a pandas merge blew memory on this — see git history). Blank emails are excluded *before* the merge and kept as unmatched. Matches are a heuristic; the first run's match list was reviewed by finance.
+
+    7. **VAT split.** `net_amount = gross / (1 + rate)`, `vat_amount = gross − net`, so the identity `net + vat == gross` holds exactly. Reverse charge (B2B, valid VAT ID) = 0%. VAT IDs are validated offline (format + checksum via `python-stdnum`), not via VIES. Unknown countries fail validation rather than defaulting to 0%.
+
+    8. **Validation** (`validate()`). The script exits non-zero if any check fails. **Do not bypass this to get the file out.** Every check here exists because that failure already happened once.
+
+    9. **Export.** `out/sales_detail.parquet` (full detail, artifact of record) and `out/revenue_summary.xlsx` (one row per country × month). No order-level Excel files — a 48 MB xlsx was sent once and finance laptops froze.
+
+    ### Scheduling
+
+    Nightly at 02:30, Kubernetes CronJob `sales-clean`, `concurrencyPolicy: Forbid`. Failures go to Slack. Exit code 1 = validation failed; 2 = crash.
+
+    ### Known failure modes
+
+    - **NaN rates on 1 January** → you forgot to load the previous year's rates file.
+    - **`KeyError: 'refunded_amount'`** → pre-March Shopify export; the loader handles this, so it means the loader was bypassed.
+    - **Merge allocating gigabytes** → blank emails got through the filter. Check before investigating anything else.
+    - **Validation fails on "no VAT rate for"** → new country appeared in sales. Add it to `VAT_RATES` *after* confirming the rate with finance — don't guess.
+    - **1-cent differences vs. finance reports** → rounding convention. Ours is half-up, implemented manually; pandas `.round()` is banker's rounding and will not match.
+
+    ### Running tests
+
+    ```bash
+    pytest tests/ -v
+    ```
+
+    The rounding, holiday, and refund tests encode decisions finance made explicitly. If one of them fails after your change, the change is probably wrong — not the test.
+- user: |
+    A customer asked under GDPR to delete their data. How do I remove their email from all the historical files we keep, including the Parquet ones?
+  assistant: |
+    First, a distinction that matters legally: GDPR gives the right to erasure of *personal data*, but tax and accounting law obliges you to keep the *financial records* for years. You almost certainly don't delete the order rows — you delete/anonymise the email (and any other direct identifiers) while keeping the amounts. Confirm with whoever handles compliance, but that's the standard resolution.
+
+    **1. Inventory what holds emails.** From your pipeline:
+
+    - `sales.csv`, Shopify CSVs (raw inputs — do you still keep them?),
+    - `out/sales_detail.parquet` and any older monthly Parquet files,
+    - the `bad_lines` dumps from the CSV loader,
+    - the cross-source `matched` review CSV you sent finance,
+    - backups of all of the above.
+
+    The Excel summary is safe: it's aggregated, no emails.
+
+    **2. Rewrite the Parquet files in place:**
+
+    ```python
+    from pathlib import Path
+    import pandas as pd
+
+    TARGET = "ana.pop@example.com"   # normalise: lower, strip
+
+    def erase_email(path: Path, email: str) -> int:
+        df = pd.read_parquet(path)
+        if "customer_email" not in df.columns:
+            return 0
+        mask = df["customer_email"].str.strip().str.lower() == email
+        if not mask.any():
+            return 0
+        df.loc[mask, "customer_email"] = None
+        df.to_parquet(path, index=False)          # overwrite
+        return int(mask.sum())
+    ```
+
+    Note the match is on the normalised form — the same normalisation the merge uses, or you'll miss rows where the customer typed their address differently. If you want to keep the row joinable for support purposes, replace with a random token instead of `None` and store the mapping separately (that makes it pseudonymisation, and the mapping file itself becomes personal data you hold).
+
+    **3. Raw CSVs and logs.** If you must keep the original CSVs for audit, extract and delete just the email there too — or, simpler and defensible: delete the raw files entirely. The cleaned Parquet is your artifact of record; keeping raw inputs "just in case" is how companies fail erasure requests. Same for `bad_lines` dumps and the `matched` CSV — grep them for the address and rewrite or delete.
+
+    **4. Backups.** This is the awkward one: old backups still contain the email, and restoring one would restore it. You can't surgically edit a tarball. Standard practice: document in your response to the customer that backups age out on schedule (say, 35 days) and the data is erased in the *live* systems; most regulators accept this. Make sure the erasure is re-applied if a backup is ever restored — write it into the restore runbook.
+
+    **5. Going forward.** This request will come again. Two cheap preparations:
+
+    - Add an `erase_customer(email)` function to the pipeline that walks the output directory, so next time it's one command, not an archaeology project.
+    - Consider storing emails hashed (SHA-256 of the normalised address) in the Parquet from the start. Deduplication and the cross-source merge still work (hash the join key on both sides), and erasure becomes trivial — though note the hash of a known email is reversible by trial, so salt it and keep the salt in a separate, access-controlled place.
+
+    **6. Document it.** Record what was deleted, when, from which files, and who approved the "keep financials, drop identity" decision. If the regulator ever asks, that record *is* your compliance.
+- user: |
+    Summarize every decision we made since the Shopify export arrived.
+  assistant: |
+    ## Decision log — from the Shopify integration onward
+
+    **Schema & loading**
+    1. Shopify export is adapted to the ERP schema via a `load_shopify()` adapter, not by editing the pipeline.
+    2. Order ids get a `SHOPIFY-` prefix to avoid collisions with ERP ids.
+    3. Timestamps are converted to UTC, then tz-stripped — one convention across both sources.
+    4. Column names are normalised to snake_case at load time; all downstream code references normalised names only.
+    5. Pre-March 2026 exports lack `Refunded Amount` / `Financial Status`: missing columns are filled at load time (`0.0` / `"paid"`), and the gap is documented rather than hidden.
+
+    **Refunds (business rule, agreed with finance)**
+    6. Fully refunded orders are excluded entirely; partially refunded ones count as `Total − Refunded Amount`.
+    7. Refunds are attributed to the *sale's* month, not the refund's month.
+    8. Refund exclusion happens by `order_id`, not by status row-by-row (partially refunded orders span multiple rows).
+    9. `validate()` asserts no negative `amount_net` — this doubles as a guard against double-subtracted refunds.
+
+    **Cross-source merge**
+    10. Matching key: normalised email + calendar day + amount within ±0.01 — a heuristic, reviewed by finance on first run, not blind truth.
+    11. Blank emails are excluded *before* the merge and kept as unmatched, never silently dropped.
+    12. The merge runs in DuckDB (pandas cross-product blew 11 GiB); pandas everywhere else. Dtypes are restored explicitly on the way back to pandas.
+    13. Shopify line-item rows are aggregated to one row per order before matching.
+
+    **Currency & rounding**
+    14. Rates: last published rate on or before the order date (`merge_asof backward`); previous year's rate file is always loaded so 1 January orders have history.
+    15. Rounding is half-up, implemented manually — pandas' banker's rounding disagreed with finance by one cent.
+
+    **VAT**
+    16. `amount_eur` is treated as gross (inclusive); `net = gross / (1+rate)`, `vat = gross − net`, so `net + vat == gross` exactly.
+    17. Reverse charge (B2B with valid VAT ID) = 0%. VAT IDs validated offline (format + checksum via `python-stdnum`), VIES only for flagged cases.
+    18. Unknown countries fail validation — no silent 0% default.
+
+    **Delivery & retention**
+    19. Finance receives `sales_detail.parquet` (artifact of record) + a small Excel summary (country × month). No order-level Excel files — the 48 MB xlsx killed that.
+    20. Order counts in the summary use `nunique`, not row counts.
+    21. GDPR erasure: financial rows are kept (tax law), emails are removed from live files; raw inputs and logs are deleted rather than archived; backups age out on schedule and this is documented.
+
+    **Process**
+    22. Every business rule above is pinned by a pytest test; a failing test after a change means the change is wrong, not the test.
+    23. `validate()` is the gate: the script exits non-zero rather than exporting a frame that fails a check.
 questions:
-  - id: q1
-    type: error-only
-    prompt: |
-      pandas.errors.ParserError: Error tokenizing data. C error: Expected 6 fields in line 912877, saw 8
-    gold:
-      - {turn: 2, quote: "on_bad_lines=lambda fields: bad_lines.append(fields) or None,"}
-  - id: q2
-    type: semantic
-    prompt: |
-      How were we converting the amounts to euros again? Which rate did we use for weekends?
-    gold:
-      - {turn: 4, quote: 'by="currency", direction="backward",'}
-  - id: q3
-    type: exact
-    prompt: |
-      What did COUNTRY_ALIASES look like?
-    gold:
-      - {turn: 3, quote: "COUNTRY_ALIASES = {"}
-  - id: q4
-    type: code-pasted
-    prompt: |
-      uk_orders = df[df["country_code"] == "GB"]
-      uk_orders["vat"] = uk_orders["amount_eur"] * 0.2
+- id: q1
+  type: error-only
+  prompt: |
+    pandas.errors.ParserError: Error tokenizing data. C error: Expected 6 fields in line 912877, saw 8
+  gold:
+  - turn: 2
+    quote: 'on_bad_lines=lambda fields: bad_lines.append(fields) or None,'
+- id: q2
+  type: semantic
+  prompt: |
+    How were we converting the amounts to euros again? Which rate did we use for weekends?
+  gold:
+  - turn: 4
+    quote: by="currency", direction="backward",
+  - turn: 23
+    quote: df = convert_to_eur(orders_on("2026-01-01"), rates).assign(currency="EUR")
+  - turn: 22
+    quote: 1. If NaNs appear on dates that *do* have rates, the currency code is missing from the file (a new currency, o
+  - turn: 30
+    quote: '3. **Currency conversion** (`convert_to_eur`). `merge_asof` with `direction="backward"`: each order gets the l'
+- id: q3
+  type: exact
+  prompt: |
+    What did COUNTRY_ALIASES look like?
+  gold:
+  - turn: 3
+    quote: COUNTRY_ALIASES = {
+- id: q4
+  type: code-pasted
+  prompt: |
+    uk_orders = df[df["country_code"] == "GB"]
+    uk_orders["vat"] = uk_orders["amount_eur"] * 0.2
 
-      I get that copy warning again here, what was the fix?
-    gold:
-      - {turn: 8, quote: 'eu_orders = df[df["country_code"].isin(EU)].copy()'}
-  - id: q5
-    type: ambiguous
-    prompt: |
-      and the duplicates, which one did we keep?
-    gold:
-      - {turn: 5, quote: 'df = df.sort_values("order_date").drop_duplicates(subset=["order_id"], keep="first")'}
-  - id: q6
-    type: semantic
-    lang: ro
-    prompt: |
-      Cum făceam venitul lunar pe țară? De ce era nevoie de observed=True?
-    gold:
-      - {turn: 7, quote: "`observed=True` matters with categoricals"}
+    I get that copy warning again here, what was the fix?
+  gold:
+  - turn: 8
+    quote: eu_orders = df[df["country_code"].isin(EU)].copy()
+- id: q5
+  type: ambiguous
+  prompt: |
+    and the duplicates, which one did we keep?
+  gold:
+  - turn: 5
+    quote: df = df.sort_values("order_date").drop_duplicates(subset=["order_id"], keep="first")
+- id: q6
+  type: semantic
+  lang: ro
+  prompt: |
+    Cum făceam venitul lunar pe țară? De ce era nevoie de observed=True?
+  gold:
+  - turn: 7
+    quote: '`observed=True` matters with categoricals'
+- id: q7
+  type: distractor
+  prompt: |
+    Which column was missing from the older Shopify exports?
+  gold:
+  - turn: 17
+    quote: 'KeyError: ''refunded_amount'''
+  - turn: 30
+    quote: pre-March Shopify export; the loader handles this
+  - turn: 32
+    quote: '5. Pre-March 2026 exports lack `Refunded Amount` / `Financial Status`: missing columns are filled at load time'
+- id: q8
+  type: decision
+  prompt: |
+    How do partially refunded orders count in revenue now?
+  gold:
+  - turn: 16
+    quote: df["amount_net"] = df["amount"] - df["refunded_amount"].fillna(0)
+  - turn: 32
+    quote: '14. Rates: last published rate on or before the order date (`merge_asof backward`); previous year''s rate file'
+  - turn: 30
+    quote: '3. **Currency conversion** (`convert_to_eur`). `merge_asof` with `direction="backward"`: each order gets the l'
+- id: q9
+  type: exact
+  prompt: |
+    How much memory did the merge try to allocate?
+  gold:
+  - turn: 19
+    quote: Unable to allocate 11.2 GiB
+  - turn: 20
+    quote: '**DuckDB** is the least invasive. It queries pandas DataFrames directly and handles the join out-of-core, so e'
+- id: q10
+  type: exact
+  prompt: |
+    How long did the merge take after we moved it to DuckDB?
+  gold:
+  - turn: 21
+    quote: The `.df()` call returns a plain pandas DataFrame
+- id: q11
+  type: distractor
+  prompt: |
+    What did we do about the missing rates on the January bank holidays?
+  gold:
+  - turn: 22
+    quote: '`merge_asof` with `direction="backward"` already handles this'
+  - turn: 30
+    quote: The rounding, holiday, and refund tests encode decisions finance made explicitly. If one of them fails after y
+- id: q12
+  type: error-only
+  prompt: |
+    AssertionError: assert 41.37 == 41.38
+  gold:
+  - turn: 24
+    quote: 'AssertionError: assert 41.37 == 41.38'
+  - turn: 30
+    quote: The rounding, holiday, and refund tests encode decisions finance made explicitly. If one of them fails after y
+- id: q13
+  type: semantic
+  lang: ro
+  prompt: |
+    Cum verificam formatul codurilor de TVA fără să apelăm VIES pentru fiecare?
+  gold:
+  - turn: 26
+    quote: Regex per country
+  - turn: 30
+    quote: 7. **VAT split.** `net_amount = gross / (1 + rate)`, `vat_amount = gross − net`, so the identity `net + vat ==
+  - turn: 32
+    quote: '14. Rates: last published rate on or before the order date (`merge_asof backward`); previous year''s rate file'
+- id: q14
+  type: decision
+  prompt: |
+    What do we send to finance now, instead of one Excel sheet per country?
+  gold:
+  - turn: 29
+    quote: df.to_parquet(f"{out_dir}/sales_detail.parquet", index=False)
+  outdated:
+  - turn: 11
+    quote: 'with pd.ExcelWriter("revenue_by_country.xlsx", engine="openpyxl") as writer:'
+- id: q15
+  type: paraphrase
+  prompt: |
+    A client wants to be forgotten: how did we scrub their address from the old files?
+  gold:
+  - turn: 31
+    quote: you delete/anonymise the email (and any other direct identifiers) while keeping the amounts
+  - turn: 32
+    quote: '21. GDPR erasure: financial rows are kept (tax law), emails are removed from live files; raw inputs and logs a'
+- id: q16
+  type: distractor
+  prompt: |
+    FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated
+  gold:
+  - turn: 27
+    quote: 'FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated'
+- id: q17
+  type: semantic
+  prompt: |
+    How did we match the orders that show up in both exports?
+  gold:
+  - turn: 18
+    quote: Match on normalised keys with a small tolerance
+  - turn: 21
+    quote: The `.df()` call returns a plain pandas DataFrame, but the dtypes won't match what the rest of your pipeline e
+- id: q18
+  type: exact
+  prompt: |
+    What VAT rate do B2B orders with a valid VAT ID get?
+  gold:
+  - turn: 25
+    quote: 'if row["is_reverse_charge"]:'
+  - turn: 30
+    quote: 7. **VAT split.** `net_amount = gross / (1 + rate)`, `vat_amount = gross − net`, so the identity `net + vat ==

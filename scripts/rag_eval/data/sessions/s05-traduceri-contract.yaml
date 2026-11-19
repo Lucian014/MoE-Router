@@ -2,105 +2,603 @@ id: s05-traduceri-contract
 category: translation
 lang: ro
 turns:
-  - user: |
-      Tradu în engleză, păstrând tonul formal:
+- user: |
+    Tradu în engleză, păstrând tonul formal:
 
-      Prestatorul se obligă să livreze serviciile descrise în Anexa 1 în termen de 30 de zile calendaristice de la data semnării prezentului contract. În cazul în care termenul nu este respectat din motive imputabile Prestatorului, Beneficiarul are dreptul la penalități de 0,1% din valoarea contractului pentru fiecare zi de întârziere, fără ca valoarea totală a penalităților să depășească 10% din valoarea contractului.
-    assistant: |
-      The Service Provider undertakes to deliver the services described in Annex 1 within 30 calendar days from the date of signature of this Agreement. Should the deadline not be met for reasons attributable to the Service Provider, the Beneficiary shall be entitled to penalties of 0.1% of the contract value for each day of delay, provided that the total amount of penalties does not exceed 10% of the contract value.
+    Prestatorul se obligă să livreze serviciile descrise în Anexa 1 în termen de 30 de zile calendaristice de la data semnării prezentului contract. În cazul în care termenul nu este respectat din motive imputabile Prestatorului, Beneficiarul are dreptul la penalități de 0,1% din valoarea contractului pentru fiecare zi de întârziere, fără ca valoarea totală a penalităților să depășească 10% din valoarea contractului.
+  assistant: |
+    The Service Provider undertakes to deliver the services described in Annex 1 within 30 calendar days from the date of signature of this Agreement. Should the deadline not be met for reasons attributable to the Service Provider, the Beneficiary shall be entitled to penalties of 0.1% of the contract value for each day of delay, provided that the total amount of penalties does not exceed 10% of the contract value.
 
-      Note on terms: „Beneficiar” is usually rendered as *Beneficiary* in Romanian-English contracts, but *Client* or *Customer* is more natural for a native reader; keep whichever the rest of the document uses. „Motive imputabile” is translated as *reasons attributable to*, the standard legal phrasing.
-  - user: |
-      Acum clauza de confidențialitate:
+    Note on terms: „Beneficiar” is usually rendered as *Beneficiary* in Romanian-English contracts, but *Client* or *Customer* is more natural for a native reader; keep whichever the rest of the document uses. „Motive imputabile” is translated as *reasons attributable to*, the standard legal phrasing.
+- user: |
+    Acum clauza de confidențialitate:
 
-      Părțile se obligă să păstreze confidențialitatea tuturor informațiilor primite în executarea prezentului contract, pe toată durata acestuia și timp de 3 ani după încetarea sa. Nu sunt considerate confidențiale informațiile care erau publice la data comunicării sau care devin publice fără o încălcare a prezentei clauze. Obligația de confidențialitate nu se aplică dezvăluirilor impuse de lege sau de o autoritate competentă, cu condiția ca partea în cauză să o notifice în prealabil pe cealaltă parte, în măsura permisă de lege.
-    assistant: |
-      The Parties undertake to keep confidential all information received in the performance of this Agreement, for its entire duration and for a period of 3 years after its termination. Information which was public at the date of disclosure, or which becomes public other than through a breach of this clause, shall not be deemed confidential. The confidentiality obligation shall not apply to disclosures required by law or by a competent authority, provided that the Party concerned gives prior notice to the other Party, to the extent permitted by law.
+    Părțile se obligă să păstreze confidențialitatea tuturor informațiilor primite în executarea prezentului contract, pe toată durata acestuia și timp de 3 ani după încetarea sa. Nu sunt considerate confidențiale informațiile care erau publice la data comunicării sau care devin publice fără o încălcare a prezentei clauze. Obligația de confidențialitate nu se aplică dezvăluirilor impuse de lege sau de o autoritate competentă, cu condiția ca partea în cauză să o notifice în prealabil pe cealaltă parte, în măsura permisă de lege.
+  assistant: |
+    The Parties undertake to keep confidential all information received in the performance of this Agreement, for its entire duration and for a period of 3 years after its termination. Information which was public at the date of disclosure, or which becomes public other than through a breach of this clause, shall not be deemed confidential. The confidentiality obligation shall not apply to disclosures required by law or by a competent authority, provided that the Party concerned gives prior notice to the other Party, to the extent permitted by law.
 
-      I used *shall* for the obligations and exclusions, which is the conventional register of English contracts, and *other than through a breach* instead of a literal *without a breach*, because it reads more naturally.
-  - user: |
-      Translate this one into Romanian, it's from the client's side:
+    I used *shall* for the obligations and exclusions, which is the conventional register of English contracts, and *other than through a breach* instead of a literal *without a breach*, because it reads more naturally.
+- user: |
+    Translate this one into Romanian, it's from the client's side:
 
-      Either Party may terminate this Agreement for convenience by giving the other Party not less than sixty (60) days' prior written notice. Upon termination, the Client shall pay for all Services performed up to the effective date of termination, and the Provider shall deliver all work in progress in its current state.
-    assistant: |
-      Oricare dintre Părți poate rezilia prezentul Contract în mod unilateral, fără a invoca un motiv, printr-o notificare scrisă transmisă celeilalte Părți cu cel puțin șaizeci (60) de zile înainte. La încetarea Contractului, Clientul va plăti toate Serviciile prestate până la data efectivă a încetării, iar Prestatorul va preda toate lucrările în curs, în stadiul în care se află.
+    Either Party may terminate this Agreement for convenience by giving the other Party not less than sixty (60) days' prior written notice. Upon termination, the Client shall pay for all Services performed up to the effective date of termination, and the Provider shall deliver all work in progress in its current state.
+  assistant: |
+    Oricare dintre Părți poate rezilia prezentul Contract în mod unilateral, fără a invoca un motiv, printr-o notificare scrisă transmisă celeilalte Părți cu cel puțin șaizeci (60) de zile înainte. La încetarea Contractului, Clientul va plăti toate Serviciile prestate până la data efectivă a încetării, iar Prestatorul va preda toate lucrările în curs, în stadiul în care se află.
 
-      Observație juridică: *terminate for convenience* nu are un echivalent fix în dreptul românesc. Tehnic, e o **denunțare unilaterală**, nu o reziliere (rezilierea presupune neexecutarea obligațiilor). Dacă documentul e supus legii române, aș scrie „poate denunța unilateral prezentul Contract”, ca să nu existe confuzii la o eventuală dispută.
-  - user: |
-      Folosește varianta cu denunțare unilaterală.
-    assistant: |
-      Oricare dintre Părți poate denunța unilateral prezentul Contract, fără a fi necesară invocarea unui motiv, printr-o notificare scrisă transmisă celeilalte Părți cu cel puțin șaizeci (60) de zile înainte. La încetarea Contractului, Clientul va plăti toate Serviciile prestate până la data la care denunțarea produce efecte, iar Prestatorul va preda toate lucrările în curs, în stadiul în care se află.
+    Observație juridică: *terminate for convenience* nu are un echivalent fix în dreptul românesc. Tehnic, e o **denunțare unilaterală**, nu o reziliere (rezilierea presupune neexecutarea obligațiilor). Dacă documentul e supus legii române, aș scrie „poate denunța unilateral prezentul Contract”, ca să nu existe confuzii la o eventuală dispută.
+- user: |
+    Folosește varianta cu denunțare unilaterală.
+  assistant: |
+    Oricare dintre Părți poate denunța unilateral prezentul Contract, fără a fi necesară invocarea unui motiv, printr-o notificare scrisă transmisă celeilalte Părți cu cel puțin șaizeci (60) de zile înainte. La încetarea Contractului, Clientul va plăti toate Serviciile prestate până la data la care denunțarea produce efecte, iar Prestatorul va preda toate lucrările în curs, în stadiul în care se află.
 
-      Am schimbat și „data efectivă a încetării” în „data la care denunțarea produce efecte”, ca terminologia să fie consecventă în toată clauza.
-  - user: |
-      Tradu în engleză paragraful despre forța majoră:
+    Am schimbat și „data efectivă a încetării” în „data la care denunțarea produce efecte”, ca terminologia să fie consecventă în toată clauza.
+- user: |
+    Tradu în engleză paragraful despre forța majoră:
 
-      Niciuna dintre părți nu răspunde pentru neexecutarea obligațiilor sale dacă aceasta este cauzată de un eveniment de forță majoră, definit ca un eveniment extern, imprevizibil, absolut invincibil și inevitabil. Partea care invocă forța majoră are obligația de a o notifica celeilalte părți în termen de 5 zile de la producerea evenimentului și de a prezenta, în termen de 15 zile, certificatul emis de Camera de Comerț și Industrie a României.
-    assistant: |
-      Neither Party shall be liable for the non-performance of its obligations if such non-performance is caused by an event of force majeure, defined as an external, unforeseeable, absolutely insurmountable and unavoidable event. The Party invoking force majeure shall notify the other Party within 5 days of the occurrence of the event and shall submit, within 15 days, the certificate issued by the Chamber of Commerce and Industry of Romania.
+    Niciuna dintre părți nu răspunde pentru neexecutarea obligațiilor sale dacă aceasta este cauzată de un eveniment de forță majoră, definit ca un eveniment extern, imprevizibil, absolut invincibil și inevitabil. Partea care invocă forța majoră are obligația de a o notifica celeilalte părți în termen de 5 zile de la producerea evenimentului și de a prezenta, în termen de 15 zile, certificatul emis de Camera de Comerț și Industrie a României.
+  assistant: |
+    Neither Party shall be liable for the non-performance of its obligations if such non-performance is caused by an event of force majeure, defined as an external, unforeseeable, absolutely insurmountable and unavoidable event. The Party invoking force majeure shall notify the other Party within 5 days of the occurrence of the event and shall submit, within 15 days, the certificate issued by the Chamber of Commerce and Industry of Romania.
 
-      The four adjectives follow the definition in the Romanian Civil Code (art. 1351), so I kept all of them even though English contracts usually just list example events (war, natural disasters, epidemics). If the counterparty is foreign, they may ask to add such a list, which is compatible with the Romanian definition.
-  - user: |
-      What's the difference between "shall" and "will" in contracts? The client asked.
-    assistant: |
-      In traditional drafting, **shall** expresses an obligation imposed by the contract (“The Provider shall deliver…” means the Provider *must* deliver), while **will** describes a future fact or an intention, without the same binding force.
+    The four adjectives follow the definition in the Romanian Civil Code (art. 1351), so I kept all of them even though English contracts usually just list example events (war, natural disasters, epidemics). If the counterparty is foreign, they may ask to add such a list, which is compatible with the Romanian definition.
+- user: |
+    What's the difference between "shall" and "will" in contracts? The client asked.
+  assistant: |
+    In traditional drafting, **shall** expresses an obligation imposed by the contract (“The Provider shall deliver…” means the Provider *must* deliver), while **will** describes a future fact or an intention, without the same binding force.
 
-      In practice:
+    In practice:
 
-      - *shall* – obligations of the parties: “The Client shall pay within 30 days.”
-      - *will* – statements about the future or about a party's own declarations: “The Agreement will enter into force on the date of signature.”
-      - *may* – a right or an option: “Either Party may terminate…”
-      - *must* – increasingly used in plain-English drafting instead of *shall*, because *shall* is sometimes used inconsistently.
+    - *shall* – obligations of the parties: “The Client shall pay within 30 days.”
+    - *will* – statements about the future or about a party's own declarations: “The Agreement will enter into force on the date of signature.”
+    - *may* – a right or an option: “Either Party may terminate…”
+    - *must* – increasingly used in plain-English drafting instead of *shall*, because *shall* is sometimes used inconsistently.
 
-      The key rule is consistency: if a contract uses *shall* for obligations, a court may read a *will* in the same document as something weaker. In Romanian this distinction maps roughly to „se obligă să” / „va” (obligație) versus „urmează să” (fapt viitor).
-  - user: |
-      Tradu și asta, e pentru emailul de trimitere: "Vă transmitem atașat varianta revizuită a contractului, cu modificările evidențiate. Vă rugăm să ne comunicați eventualele observații până vineri."
-    assistant: |
-      Please find attached the revised version of the agreement, with the changes highlighted. We would be grateful if you could send us any comments by Friday.
+    The key rule is consistency: if a contract uses *shall* for obligations, a court may read a *will* in the same document as something weaker. In Romanian this distinction maps roughly to „se obligă să” / „va” (obligație) versus „urmează să” (fapt viitor).
+- user: |
+    Tradu și asta, e pentru emailul de trimitere: "Vă transmitem atașat varianta revizuită a contractului, cu modificările evidențiate. Vă rugăm să ne comunicați eventualele observații până vineri."
+  assistant: |
+    Please find attached the revised version of the agreement, with the changes highlighted. We would be grateful if you could send us any comments by Friday.
 
-      *We would be grateful if you could* sună mai politicos decât un *please let us know* direct, potrivit pentru o corespondență cu un client. Dacă relația e deja informală, poți scrie simplu: *Please let us know if you have any comments by Friday.*
-  - user: |
-      Mulțumesc mult!
-    assistant: |
-      Cu plăcere! Am tradus astăzi clauza de termen și penalități, clauza de confidențialitate (3 ani după încetare), clauza de denunțare unilaterală cu preaviz de 60 de zile, forța majoră cu notificare în 5 zile și certificatul CCIR în 15 zile, plus emailul de trimitere. Dacă mai apar clauze, păstrează aceeași terminologie: *Service Provider*, *Beneficiary*, *shall* pentru obligații.
+    *We would be grateful if you could* sună mai politicos decât un *please let us know* direct, potrivit pentru o corespondență cu un client. Dacă relația e deja informală, poți scrie simplu: *Please let us know if you have any comments by Friday.*
+- user: |
+    Mulțumesc mult!
+  assistant: |
+    Cu plăcere! Am tradus astăzi clauza de termen și penalități, clauza de confidențialitate (3 ani după încetare), clauza de denunțare unilaterală cu preaviz de 60 de zile, forța majoră cu notificare în 5 zile și certificatul CCIR în 15 zile, plus emailul de trimitere. Dacă mai apar clauze, păstrează aceeași terminologie: *Service Provider*, *Beneficiary*, *shall* pentru obligații.
+- user: |
+    Revin cu același contract. Clientul a trimis Anexa 3, cu SLA-ul. Tradu-o în română:
+
+    Annex 3 – Service Level Agreement. The Provider shall ensure a monthly availability of the Platform of at least 99.5%, measured at the Provider's load balancer and excluding Planned Maintenance. Planned Maintenance shall take place on Sundays between 02:00 and 05:00 EET and shall be announced to the Client at least 72 hours in advance. If the monthly availability falls below the target, the Client shall be entitled to service credits equal to 5% of the monthly fee for each 0.5 percentage points below the target, capped at 25% of the monthly fee. Service credits shall be the Client's sole and exclusive remedy for unavailability, except where the availability falls below 95% in two consecutive months, in which case the Client may terminate the Agreement with immediate effect. Incidents shall be classified as Severity 1 (Platform unavailable), Severity 2 (major function impaired) or Severity 3 (minor issue), with response times of 30 minutes, 4 hours and 2 business days respectively.
+  assistant: |
+    Anexa 3 – Acord privind Nivelul de Servicii (SLA). Prestatorul va asigura o disponibilitate lunară a Platformei de cel puțin 99,5%, măsurată la nivelul echilibratorului de încărcare (load balancer) al Prestatorului și cu excluderea Întreținerii Programate. Întreținerea Programată se va efectua duminicile, între orele 02:00 și 05:00 (ora Europei de Est) și va fi anunțată Clientului cu cel puțin 72 de ore înainte. În cazul în care disponibilitatea lunară scade sub nivelul țintă, Clientul va avea dreptul la credite de serviciu în valoare de 5% din tariful lunar pentru fiecare 0,5 puncte procentuale sub nivelul țintă, fără ca valoarea totală a creditelor să depășească 25% din tariful lunar. Creditele de serviciu constituie singurul și exclusivul remediu al Clientului pentru indisponibilitate, cu excepția situației în care disponibilitatea scade sub 95% în două luni consecutive, caz în care Clientul poate denunța unilateral Contractul cu efect imediat. Incidentele se clasifică în Severitate 1 (Platformă indisponibilă), Severitate 2 (funcție majoră afectată) sau Severitate 3 (problemă minoră), cu timpi de răspuns de 30 de minute, 4 ore și, respectiv, 2 zile lucrătoare.
+
+    Două observații:
+
+    - Am păstrat „denunța unilateral” pentru *terminate*, consecvent cu clauza de reziliere tradusă anterior.
+    - *Sole and exclusive remedy* – am folosit formula consacrată „singurul și exclusivul remediu”. Atenție: în dreptul românesc, o clauză limitativă de remedii poate fi considerată neechitabilă dacă e interpretată strict, deci merită verificat dacă clientul acceptă acest echilibru de risc.
+- user: |
+    „Service credits” cum îl traducem? „Credite de serviciu” sună ciudat în română.
+  assistant: |
+    Ai dreptate, e o calchiere nefericită. Problema e că „credit de serviciu” nu există ca noțiune consacrată în română, iar cititorul neavizat s-ar putea gândi la un credit bancar sau la puncte de fidelitate.
+
+    Variante, în ordinea preferinței mele:
+
+    1. **„reducere de tarif”** – cea mai naturală: *„Clientul va avea dreptul la o reducere de tarif în valoare de 5% din tariful lunar…”*. E clară și descrie exact efectul economic.
+    2. **„compensație la factura lunară”** – subliniază mecanismul (se scade din factura următoare), util dacă vrei să fie explicit că nu se plătește în bani.
+    3. **„credite de facturare”** – compromis, se înțelege din context, dar tot e o construcție nouă.
+
+    Un detaliu tehnic: *service credit* în practică înseamnă de obicei o sumă dedusă din factura următoare, nu o rambursare. Dacă traduci cu „reducere de tarif”, e bine ca SLA-ul să precizeze cum se aplică (de exemplu: *„reducerea se va reflecta în factura lunară imediat următoare perioadei în care s-a înregistrat indisponibilitatea”*), ca să nu apară discuții dacă clientul a plătit deja în avans.
+
+    Dacă vrei, îți reformulez clauza cu varianta aleasă.
+- user: |
+    Mergem pe „reduceri de tarif” pentru service credits, în tot contractul. Refă paragraful din anexă care le conține.
+  assistant: |
+    Anexa 3 – Acord privind Nivelul de Servicii (SLA). Prestatorul va asigura o disponibilitate lunară a Platformei de cel puțin 99,5%, măsurată la nivelul echilibratorului de încărcare (load balancer) al Prestatorului și cu excluderea Întreținerii Programate. Întreținerea Programată se va efectua duminicile, între orele 02:00 și 05:00 (ora Europei de Est) și va fi anunțată Clientului cu cel puțin 72 de ore înainte. În cazul în care disponibilitatea lunară scade sub nivelul țintă, Clientul va avea dreptul la reduceri de tarif în valoare de 5% din tariful lunar pentru fiecare 0,5 puncte procentuale sub nivelul țintă, fără ca valoarea totală a reducerilor să depășească 25% din tariful lunar. Reducerile de tarif constituie singurul și exclusivul remediu al Clientului pentru indisponibilitate, cu excepția situației în care disponibilitatea scade sub 95% în două luni consecutive, caz în care Clientul poate denunța unilateral Contractul cu efect imediat. Incidentele se clasifică în Severitate 1 (Platformă indisponibilă), Severitate 2 (funcție majoră afectată) sau Severitate 3 (problemă minoră), cu timpi de răspuns de 30 de minute, 4 ore și, respectiv, 2 zile lucrătoare.
+
+    Am adăugat și o propoziție care precizează mecanismul de aplicare, conform discuției de ieri:
+
+    *Reducerile de tarif se vor reflecta în factura lunară imediat următoare perioadei în care s-a înregistrat indisponibilitatea.*
+
+    Dacă o incluzi, insereaz-o după propoziția cu plafonul de 25%. La fel, în versiunea engleză a contractului, dacă există, *service credits* rămâne neschimbat — doar traducerea în română folosește „reduceri de tarif”.
+- user: |
+    Acum clauza de răspundere, în engleză:
+
+    Răspunderea totală a Prestatorului pentru orice prejudiciu cauzat Beneficiarului în legătură cu prezentul contract, indiferent de temeiul acesteia, nu va depăși valoarea totală a sumelor plătite de Beneficiar în cele 12 luni anterioare evenimentului care a generat prejudiciul. Limitarea nu se aplică prejudiciilor cauzate prin dol sau culpă gravă, încălcării obligațiilor de confidențialitate și încălcării obligațiilor privind protecția datelor cu caracter personal. Niciuna dintre părți nu va răspunde pentru beneficiul nerealizat, pierderea de date sau prejudiciile indirecte.
+  assistant: |
+    The Provider's total liability for any damage caused to the Beneficiary in connection with this Agreement, regardless of the legal basis thereof, shall not exceed the total amount paid by the Beneficiary during the 12 months preceding the event giving rise to the damage. This limitation shall not apply to damage caused by intent or gross negligence, to breach of the confidentiality obligations, or to breach of the obligations regarding the protection of personal data. Neither Party shall be liable for loss of profit, loss of data, or indirect damages.
+
+    Câteva observații de redactare:
+
+    - *regardless of the legal basis thereof* – echivalentul consacrat pentru „indiferent de temeiul acesteia”; în contractele englezești apare adesea ca *howsoever arising*, dar e arhaic, am preferat varianta modernă.
+    - *intent or gross negligence* – pentru „dol sau culpă gravă”; în contractele de common law se folosește de obicei *fraud or fraudulent misrepresentation* în loc de *intent*. Dacă contractul e guvernat de legea engleză, discută cu clientul dacă vrea *fraud*, pentru că limitările de răspundere pentru fraudă sunt oricum nule în dreptul englez.
+    - Am scris *Neither Party* la ultima propoziție, deși textul românesc spune doar „Niciuna dintre părți” fără să precizeze — în original pare că excluderea se referă la ambele părți, dar verifică dacă nu cumva intenția era să protejeze doar Prestatorul. Dacă da, ar trebui să fie *The Provider shall not be liable…*, ceea ce schimbă semnificativ echilibrul clauzei.
+- user: |
+    Cum ai tradus „dol” și „culpă gravă”? Există echivalente exacte în common law sau e doar o aproximare?
+  assistant: |
+    E o aproximare, nu echivalență exactă — și merită să știi exact unde se rupe corespondența.
+
+    **„Dol” (românesc: intenția de a păcăli, art. 1351 C. civ. și art. 1440 pentru nulități)** nu are echivalent fix în common law. Cele mai apropiate noțiuni sunt:
+
+    - ***fraud*** / ***fraudulent misrepresentation*** – înșelăciunea intenționată; e mai îngust decât „dol” în sens civilist, dar e termenul consacrat în clauzele de excludere a răspunderii.
+    - ***wilful misconduct*** – conduită intenționată abuzivă; apare în contracte, dar e o noțiune fuzzy, definită rar.
+    - ***intent*** – simpla intenție, fără elementul de viclenie pe care „dol” îl implică în tradiția romană.
+
+    În clauze de limitare a răspunderii, standardul de common law e aproape întotdeauna *fraud* (sau *fraud or fraudulent misrepresentation*), tocmai pentru că instanțele engleze nu tolerează excluderea răspunderii pentru fraudă — o clauză care limitează răspunderea pentru fraudă e nulă (*Salford Estates v. Miller* linia de jurisprudență, consolidată în practica modernă).
+
+    **„Culpă gravă”** se traduce de obicei prin ***gross negligence***, dar aici e o capcană mai subtilă: în dreptul englez, *gross negligence* nu are o definiție fermă. Instanțele au spus uneori că nu e o categorie distinctă de *negligence*, ci doar neglijență „atât de gravă încât demonstrează indiferență față de contract”. În schimb, în dreptul american (și în dreptul civil, inclusiv românesc), gradul e clar: neglijență simplă / gravă / dol.
+
+    Consecințe practice pentru contractul vostru:
+
+    1. Dacă e guvernat de **legea engleză**, înlocuiește *intent or gross negligence* cu ***fraud or fraudulent misrepresentation*** și, eventual, adaugă *wilful misconduct* — altfel clauza de excludere riscă să fie neaplicabilă exact acolo unde voia să opereze.
+    2. Dacă e **legea română**, formularea actuală e corectă, dar poți fi explicit: *damage caused by intent (dol) or gross negligence*.
+    3. Dacă e **legea americană**, *gross negligence* funcționează bine, pentru că acolo are conținut juridic ferm.
+
+    A treia opțiune, folosită des în contracte internaționale, e să definești termenii în contractul însuși, ca să nu depinzi de legea aplicabilă.
+- user: |
+    Acum clauza de protecție a datelor, în engleză:
+
+    Prestatorul acționează în calitate de persoană împuternicită de operator, în sensul art. 28 din Regulamentul (UE) 2016/679, și prelucrează datele cu caracter personal exclusiv pe baza instrucțiunilor scrise ale Beneficiarului. Prestatorul nu va angaja un alt împuternicit fără acordul prealabil scris al Beneficiarului. În cazul unei încălcări a securității datelor cu caracter personal, Prestatorul va notifica Beneficiarul fără întârzieri nejustificate și în cel mult 48 de ore de la data la care a luat cunoștință de aceasta, punând la dispoziție toate informațiile necesare pentru ca Beneficiarul să își poată îndeplini obligațiile față de autoritatea de supraveghere.
+  assistant: |
+    The Provider acts as a processor acting on behalf of the controller, within the meaning of Article 28 of Regulation (EU) 2016/679, and processes personal data exclusively on the basis of the Beneficiary's written instructions. The Provider shall not engage another processor without the Beneficiary's prior written consent. In the event of a personal data breach, the Provider shall notify the Beneficiary without undue delay and in any event within 48 hours of becoming aware of it, providing all information necessary to enable the Beneficiary to comply with its obligations towards the supervisory authority.
+
+    Observații:
+
+    - Am folosit terminologia oficială GDPR: *processor* pentru „persoană împuternicită” și *controller* pentru „operator”. Aș fi tentat să păstrez „împuternicit” literal, dar în documentele GDPR traducerea consacrată e obligatorie — orice avocat sau autoritate va căuta *processor/controller*, nu echivalentele din legislația română.
+    - *without undue delay* e formula exactă din textul GDPR (art. 33), deci am păstrat-o, deși „fără întârzieri nejustificate” ar putea fi redat și altfel.
+    - *personal data breach* e termenul oficial din Regulament pentru „încălcarea securității datelor cu caracter personal” — nu *data breach* simplu, care e mai larg.
+    - Atenție la un detaliu: art. 33 alin. 2 GDPR impune procesorului să notifice controllerul „fără întârzieri nejustificate”, fără termen de 48 de ore — acel termen se aplică controllerului față de autoritate. Cele 48 de ore din contract sunt o obligație contractuală suplimentară, mai strictă decât legea; e în regulă, dar clientul (Prestatorul) ar trebui să știe că își asumă un termen mai strâns decât minimul legal.
+- user: |
+    Clientul vrea notificarea în 24 de ore, nu în 48. Modifică traducerea în engleză.
+  assistant: |
+    In the event of a personal data breach, the Provider shall notify the Beneficiary without undue delay and in any event within 24 hours of becoming aware of it, providing all information necessary to enable the Beneficiary to comply with its obligations towards the supervisory authority.
+
+    Doar termenul s-a schimbat, restul propoziției rămâne identic. Reamintesc observația de dinainte: 24 de ore e o obligație contractuală semnificativ mai strictă decât standardul GDPR, deci asigură-te că Prestatorul are operațional posibilitatea să se conformeze (proceduri interne de escaladare), altfel clauza devine o sursă de răspundere automată.
+- user: |
+    Tradu în română clauza de lege aplicabilă:
+
+    This Agreement shall be governed by and construed in accordance with the laws of Romania. Any dispute arising out of or in connection with this Agreement, including any question regarding its existence, validity or termination, shall be finally settled by arbitration administered by the Court of International Commercial Arbitration attached to the Chamber of Commerce and Industry of Romania, in Bucharest, by three arbitrators, in the English language, in accordance with its rules in force at the date of the request for arbitration.
+  assistant: |
+    Prezentul Contract se va supune legilor României și va fi interpretat în conformitate cu acestea. Orice litigiu izvorât din prezentul Contract sau în legătură cu acesta, inclusiv orice controversă privind existența, valabilitatea sau încetarea sa, va fi soluționat definitiv pe calea arbitrajului administrat de Curtea de Arbitraj Comercial Internațional de pe lângă Camera de Comerț și Industrie a României, cu sediul în București, de un complet format din trei arbitri, în limba engleză, în conformitate cu regulamentul acesteia în vigoare la data introducerii cererii de arbitraj.
+
+    Observații:
+
+    - *governed by and construed in accordance with* – formula dublă consacrată; am redat-o cu „se va supune... și va fi interpretat în conformitate cu”, construcția standard în contractele românești.
+    - Numele instituției: denumirea oficială actuală este **CURIA – Curtea de Arbitraj Comercial Internațional de pe lângă Camera de Comerț și Industrie a României**. Am folosit denumirea tradițională, care apare și în denumirea engleză din contract; dacă vrei, poți adăuga „(CURIA)” după nume, pentru claritate.
+    - *request for arbitration* – „cerere de arbitraj” e termenul din regulamentul CACIA; am evitat „cererea de introducere a arbitrajului”, care nu e formularea oficială.
+    - Un detaliu de fond, nu de traducere: arbitrajul în limba engleză cu trei arbitri la CACIA e costisitor pentru un contract de servicii de dimensiunea acestuia (tarife de arbitraj + onorariile a trei arbitri). Dacă clientul vrea să reducă costurile, variantele uzuale sunt un singur arbitru sau arbitrajul în limba română. Merită semnalat înainte de semnare.
+- user: |
+    Avocata noastră nu vrea arbitraj: vrea ca litigiile să fie soluționate de instanțele judecătorești competente din Iași. Rescrie clauza în ambele limbi.
+  assistant: |
+    **În română:**
+
+    Prezentul Contract se va supune legilor României și va fi interpretat în conformitate cu acestea. Orice litigiu izvorât din prezentul Contract sau în legătură cu acesta, inclusiv orice controversă privind existența, valabilitatea sau încetarea sa, va fi soluționat de instanțele judecătorești competente de la sediul Curții de Apel Iași, părțile declarând în mod expres și irevocabil competența teritorială a acestora, cu excluderea oricărei alte competențe teritoriale alternative.
+
+    **În engleză:**
+
+    This Agreement shall be governed by and construed in accordance with the laws of Romania. Any dispute arising out of or in connection with this Agreement, including any question regarding its existence, validity or termination, shall be settled by the courts having jurisdiction at the seat of the Iași Court of Appeal, the Parties expressly and irrevocably submitting to the territorial jurisdiction of such courts, to the exclusion of any other alternative territorial jurisdiction.
+
+    Două observații de tehnică juridică:
+
+    - Am formulat clauza ca **alegere de competență teritorială** (art. 24 alin. 2 din Legea nr. 76/2012), nu doar o mențiune de fapt. Formula „declarând în mod expres și irevocabil” e necesară pentru ca pactul de competență să fie valabil — o simplă referire la Iași fără această declarație ar putea fi considerată nevalabilă.
+    - Am legat competența de **Curtea de Apel Iași**, nu de un tribunal anume, pentru că instanța de fond (Tribunalul Iași) rezultă din regulile generale de competență; clauza fixează doar aria teritorială. Dacă avocata vrea explicit Tribunalul Iași, se poate formula și așa, dar e redundant față de regulile legale.
+    - De verificat: dacă una dintre părți e consumator, pactul de competență nu i-ar fi opozabil — aici ambele părți sunt profesioniști, deci nu e o problemă.
+- user: |
+    Fă-mi un glosar cu toți termenii pe care i-am stabilit până acum, română–engleză.
+  assistant: |
+    **Glosar română–engleză – Contract de prestare de servicii**
+
+    | Română | Engleză | Observații |
+    |---|---|---|
+    | Prestator | Service Provider | |
+    | Beneficiar | Beneficiary | Alternativă mai naturală: *Client*; de păstrat consecvent |
+    | Contract / prezentul contract | Agreement / this Agreement | |
+    | Anexa 1 | Annex 1 | |
+    | se obligă să | shall | *will* = fapt viitor; *may* = drept/opțiune |
+    | penalități | penalties | 0,1%/zi, plafon 10% din valoarea contractului |
+    | motive imputabile | reasons attributable to | |
+    | denunțare unilaterală | termination for convenience | Nu „reziliere” – aceea presupune neexecutare |
+    | notificare scrisă | written notice | |
+    | data la care denunțarea produce efecte | effective date of termination | |
+    | forță majoră | force majeure | |
+    | eveniment extern, imprevizibil, absolut invincibil și inevitabil | external, unforeseeable, absolutely insurmountable and unavoidable event | Definiția din art. 1351 C. civ. |
+    | Camera de Comerț și Industrie a României | Chamber of Commerce and Industry of Romania | |
+    | clauză de confidențialitate | confidentiality clause | 3 ani după încetare |
+    | divulgare | disclosure | |
+    | autoritate competentă | competent authority | |
+    | Acord privind Nivelul de Servicii (SLA) | Service Level Agreement | |
+    | disponibilitate lunară | monthly availability | țintă 99,5% |
+    | Întreținere Programată | Planned Maintenance | |
+    | echilibrator de încărcare | load balancer | |
+    | tariful lunar | monthly fee | |
+    | **reduceri de tarif** | **service credits** | Decizie fermă, pentru tot contractul; nu „credite de serviciu” |
+    | singurul și exclusivul remediu | sole and exclusive remedy | |
+    | denunțare unilaterală cu efect imediat | termination with immediate effect | |
+    | Severitate 1/2/3 | Severity 1/2/3 | |
+    | timp de răspuns | response time | |
+    | zile lucrătoare | business days | |
+    | limitarea răspunderii | limitation of liability | |
+    | dol | intent | Dacă legea engleză: *fraud or fraudulent misrepresentation* |
+    | culpă gravă | gross negligence | Conținut ferm doar în dreptul american/civil |
+    | beneficiu nerealizat | loss of profit | |
+    | prejudicii indirecte | indirect damages | |
+    | persoană împuternicită de operator | processor acting on behalf of the controller | Terminologie GDPR obligatorie |
+    | operator | controller | |
+    | instrucțiuni scrise | written instructions | |
+    | încălcarea securității datelor cu caracter personal | personal data breach | Nu *data breach* simplu |
+    | fără întârzieri nejustificate | without undue delay | Formula din GDPR |
+    | autoritate de supraveghere | supervisory authority | |
+    | legea aplicabilă | governing law | |
+    | pact de competență | submission to jurisdiction | Curtea de Apel Iași, art. 24 alin. 2 Legea 76/2012 |
+    | litigiu izvorât din contract sau în legătură cu acesta | dispute arising out of or in connection with | |
+
+    Termenii cu decizii ferme de traducere, de păstrat în orice document viitor: **reduceri de tarif**, **denunțare unilaterală**, **processor/controller**, **shall** pentru obligații.
+- user: |
+    Pentru „Prestator” am folosit „Provider” peste tot. Clientul folosește „Supplier” în toate documentele lor. Ce recomanzi?
+  assistant: |
+    Recomandarea mea: **păstrează „Provider” în contract**, cu o scurtă explicație pentru client. Motivele:
+
+    1. **Consecvența internă primește.** Un contract trebuie să folosească un singur termen definit pentru o singură parte. Dacă în contract scrie „Provider” și în anexe sau corespondență apare „Supplier”, există riscul (teoretic) ca o instanță să întrebe dacă e vorba despre aceeași entitate sau despre un subcontractant. Dacă tot contractul e deja redactat cu „Provider”, schimbarea globală introduce riscul de a rămâne un „Provider” uitat undeva.
+
+    2. **„Provider” e termenul corect pentru servicii.** *Service provider* e colocația consacrată; *supplier* sugerează în primul rând furnizare de bunuri (*goods*). În contracte de servicii IT/SaaS, standardul industriei e *Provider* (sau *Vendor*). „Supplier” nu e greșit, dar e un semnal că documentul clientului a fost probabil adaptat dintr-un contract de achiziție de bunuri.
+
+    3. **Diferența nu e juridică, ci de uzanță.** Nu există un risc juridic real în a folosi „Supplier” — ambele desemnează aceeași parte dacă sunt definite. Deci nu e o luptă pe principii.
+
+    Cum să gestionezi practic:
+
+    - Dacă clientul insistă pe „Supplier” pentru coerență cu documentele lor interne (de exemplu sistemul lor de procurement), varianta acceptabilă e să redefinești termenul în contract: *“Provider” (also referred to as “Supplier”)* — dar o singură dată, în definiții, nu alternat în text.
+    - Verifică și partea română: „Prestator” e corect pentru servicii; „Furnizor” ar fi echivalentul lui *Supplier*. Dacă treci pe „Supplier” în engleză, ar trebui logic să treci pe „Furnizor” în română — și acolo pierzi precizia.
+    - Dacă există alte contracte-cadru între părți care folosesc „Supplier”, menționează în contract o clauză de referință sau asigură-te că definiția părții include denumirea legală completă, astfel încât identificarea să fie neechivocă indiferent de termen.
+
+    Pe scurt: nu e o problemă de drept, ci de disciplină redacțională. Ține „Provider” în contract, lasă clientului „Supplier” pentru documentele lor interne, și asigură-te că denumirea legală completă a părții apare în secțiunea de definiții/parti.
+- user: |
+    Bine, trecem la „Supplier” în toate clauzele în engleză. Refă clauza de livrare de la început cu „Supplier”.
+  assistant: |
+    The Supplier undertakes to deliver the services described in Annex 1 within 30 calendar days from the date of signature of this Agreement. Should the deadline not be met for reasons attributable to the Supplier, the Beneficiary shall be entitled to penalties of 0.1% of the contract value for each day of delay, provided that the total amount of penalties does not exceed 10% of the contract value.
+
+    Singura schimbare e *Provider* → *Supplier* (o singură apariție în această clauză). Reamintesc: la fel ca în română „Prestator”, termenul trebuie schimbat consecvent în toate clauzele traduse până acum — confidențialitate, SLA, răspundere, protecția datelor. Dacă vrei, îți pot lista toate propozițiile afectate, dar în esență e aceeași înlocuire mecanică.
+- user: |
+    Tradu în engleză anexa de prețuri:
+
+    ```text
+    Pachet       | Preț lunar (fără TVA) | Ore de suport incluse | Tarif oră suplimentară
+    Standard     | 2.400 lei             | 10                    | 180 lei
+    Business     | 4.900 lei             | 25                    | 160 lei
+    Enterprise   | 9.800 lei             | 60                    | 140 lei
+    ```
+  assistant: |
+    ```text
+    Package     | Monthly Fee (excl. VAT) | Included Support Hours | Additional Hourly Rate
+    Standard    | RON 2,400               | 10                     | RON 180
+    Business    | RON 4,900               | 25                     | RON 160
+    Enterprise  | RON 9,800               | 60                     | RON 140
+    ```
+
+    Observații de adaptare:
+
+    - **„lei” → „RON”**: în documente în engleză se folosește codul ISO 4217 (RON), plasat înaintea sumei. Dacă contractul e cu un partener străin, RON e obligatoriu — „lei” singur poate fi confundat (leu românesc vs. leu moldovenesc, MDL).
+    - **Formatul numerelor**: am trecut la separator englezesc (2,400). Atenție la consecvență cu restul contractului — în clauzele anterioare am folosit format românesc (99,5%, 0,1%). Într-un document integral englezesc, standardizează tot pe format englezesc: *99.5%*, *0.1%*.
+    - **„fără TVA” → excl. VAT**: varianta completă, folosită în contracte, e *exclusive of VAT* sau *plus VAT*. Dacă vrei formulare completă în textul anexei: *All prices are exclusive of VAT.*
+    - **„Ore de suport incluse”** – am presupus că e suport tehnic; dacă e alt tip de suport (implementare, training), precizează: *Included Implementation Hours* etc.
+
+    Dacă anexa are și text introductoriu (de exemplu despre indexarea prețurilor anual), trimite-l și pe acela.
+- user: |
+    Cum scriu sumele în engleză în contract: „RON 2,400”, „2,400 lei” sau altfel? Și virgula zecimală?
+  assistant: |
+    Recomandarea standard pentru contracte în engleză: **„RON 2,400”** — codul ISO înaintea sumei, fără spațiu, cu separator de mii prin virgulă.
+
+    **Codul valutei:**
+
+    - **RON 2,400** – varianta recomandată, folosită în contracte internaționale și documente financiare. Codul ISO 4217 elimină orice ambiguitate.
+    - **2,400 lei** – acceptabil, dar mai puțin riguros; „lei” e denumirea populară, nu codul. E ok în corespondență, nu în anexe de prețuri.
+    - **2,400 RON** – evitat; ordinea standard e cod înaintea sumei.
+    - **2,400.00 lei** – dacă vrei să afișezi și bani (cenți), scrie **RON 2,400.00**.
+
+    **Separatorii — aici e partea delicată:**
+
+    În convenția engleză (UK/US):
+
+    - separator de mii: **virgulă** – RON 2,400 / RON 9,800
+    - separator zecimal: **punct** – 99.5%, 0.1%
+
+    Deci în contractul vostru englezesc, toate cifrele ar trebui trecute la format englezesc: *99.5%* nu „99,5%”, *0.1%* nu „0,1%”. Am folosit format românesc în primele traduceri — dacă documentul final e integral în engleză, standardizează tot pe punct zecimal.
+
+    **Două precauții de contract:**
+
+    1. **Ambiguitatea virgulei.** „2,400” în convenția engleză = două mii patru sute, dar în convenția continentală = 2,4 (două virgulă patru). Pentru sume mari, practica prudentă din contracte internaționale e să scrii și în litere la prima mențiune: *RON 2,400 (two thousand four hundred Romanian lei)*. În anexe cu tabele, asta nu e necesară, dar în clauzele de penalități sau preț da.
+
+    2. **O clauză de interpretare.** Dacă vrei să elimini complet riscul, adaugă în secțiunea de interpretare: *Amounts expressed in figures refer to the currency and number conventions stated in this Agreement.* Sau, mai simplu, asigură-te că tot documentul folosește o singură convenție.
+
+    Pe scurt: **RON 2,400** pentru sume, **punct** pentru zecimale, **virgulă** pentru mii — consecvent în tot documentul, inclusiv la procente.
+- user: |
+    Tradu în română emailul ăsta de la client, ca să-l trimit managerului:
+
+    ```text
+    Dear Ms Rusu, thank you for the revised draft. We can accept the liability cap at twelve months of fees, provided that the carve-outs remain as drafted. However, our compliance team requires the personal data breach notice within 24 hours, and our operations team has asked for the availability target to be raised to 99.7%, with the same service credit mechanism. We would also like the payment term changed from 30 to 45 days. If these points are acceptable, we are ready to sign before the end of the month. Kind regards, Thomas Berger, Head of Procurement.
+    ```
+  assistant: |
+    Stimată doamnă Rusu, vă mulțumim pentru varianta revizuită. Putem accepta plafonul de răspundere la douăsprezece luni de tarife, cu condiția ca excluderile de la limitare să rămână în forma redactată. Totuși, echipa noastră de conformitate solicită notificarea încălcării securității datelor cu caracter personal în termen de 24 de ore, iar echipa de operațiuni a cerut ca nivelul țintă de disponibilitate să fie majorat la 99,7%, cu același mecanism de reduceri de tarif. De asemenea, am dori ca termenul de plată să fie modificat de la 30 la 45 de zile. Dacă aceste puncte sunt acceptabile, suntem pregătiți să semnăm până la sfârșitul lunii. Cu stimă, Thomas Berger, Director Achiziții.
+
+    Observații pentru manager (nu fac parte din traducere):
+
+    - **99,7% disponibilitate** – cerere nouă față de 99,5% din SLA. E o creștere semnificativă: de la ~3,6 ore de indisponibilitate lunară permisă la ~2,2 ore. Verificați dacă Prestatorul poate garanta tehnic acest nivel, mai ales cu Întreținerea Programată exclusă.
+    - **Termen de plată 45 de zile** – schimbare în defavoarea Prestatorului; dacă contractul are penalități de întârziere la plată, se aplică automat la noul termen.
+    - Notificarea în 24 de ore era deja convenită anterior, deci doar disponibilitatea și termenul de plată sunt puncte noi de negociat.
+    - *Carve-outs* l-am tradus prin „excluderile de la limitare” — se referă la situațiile care scapă de plafonul de răspundere (dol, culpă gravă, confidențialitate, date personale), deja stabilite în clauza de răspundere.
+- user: |
+    Managerul a acceptat: 99,7% în loc de 99,5%. Modifică Anexa 3 tradusă în română.
+  assistant: |
+    Anexa 3 – Acord privind Nivelul de Servicii (SLA). Prestatorul va asigura o disponibilitate lunară a Platformei de cel puțin 99,7%, măsurată la nivelul echilibratorului de încărcare (load balancer) al Prestatorului și cu excluderea Întreținerii Programate. Întreținerea Programată se va efectua duminicile, între orele 02:00 și 05:00 (ora Europei de Est) și va fi anunțată Clientului cu cel puțin 72 de ore înainte. În cazul în care disponibilitatea lunară scade sub nivelul țintă, Clientul va avea dreptul la reduceri de tarif în valoare de 5% din tariful lunar pentru fiecare 0,5 puncte procentuale sub nivelul țintă, fără ca valoarea totală a reducerilor să depășească 25% din tariful lunar. Reducerile de tarif se vor reflecta în factura lunară imediat următoare perioadei în care s-a înregistrat indisponibilitatea. Reducerile de tarif constituie singurul și exclusivul remediu al Clientului pentru indisponibilitate, cu excepția situației în care disponibilitatea scade sub 95% în două luni consecutive, caz în care Clientul poate denunța unilateral Contractul cu efect imediat. Incidentele se clasifică în Severitate 1 (Platformă indisponibilă), Severitate 2 (funcție majoră afectată) sau Severitate 3 (problemă minoră), cu timpi de răspuns de 30 de minute, 4 ore și, respectiv, 2 zile lucrătoare.
+
+    Singura modificare: 99,5% → 99,7%. Am inclus și propoziția cu mecanismul de aplicare a reducerilor, adăugată anterior.
+
+    Un detaliu de verificat: pragul de denunțare unilaterală (sub 95% în două luni consecutive) a rămas neschimbat. Cu ținta majorată la 99,7%, distanța până la pragul de 95% e mai mare, deci clauza de ieșire devine mai greu de atins — dacă managerul a acceptat 99,7% tocmai pentru că Prestatorul e sigur de performanță, e în regulă; dacă vrea totuși un prag de ieșire mai strâns (de exemplu 97%), e momentul să discutăm.
+- user: |
+    Verifică traducerea făcută de un coleg pentru clauza de cesiune:
+
+    ```text
+    RO: Prestatorul nu poate cesiona drepturile și obligațiile sale din prezentul contract fără acordul prealabil scris al Beneficiarului.
+    EN: The Supplier may assign its rights and obligations under this Agreement with the prior written notice of the Client.
+    ```
+  assistant: |
+    Traducerea colegului conține **două erori grave**, ambele schimbă sensul juridic în defavoarea Beneficiarului:
+
+    1. **Negația a dispărut.** Originalul spune „nu poate cesiona... fără acordul prealabil scris” — o **interdicție** cu excepție. Traducerea spune „may assign... with the prior written notice” — un **drept** de cesiune. Sunt opuse: una protejează Beneficiarul, cealaltă îi înlătură controlul asupra identității contractantului.
+
+    2. **„Acordul” a devenit „notice”.** *Written notice* = notificare scrisă (o simplă informare); *written consent* = acord scris (o aprobare). Chiar dacă s-ar fi păstrat structura negației, „with prior written notice” ar fi însemnat că Prestatorul cesionează liber, doar anunțând — exact ce clauza interzice.
+
+    3. **„Beneficiarul” a devenit „Client”.** În glosarul nostru, *Beneficiary* e termenul stabilit. *Client* nu e greșit în sine, dar introducerea unui al doilea termen pentru aceeași parte creează ambiguitate — exact problema discutată la Provider/Supplier.
+
+    Varianta corectă:
+
+    ```text
+    The Supplier may not assign its rights and obligations under this Agreement without the Beneficiary's prior written consent.
+    ```
+
+    Sau, mai aproape de formula consacrată în contractele englezești:
+
+    ```text
+    The Supplier shall not assign any of its rights or obligations under this Agreement without the prior written consent of the Beneficiary.
+    ```
+
+    A doua variantă e preferabilă: *shall not* e formula standard de interdicție în contractele englezești, iar „any of its rights or obligations” acoperă și cesiunile parțiale, pe care formularea „its rights and obligations” (drepturile și obligațiile — citite ca un tot) le-ar putea lăsa în afara clauzei.
+
+    Recomand verificarea întregii traduceri a colegului înainte de trimitere — o eroare de această natură (inversarea unei negații) rareori e izolată.
+- user: |
+    Ce înseamnă „time is of the essence” și ar trebui să-l punem în clauza de livrare?
+  assistant: |
+    **Ce înseamnă:** *Time is of the essence* e o formulă din common law prin care părțile declară că termenele din contract sunt **esențiale**, nu doar orientative. Efectul practic: neexecutarea la termen nu e o simplă întârziere care dă drept la penalități, ci o **încălcare fundamentală** a contractului, care poate deschide dreptul la reziliere și daune, fără a mai fi nevoie să demonstrezi că întârzierea a fost gravă.
+
+    Fără această formulă, în dreptul englez, un termen poate fi interpretat ca *condition* (esențial) sau *innominate term* (a cărui încălcare dă drept la reziliere doar dacă e gravă) — iar instanțele tind spre a doua interpretare. Formula elimină incertitudinea.
+
+    **Echivalentul românesc:** nu există o formulă identică consacrată. Efectul se obține prin redactare explicită, de exemplu: *„Termenul de livrare constituie o obligație esențială a Prestatorului; neîndeplinirea lui la termen constituie încălcare gravă a contractului, care dă Beneficiarului dreptul de a rezilia contractul, fără prejudicarea dreptului la daune-interese și penalități.”*
+
+    **Ar trebui pus în clauza voastră de livrare?** Argumente pentru da:
+
+    - Aveți deja un termen fix (30 de zile calendaristice) și penalități de 0,1%/zi — dar penalitățile **nu** dau automat drept de reziliere. Dacă Prestatorul întârzie 40 de zile, plătește 4% penalități, dar Beneficiarul rămâne legat de contract.
+    - Clauza actuală nu are niciun **prag de reziliere pentru întârziere**. *Time is of the essence* (sau echivalentul său explicit) ar acoperi această gaură.
+
+    Argumente pentru o soluție mai precisă:
+
+    - Formula e blunt: teoretic, o întârziere de o zi ar putea justifica rezilierea. Practica mai fină e un **prag**: *„În cazul în care livrarea nu are loc în termen de 15 zile de la termenul stabilit, Beneficiarul poate rezilia contractul, păstrând dreptul la penalități pentru toată perioada întârzierii.”*
+
+    **Recomandarea mea:** nu formula engleză literală, ci o clauză explicită cu prag de reziliere, în ambele versiuni. Dacă totuși contractul va fi guvernat de lege engleză și clientul o cere, *time is of the essence* funcționează, dar combinată cu pragul: *„Time is of the essence for delivery under this clause; if delivery is delayed by more than 15 days, the Beneficiary may terminate this Agreement without prejudice to its right to penalties.”*
+
+    Vrei să-ți redactez clauza completă, în ambele limbi, cu pragul de 15 zile?
+- user: |
+    Fă lista finală cu toate modificările cerute de client, clauză cu clauză.
+  assistant: |
+    **Lista finală a modificărilor, clauză cu clauză**
+
+    | # | Clauză | Modificare | Stare |
+    |---|---|---|---|
+    | 1 | **Livare (termen + penalități)** | Fără modificări de la client. Recomandare deschisă: adăugarea unui prag de reziliere pentru întârziere (15 zile), în locul formulei *time is of the essence* | De decis intern |
+    | 2 | **Cesiune** | Corectată traducerea colegului: „may assign with prior written notice” → „shall not assign without prior written consent” (negație + consent, nu notice) | Corectată |
+    | 3 | **Confidențialitate** | Fără modificări cerute de client | Neschimbată |
+    | 4 | **Denunțare unilaterală (60 zile)** | Fără modificări de la client; ajustare de traducere: *terminate for convenience* → „denunțare unilaterală” | Neschimbată |
+    | 5 | **SLA (Anexa 3)** | **Disponibilitate: 99,5% → 99,7%** (cerută de echipa de operațiuni a clientului, acceptată de manager). Mecanismul de reduceri de tarif rămâne neschimbat. Pragul de denunțare (95% două luni consecutive) rămas neatins — semnalat ca punct de verificat | Finalizată |
+    | 6 | **Protecția datelor (GDPR)** | **Notificarea breach-ului: 48 ore → 24 ore** (cerința echipei de conformitate a clientului). Obligație contractuală mai strictă decât minimul GDPR — Prestatorul trebuie să aibă proceduri interne corespunzătoare | Finalizată |
+    | 7 | **Răspundere** | Plafonul la 12 luni de tarife **acceptat de client**, cu condiția ca excluderile (dol, culpă gravă, confidențialitate, date personale) să rămână în forma redactată — condiția este îndeplinită, clauza rămâne cum e | Finalizată |
+    | 8 | **Termen de plată** | **30 → 45 de zile** (cerut de client). ⚠️ Singurul punct din emailul Berger **fără confirmare explicită** a managerului — doar 99,7% a fost acceptată explicit. De confirmat înainte de semnare | **În așteptarea confirmării** |
+    | 9 | **Lege aplicabilă + soluționarea litigiilor** | Arbitraj CACIA eliminat la cererea avocatei; înlocuit cu instanțele judecătorești competente de la Curtea de Apel Iași, cu pact de competență expres (art. 24 alin. 2 Legea 76/2012). Redactată în ambele limbi | Finalizată |
+    | 10 | **Anexa de prețuri** | Fără modificări de fond; format englezesc: RON înaintea sumei, separatori englezești | Finalizată |
+
+    **Decizii de terminologie valabile în tot documentul:**
+
+    - *Provider* → **Supplier** (în toate clauzele englezești, la cererea clientului); în română rămâne „Prestator”
+    - *Service credits* → **reduceri de tarif** (în toate clauzele românești)
+    - *Beneficiary* rămâne termenul pentru Beneficiar (nu *Client*) — de verificat consecvența, având în vedere că traducerea colegului folosea *Client*
+    - *Shall* pentru obligații, punct zecimal și virgulă pentru mii în versiunea engleză
+
+    **Înainte de trimitere, de rezolvat:** confirmarea termenului de plată de 45 de zile (punctul 8) și decizia privind pragul de reziliere pentru întârziere (punctul 1).
+- user: |
+    Mulțumesc, trimit contractul la semnat.
+  assistant: |
+    Cu plăcere! Succese la semnare.
+
+    Doar două memento-uri înainte de trimitere, dacă nu le-ai deja rezolvat:
+
+    1. **Termenul de plată de 45 de zile** — era singurul punct din cererile clientului fără confirmare explicită. Asigură-te că e inclus în versiunea finală sau că a fost comunicat ca acceptat.
+    2. **Consecvența terminologiei** — o ultimă verificare globală: *Supplier* peste tot în engleză, „reduceri de tarif” peste tot în română, și niciun *Provider*/*Client* rămas din versiunile anterioare.
+
+    Dacă mai apar negocieri, anexe noi sau traduceri pentru executarea contractului, mă găsești aici. Mult succes!
 questions:
-  - id: q1
-    type: semantic
-    lang: en
-    prompt: |
-      How did you translate the penalties clause? What was the cap?
-    gold:
-      - {turn: 1, quote: "provided that the total amount of penalties does not exceed 10% of the contract value"}
-  - id: q2
-    type: exact
-    prompt: |
-      Care era traducerea pentru „motive imputabile”?
-    gold:
-      - {turn: 1, quote: "„Motive imputabile” is translated as *reasons attributable to*"}
-  - id: q3
-    type: semantic
-    prompt: |
-      De ce ziceai că terminate for convenience nu e reziliere?
-    gold:
-      - {turn: 3, quote: "Tehnic, e o **denunțare unilaterală**, nu o reziliere"}
-  - id: q4
-    type: semantic
-    prompt: |
-      Dă-mi din nou varianta finală în română a clauzei de încetare.
-    gold:
-      - {turn: 4, quote: "Oricare dintre Părți poate denunța unilateral prezentul Contract"}
-    outdated:
-      - {turn: 3, quote: "Oricare dintre Părți poate rezilia prezentul Contract în mod unilateral"}
-  - id: q5
-    type: ambiguous
-    prompt: |
-      și la forța majoră, în câte zile trebuia notificarea?
-    gold:
-      - {turn: 5, quote: "The Party invoking force majeure shall notify the other Party within 5 days of the occurrence of the event"}
-  - id: q6
-    type: exact
-    lang: en
-    prompt: |
-      Remind me the rule for shall vs will.
-    gold:
-      - {turn: 6, quote: "In traditional drafting, **shall** expresses an obligation imposed by the contract"}
+- id: q1
+  type: semantic
+  lang: en
+  prompt: |
+    How did you translate the penalties clause? What was the cap?
+  gold:
+  - turn: 1
+    quote: provided that the total amount of penalties does not exceed 10% of the contract value
+  - turn: 20
+    quote: provided that the total amount of penalties does not exceed 10% of the contract value
+  - turn: 18
+    quote: 0,1%/zi, plafon 10% din valoarea contractului
+- id: q2
+  type: exact
+  prompt: |
+    Care era traducerea pentru „motive imputabile”?
+  gold:
+  - turn: 1
+    quote: „Motive imputabile” is translated as *reasons attributable to*
+  - turn: 18
+    quote: motive imputabile | reasons attributable to
+- id: q3
+  type: semantic
+  prompt: |
+    De ce ziceai că terminate for convenience nu e reziliere?
+  gold:
+  - turn: 3
+    quote: Tehnic, e o **denunțare unilaterală**, nu o reziliere
+- id: q4
+  type: semantic
+  prompt: |
+    Dă-mi din nou varianta finală în română a clauzei de încetare.
+  gold:
+  - turn: 4
+    quote: Oricare dintre Părți poate denunța unilateral prezentul Contract
+  outdated:
+  - turn: 3
+    quote: Oricare dintre Părți poate rezilia prezentul Contract în mod unilateral
+- id: q5
+  type: ambiguous
+  prompt: |
+    și la forța majoră, în câte zile trebuia notificarea?
+  gold:
+  - turn: 5
+    quote: The Party invoking force majeure shall notify the other Party within 5 days of the occurrence of the event
+  - turn: 8
+    quote: Cu plăcere! Am tradus astăzi clauza de termen și penalități, clauza de confidențialitate (3 ani după încetare)
+- id: q6
+  type: exact
+  lang: en
+  prompt: |
+    Remind me the rule for shall vs will.
+  gold:
+  - turn: 6
+    quote: In traditional drafting, **shall** expresses an obligation imposed by the contract
+- id: q7
+  type: exact
+  prompt: |
+    Care era plafonul pentru service credits în SLA?
+  gold:
+  - turn: 9
+    quote: capped at 25% of the monthly fee
+  - turn: 11
+    quote: Anexa 3 – Acord privind Nivelul de Servicii (SLA). Prestatorul va asigura o disponibilitate lunară a Platforme
+  - turn: 24
+    quote: Anexa 3 – Acord privind Nivelul de Servicii (SLA). Prestatorul va asigura o disponibilitate lunară a Platforme
+- id: q8
+  type: decision
+  prompt: |
+    Ce disponibilitate lunară garantăm acum în SLA?
+  gold:
+  - turn: 24
+    quote: Prestatorul va asigura o disponibilitate lunară a Platformei de cel puțin 99,7%
+  - turn: 27
+    quote: '| 5 | **SLA (Anexa 3)** | **Disponibilitate: 99,5% → 99,7%** (cerută de echipa de operațiuni a clientului, acc'
+  outdated:
+  - turn: 9
+    quote: Prestatorul va asigura o disponibilitate lunară a Platformei de cel puțin 99,5%
+  - turn: 11
+    quote: Prestatorul va asigura o disponibilitate lunară a Platformei de cel puțin 99,5%
+- id: q9
+  type: decision
+  prompt: |
+    În câte ore trebuie notificată o încălcare a securității datelor?
+  gold:
+  - turn: 15
+    quote: within 24 hours of becoming aware of it
+  - turn: 23
+    quote: Stimată doamnă Rusu, vă mulțumim pentru varianta revizuită. Putem accepta plafonul de răspundere la douăspreze
+  - turn: 27
+    quote: '| 5 | **SLA (Anexa 3)** | **Disponibilitate: 99,5% → 99,7%** (cerută de echipa de operațiuni a clientului, acc'
+  outdated:
+  - turn: 14
+    quote: within 48 hours of becoming aware of it
+- id: q10
+  type: decision
+  prompt: |
+    Cum îi spunem prestatorului în varianta engleză a contractului?
+  gold:
+  - turn: 20
+    quote: The Supplier undertakes to deliver the services described in Annex 1
+  - turn: 27
+    quote: '- *Beneficiary* rămâne termenul pentru Beneficiar (nu *Client*) — de verificat consecvența, având în vedere că'
+  - turn: 28
+    quote: '2. **Consecvența terminologiei** — o ultimă verificare globală: *Supplier* peste tot în engleză, „reduceri de'
+  outdated:
+  - turn: 1
+    quote: The Service Provider undertakes to deliver the services described in Annex 1
+- id: q11
+  type: distractor
+  prompt: |
+    Cât costa ora suplimentară de suport la pachetul Business?
+  gold:
+  - turn: 21
+    quote: Business     | 4.900 lei             | 25                    | 160 lei
+- id: q12
+  type: exact
+  prompt: |
+    Cum am tradus „culpă gravă”?
+  gold:
+  - turn: 13
+    quote: '**„Culpă gravă”** se traduce de obicei prin ***gross negligence***'
+  - turn: 18
+    quote: culpă gravă | gross negligence
+  - turn: 12
+    quote: caused by intent or gross negligence
+- id: q13
+  type: decision
+  prompt: |
+    Cine soluționează litigiile, până la urmă?
+  gold:
+  - turn: 17
+    quote: soluționat de instanțele judecătorești competente de la sediul Curții de Apel Iași
+  - turn: 27
+    quote: înlocuit cu instanțele judecătorești competente de la Curtea de Apel Iași
+  outdated:
+  - turn: 16
+    quote: va fi soluționat definitiv pe calea arbitrajului
+- id: q14
+  type: paraphrase
+  prompt: |
+    Ce era expresia englezească prin care întârzierea devine automat o încălcare gravă?
+  gold:
+  - turn: 26
+    quote: e o formulă din common law prin care părțile declară că termenele din contract sunt
+  - turn: 27
+    quote: '| 5 | **SLA (Anexa 3)** | **Disponibilitate: 99,5% → 99,7%** (cerută de echipa de operațiuni a clientului, acc'
+- id: q15
+  type: semantic
+  prompt: |
+    Ce greșise colegul la clauza de cesiune?
+  gold:
+  - turn: 25
+    quote: Negația a dispărut.
+  - turn: 27
+    quote: '| 5 | **SLA (Anexa 3)** | **Disponibilitate: 99,5% → 99,7%** (cerută de echipa de operațiuni a clientului, acc'
+- id: q16
+  type: semantic
+  prompt: |
+    Cum am hotărât să traducem service credits?
+  gold:
+  - turn: 11
+    quote: Clientul va avea dreptul la reduceri de tarif în valoare de 5% din tariful lunar
+  - turn: 24
+    quote: Clientul va avea dreptul la reduceri de tarif în valoare de 5% din tariful lunar
+  - turn: 27
+    quote: '- *Beneficiary* rămâne termenul pentru Beneficiar (nu *Client*) — de verificat consecvența, având în vedere că'
+  - turn: 28
+    quote: '2. **Consecvența terminologiei** — o ultimă verificare globală: *Supplier* peste tot în engleză, „reduceri de'
+  - turn: 18
+    quote: 'Termenii cu decizii ferme de traducere, de păstrat în orice document viitor: **reduceri de tarif**, **denunțar'
+- id: q17
+  type: exact
+  prompt: |
+    Cu ce termen de plată voia clientul să înlocuiască 30 de zile?
+  gold:
+  - turn: 23
+    quote: payment term changed from 30 to 45 days
+  - turn: 27
+    quote: '**Înainte de trimitere, de rezolvat:** confirmarea termenului de plată de 45 de zile (punctul 8) și decizia pr'
+  - turn: 28
+    quote: '2. **Consecvența terminologiei** — o ultimă verificare globală: *Supplier* peste tot în engleză, „reduceri de'

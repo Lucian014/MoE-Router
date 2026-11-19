@@ -1,0 +1,62 @@
+id: s16-poveste-sulina
+category: creative-writing
+lang: ro
+turns:
+  - user: |
+      Vreau să scriem împreună o povestire de vreo 3000 de cuvinte. Ideea: un paznic de far bătrân din Sulina găsește într-o dimineață, la mal, o barcă goală în care e un ceas de buzunar oprit. Propune-mi trei direcții posibile pentru poveste.
+  - user: |
+      Îmi place a doua direcție. Cum îl numim pe paznic? Aș vrea un nume lipovenesc.
+  - user: |
+      Îl cheamă Avdei. Are o nepoată care vine în vizită de la Tulcea. Propune-mi un nume pentru ea, tot cu rădăcini lipovenești.
+  - user: |
+      Bun, mergem cu numele propus. Scrie primul capitol, în jur de 600 de cuvinte: dimineața în care Avdei găsește barca.
+  - user: |
+      Prea multe descrieri de peisaj. Rescrie capitolul cu mai mult monolog interior al lui Avdei.
+  - user: |
+      Ce ar trebui să aibă special ceasul din barcă? Dă-mi câteva idei.
+  - user: |
+      Mergem pe ideea cu ceasul care merge înapoi, dar doar noaptea. Scrie capitolul 2: sosește nepoata și observă ceasul.
+  - user: |
+      Schimbăm numele nepoatei în Irina, e mai ușor pentru cititori. Rescrie pasajele din capitolul 2 în care apare ea.
+  - user: |
+      Ce secret ar putea avea Avdei legat de barcă?
+  - user: |
+      Secretul: acum 40 de ani, fratele lui mai mic, Fiodor, a ieșit pe mare cu o barcă identică și n-a mai venit. Scrie capitolul 3, în care Irina găsește în far o fotografie veche cu cei doi frați.
+  - user: |
+      Ce scrie pe spatele fotografiei? Ceva scurt, misterios, de mâna lui Fiodor.
+  - user: |
+      Îmi place prima variantă. Integreaz-o în capitolul 3, în momentul în care Irina întoarce fotografia.
+  - user: |
+      Capitolul 4: vine furtuna, iar Avdei iese noaptea pe mare cu barca găsită. Scrie-l.
+  - user: |
+      E prea grăbit. Încetinește momentul în care pornește motorul și iese din port.
+  - user: |
+      Vreau un cântec scurt pe care Fiodor obișnuia să-l cânte, în stilul cântecelor pescărești, de două strofe. Îl va fredona Avdei pe mare.
+  - user: |
+      Finalul: îl găsește pe Fiodor sau nu? Dă-mi trei variante de final.
+  - user: |
+      Vreau un final ambiguu: Avdei se întoarce în zori, barca e goală, iar ceasul merge din nou normal. Scrie capitolul 5.
+  - user: |
+      Ce titlu ar putea avea povestirea? Propune cinci.
+  - user: |
+      Alegem „Ceasul de la Sulina”. Scrie un rezumat de trei fraze pentru înscrierea la un concurs literar.
+    domain: summarization
+  - user: |
+      Tradu rezumatul în engleză, pentru secțiunea internațională a concursului.
+    domain: translation
+  - user: |
+      Recitește capitolul 1 în raport cu restul: e vreo contradicție de timp, de loc sau de nume?
+  - user: |
+      Dacă un profesor ar întreba ce simbolizează ceasul, ce aș putea răspunde?
+    domain: open-qa
+  - user: |
+      Fă-mi o listă cu toate personajele și ce știm despre fiecare.
+question_plan:
+  - {id: q1, type: decision, turn: 8, outdated: [3, 7], ask: "Cum o cheamă pe nepoata lui Avdei?"}
+  - {id: q2, type: exact, turn: 12, ask: "Ce scria pe spatele fotografiei?"}
+  - {id: q3, type: semantic, turn: 7, ask: "Ce avea special ceasul din barcă?"}
+  - {id: q4, type: exact, turn: 10, ask: "Cum îl chema pe fratele care a dispărut?"}
+  - {id: q5, type: paraphrase, turn: 15, ask: "Mai arată-mi versurile pe care le fredona bătrânul pe apă."}
+  - {id: q6, type: ambiguous, turn: 20, ask: "Și în engleză cum suna?"}
+  - {id: q7, type: multi-hop, turn: 17, ask: "Ce s-a întâmplat cu ceasul la finalul poveștii?"}
+questions: []

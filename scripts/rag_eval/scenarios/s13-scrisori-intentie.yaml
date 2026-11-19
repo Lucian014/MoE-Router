@@ -1,0 +1,64 @@
+id: s13-scrisori-intentie
+category: text-rewrite
+lang: en
+turns:
+  - user: |
+      I'm applying for a Junior Data Analyst role at Nordwind Analytics. Here's my draft cover letter, can you make it more professional?
+
+      Dear Nordwind team,
+
+      My name is Andrei and I want to apply for the junior data analyst job. I have been working for 2 years at TransCarpat, which is a logistics company in Cluj, and I do a lot of reports there. The thing I am most proud of is a Power BI dashboard I built for the operations team, which cut our weekly reporting time from 3 days to 4 hours, because before that everybody was copying numbers from Excel files by hand.
+
+      I know SQL quite well, I use it every day, mostly PostgreSQL, and I also know Python with pandas for cleaning data. I did a master's degree in data science at Babeș-Bolyai University, where my thesis was about predicting hospital readmissions with logistic regression.
+
+      I like your company because you work with renewable energy data and I think this is important for the future. I would be very happy to learn from your team and grow as an analyst.
+
+      Thank you for reading,
+      Andrei Mureșan
+  - user: |
+      Too formal now. Make it sound like a real person wrote it, and keep it under 250 words.
+  - user: |
+      Add that I'm moving to Berlin in March, so I can work on site from then.
+  - user: |
+      Now I need a different letter for Calder Health in London, a Healthcare Data Analyst role. Focus on the hospital readmission project from my thesis instead of the dashboard. This is the job ad:
+
+      Calder Health is looking for a Healthcare Data Analyst to join our population health team in London. You will analyse hospital activity data to find patients at risk of readmission and help clinical teams act early. Requirements: strong SQL, experience with R or Python, understanding of basic statistical modelling, clear communication with non-technical stakeholders. Experience with NHS data (HES, SUS) is a strong plus. Hybrid working, two days a week in our King's Cross office.
+  - user: |
+      I don't have any NHS data experience. How do I address that without sounding weak?
+  - user: |
+      Rewrite the Calder letter with that paragraph included.
+  - user: |
+      Back to the Nordwind letter: they replied that their application portal only accepts a short version, max 120 words. Shorten the latest version.
+  - user: |
+      Write a LinkedIn message to the Nordwind recruiter, Jana Köhler, following up one week after I applied.
+  - user: |
+      Less pushy, please. She doesn't owe me anything.
+  - user: |
+      Calder invited me to an interview and it went well! Write a thank-you email to Dr. Hollis, who interviewed me. Mention our conversation about readmission rates going up in winter.
+  - user: |
+      The subject line is boring. Give me three better ones.
+  - user: |
+      Bad news: Nordwind rejected me. Help me write a gracious reply that asks for feedback.
+  - user: |
+      I found a similar role at a company called Brightloop in Munich. Rewrite my original Nordwind letter for them: same structure, swap the details.
+  - user: |
+      Remove the part about moving to Berlin, it doesn't apply to Munich. Just say I'm open to relocating.
+  - user: |
+      Give me a final checklist I can use to proofread any cover letter before sending it.
+  - user: |
+      Translate the first paragraph of the Brightloop letter into German, just so I can see how it reads.
+    domain: translation
+question_plan:
+  - {id: q2, type: decision, turn: 7, outdated: [3], ask: "What's the latest version of my Nordwind letter?"}
+  - {id: q3, type: multi-hop, turn: 5, ask: "How did we deal with the missing requirement in the Calder application?", note: "the requirement (NHS data) is named in 4; 5 / 6 handle it"}
+  - {id: q4, type: exact, turn: 8, ask: "What was the name of the recruiter at Nordwind?"}
+  - {id: q5, type: paraphrase, turn: 10, ask: "What did I write to the doctor after we talked?"}
+  - {id: q6, type: ambiguous, turn: 16, ask: "And the German version?"}
+  - {id: q7, type: decision, turn: 14, outdated: [13], ask: "What does the Munich letter say about where I'll live?"}
+questions:
+  - id: q1
+    type: exact
+    prompt: |
+      How much did my dashboard cut the reporting time, exactly?
+    gold:
+      - {turn: 1, quote: "cut our weekly reporting time from 3 days to 4 hours"}

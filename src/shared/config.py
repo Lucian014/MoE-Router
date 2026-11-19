@@ -44,14 +44,19 @@ RAG_LAST_TURN_MAX_SHARE                       0.5 (the last turn is cut beyond t
 RAG_CONTEXT_MARGIN                            0.1 (of the context window, for tokenizer differences)
 RAG_VARIANT                                   V2 (V0 = recent turns only, V1 dense, V2 dense + BM25)
 ALLOW_VARIANT_OVERRIDE                        false (true: a request's `variant` picks the preset; tests)
-RAG_TOP_K                                     8 (fragments at most, after the whole turns are known)
+RAG_TOP_K                                     10 (fragments at most, after the whole turns are known)
 RAG_POOL                                      30 (candidates kept after fusion + dedup)
 RAG_CANDIDATES                                50 (per method, before fusion)
 RAG_DEDUP                                     near (off | hash | near)
 RAG_DEDUP_JACCARD                             0.8 ("near": Jaccard on the terms)
 RAG_MAX_CHUNKS_PER_TURN                       0 (= no cap)
+RAG_NEIGHBOR_TURNS                            1 (0 = off; each top chunk brings the first answer chunk of its next N turns: multi-hop)
+RAG_NEIGHBOR_FROM_TOP                         3 (how many of the first chunks of the pool do)
+RAG_GATE_SIMILARITY                           0 (= off; no fragments at all when the best chunk's dense similarity is below it)
+RAG_MIN_SIMILARITY                            0 (= off; each fragment at least this dense similarity, next-turn neighbors exempt)
 RAG_DENSE_QUERY_MAX_TOKENS                    512 (prompts with no prose: their last N tokens)
 RAG_MAX_CONTEXT_TOKENS                        0 (= off; else a cap on the context, an experiment)
+RAG_BM25_STEMMERS        router, memory       romanian,english (Snowball stemmers, all applied; change = terms recomputed)
 DOMAIN_CHECKPOINT        router (classifier)  <CHECKPOINT_DIR>/laya-domain-v4, router/checkpoints/..., else HF repo
 COMPLEXITY_CHECKPOINT                         <CHECKPOINT_DIR>/laya-complexity-v2, router/checkpoints/..., else HF repo
 CLASSIFIER_DEVICE                             cpu
@@ -194,14 +199,36 @@ class RetrievalSettings(_Settings):
     variant: str = Field("V2", validation_alias="RAG_VARIANT")
     # a request's `variant` overrides `variant` only when this is on (evaluation environments)
     allow_variant_override: bool = Field(False, validation_alias="ALLOW_VARIANT_OVERRIDE")
-    top_k: int = Field(8, ge=0, validation_alias="RAG_TOP_K")
+    top_k: int = Field(10, ge=0, validation_alias="RAG_TOP_K")
     pool: int = Field(30, ge=1, validation_alias="RAG_POOL")
     candidates: int = Field(50, ge=1, validation_alias="RAG_CANDIDATES")
     dedup: Literal["off", "hash", "near"] = Field("near", validation_alias="RAG_DEDUP")
     dedup_jaccard: float = Field(0.8, gt=0, le=1, validation_alias="RAG_DEDUP_JACCARD")
     max_chunks_per_turn: int = Field(0, ge=0, validation_alias="RAG_MAX_CHUNKS_PER_TURN")
+    neighbor_turns: int = Field(1, ge=0, validation_alias="RAG_NEIGHBOR_TURNS")
+    neighbor_from_top: int = Field(3, ge=1, validation_alias="RAG_NEIGHBOR_FROM_TOP")
+    gate_similarity: float = Field(0.0, ge=0, le=1, validation_alias="RAG_GATE_SIMILARITY")
+    min_similarity: float = Field(0.0, ge=0, le=1, validation_alias="RAG_MIN_SIMILARITY")
     dense_query_max_tokens: int = Field(DENSE_QUERY_MAX_TOKENS, ge=16, validation_alias="RAG_DENSE_QUERY_MAX_TOKENS")
     max_context_tokens: int = Field(0, ge=0, validation_alias="RAG_MAX_CONTEXT_TOKENS")
+    # Snowball stemmers for the BM25 terms (shared/memory/analyzer.py), comma-separated; every one
+    # is applied to every word, so the languages of the conversations need not be detected.
+    # Changing it makes the memory service recompute the stored terms.
+    bm25_stemmers: str = Field("romanian,english", validation_alias="RAG_BM25_STEMMERS")
+
+    @property
+    def bm25_stemmer_list(self) -> tuple[str, ...]:
+        return tuple(s.strip() for s in self.bm25_stemmers.split(",") if s.strip())
+
+    @model_validator(mode="after")
+    def _known_stemmers(self):
+        import snowballstemmer
+
+        unknown = set(self.bm25_stemmer_list) - set(snowballstemmer.algorithms())
+        if unknown:
+            raise ValueError(f"RAG_BM25_STEMMERS: unknown Snowball stemmers {sorted(unknown)}; "
+                             f"available: {', '.join(snowballstemmer.algorithms())}")
+        return self
 
     @model_validator(mode="after")
     def _known_online_variant(self):
