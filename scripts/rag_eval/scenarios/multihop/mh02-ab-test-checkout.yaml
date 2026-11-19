@@ -1,0 +1,83 @@
+id: mh02-ab-test-checkout
+category: math
+lang: en
+turns:
+  - user: |
+      I'm analysing A/B tests for an e-commerce company. First one: we tested a one-page checkout ("Variant B") against the current three-step checkout. Here are the numbers after 14 days:
+
+      ```
+      variant   visitors   orders
+      A         48,210     1,687
+      B         47,955     1,822
+      ```
+
+      Is the difference in conversion rate significant?
+  - user: |
+      My manager says we should have stopped it on day 4, when B was already ahead by 12%. Here's what the dashboard showed every day:
+
+      ```
+      day  A_conv  B_conv  p_value
+      1    3.31%   3.92%   0.21
+      2    3.40%   3.88%   0.09
+      3    3.37%   3.81%   0.06
+      4    3.36%   3.77%   0.04
+      5    3.45%   3.71%   0.11
+      6    3.49%   3.79%   0.07
+      ```
+
+      Was he right?
+  - user: |
+      What's the difference between a one-sided and a two-sided test, and which one should we use?
+  - user: |
+      Second test, owned by Ioana from the growth team: free shipping threshold lowered from 200 to 150 lei. She reports that average order value went DOWN, from 231 to 219 lei, and wants to roll it back.
+  - user: |
+      I split her data by customer type:
+
+      ```
+      segment      variant  orders  avg_order_value
+      new          control  1,240   176
+      new          test     2,010   171
+      returning    control  2,860   255
+      returning    test     2,190   259
+      ```
+
+      What's going on here?
+  - user: |
+      How do I compute a confidence interval for a difference in means when the data is very skewed?
+  - user: |
+      What sample size do I need to detect a 0.3 percentage point lift on a 3.5% baseline, with 80% power?
+  - user: |
+      The third test is about product recommendations on the cart page. The PM, Mihai, says the new algorithm increased clicks on recommendations by 40%.
+  - user: |
+      I looked at the event logs and something is off:
+
+      ```
+      variant   sessions  rec_impressions  rec_clicks  sessions_with_click  orders
+      control   61,420    184,260          5,527       4,912               2,149
+      test      60,980    365,880          7,742       4,958               2,131
+      ```
+
+      The test variant shows 6 recommendations instead of 3.
+  - user: |
+      Explain the difference between Bayesian and frequentist A/B testing in simple words.
+  - user: |
+      How should I correct for testing several metrics at once?
+  - user: |
+      Back to the first test: the data team found that bots were not filtered on day 1 and 2 of the checkout experiment. Roughly 3,100 visitors in A and 2,950 in B on those days were bots, with zero orders.
+  - user: |
+      Recompute it with those removed.
+  - user: |
+      What is a sample ratio mismatch and how do I check for it?
+  - user: |
+      In one of our tests the split came out like this: 50,812 in control, 48,394 in test, with a 50/50 configuration. Is that a problem?
+  - user: |
+      The engineers say the redirect to the test page fails on old Android browsers, those users silently land back on control.
+  - user: |
+      Write a short checklist for the analysts on what to check before reporting any test result.
+question_plan:
+  - {type: multi-hop, ask: "Should we have stopped the one-page checkout test early, as the manager wanted?", gold_turn: 2, note: "the test is named in 1; turn 2 only shows daily p-values"}
+  - {type: multi-hop, ask: "Why did Ioana see average order value drop?", gold_turn: 5, note: "Ioana in 4, Simpson-like split in 5"}
+  - {type: multi-hop, ask: "Did the new recommendation algorithm really increase clicks by 40%?", gold_turn: 9, note: "claim in 8, per-session analysis in 9"}
+  - {type: multi-hop, ask: "What was Mihai's claim missing?", gold_turn: 9, note: "Mihai named only in 8"}
+  - {type: multi-hop, ask: "After removing the bots, was the one-page checkout still significantly better?", gold_turn: 13, note: "bots in 12, recomputation in 13, test from 1"}
+  - {type: multi-hop, ask: "What caused the uneven split between control and test?", gold_turn: 16, note: "SRM numbers in 15, cause in 16"}

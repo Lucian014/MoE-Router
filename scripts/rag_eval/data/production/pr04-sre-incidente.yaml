@@ -1,0 +1,2614 @@
+id: pr04-sre-incidente
+category: coding
+lang: ro
+turns:
+- user: |
+    avem un cluster EKS cu vreo 25 de servicii. azi checkout-service a picat de 3 ori:
+
+    ```
+    $ kubectl describe pod checkout-service-7d9f8c6b5-x2kqp -n shop
+    ...
+        Last State:     Terminated
+          Reason:       OOMKilled
+          Exit Code:    137
+          Started:      Mon, 09 Nov 2026 10:02:11 +0200
+          Finished:     Mon, 09 Nov 2026 11:47:53 +0200
+        Restart Count:  3
+        Limits:
+          cpu:     1
+          memory:  1Gi
+        Requests:
+          cpu:      500m
+          memory:   768Mi
+    Events:
+      Warning  BackOff  2m (x4 over 1h)  kubelet  Back-off restarting failed container
+    ```
+  assistant: |
+    E un caz clasic de **OOMKilled** — containerul depășește limita de 1Gi și kernelul îl omoară (exit 137 = SIGKILL). Restart Count 3 + BackOff confirmă că se repetă.
+
+    ## Ce faci mai întâi
+
+    **1. Verifică consumul real de memorie** înainte să mărești orbește limita:
+
+    ```bash
+    kubectl top pod checkout-service-7d9f8c6b5-x2kqp -n shop --containers
+    ```
+
+    Sau mai bine, uită-te la istoric (Prometheus/Grafana dacă ai): `container_memory_working_set_bytes{pod=~"checkout-service.*"}` — asta e metrica pe care o folosește kubelet-ul pentru OOM, nu RSS.
+
+    **2. Distinge între două scenarii:**
+
+    - **Creștere graduală până la 1Gi** (grafic în rampă) → memory leak. Mărirea limitei doar amână problema. Verifică heap dump / profile la runtime (pentru Java: `-XX:+HeapDumpOnOutOfMemoryError`, pentru Node: `--inspect` sau clinic, pentru Go: pprof).
+    - **Spike brusc** (ex. la un request mare, batch job, payload mare) → limita e pur și simplu prea mică pentru traficul actual.
+
+    ## Fix-ul rapid
+
+    Dacă e spike sau vrei timp pentru investigație, mărește limita:
+
+    ```yaml
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1
+        memory: 1536Mi   # sau 2Gi, în funcție de top
+    ```
+
+    ## Două recomandări pentru tot clusterul
+
+    1. **Pentru memorie, setează request = limit.** Memory e necomprimabilă — dacă diferența e mare, nodul poate ajunge în overcommit și primești evictions în masă sub presiune de memorie. Cu 25 de servicii, asta te poate lovi la un node failure.
+
+    2. **Instalează VPA în modul recommendation** (nu auto) ca să vezi ce valori recomandă pe baza usage-ului real:
+
+    ```bash
+    kubectl get vpa checkout-service -n shop
+    ```
+
+    Cu 25 de servicii, e foarte probabil ca și altele să aibă requests/limits ghicite, nu măsurate — VPA în recommendation mode îți dă datele fără risc.
+
+    Vrei să detaliez partea de diagnosticare leak (în ce limbaj e checkout-service?) sau setup-ul de VPA?
+- user: |
+    memoria creste constant pana la limita, ca un leak. e java 17 cu spring boot 3. cum investighez?
+  assistant: |
+    Memorie în creștere constantă la Java = aproape sigur leak. Iată planul de investigație:
+
+    ## 1. Mai întâi: unde se duce memoria?
+
+    JVM-ul nu are doar heap — are metaspace, thread stacks, direct buffers, code cache, native memory. Verifică ce parte crește:
+
+    ```bash
+    kubectl exec -it checkout-service-7d9f8c6b5-x2kqp -n shop -- jcmd 1 VM.native_memory summary
+    ```
+
+    Pentru asta trebuie să pornești JVM-ul cu `-XX:NativeMemoryTracking=summary`. Dacă nu e activ, adaugă-l — overhead ~5%.
+
+    Dacă nu poți reporna, compară heap-ul văzut de JVM cu working set-ul pod-ului:
+
+    ```bash
+    kubectl exec ... -- jcmd 1 GC.heap_info
+    kubectl top pod ... --containers
+    ```
+
+    Dacă heap-ul e mic dar pod-ul consumă mult → leak **off-heap** (direct buffers, native libs, glibc malloc fragmentation — clasic pe Alpine/musl).
+
+    ## 2. Activează heap dump la OOM
+
+    Adaugă în deployment:
+
+    ```yaml
+    env:
+      - name: JAVA_TOOL_OPTIONS
+        value: >-
+          -XX:+HeapDumpOnOutOfMemoryError
+          -XX:HeapDumpPath=/dumps
+          -XX:MaxRAMPercentage=75.0
+    ```
+
+    cu un emptyDir montat la `/dumps` (nu scrie dump-uri în container filesystem). Apoi copiezi dump-ul local:
+
+    ```bash
+    kubectl cp shop/checkout-service-...:/dumps/heap.hprof ./heap.hprof
+    ```
+
+    și îl analizezi în **Eclipse MAT** — raportul "Leak Suspects" îți arată de obicei direct vinovatul.
+
+    ## 3. Live profiling (fără restart)
+
+    Dacă ai `kubectl debug` cu ephemeral containers sau imaginea are un JDK complet:
+
+    ```bash
+    # histogramă obiecte — vezi ce clase domină heap-ul
+    kubectl exec ... -- jcmd 1 GC.class_histogram | head -30
+
+    # compară două histograma la 10 min distanță — ce crește constant e leak-ul
+    ```
+
+    Clase suspecte frecvente: `byte[]` (buffere nedezalocate), `ConcurrentHashMap` (cache fără TTL), `ThreadLocal`, `org.apache.catalina.session` (sesiuni).
+
+    ## 4. Cauze tipice în Spring Boot 3
+
+    - **Cache-uri proprii fără evicție** — folosește Caffeine cu `maximumSize`/`expireAfterWrite`
+    - **Connection pool-uri** — HikariCP leak, sau client HTTP care nu închide response-urile (RestClient/WebClient cu body neconsumat)
+    - **`@Scope("prototype")` injectat în singleton** — instanțele nu se eliberează niciodată
+    - **Direct buffers** de la Netty (WebClient) — cresc off-heap; limitează cu `-XX:MaxDirectMemorySize`
+    - **Thread-uri care se acumulează** — verifică cu `jcmd 1 Thread.print | grep -c java`
+
+    ## 5. Dacă e off-heap / malloc fragmentation
+
+    Testează `-XX:MaxRAMPercentage=75` (ca heap-ul să nu mănânce toată limita) și, pe glibc, `MALLOC_ARENA_MAX=2`.
+
+    Vrei să-ți dau configurația completă de deployment cu emptyDir pentru dumps și flag-urile recomandate pentru un pod de 1.5Gi?
+- user: |
+    heap dump-ul arata 1,2 milioane de obiecte CartSessionCache$Entry, aproape 600MB
+  assistant: "Găsit — e un cache de sesiuni de coș care crește nelimitat. 1,2 milioane de entry-uri înseamnă că nimic nu le expiră/elimină niciodată: fiecare request nou de coș adaugă un entry, dar nimic nu le curăță.\n\n## Verifică implementarea\n\nProbabil `CartSessionCache` e un `ConcurrentHashMap` propriu, ceva de genul:\n\n```java\nclass CartSessionCache {\n    private final Map<String, Entry> cache = new ConcurrentHashMap<>();\n    \n    public void put(String sessionId, Entry entry) {\n        cache.put(sessionId, entry);  // doar pune, nimic nu scoate\n    }\n}\n```\n\n## Fix-ul: înlocuiește cu Caffeine\n\nCaffeine e standardul de facto pentru cache-uri in-process în Spring (și e deja dependență transitivă în multe setup-uri Spring Boot):\n\n```java\nprivate final Cache<String, Entry> cache = Caffeine.newBuilder()\n    .maximumWeight(500_000)                    // sau maximumSize\n    .expireAfterAccess(Duration.ofMinutes(30)) // sesiunile de coș mor după inactivitate\n    .build();\n\
+    ```\n\nAlege politica în funcție de semantică:\n\n- **`expireAfterAccess(30min)`** — sesiunea de coș expiră dacă userul nu face nimic (probabil ce vrei, aliniat cu TTL-ul sesiunii)\n- **`expireAfterWrite(...)`** — expiră de la creare, indiferent de activitate\n- **`maximumSize`/`maximumWeight`** — plasă de siguranță ca să nu mai poți ajunge niciodată la OOM, indiferent de trafic\n\nRecomand **ambele**: expirare pe timp + limită de mărime. Expirația singură nu te protejează de un spike de trafic.\n\n## Verifică și sesiunile orfane\n\n1,2 milioane de sesiuni e mult — merită să te întrebi de unde vin:\n\n- **Boti/crawleri** care creează coșuri fără să cumpere nimic\n- **Mobile app** care regenerează sessionId la fiecare restart\n- **Lipsă de cleanup** la checkout finalizat — sesiunea rămâne și după ce comanda e plasată\n\nDacă sesiunile ar trebui să moară la checkout, adaugă explicit `cache.invalidate(sessionId)` acolo.\n\n## Notă despre dimensiunea entry-urilor\n\n600MB / 1,2M = ~500 bytes\
+    \ per entry — rezonabil dacă e doar coșul. Dar dacă `Entry` conține obiecte mari (snapshot-uri de produse, imagini base64), ia în considerare să stochezi doar ID-uri și să încarci restul la cerere.\n\n## Pe termen scurt\n\nPână la deploy-ul fixului, mărește limita la 2Gi ca să nu mai pice, și pune alertă pe `jvm_memory_used_bytes` la ~80% din max ca să prindi următorul leak înainte de OOM.\n"
+- user: |
+    am pus pe cache-ul ala maximumSize(50_000) si expireAfterAccess de 30 de minute. e ok asa?
+  assistant: |
+    Da, combinația e corectă — expirarea pe timp curăță sesiunile inactive, iar `maximumSize` e plasă de siguranță la spike-uri de trafic. Câteva observații ca să fii sigur că e chiar ok:
+
+    ## 1. Verifică ce se întâmplă la evicție
+
+    `maximumSize(50_000)` înseamnă că, peste limită, Caffeine aruncă entry-uri **chiar dacă sunt active**. Întrebarea de business: ce vede userul al cărui coș tocmai a fost evacuat? Dacă aplicația face `cache.get(id)` și primește `null`:
+
+    - **reconstruiește coșul** (din DB/redis) → perfect, totul ok
+    - **crapă sau creează coș gol** → userul își pierde coșul în plină sesiune
+
+    Dacă e cazul al doilea, ai nevoie de un loader:
+
+    ```java
+    cache.get(sessionId, id -> cartRepository.load(id));
+    ```
+
+    ## 2. Gândește-te dacă cache-ul e chiar locul potrivit pentru sesiuni
+
+    Aici e o problemă mai subtilă: **sesiunile de coș sunt state, nu cache**. Cu ele în memorie:
+
+    - la **fiecare deploy/restart** toți userii își pierd coșul (rolling update pe 25 de servicii = des)
+    - nu poți scala orizontal corect — pod-ul A nu vede coșul creat pe pod-ul B
+    - `expireAfterAccess` nu supraviețuiește unui restart
+
+    Dacă pierderea coșului contează pentru business, mută starea în **Redis** (cu TTL de 30 min) și ține în Caffeine doar un cache de citire deasupra, dacă e nevoie de performanță. Dacă coșul e efemer oricum (ex. guest checkout simplu), varianta actuală e perfect acceptabilă.
+
+    ## 3. Detalii mici, dar utile
+
+    ```java
+    Cache<String, Entry> cache = Caffeine.newBuilder()
+        .maximumSize(50_000)
+        .expireAfterAccess(Duration.ofMinutes(30))
+        .recordStats()   // dacă vrei hit rate în metrics
+        .build();
+    ```
+
+    - Evicția din `maximumSize` e **aproape imediată, dar asincronă** — pe un spike pot exista temporar >50k entry-uri. Nu-i problemă la 500 bytes/entry (~25MB total), doar să știi.
+    - Dacă ai expunut metrics Caffeine prin Micrometer, pune alertă pe `cache_evictions` — un vârf mare înseamnă că limita e prea mică pentru traficul real.
+
+    ## 4. Verifică fix-ul
+
+    După deploy, urmărește 24-48h:
+
+    ```promql
+    jvm_memory_used_bytes{area="heap"}
+    ```
+
+    Trebuie să vezi un **dinte de fierăstrău** (crește, GC-l coboară, plateau), nu rampă continuă. Dacă rampa persistă, mai ai un al doilea leak — 600MB erau CartSessionCache, dar nu e sigur că era tot.
+
+    Pe scurt: fix-ul e bun pentru simptom. Decizia reală e dacă sesiunile de coș merită să fie în Redis — asta ți-ar rezolva și leak-ul, și pierderea la restart, și scalarea.
+- user: |
+    scrie postmortem-ul pt incidentul asta, template standard: rezumat, impact, cronologie, cauza radacina, actiuni
+  assistant: |
+    # Postmortem: Checkout-service — OOMKilled (incident 09.11.2026)
+
+    ## Rezumat
+
+    Pe 9 noiembrie 2026, serviciul `checkout-service` din namespace `shop` a suferit 3 reporniri cauzate de epuizarea memoriei (OOMKilled, exit code 137). Cauza a fost un memory leak în cache-ul de sesiuni de coș (`CartSessionCache`), care creștea nelimitat până la atingerea limitei de memorie de 1Gi a containerului. Incidentul a fost remediat prin limitarea cache-ului (maximumSize + expirare) și creșterea temporară a limitei de memorie.
+
+    ## Impact
+
+    - **Durată:** ~1h 45m de la primul crash până la stabilizare (10:02 – 11:47 EET)
+    - **Utilizatori afectați:** utilizatorii care au avut sesiuni de coș rute către pod-ul afectat au experimentat erori 5xx / timeout-uri în timpul restart-urilor
+    - **Sesiuni pierdute:** coșurile de cumpărături ținute în memorie s-au pierdut la fiecare restart
+    - **Scop:** un singur serviciu din 25; restul clusterului neafectat
+    - **Pierderi financiare:** de estimat — checkout-ul a fost degradat intermitent în perioada de vârf
+
+    ## Cronologie
+
+    | Ora (EET) | Eveniment |
+    |---|---|
+    | (data anterioară) | Deploy-ul care a introdus/activat cache-ul nelimitat — de confirmat |
+    | 10:02:11 | Pod-ul `checkout-service-7d9f8c6b5-x2kqp` pornește după un restart anterior OOMKilled |
+    | ~10:02–11:47 | Memoria crește constant până la limita de 1Gi; containerul este omorât de kernel; Kubernetes repornește pod-ul (Restart Count: 3) |
+    | 11:47:53 | Al treilea OOMKill; kubelet intră în BackOff |
+    | (completare) | Alerta/raportarea incidentului — de completat |
+    | (completare) | Investigare: heap dump analizat în Eclipse MAT — 1,2M obiecte `CartSessionCache$Entry` (~600MB) identificate ca leak |
+    | (completare) | Fix deployat: `maximumSize(50_000)` + `expireAfterAccess(30min)` pe cache; limita de memorie mărită temporar |
+    | (completare) | Serviciu stabilizat, memoria cu comportament normal (sawtooth) |
+
+    ## Cauza rădăcină
+
+    `CartSessionCache` era implementat ca un `ConcurrentHashMap` fără nicio politică de evicție sau expirare. Fiecare sesiune de coș nouă adăuga un entry, dar niciun mecanism nu elimina entry-urile vechi. Sub traficul normal, cache-ul a acumulat 1,2 milioane de entry-uri (~600MB), depășind limita de memorie de 1Gi a containerului, iar kernelul a terminat procesul cu SIGKILL (OOMKilled).
+
+    **Factori contributivi:**
+
+    1. **Lipsa limitelor de securitate pe cache** — nu exista `maximumSize` sau TTL
+    2. **Lipsa alertării pe memorie** — nu exista alertă pe consumul de memorie al pod-urilor; incidentul a fost depistat abia la crash
+    3. **Requests/limits nevalidate** — limita de 1Gi nu fusese calibrată pe consumul real al serviciului
+    4. **Stare de sesiune în memorie** — coșurile ținute in-process se pierd la orice restart, amplificând impactul
+
+    ## Acțiuni
+
+    | # | Acțiune | Tip | Owner | Status |
+    |---|---|---|---|---|
+    | 1 | Limitare `CartSessionCache`: `maximumSize(50_000)` + `expireAfterAccess(30min)` | Preventiv | team checkout | ✅ Done |
+    | 2 | Invalidează explicit sesiunea la checkout finalizat | Preventiv | team checkout | 🔲 TODO |
+    | 3 | Evaluează mutarea sesiunilor de coș în Redis (TTL 30 min) — elimină pierderea la restart și permite scalare orizontală | Preventiv | team checkout | 🔲 TODO |
+    | 4 | Alertă pe `jvm_memory_used_bytes` la 80% din heap max, pentru toate serviciile Java | Detectiv | platform | 🔲 TODO |
+    | 5 | Audit requests/limits pe toate cele 25 de servicii; request = limit pentru memorie; VPA în mod recommendation | Preventiv | platform | 🔲 TODO |
+    | 6 | Activează `-XX:+HeapDumpOnOutOfMemoryError` + emptyDir `/dumps` pe toate serviciile Java | Detectiv | platform | 🔲 TODO |
+    | 7 | Alertă pe rata de restart-uri a pod-urilor (OOMKilled / CrashLoopBackOff) | Detectiv | platform | 🔲 TODO |
+    | 8 | Identifică sursa celor 1,2M sesiuni (boti, regenerare sessionId în mobile app) | Investigare | team checkout | 🔲 TODO |
+
+    ## Lecții învățate
+
+    - Un cache fără limite este un leak în așteptare — orice structură in-memory de date trebuie să aibă o politică de evicție
+    - Alertarea pe tendința de memorie (nu doar pe crash) ar fi prins incidentul cu zile înainte
+    - Starea de sesiune în memorie este fragilă în Kubernetes — restart-urile sunt rutină, nu excepție
+
+    ---
+
+    Câmpurile marcate „de completat" (timpii exacți de detecție și remediere, ownerii reali) trebuie populate de echipă — cronologia din `kubectl describe` acoperă doar crash-urile, nu momentul alertării și al fix-ului.
+- user: |
+    altceva: pe ingress apar 502 intermitent, cam 1% din requesturi, doar spre search:
+
+    ```
+    2026/11/10 14:21:07 [error] 31#31: *88213 upstream prematurely closed connection while reading response header from upstream, client: 10.0.3.17, server: shop.example.ro, request: "GET /api/search?q=laptop HTTP/1.1", upstream: "http://10.0.12.44:3000/api/search?q=laptop"
+    ```
+  assistant: |
+    Eroarea asta e clasică și, la 1% intermitent doar spre un singur serviciu, suspectul principal e **race condition pe keepalive connections** între nginx și upstream.
+
+    ## Cauza cea mai probabilă
+
+    Ingress-nginx ține conexiuni keepalive deschise către upstream (default: 32 conexiuni, timeout 60s). Dacă search-service e **Node.js**, serverul Node închide conexiunile idle după `server.keepAliveTimeout` — **default 5 secunde**. Se creează o cursă:
+
+    1. nginx trimite un request pe o conexiune pe care o consideră deschisă
+    2. exact în același moment, Node o închide pentru că a expirat idle timeout-ul (5s)
+    3. nginx primește connection closed → `upstream prematurely closed connection` → 502
+
+    De asta e intermitent și procentual mic: doar requesturile care cad exact pe fereastra de închidere pierd. Și de asta e doar spre search: celelalte servicii probabil sunt Java (keepalive mai lung sau comportament diferit).
+
+    ## Verifică rapid
+
+    ```bash
+    # 1. Nu e altceva decât keepalive? Verifică dacă pod-urile restartează
+    kubectl get pods -n shop -l app=search
+
+    # 2. Corelează 502-urile cu deploy-uri — dacă apar doar la rolling update, e altă problemă
+    kubectl rollout history deployment/search -n shop
+    ```
+
+    Dacă pod-urile nu restartează și 502-urile sunt distribuite uniform în timp → keepalive race, confirmat aproape sigur.
+
+    ## Fix-ul
+
+    **Varianta A (recomandat): mărește keepAliveTimeout în Node, peste timeout-ul nginx:**
+
+    ```js
+    const server = app.listen(3000);
+    server.keepAliveTimeout = 65000;   // 65s > 60s nginx
+    server.headersTimeout = 66000;     // trebuie > keepAliveTimeout
+    ```
+
+    Sau în Express 5 / recent, la fel — proprietăți pe serverul http, nu pe app.
+
+    **Varianta B: dezactivează keepalive către upstream** în Ingress:
+
+    ```yaml
+    metadata:
+      annotations:
+        nginx.ingress.kubernetes.io/upstream-keepalive-connections: "1"
+    ```
+
+    Funcționează, dar pierzi beneficiile keepalive-ului (latență mai mare per request) — preferabil A.
+
+    ## Alte cauze posibile (mai puțin probabile aici, dar de exclus)
+
+    - **Pod terminat în timpul rolling update** — dar ar produce 502 doar în ferestrele de deploy, nu constant 1%
+    - **readinessProbe cu perioadă mare** — pod scos din endpoints, dar nginx are cache de endpoints (verifică `--upstream-sync-period`)
+    - **Serviciul crapă pe anumite requesturi** — dar atunci ai vedea și erori în logurile aplicației; verifică oricum `kubectl logs` pe search la timestamp-urile din error log
+
+    ## Verificare după fix
+
+    ```promql
+    sum(rate(nginx_ingress_controller_requests{status="502", service="search"}[5m]))
+    ```
+
+    Trebuie să scadă la ~0. Dacă mai rămân 502-uri izolate, caută în logurile Node-ului la acele timestamp-uri — ar putea fi un al doilea tip de eroare amestecat în statistică.
+
+    Ce framework rulează pe search — Express, Fastify, NestJS? Îți pot da configurația exactă.
+- user: |
+    search e node.js, express, n-am setat keepAliveTimeout deloc
+  assistant: |
+    Confirmat — diagnosticul e aproape sigur corect. Express nu setează nimic legat de keepalive; serverul HTTP de sub folosește default-urile Node: **keepAliveTimeout = 5 secunde**, în timp ce nginx-nginx ține conexiunile upstream deschise 60 de secunde. Fereastra de 5s vs 60s garantează cursa.
+
+    ## Fix-ul exact
+
+    În codul unde pornești serverul:
+
+    ```js
+    const app = require('./app'); // sau cum ai structurat
+    const server = app.listen(3000);
+
+    server.keepAliveTimeout = 65000;  // 65s > 60s (timeout-ul nginx upstream)
+    server.headersTimeout = 66000;    // obligatoriu > keepAliveTimeout
+    ```
+
+    Atenție la două capcane:
+
+    1. **`headersTimeout` trebuie să fie mai mare decât `keepAliveTimeout`**, altfel Node închide conexiunile exact la fel ca înainte. Ordinea corectă: headersTimeout ≥ keepAliveTimeout + puțin.
+    2. **Verifică dacă folosești `app.listen()` direct** — funcționează, dar dacă ai ceva de genul `http.createServer(app)`, setează proprietățile pe acel `server`, nu pe alt obiect.
+
+    Dacă folosești un template engine sau middleware care creează serverul intern (rar la Express), verifică unde e `listen()` real.
+
+    ## De ce 65s și nu 61s
+
+    Timeout-ul nginx upstream keepalive e 60s default, dar în lanț pot exista alte componente (load balancer AWS/ALB are idle timeout propriu, de obicei 60s). Regula practică: **timeout-ul serverului cu ~5s peste cel al clientului din amonte**. Dacă search stă și în spatele unui ALB sau alt proxy, verifică și idle timeout-ul acela.
+
+    ## Verifică și ce e în fața nginx
+
+    Dacă Ingress-nginx rulează pe AWS cu NLB/ALB în față, lanțul e: client → LB → nginx → pod. Timeout-urile care contează sunt cele ale **fiecărui hop față de următorul**. Configurația ideală, crescătoare dinspre pod spre client:
+
+    ```
+    Node keepAliveTimeout: 65s  >  nginx upstream keepalive: 60s  >  LB idle timeout: 60s+
+    ```
+
+    ## Deploy și verificare
+
+    ```bash
+    kubectl set env deployment/search -n shop NODE_ENV=production  # doar dacă e cazul
+    kubectl rollout restart deployment/search -n shop
+    ```
+
+    Apoi urmărește 24h:
+
+    ```promql
+    sum(increase(nginx_ingress_controller_requests{status="502", path=~"/api/search.*"}[1h]))
+    ```
+
+    Trebuie să ajungă la 0. Dacă mai vezi 502-uri izolate, ia timestamp-ul din error log și verifică `kubectl logs` pe pod-ul search la acel moment — ar fi un al doilea tip de problemă, dar statistic după fix-ul ăsta 502-urile ar trebui să dispară complet.
+
+    Merită adăugat în postmortem-ul de la checkout ca incident separat, sau cel puțin o acțiune de audit: **toate serviciile Node din cluster au nevoie de keepAliveTimeout setat explicit** — e o capcană cunoscută pe care o are orice setup Node + nginx.
+- user: |
+    HPA-ul de la search e pe CPU 70%. la varfuri latenta sare la 2 secunde pana pornesc podurile noi. il scad la 60%?
+  assistant: |
+    Scăderea la 60% ajută puțin, dar nu rezolvă problema reală. Să descompunem de ce lată la 2 secunde la vârfuri:
+
+    ## De ce întârzie scalarea
+
+    1. **CPU-ul e un indicator lagging** — crește *după* ce traficul a crescut. Până când media depășește 70%, serviciul e deja sub presiune.
+    2. **HPA are delay inerent** — metricile vin din metrics-server cu scrape la 15s, plus fereastra de 1 minut pentru decizie, plus `--horizontal-pod-autoscaler-sync-period` (15s default). Realist: 30-60s de la spike până la decizie.
+    3. **Pod startup** — timp până când noul pod e Ready (pull imagine, pornire Node, readinessProbe). La Node/Express ar trebui să fie rapid (<10s), dar verifică: dacă readiness are `initialDelaySeconds` mare, adaugi secunde inutile.
+
+    Deci chiar și cu 60%, vei avea o fereastră de degradare la spike-uri bruște — doar puțin mai scurtă.
+
+    ## Ce fac, în ordinea eficienței
+
+    **1. Scade ținta, da — dar moderat.** 60% e rezonabil. Sub 50% ai riscul de flapping (scale up/down continuu). 60-65% e un sweet spot pentru servicii web.
+
+    **2. Configurează comportamentul de scale-up agresiv** (asta contează mai mult decât ținta):
+
+    ```yaml
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 0    # default 0 la scaleUp, ok
+        policies:
+        - type: Percent
+          value: 100                     # poți dubla numărul de poduri
+          periodSeconds: 15
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+        selectPolicy: Max
+      scaleDown:
+        stabilizationWindowSeconds: 300  # default, ok — nu scala în jos prea repede
+    ```
+
+    Cu `value: 100%` la 15s, la un spike îți dublează capacitatea în ~15-30s în loc să adauge câte 1-2 poduri.
+
+    **3. Verifică de ce lată crește atât de mult cu CPU sub 70%.** 2 secunde de latență la CPU 70% e suspect — Node e single-threaded pe event loop. Dacă ai endpoint-uri blocking (query sincron, JSON mare, crypto), latența explodează înainte ca CPU-ul să arate probleme. Merită un profil la vârfuri — s-ar putea ca problema reală să fie un endpoint lent, nu capacitatea.
+
+    **4. Pe termen lung: scalează pe latență, nu pe CPU.** CPU-ul nu știe nimic despre experiența userului. KEDA cu scaler Prometheus pe `http_request_duration` p99 e soluția standard:
+
+    ```yaml
+    # KEDA ScaledObject, trigger pe p99 latency
+    query: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{service="search"}[1m])) by (le))
+    threshold: "0.5"   # scalează când p99 depășește 500ms
+    ```
+
+    Asta scalează *când userii simt*, nu când CPU-ul crește.
+
+    **5. Dacă vârfurile sunt predictibile** (ex. trafic de seară, campanii), adaugă scalare programată — KEDA sau CronHPA — ca să ai poduri gata *înainte* de vârf.
+
+    ## Rezumat practic
+
+    - Da, scade la 60% — câștigi puțin
+    - Adaugă `behavior.scaleUp` agresiv — câștigi cel mai mult, efort minim
+    - Verifică readiness probe și timpul de pornire al pod-ului
+    - Investighează de ce latența sare la 2s sub 70% CPU — posibil event loop blocking
+    - Planifică migrarea spre scalare pe latență (KEDA) dacă vârfurile rămân o problemă
+
+    Vrei configurația completă de HPA cu behavior sau exemplul KEDA pentru search?
+- user: |
+    ok, punem 60%
+  assistant: |
+    Perfect. Ca să aplici totul dintr-o dată, iată HPA-ul complet cu ținta 60% și scale-up agresiv:
+
+    ```yaml
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    metadata:
+      name: search
+      namespace: shop
+    spec:
+      scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: search
+      minReplicas: 3
+      maxReplicas: 15
+      metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 60
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+          - type: Percent
+            value: 100
+            periodSeconds: 15
+          - type: Pods
+            value: 4
+            periodSeconds: 15
+          selectPolicy: Max
+        scaleDown:
+          stabilizationWindowSeconds: 300
+    ```
+
+    Ajustează `minReplicas`/`maxReplicas` la valorile tale actuale.
+
+    Aplicare și verificare:
+
+    ```bash
+    kubectl apply -f search-hpa.yaml
+    kubectl get hpa search -n shop -w
+    ```
+
+    La următorul vârf de trafic, urmărește:
+
+    1. **Cât durează până cresc replicile** — cu `Percent: 100` ar trebui să vezi dublarea în ~15-30s
+    2. **Latenta p99 în fereastra de scalare** — dacă tot sare spre 2s, problema e în cod (event loop blocking), nu în HPA
+    3. **Că nu flapping-uiește** — cu `scaleDown` pe 300s nu ar trebui
+
+    Dacă după o săptămână latența la vârfuri rămâne o problemă, revenim la varianta KEDA pe latență.
+- user: |
+    fa-mi tichetele de jira pt actiunile din postmortem, intr-un tabel: titlu, descriere, acceptance criteria
+  assistant: |
+    # Tichete Jira — acțiuni postmortem checkout-service
+
+    | # | Titlu | Descriere | Acceptance Criteria |
+    |---|---|---|---|
+    | 1 | **[checkout] Invalidează sesiunea de coș la checkout finalizat** | Sesiunile de coș rămân în `CartSessionCache` și după plasarea comenzii, consumând memorie inutil. Adăugați apel explicit `cache.invalidate(sessionId)` în fluxul de checkout, imediat după confirmarea comenzii. | - Sesiunea este ștearsă din cache imediat după finalizarea checkout-ului<br>- Test unit care verifică invalidarea pe fluxul de succes<br>- Test care verifică că sesiunea NU e invalidată dacă comanda eșuează |
+    | 2 | **[checkout] Migrare sesiuni coș în Redis** | Sesiunile de coș sunt ținute in-process (Caffeine) — se pierd la orice restart/deploy și blochează scalarea orizontală corectă. Migrarea stării în Redis cu TTL 30 min; Caffeine rămâne opțional ca cache de citire deasupra. | - Coșul supraviețuiește unui rolling update (verificat manual + test de integrare)<br>- TTL de 30 min setat pe cheile Redis<br>- Pod-urile pot fi scalate la 0+ replici fără pierdere de coșuri active<br>- Fallback documentat dacă Redis e indisponibil |
+    | 3 | **[platform] Alertă pe consumul de memorie JVM la 80% din heap max** | Incidentul checkout a fost depistat abia la OOMKill. Implementați alertare pe `jvm_memory_used_bytes` la 80% din heap maxim pentru toate serviciile Java din cluster. | - Alertă activă pe toate serviciile Java (inventar în tichet)<br>- Alerta trimite către canalul de on-call<br>- Runbook atașat: pași de investigație (heap dump, histogramă)<br>- Test de validare: alerta se declanșează pe un serviciu de test |
+    | 4 | **[platform] Audit requests/limits pe toate cele 25 de servicii** | Requests/limits actuale nu sunt calibrate pe consumul real (checkout avea limită 1Gi depășită). Rulați VPA în mod recommendation pe 2 săptămâni, apoi recalibrați. Pentru memorie: request = limit. | - VPA în mod recommendation instalat pe namespace-urile de producție<br>- Raport cu valorile recomandate vs. actuale pentru toate serviciile<br>- Requests/limits actualizate; memory request = limit<br>- Zero OOMKilled / evictions timp de 2 săptămâni după aplicare |
+    | 5 | **[platform] Heap dump la OOM pe toate serviciile Java** | Fără heap dump, diagnosticarea leak-urilor durează zile. Activați `-XX:+HeapDumpOnOutOfMemoryError` cu `-XX:HeapDumpPath=/dumps` (emptyDir) și `-XX:NativeMemoryTracking=summary` pe toate deployment-urile Java. | - Toate deployment-urile Java au flag-urile setate<br>- emptyDir `/dumps` montat, cu dimensiune suficientă pentru heap<br>- Procedură documentată de extragere dump (`kubectl cp`) și analizare în Eclipse MAT<br>- Verificat pe un serviciu pilot cu restart forțat |
+    | 6 | **[platform] Alertă pe rata de restart-uri pod-uri (OOMKilled / CrashLoopBackOff)** | Crash-urile repetate nu au generat notificare — incidentul a fost observat manual. Alertați pe restart count crescând / stare OOMKilled / CrashLoopBackOff. | - Alertă pe orice pod cu >2 restart-uri în 15 min<br>- Alertă pe orice container în stare OOMKilled sau CrashLoopBackOff<br>- Trimite către canalul de on-call cu link spre pod<br>- Runbook cu pași de triaj inițial |
+    | 7 | **[checkout] Identifică sursa celor 1,2M sesiuni de coș** | Volumul de sesiuni sugerează trafic anormal: boti/crawleri, regenerare sessionId în mobile app, sau lipsă de cleanup. Analizați logurile și pattern-urile de creare a sesiunilor. | - Raport cu distribuția surselor de sesiuni (user agent, IP, app version)<br>- Concluzie documentată: trafic legitim vs. anormal<br>- Dacă e trafic de boti: rate limiting propus (tichet separat)<br>- Dacă e mobile app: tichet creat pentru echipa mobile |
+    | 8 | **[platform] Setează keepAliveTimeout explicit pe toate serviciile Node** | Serviciile Node au default `keepAliveTimeout = 5s`, sub timeout-ul de 60s al nginx — cauză de 502 intermitente (incident search, 10.11). Setați `keepAliveTimeout = 65000` și `headersTimeout = 66000` pe toate deployment-urile Node. | - Inventar cu toate serviciile Node din cluster<br>- Flag-urile setate în cod sau prin template comun<br>- Zero 502 de tip "upstream prematurely closed" timp de 7 zile<br>- Documentat în template-ul de serviciu pentru servicii Node noi |
+
+    **Sugestii de organizare:**
+    - **Epic:** "Fiabilitate platformă shop — Q4" cu tichetele 3-6, 8 sub el (platform), iar 1, 2, 7 în echipa checkout
+    - **Priorități:** 3, 6 (detectiv, ieftine) → High; 1, 8 → High; 4, 5 → Medium; 2, 7 → Medium/Low
+    - Tichetele 3 și 6 pot fi făcute în același PR de alertare dacă folosiți aceeași stivă de monitoring
+
+    Vrei și descrierile extinse (format Jira cu context, link-uri spre loguri și grafice de atașat)?
+- user: |
+    on-call: suntem 5 oameni, rotatie saptamanala. cum fac sa nu pice nimeni de craciun doi ani la rand?
+  assistant: |
+    Vestea bună: matematica lucrează pentru tine, cu o condiție.
+
+    ## De ce ți s-a întâmplat (probabil)
+
+    Cu 5 oameni și rotație săptămânală pură, un an are 52 de săptămâni, iar 52 mod 5 = **2**. Deci persoana de la Crăciun se mută cu 2 poziții în fiecare an — la rotație pură, **imposibil** să pice același om de Crăciun doi ani la rând. Dacă ți s-a întâmplat, înseamnă că rotația nu e pură: se face manual, cineva a resetat ordinea, sau au fost swap-uri care au deplasat ciclul.
+
+    ## Soluția simplă: rotație fixă, calculată pe un an înainte
+
+    Stabiliți ordinea fixă (A → B → C → D → E → A...) și generați calendarul pe 12 luni înainte. Crăciunul va roti printre voi cu pas de 2: anul N persoana 1, anul N+1 persoana 3, anul N+2 persoana 5 etc. Nimeni nu-l prinde de două ori la rând, dar cineva îl prinde la fiecare ~5 ani — corect.
+
+    Problemă secundară: rotația pură nu ține cont de sărbători — același om poate prinde Crăciunul *și* Revelionul în ani diferiți, sau Paștele de două ori la rând (Paștele e mobil, deci se mișcă altfel prin ciclu).
+
+    ## Soluția mai bună: separă sărbătorile "prime" de rotația obișnuită
+
+    1. **Definește pool-ul de sărbători premium**: Crăciun, Revelion/1 ianuarie, Paște, 1 Mai, Sf. Andrei etc.
+    2. **Alocă-le explicit, în ordine rotativă**, independent de rotația săptămânală: fiecare persoană ia o sărbătoare premium pe an, iar cine a luat Crăciunul anul asta nu poate lua nici Crăciunul, nici Revelionul anul viitor.
+    3. **Restul săptămânilor** merg pe rotația normală, cu excepția săptămânilor premium care sunt pre-asignate.
+
+    Practic, ține un **ledger de fairness** simplu (o foaie Excel):
+
+    | Persoană | Crăciun 2025 | Revelion 2025 | Crăciun 2026 |
+    |---|---|---|---|
+    | A | ✅ | — | 🚫 exclus |
+    | B | — | ✅ | eligibil |
+    | C | — | — | eligibil |
+    | D | — | — | eligibil |
+    | E | — | — | eligibil |
+
+    ## Aspecte practice
+
+    - **Publică calendarul pe un an înainte** — oamenii își pot planifica vacanțele, iar swap-urile se negociază devreme, nu în decembrie
+    - **Swap-urile rămân permise**, dar se fac între persoane, nu prin mutarea în viitor a datoriei — altfel strici contabilitatea
+    - **Compensare/recunoaștere** pentru sărbătorile premium (zi liberă compensatorie după, sau bonus) — altfel ledger-ul corect devine ledger-ul resentimentelor
+    - Dacă folosiți **PagerDuty/Opsgenie**, ambele au schedule-uri cu override și pot importa un calendar generat; altfel, un Google Calendar partajat e suficient pentru 5 oameni
+
+    ## Concret pentru voi
+
+    1. Stabiliți ordinea fixă a celor 5
+    2. Generați calendarul ianuarie–decembrie 2027 cu rotația pură
+    3. Suprascrieți explicit săptămâna de Crăciun: oricine a fost de Crăciun 2026 e exclus, alegeți printre restul de 4 (ideal, cel care n-a avut nicio sărbătoare premium în 2026)
+    4. Repetați pentru fiecare sărbătoare premium
+
+    Vrei să-ți generez calendarul pe 2027 complet, cu distribuția sărbătorilor premium pe cele 5 persoane?
+- user: |
+    cost: avem 14 noduri m5.xlarge on-demand, 0,192 $/ora. cat economisim daca trecem 60% din ele pe spot, cu reducere medie de 65%?
+  assistant: |
+    ## Calculul de bază
+
+    **Situația actuală:**
+    - 14 noduri × $0,192/oră = **$2,688/oră**
+    - Lunar (730h): **$1.962**
+    - Anual: **~$23.543**
+
+    **După migrarea a 60% (8,4 noduri → spot):**
+
+    | Componentă | Noduri | Preț/oră | Cost lunar |
+    |---|---|---|---|
+    | On-demand (40%) | 5,6 | $0,192 | $783 |
+    | Spot (60%) | 8,4 | $0,067 (−65%) | $411 |
+    | **Total** | 14 | | **$1.194** |
+
+    **Economie: ~$765/lună → ~$9.180/an** (reducere de ~39% pe totalul clusterului).
+
+    ## Dar atenție la câteva lucruri
+
+    **1. Spot = întreruperi cu 2 minute de preaviz.** Nu e "reducere gratuită" — trebuie să suporti evacuări. Regula de aur:
+
+    - ✅ **Spot:** servicii stateless, batch jobs, CI/CD, search, servicii cu HPA (se rescalează singure)
+    - ❌ **On-demand:** baze de date, servicii cu stare, noduri critice de sistem (ingress, monitoring), un minim de capacitate garantată
+
+    Din fericire, profilul vostru se potrivește: checkout, search etc. cu HPA sunt candidați buni la spot, mai ales că acum aveți deja sesiunile în curs de migrare spre Redis (tichetul #2 din postmortem) — asta le face cu adevărat stateless.
+
+    **2. Realist, nu 60% fix.** Practica standard e un mix:
+
+    - **~20-30% on-demand** ca bază garantată (capacity type obligatoriu)
+    - **restul spot**, cu multiple instance types (nu doar m5.xlarge — și m5a, m6i, m6a, adesea și mai ieftine la spot)
+    - **Karpenter** sau node groups mixte în EKS cu `capacityType: SPOT` — Karpenter face asta cel mai elegant, cu fallback automat la on-demand când spot-ul dispare
+
+    **3. PDB-uri obligatorii.** Fără PodDisruptionBudget-uri, o întrerupere spot poate lua 3 pod-uri din același serviciu simultan. Cu PDB, Kubernetes evacuează controlat. Cu 25 de servicii, asta e prerequisite înainte de migrare.
+
+    **4. Prețul spot fluctuează.** 65% reducere e medie realistă pentru m5.xlarge (adesea chiar 70%+), dar în perioade de cerere mare poate scădea. Calculează cu 60% reducere pentru buget conservator: economie ~$710/lună.
+
+    ## Concluzie
+
+    **~$9.000/an economie**, cu condiția să faci în ordinea asta:
+
+    1. PDB-uri pe toate serviciile (1-2 zile de lucru)
+    2. Karpenter sau node groups mixte on-demand + spot (2-3 zile)
+    3. Migrare graduală: 20% spot → monitorizează 2 săptămâni → crește spre 60%
+
+    Vrei configurația Karpenter cu mix-ul 40/60 și instance types diversificate?
+- user: |
+    si daca pe restul de 40% luam savings plan pe 1 an la -28%?
+  assistant: |
+    ## Calculul complet
+
+    **Răspuns scurt:** economie totală urcă la **~$11.800/an (~49%)**, față de ~$9.180 doar cu spot. Dar savings plan-ul vine cu un risc de angajament pe care trebuie să-l înțelegi înainte.
+
+    | Componentă | Noduri | Preț/oră | Cost lunar | Economie |
+    |---|---|---|---|---|
+    | Spot (60%) | 8,4 | $0,067 | $411 | −65% |
+    | On-demand cu Savings Plan (40%) | 5,6 | $0,138 | $565 | −28% |
+    | **Total** | 14 | | **$976** | **−$986/lună** |
+
+    **Economie totală: ~$986/lună → ~$11.830/an** — față de $1.962/lună actual.
+
+    ## Capcanele Savings Plan-ului
+
+    **1. E un angajament la cheltuială, nu la utilizare.** Te angajezi să plătești $X/oră timp de 12 luni, indiferent dacă folosești sau nu capacitatea. Dacă clusterul se micșorează (optimizări, migrare la Karpenter cu consolidare, servicii decomisionate), plătești oricum angajamentul.
+
+    **2. Karpenter poate strica calculul.** Dacă implementezi Karpenter (recomandat pentru spot), consolidarea lui reduce adesea numărul de noduri cu 20-30%. Dacă te-ai angajat pe 5,6 noduri on-demand și Karpenter le aduce la 4, plătești diferența degeaba. **Ordinea corectă: mai întâi Karpenter + spot, măsoară consumul stabil 4-6 săptămâni, abia apoi cumpără savings plan pe valoarea reală rămasă.**
+
+    **3. Alege Compute Savings Plan, nu EC2 Instance Savings Plan.** Compute SP e mai flexibil: acoperă orice instanță, orice regiune, chiar și Fargate/Lambda, cu discount puțin mai mic (28% e tipic pentru m5 pe 1 an, no upfront). EC2 Instance SP dă cu câteva procente mai mult, dar te blochează pe familie de instanțe — riscant dacă vrei să migrezi spre m6i/m7i.
+
+    **4. Spot-ul NU e acoperit de savings plans** — se exclud reciproc, deci calculul tău de 60/40 rămâne așa cum e.
+
+    ## Recomandarea mea de ordine
+
+    1. **Lună 1-2:** PDB-uri + Karpenter, migrare 60% spre spot → economie imediată ~$765/lună, fără niciun angajament
+    2. **Lună 2-3:** lasă Karpenter să consolideze, măsoară consumul on-demand stabil
+    3. **Lună 3-4:** cumpără Compute Savings Plan pe 1 an pentru **valoarea măsurată minus 10-15% marjă de siguranță** — mai bine sub-cumpărat (restul merge on-demand la preț normal) decât supra-cumpărat
+
+    Cu această secvență, economiile reale vor fi probabil **peste $12.000/an**, pentru că Karpenter reduce și baza on-demand înainte de angajament.
+
+    Un detaliu de negociat intern: savings plan-ul se cumpără la nivel de organizație AWS (nu per cont), deci dacă aveți mai multe conturi/medii, angajamentul se poate distribui flexibil — asta reduce și mai mult riscul.
+- user: |
+    acum notification-service e OOMKilled:
+
+    ```
+    $ kubectl describe pod notification-service-5b7c9d4f8-mm2lt -n shop
+        Last State:     Terminated
+          Reason:       OOMKilled
+          Exit Code:    137
+        Restart Count:  6
+        Limits:
+          memory:  256Mi
+    $ kubectl top pod notification-service-5b7c9d4f8-mm2lt -n shop
+    NAME                                       CPU(cores)   MEMORY(bytes)
+    notification-service-5b7c9d4f8-mm2lt       41m          251Mi
+    ```
+  assistant: |
+    Al doilea OOMKill în două zile — și exact scenariul pentru care aveți tichetele 3 și 6 din postmortem (alerte pe memorie și pe restart-uri). Dacă ar fi fost active, aflai acum 6 restart-uri, nu de la useri.
+
+    ## Primul diagnostic
+
+    251Mi folosiți din 256Mi limită — pod-ul trăiește permanent la limită. Două întrebări imediate:
+
+    **1. În ce e scris notification-service?** Dacă e Java, 256Mi e foarte puțin — heap-ul JVM + metaspace + thread stacks + direct buffers nu încap confortabil în 256Mi. Un Spring Boot 3 are nevoie de minim 512Mi, realist 768Mi-1Gi. Dacă e Java, fix-ul e aproape mecanic:
+
+    ```yaml
+    resources:
+      requests:
+        memory: 512Mi
+      limits:
+        memory: 768Mi
+    env:
+      - name: JAVA_TOOL_OPTIONS
+        value: "-XX:MaxRAMPercentage=70.0"
+    ```
+
+    **2. Dacă e Node/Go/Python** — 256Mi ar trebui să fie suficient pentru un serviciu de notificări, deci aici e probabil un leak sau un buffer nelimitat, la fel ca la checkout.
+
+    ## Suspecți specifici pentru un notification-service
+
+    Serviciile de notificări au un pattern clasic de OOM: **consumă din coadă mai repede decât procesează** și acumulează în memorie:
+
+    - **Buffer de mesaje nelimitat** — consumatorul trage mesaje din SQS/Kafka/RabbitMQ mai repede decât le trimite, și le ține în memorie (batch mare de prefetch, sau coadă internă fără limită)
+    - **Prefetch prea mare** — la RabbitMQ, `prefetch` mare + procesare lentă = sute de mesaje acumulate
+    - **Payload-uri mari reținute** — template-uri cu date încărcate complet, atașamente în memorie
+    - **Retry fără backoff** — mesajele eșuate se acumulează în memorie în loc să meargă înapoi în coadă / DLQ
+
+    Verifică:
+
+    ```bash
+    # ce face în momentul OOM — loguri de la restart-ul anterior
+    kubectl logs notification-service-5b7c9d4f8-mm2lt -n shop --previous | tail -50
+
+    # cât de repede crește memoria — urmărește 10 minute
+    kubectl top pod notification-service-... -n shop -w
+    ```
+
+    Dacă memoria crește în trepte bruște (nu gradual) → burst de mesaje din coadă. Dacă crește constant → leak clasic.
+
+    ## Fix-ul imediat (acum)
+
+    Indiferent de cauză, dublează limita ca să oprești sângerarea:
+
+    ```yaml
+    resources:
+      limits:
+        memory: 512Mi
+      requests:
+        memory: 384Mi
+    ```
+
+    ## Fix-ul de fond
+
+    1. **Limitează batch-ul/prefetch-ul** la ce poate procesa serviciul (ex. RabbitMQ prefetch 10-30, Kafka `max.poll.records` mic)
+    2. **Nu ține mesajele în memorie** — procesează și confirmă (ack) pe măsură ce termini
+    3. **DLQ pentru eșuate**, nu retry în memorie
+
+    Și un lucru de spus echipei: **două OOM-uri în două zile pe servicii diferite confirmă tichetul #4** (audit requests/limits pe toate cele 25 de servicii). Notification-service cu 256Mi arată exact ca un limit setat "din cap", nu măsurat. Merită să prioritizați acel audit — probabil mai sunt 3-4 servicii în aceeași situație, doar că nu au picat încă.
+
+    În ce e scris notification-service și ce coadă consumă? Îți dau configurația exactă de consumer.
+- user: |
+    e python cu celery, 8 workeri concurenti, worker_prefetch_multiplier e pe default. mesajele au atasate pdf-urile facturilor, cam 2MB fiecare
+  assistant: |
+    Mister rezolvat — e o combinație clasică de probleme Celery cu payload-uri mari:
+
+    ## Matematica problemei
+
+    **Prefetch default = 4** (`worker_prefetch_multiplier=4`) × **8 workeri concurenți** = **32 de mesaje trase în memorie simultan** per pod.
+
+    32 × 2MB = **64MB doar corpurile mesajelor** — și asta e optimist, pentru că:
+
+    - Celery deserializează mesajele (JSON + base64 dacă PDF-ul e încorporat → base64 adaugă ~33%, deci ~2,7MB per mesaj → **~86MB**)
+    - La procesare, PDF-ul se încarcă complet în memorie (poate de 2-3 ori: bytes → procesare → serializare la trimitere)
+    - Python are overhead semnificativ pe obiecte mari
+    - Dacă mesajele conțin PDF-ul **încorporat în body** (nu doar o referință), brokerul le livrează întregi la prefetch
+
+    Total realist: 150-250MB la un burst de mesaje — exact ce vezi. 256Mi era condamnat de la început.
+
+    ## Fix-uri, în ordine
+
+    **1. Imediat — limite și prefetch:**
+
+    ```python
+    # celery config
+    worker_prefetch_multiplier = 1        # fiecare worker ia 1 mesaj pe rând
+    worker_concurrency = 8                # păstrează, dar vezi punctul 3
+    task_acks_late = True                 # ack doar după procesare (cu prefetch 1, e sigur)
+    worker_max_tasks_per_child = 100      # reciclează procesele worker — eliberează memorie
+    ```
+
+    `worker_prefetch_multiplier = 1` e **recomandarea oficială Celery pentru task-uri lungi** — cu 4, workerii "hordăresc" mesaje pe care le procesează în 8 minute în timp ce alți workeri stau pe liber, și totodată le țin în memorie.
+
+    Plus limita:
+
+    ```yaml
+    resources:
+      limits:
+        memory: 512Mi
+      requests:
+        memory: 384Mi
+    ```
+
+    **2. Fix-ul de fond — nu trimite PDF-uri prin broker.** Acesta e adevărata problemă. Celery documentează explicit: mesaje mari (>câteva sute KB) nu trebuie să treacă prin broker. Refactor:
+
+    ```python
+    # înainte: PDF-ul în mesaj
+    send_invoice.delay(invoice_id, pdf_bytes)   # ❌ 2MB prin RabbitMQ/Redis
+
+    # după: PDF în S3, referință în mesaj
+    s3.put_object(bucket, key, pdf_bytes)
+    send_invoice.delay(invoice_id, s3_key=key)  # ✅ mesaj de ~200 bytes
+    ```
+
+    Beneficii în cascadă:
+    - Mesajele devin minuscule → prefetch nu mai contează aproape deloc
+    - Brokerul (RabbitMQ/Redis) nu se sufocă cu payload-uri mari — și Redis cu `maxmemory` poate începe să evicte mesaje
+    - Retry-urile nu re-transferă 2MB de fiecare dată
+    - Poți reveni la prefetch mai mare pentru throughput
+
+    **3. Verifică ce face task-ul cu PDF-ul.** Dacă folosește `reportlab`/`weasyprint` pentru generare, acestea pot consuma 10-50MB per document la documente complexe — cu 8 concurenți, doar generarea poate înghiți 100-400MB în vârf. Dacă da, scade `worker_concurrency` la 4 și compensează cu mai multe replici (HPA pe CPU sau pe lungimea cozii — KEDA are scaler nativ pentru Celery/RabbitMQ/SQS).
+
+    ## Ordinea recomandată
+
+    1. **Acum:** prefetch=1 + limită 512Mi + `worker_max_tasks_per_child` → oprește OOM-urile, deploy în 10 minute
+    2. **Săptămâna asta:** PDF-uri în S3, referințe în mesaje → rezolvă de la sursă
+    3. **Apoi:** KEDA pe lungimea cozii pentru scalare reală, și adaugă notification-service la tichetul #4 (audit requests/limits) — 256Mi pentru un serviciu care procesează PDF-uri era o valoare ghicită, nu măsurată
+
+    Ce broker folosiți — RabbitMQ sau Redis? Și PDF-urile sunt generate în task sau primite gata făcute de la checkout? Detaliile astea decid dacă punctul 2 e un refactor mic sau mediu.
+- user: |
+    traduce postmortem-ul de la checkout in engleza pt echipa din US
+  assistant: |
+    # Postmortem: checkout-service — OOMKilled (incident Nov 9, 2026)
+
+    ## Summary
+
+    On November 9, 2026, the `checkout-service` in the `shop` namespace suffered 3 restarts caused by memory exhaustion (OOMKilled, exit code 137). The root cause was a memory leak in the cart session cache (`CartSessionCache`), which grew without bound until it hit the container's 1Gi memory limit. The incident was remediated by capping the cache (maximumSize + expiration) and temporarily raising the memory limit.
+
+    ## Impact
+
+    - **Duration:** ~1h 45m from first crash to stabilization (10:02 – 11:47 EET / 03:02 – 04:47 EST)
+    - **Users affected:** users with cart sessions routed to the affected pod experienced 5xx errors / timeouts during restarts
+    - **Lost sessions:** cart sessions held in memory were lost on each restart
+    - **Blast radius:** a single service out of 25; the rest of the cluster was unaffected
+    - **Financial impact:** to be estimated — checkout was intermittently degraded during peak hours
+
+    ## Timeline
+
+    | Time (EET) | Event |
+    |---|---|
+    | (prior date) | Deploy that introduced/activated the unbounded cache — to be confirmed |
+    | 10:02:11 | Pod `checkout-service-7d9f8c6b5-x2kqp` starts after a previous OOMKilled restart |
+    | ~10:02–11:47 | Memory grows steadily to the 1Gi limit; container is killed by the kernel; Kubernetes restarts the pod (Restart Count: 3) |
+    | 11:47:53 | Third OOMKill; kubelet enters BackOff |
+    | (to fill in) | Incident alert/report — to be completed |
+    | (to fill in) | Investigation: heap dump analyzed in Eclipse MAT — 1.2M `CartSessionCache$Entry` objects (~600MB) identified as the leak |
+    | (to fill in) | Fix deployed: `maximumSize(50_000)` + `expireAfterAccess(30min)` on the cache; memory limit temporarily raised |
+    | (to fill in) | Service stabilized, memory showing normal (sawtooth) behavior |
+
+    ## Root Cause
+
+    `CartSessionCache` was implemented as a plain `ConcurrentHashMap` with no eviction or expiration policy. Every new cart session added an entry, but nothing ever removed old ones. Under normal traffic, the cache accumulated 1.2 million entries (~600MB), exceeding the container's 1Gi memory limit, and the kernel terminated the process with SIGKILL (OOMKilled).
+
+    **Contributing factors:**
+
+    1. **No safety limits on the cache** — no `maximumSize` or TTL
+    2. **No memory alerting** — no alert on pod memory consumption; the incident was only detected at crash time
+    3. **Unvalidated requests/limits** — the 1Gi limit had never been calibrated against the service's actual usage
+    4. **Session state in memory** — carts held in-process are lost on any restart, amplifying the impact
+
+    ## Action Items
+
+    | # | Action | Type | Owner | Status |
+    |---|---|---|---|---|
+    | 1 | Cap `CartSessionCache`: `maximumSize(50_000)` + `expireAfterAccess(30min)` | Preventive | checkout team | ✅ Done |
+    | 2 | Explicitly invalidate the session when checkout completes | Preventive | checkout team | 🔲 TODO |
+    | 3 | Evaluate moving cart sessions to Redis (30 min TTL) — eliminates loss on restart and enables horizontal scaling | Preventive | checkout team | 🔲 TODO |
+    | 4 | Alert on `jvm_memory_used_bytes` at 80% of max heap, for all Java services | Detective | platform | 🔲 TODO |
+    | 5 | Audit requests/limits across all 25 services; request = limit for memory; VPA in recommendation mode | Preventive | platform | 🔲 TODO |
+    | 6 | Enable `-XX:+HeapDumpOnOutOfMemoryError` + emptyDir `/dumps` on all Java services | Detective | platform | 🔲 TODO |
+    | 7 | Alert on pod restart rate (OOMKilled / CrashLoopBackOff) | Detective | platform | 🔲 TODO |
+    | 8 | Identify the source of the 1.2M sessions (bots, sessionId regeneration in the mobile app) | Investigation | checkout team | 🔲 TODO |
+
+    ## Lessons Learned
+
+    - An unbounded cache is a leak waiting to happen — every in-memory data structure needs an eviction policy
+    - Alerting on memory *trend* (not just crashes) would have caught this incident days earlier
+    - Session state in memory is fragile in Kubernetes — restarts are routine, not the exception
+
+    ---
+
+    Note: fields marked "to be filled in" (exact detection and remediation times, actual owners) need to be completed by the team — the `kubectl describe` timeline only covers the crashes, not the alert and fix times.
+- user: |
+    au zis ca cronologia e prea lunga. scurteaz-o la 6 puncte
+  assistant: |
+    # Timeline (condensed)
+
+    | Time (EET) | Event |
+    |---|---|
+    | 10:02:11 | Pod restarts after an OOMKilled crash; memory grows steadily toward the 1Gi limit |
+    | 11:47:53 | Third OOMKill; kubelet enters BackOff (Restart Count: 3) |
+    | (to fill in) | Incident investigated: heap dump shows 1.2M `CartSessionCache$Entry` objects (~600MB) — unbounded cart session cache identified as the leak |
+    | (to fill in) | Fix deployed: cache capped (`maximumSize(50_000)` + `expireAfterAccess(30min)`); memory limit temporarily raised |
+    | (to fill in) | Service stabilized; memory shows normal (sawtooth) behavior |
+
+    Asta e 5 rânduri — dacă vrei strict 6, pot adăuga înapoi punctul despre deploy-ul care a introdus cache-ul nelimitat (util pentru context, dar poate rămâne în Root Cause). Spune-mi dacă ajustez.
+- user: |
+    iar 502! acum pe payments:
+
+    ```
+    2026/11/12 09:14:52 [error] 29#29: *120544 connect() failed (111: Connection refused) while connecting to upstream, client: 10.0.4.9, server: shop.example.ro, request: "POST /api/payments/authorize HTTP/1.1", upstream: "http://10.0.15.21:8080/api/payments/authorize"
+    ```
+
+    a tinut cam 40 de secunde
+  assistant: |
+    Eroarea asta e **diferită** de cea de la search — și e importantă distincția:
+
+    - **Search:** `upstream prematurely closed connection` → conexiunea s-a închis *în timpul* requestului (keepalive race)
+    - **Payments:** `connect() failed (111: Connection refused)` → nimic nu asculta pe acel IP:port *în momentul conectării*. Nginx a avut endpoint-ul `10.0.15.21` în lista lui, dar procesul nu era pornit.
+
+    ## Cauza cea mai probabilă: un pod care restartează sau un rolling update
+
+    40 de secunde e exact fereastra **pornire JVM + readiness probe** pentru un serviciu Java pe 8080. Scenariul tipic:
+
+    1. Pod-ul moare (OOMKill, crash, sau rolling update)
+    2. Kubernetes îl repornește / pornește pod-ul nou
+    3. JVM-ul durează 20-40s până ascultă pe 8080
+    4. În acea fereastră, nginx mai are vechiul IP în endpoints → Connection refused → 502
+
+    ## Verifică imediat
+
+    ```bash
+    # 1. A restartat pod-ul la 09:14?
+    kubectl get pods -n shop -l app=payments -o wide   # uită-te la RESTARTS și AGE
+
+    # 2. A fost deploy la ora aceea?
+    kubectl rollout history deployment/payments -n shop
+    kubectl get events -n shop --sort-by=.lastTimestamp | grep -i payments
+
+    # 3. Dacă restartează — de ce?
+    kubectl describe pod <pod-ul cu restart> -n shop   # OOMKilled din nou?
+    kubectl logs <pod> -n shop --previous | tail -30
+    ```
+
+    Dacă găsești OOMKilled → ai al treilea serviciu cu limits ghicite, confirmă urgent tichetul #4. Dacă a fost deploy → problema e de graceful shutdown.
+
+    ## Dacă a fost deploy/terminare: fix-ul standard
+
+    Pod-ul vechi se termină înainte ca nginx să afle că a fost scos din endpoints. Soluția clasică — `preStop` sleep + readiness corect:
+
+    ```yaml
+    containers:
+    - name: payments
+      lifecycle:
+        preStop:
+          exec:
+            command: ["sh", "-c", "sleep 10"]   # dă timp endpoints-ului să se propage
+      readinessProbe:
+        httpGet:
+          path: /actuator/health/readiness      # Spring Boot 3
+          port: 8080
+        periodSeconds: 5
+        failureThreshold: 3
+    ```
+
+    Plus, la Spring Boot, activează graceful shutdown ca cererile în curs să se termine curat:
+
+    ```yaml
+    # application.yml
+    server:
+      shutdown: graceful
+    spring:
+      lifecycle:
+        timeout-per-shutdown-phase: 20s
+    ```
+
+    ## Dacă pod-ul nu restartează și nu a fost deploy
+
+    Atunci suspectează **readiness probe care nu verifică portul real** — ex. probe pe un health endpoint care răspunde înainte ca serverul HTTP să asculte, sau `initialDelaySeconds` prea mic. Verifică configurația probei:
+
+    ```bash
+    kubectl get deployment payments -n shop -o jsonpath='{.spec.template.spec.containers[0].readinessProbe}' | jq
+    ```
+
+    ## Context de echipă
+
+    Al treilea incident în 4 zile (checkout OOM, search 502, payments 502). Două observații:
+
+    1. **Tichetele 3, 6 și 8 din postmortem** (alerte pe restart-uri/memorie + audit Node keepAlive) ar fi detectat sau prevenit parțial toate trei. Merită să le promovezi cu prioritate mare și să adaugi una nouă: **preStop + graceful shutdown ca template pe toate deployment-urile** — problema asta o vei avea la fiecare deploy pe orice serviciu Java.
+    2. Dacă payments restartează des, verifică și el limits — e candidat perfect pentru același audit cu VPA.
+
+    Ce ai găsit în events — deploy la 09:14 sau restart?
+- user: |
+    readiness probe-ul de la payments e pe /health, care verifica si conexiunea la baza de date. RDS-ul a facut failover fix atunci, 40 de secunde
+  assistant: |
+    Mister rezolvat complet — și e o capcană clasică Spring Boot. Detaliul important: **Connection refused înseamnă că procesul chiar nu era pornit**, deci nu doar readiness a picat — **liveness probe-ul a omorât containerul**.
+
+    ## Ce s-a întâmplat, pas cu pas
+
+    1. RDS face failover — 40 de secunde fără DB
+    2. `/health` verifică și conexiunea la DB → health raportează DOWN
+    3. **Liveness probe** (probabil pe același `/health`) eșuează → kubelet-ul **omoară containerul** și îl repornește
+    4. JVM-ul durează 20-40s să pornească → în fereastra asta, nginx primește Connection refused → 502
+    5. Failover-ul se termină, pod-ul revine, totul "se repară singur" — de asta a durat exact ~40s
+
+    Deci RDS-ul a făcut failover, dar **distrugerea a fost auto-inflictată de liveness probe**. Fără el, pod-urile ar fi rămas sus, cererile spre DB ar fi eșuat temporar cu erori tratabile, și nu aveai 502.
+
+    ## Regula de aur a probelor
+
+    - **Liveness** = "procesul e blocat/înfometat și nu se poate recupera?" → **doar ping, niciodată dependențe externe**. Dacă DB-ul pică, restart-ul containerului nu rezolvă nimic — DB-ul tot picat e.
+    - **Readiness** = "pot procesa trafic acum?" → aici e loc pentru DB, dar cu nuanțe (vezi mai jos).
+
+    ## Fix-ul în Spring Boot 3
+
+    Actuatorul are deja health groups separate — folosește-le:
+
+    ```yaml
+    management:
+      endpoint:
+        health:
+          probes:
+            enabled: true
+      health:
+        livenessState:
+          enabled: true
+        readinessState:
+          enabled: true
+    ```
+
+    Apoi în deployment:
+
+    ```yaml
+    livenessProbe:
+      httpGet:
+        path: /actuator/health/liveness   # nu atinge DB-ul niciodată
+        port: 8080
+      periodSeconds: 10
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /actuator/health/readiness  # poate include db
+        port: 8080
+      periodSeconds: 5
+      failureThreshold: 3
+    ```
+
+    **Decizie de luat la readiness:** dacă incluzi DB în readiness, la următorul failover primești 503 (pod-urile scoase din endpoints) în loc de 502 — mai puțin rău, dar tot downtime perceput. Alternativa mai robustă: **readiness fără DB**, iar erorile de DB le tratezi în cereri (503 pe endpoint + retry cu backoff pe client). Pentru payments, unde cererile sunt tranzacții, recomand readiness cu DB + client cu retry — failover-urile RDS sunt rare și scurte.
+
+    ## Bonus: rezistență la failover
+
+    - HikariCP: setează `connection-timeout` mic (~3s) și `validation-timeout` — ca pool-ul să se recupereze rapid după failover, nu să stagneze
+    - Activează retry pe cererile critice (Spring Retry sau la client) — un failover de 40s cu retry poate fi invizibil pentru useri
+    - Dacă RDS-ul e Multi-AZ, failover-ul de 40s e normal, dar verifică dacă nu puteți avea reader endpoint / proxy (RDS Proxy reduce efectul failover-ului drastic)
+
+    ## Pentru echipă
+
+    Asta e al treilea incident în 4 zile, fiecare cu o cauză diferită dar toate în categoria "configurație default nepotrivită Kubernetes". Propun o tichet nouă de platform: **template standard de deployment** (probes separate liveness/readiness, preStop sleep, graceful shutdown, limits calibrate) aplicat la toate cele 25 de servicii — fiecare din cele 3 incidente ar fi fost prevenit de acest template. Vrei să-l adaug în lista de tichete?
+- user: |
+    deci scoatem verificarea DB din readiness? sau o lasam doar in liveness?
+  assistant: |
+    Niciuna din variantele astea — **DB-ul nu trebuie în niciun probe**. Să clarific de ce:
+
+    ## Liveness: niciodată DB (asta e sigur)
+
+    Verificarea DB în liveness e exact ce v-a produs incidentul: dependență externă picată → container omorât → restart care nu rezolvă nimic → 502 în plus pe durata pornirii. Asta nu se discută, se scoate.
+
+    ## Readiness: recomand să scoți și de aici
+
+    Argumentul: **ce câștigi practic când scozi pod-ul din endpoints la picarea DB-ului?**
+
+    - Toate pod-urile payments depind de același RDS. Dacă DB-ul pică, **toate** pod-urile devin not-ready simultan → **toate** scoase din endpoints → nginx nu mai are unde trimite → 502/503 pe tot serviciul. Exact ce aveți acum, doar cu un pas în plus.
+    - Readiness cu DB nu protejează userii de erori — doar le schimbă forma (502 în loc de 503 cu mesaj de eroare).
+    - În schimb, te costă: la un failover scurt de 40s, pod-urile care rămân în endpoints pot procesa cererile imediat ce DB revine, fără să aștepți ca probele să le redeclare ready (încă 5-15s de propagare).
+
+    **Cu DB scos din readiness, la următorul failover:** cererile care ajung la DB în cele 40s eșuează cu eroare rapidă și tratabilă (503 + retry), restul trec normal. Fără pod-uri omorâte, fără endpoints goale, fără fereastră de pornire JVM.
+
+    ## Cum arată configurația finală
+
+    ```yaml
+    livenessProbe:
+      httpGet:
+        path: /actuator/health/liveness   # doar "procesul e viu"
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /actuator/health/readiness  # fără db — doar "aplicația e pornită și configurată"
+      periodSeconds: 5
+    ```
+
+    În Spring Boot 3, cu health groups activate, `/actuator/health/readiness` include implicit doar liveness/readiness state — DB-ul rămâne în `/actuator/health` complet, pe care îl păstrezi pentru **monitoring și alertare** (alertă când `health` raportează DOWN pe componenta `db` — asta e locul unde vrei să afli de failover, nu în probe).
+
+    ## Compensarea: rezistență la nivel de cerere
+
+    Deoarece scoți DB din probes, erorile de DB ajung la user ca 5xx — le tratezi acolo:
+
+    1. **Retry cu backoff pe cererile de autorizare** (Spring Retry, `@Retryable` pe 2-3 încercări, backoff 500ms) — un failover de 40s nu se acoperă complet cu retry, dar cererile din momentele de instabilitate da
+    2. **Răspuns 503 curat, nu 500**, când DB e indisponibil — clientul/mobile app poate arăta "încercați din nou" în loc de eroare generică
+    3. **Opțional, pe termen lung: RDS Proxy** — menține pool-ul de conexiuni prin failover și reduce fereastra de eroare de la 40s la câteva secunde
+
+    ## Excepția de la regulă
+
+    Readiness cu DB are sens într-un singur scenariu: servicii care **cache-uiesc agresiv** și pot servi trafic util chiar și fără DB, dar vrei să le scoți din rotație când dependența pică. Payments nu e cazul ăsta — fiecare cerere atinge DB-ul.
+
+    Pe scurt: **scoate DB din ambele probe, ține-l în /actuator/health pentru alertare, și adaugă retry pe cereri.** Vrei să-ți scriu configurația completă de health groups + Spring Retry pentru payments?
+- user: |
+    HPA search: la 60% avem prea multe poduri noaptea si costa. hai sa punem 75% dar cu minReplicas 4 si scale-up mai agresiv. scrie-mi manifestul
+  assistant: |
+    Bună decizie — 75% + minReplicas 4 e un compromis rezonabil: noaptea stai la 4 pod-uri în loc de 6-7, iar la vârfuri scale-up-ul agresiv compensează ținta mai mare.
+
+    ```yaml
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    metadata:
+      name: search
+      namespace: shop
+    spec:
+      scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: search
+      minReplicas: 4
+      maxReplicas: 15
+      metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 75
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+          - type: Percent
+            value: 100        # dublează replicile
+            periodSeconds: 15
+          - type: Pods
+            value: 4          # sau +4 pod-uri, oricare e mai mare
+            periodSeconds: 15
+          selectPolicy: Max
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies:
+          - type: Percent
+            value: 25         # coboară max 25% din replici per minut
+            periodSeconds: 60
+    ```
+
+    Două nuanțe pe care le-am adăugat:
+
+    1. **`scaleDown` cu `Percent: 25` pe 60s** — în plus față de default, ca să nu coboare brusc noaptea și apoi să fie prins de un mic vârf tardiv. Cu `stabilizationWindowSeconds: 300` + coborâre graduală, scăderea spre 4 pod-uri noaptea e lină dar sigură.
+
+    2. **Cu ținta 75%, fereastra de degradare la spike e mai mare** decât la 60% — de asta scale-up-ul agresiv e esențial, nu opțional. Cu `Percent: 100` la 15s, de la 4 pod-uri ajungi la 8 în ~15-30s, apoi la 15 în încă ~30s dacă e nevoie.
+
+    Aplicare:
+
+    ```bash
+    kubectl apply -f search-hpa.yaml
+    kubectl get hpa search -n shop -w
+    ```
+
+    **De urmărit o săptămână:**
+
+    - **Noaptea** — trebuie să vezi 4 replici stabile (economia dorită)
+    - **La vârfuri** — p99 latency în primele 30-60s de spike; dacă tot sare spre 2s, problema e event loop blocking, nu HPA (punctul de la discuția anterioară rămâne valabil)
+    - **Flapping** — dacă vezi pod-uri care pornesc/opresc des la granița de 75%, urcă ținta la 78-80% sau mărește `stabilizationWindowSeconds` la scaleDown
+
+    Dacă noaptea chiar și 4 pod-uri ți se pare mult, următorul pas natural e KEDA cu minim pe program (scale to 2 noaptea, minim 4 ziua) — dar vezi întâi cât economisești cu varianta asta.
+- user: |
+    scrie un runbook pt "502 pe ingress" cu toate cauzele pe care le-am vazut si cum le diferentiezi din loguri
+  assistant: |
+    # Runbook: 502 pe Ingress (nginx)
+
+    **Simptom:** erori 502 în logurile ingress-nginx, trafic către unul sau mai multe servicii din namespace `shop`.
+    **Severitate:** SEV2 dacă e intermitent (<5% din requesturi), SEV1 dacă e masiv (>20%) sau pe payments/checkout.
+
+    ---
+
+    ## Pasul 1: Identifică semnătura erorii din log
+
+    Toate cauzele produc 502, dar **mesajul de eroare din logul nginx e diferit**. Prinde mai multe exemple înainte de a trage concluzii:
+
+    ```bash
+    kubectl logs -n ingress-nginx <ingress-nginx-pod> | grep ' 502 ' | tail -20
+    ```
+
+    | Mesaj în log | Cauză | Secțiune |
+    |---|---|---|
+    | `upstream prematurely closed connection while reading response header` | Keepalive race (Node) sau procesul crapă în mijlocul requestului | A |
+    | `connect() failed (111: Connection refused)` | Procesul nu ascultă pe port — pod pornind/restartat | B |
+    | `upstream timed out` | Serviciul lent/blocat (nu e strict 502, dar apare în aceeași investigație) | E |
+    | `no live upstreams` | Toate pod-urile serviciului sunt not-ready | C |
+
+    ---
+
+    ## Pasul 2: Context rapid (30 de secunde)
+
+    Răspunde la aceste întrebări înainte de diagnosticarea detaliată:
+
+    ```bash
+    # 1. Pod-urile serviciului afectat restartează?
+    kubectl get pods -n shop -l app=<serviciu>    # coloana RESTARTS
+
+    # 2. A fost deploy recent?
+    kubectl get events -n shop --sort-by=.lastTimestamp | grep -i <serviciu>
+
+    # 3. 502-urile sunt corelate cu deploy-uri sau cu evenimente externe (failover DB)?
+    ```
+
+    **Regula de decizie rapidă:**
+    - 502 doar în ferestre de deploy → **Cauza C** (graceful shutdown)
+    - 502 uniform distribuite, procent mic, constant → **Cauza A** (keepalive)
+    - 502 în burst, corelat cu restart-uri → **Cauza B** (pod pornind / OOMKilled)
+    - 502 corelat cu un eveniment de infrastructură (RDS failover, redis restart) → **Cauza D** (liveness pe dependențe)
+
+    ---
+
+    ## Cauza A: Keepalive race (Node.js + nginx)
+
+    **Semnătură:** `upstream prematurely closed connection`, procent mic (0,5–2%), uniform în timp, doar spre servicii Node.
+
+    **Mecanism:** nginx ține conexiuni keepalive către upstream 60s; Node închide conexiunile idle după `keepAliveTimeout` default **5s**. Requestul care cade exact pe fereastra de închidere pierde.
+
+    **Diagnostic:**
+    ```bash
+    # pod-urile NU restartează, dar 502-urile continuă
+    kubectl get pods -n shop -l app=<serviciu>
+
+    # confirmă că serviciul e Node și nu are timeout setat
+    grep -r "keepAliveTimeout" <repo-ul serviciului>/src/
+    ```
+
+    **Fix:** în codul care pornește serverul:
+    ```js
+    server.keepAliveTimeout = 65000;   // > 60s nginx
+    server.headersTimeout = 66000;     // > keepAliveTimeout
+    ```
+
+    **Verificare:** zero `upstream prematurely closed` timp de 24h. Ref: incident search, 10.11.
+
+    ---
+
+    ## Cauza B: Pod pornind sau restartat (Connection refused)
+
+    **Semnătură:** `connect() failed (111: Connection refused)`, în burst-uri de 20–60s, corelat cu restart-uri.
+
+    **Mecanism:** procesul nu ascultă pe port. Cauze: OOMKill, crash, sau pornire lentă (JVM 20–40s) în timp ce nginx mai are vechiul IP în endpoints.
+
+    **Diagnostic:**
+    ```bash
+    # cine restartează și de ce
+    kubectl describe pod <pod> -n shop          # caută OOMKilled, exit 137
+    kubectl logs <pod> -n shop --previous | tail -30
+
+    # dacă e OOMKilled → urmează runbook-ul de OOM (heap dump, limits)
+    # dacă e crash de aplicație → investighează stack trace-ul din --previous
+    ```
+
+    **Fix:**
+    - OOMKilled → recalibrează limits (vezi runbook OOM; tichet #4 postmortem)
+    - Pornire lentă → verifică `readinessProbe.initialDelaySeconds` și că probele nu declanșează restart-uri inutile
+
+    **Verificare:** Restart Count stabil, fără OOMKilled în events.
+
+    ---
+
+    ## Cauza C: Rolling update fără graceful shutdown
+
+    **Semnătură:** `connect() failed (111: Connection refused)` sau `prematurely closed`, **doar în ferestrele de deploy**, durează cât pornirea pod-ului nou.
+
+    **Mecanism:** pod-ul vechi se termină înainte ca nginx să afle că a fost scos din endpoints; cererile în zbor sau cele rute către IP-ul mort eșuează.
+
+    **Diagnostic:**
+    ```bash
+    kubectl rollout history deployment/<serviciu> -n shop
+    # corelează timestamp-ul deploy-ului cu 502-urile din logul nginx
+    ```
+
+    **Fix — template standard de deployment:**
+    ```yaml
+    lifecycle:
+      preStop:
+        exec:
+          command: ["sh", "-c", "sleep 10"]   # timp pentru propagarea endpoints
+    # plus, pentru Spring Boot:
+    # server.shutdown: graceful + timeout-per-shutdown-phase: 20s
+    ```
+
+    **Verificare:** deploy de test → zero 502 în fereastra rollout-ului.
+
+    ---
+
+    ## Cauza D: Liveness probe pe dependențe externe (DB failover etc.)
+
+    **Semnătură:** `connect() failed (111: Connection refused)` în burst, **toate pod-urile simultan**, corelat cu un eveniment extern (RDS failover, Redis restart). Durată = durata evenimentului + timpul de pornire JVM.
+
+    **Mecanism:** health check-ul include DB → DB pică → liveness eșuează → kubelet omoară TOATE pod-urile → serviciul întreg repornește după ce DB revine. Distrugere auto-inflictată. Ref: incident payments, 12.11.
+
+    **Diagnostic:**
+    ```bash
+    # toate pod-urile serviciului au restartat în același interval?
+    kubectl get pods -n shop -l app=<serviciu> -o wide
+
+    # probele ating dependențe externe?
+    kubectl get deployment <serviciu> -n shop -o jsonpath='{.spec.template.spec.containers[0].livenessProbe}' | jq
+    # dacă path-ul e /health sau /actuator/health (complet) → suspect
+
+    # eveniment extern în acel interval? (RDS events, etc.)
+    ```
+
+    **Fix:**
+    ```yaml
+    livenessProbe:
+      httpGet:
+        path: /actuator/health/liveness   # NICIODATĂ dependențe externe
+    readinessProbe:
+      httpGet:
+        path: /actuator/health/readiness  # fără db; erorile de DB se tratează cu retry
+    ```
+    DB-ul rămâne în `/actuator/health` complet, doar pentru alertare. Adaugă retry cu backoff pe cererile critice.
+
+    **Verificare:** la următorul failover RDS → zero pod-uri restartate, doar erori 5xx tratabile pe cereri.
+
+    ---
+
+    ## Cauza E: Toate pod-urile not-ready (no live upstreams)
+
+    **Semnătură:** `no live upstreams while connecting to upstream` — cel mai sever: serviciul complet indisponibil.
+
+    **Diagnostic:**
+    ```bash
+    kubectl get endpoints <serviciu> -n shop        # gol sau fără adrese?
+    kubectl describe pod <pod> -n shop               # de ce e not-ready? (readiness fail, OOM, crash)
+    kubectl logs <pod> -n shop --previous | tail -30
+    ```
+
+    **Escaladare:** dacă endpoints e gol și pod-urile par sănătoase → verifică selectorul Service vs. label-urile pod-urilor (deploy recent cu label schimbat e cauza clasică).
+
+    ---
+
+    ## Escaladare și după-incident
+
+    1. **Nu găsești cauza în 15 minute** → capturează: loguri nginx (cu exemple), `kubectl get events`, starea pod-urilor, grafice de trafic/latență — și escaladează către platform
+    2. **Mitigare rapidă** dacă serviciul e degradat dar funcțional: restart `kubectl rollout restart deployment/<serviciu>` doar dacă suspectezi stare coruptă; altfel NU restarta — distrugi dovezile
+    3. **Post-incident:** adaugă incidentul la lista de cauze din runbook dacă e una nouă; verifică dacă tichetele preventive (template deployment, alerte restart/memorie) ar fi prevenit cazul
+
+    ## Legături
+
+    - Runbook OOMKilled (checkout, notification)
+    - Tichete postmortem #3, #6, #8 + template deployment (propus după incidentul payments)
+- user: |
+    ce SLO punem pt checkout? 99,9%?
+  assistant: |
+    99,9% e un punct de plecare rezonabil pentru checkout, dar hai să-l definim corect — un SLO bun are trei componente, nu doar un procent.
+
+    ## 1. Alege indicatorul (SLI) — cel mai important pas
+
+    Pentru checkout, nu măsura "uptime" — măsoară **succesul din perspectiva userului**:
+
+    **Availability SLI:** proporția de requesturi valide care primesc răspuns non-5xx:
+
+    ```
+    requests_fulfilled / total_valid_requests
+    ```
+
+    Atenție la detalii care schimbă numărul:
+    - **Exclude erorile clientului** (4xx) — un 402 "card refuzat" nu e incident de disponibilitate
+    - **Include timeout-urile ca eșecuri** — un request care moare după 30s e eșuat pentru user, chiar dacă tehnic "a răspuns"
+    - Dacă plățile trec prin provider extern (Stripe/Adyen), decizează explicit cum tratezi erorile lor — de obicei le incluzi, pentru că userul nu face diferența
+
+    **Latency SLI:** checkout-ul are două praguri relevante:
+    - **fast path:** 99% din requesturi sub ~500ms-1s (validări, calcule)
+    - **slow path:** 99% din autorizările de plată sub ~3s (include apelul spre provider)
+
+    ## 2. Ținta: 99,9% sau altceva?
+
+    Calculează ce înseamnă numeric:
+
+    | Țintă | Buget de eroare lunar (30 zile) |
+    |---|---|
+    | 99% | 7,2 ore |
+    | 99,9% | 43 minute |
+    | 99,95% | 21 minute |
+    | 99,99% | 4,3 minute |
+
+    Recomandarea mea: **99,9% availability + 99% sub 1s latency** e un start matur. Motive:
+
+    - **99,99% e capcană** pentru arhitectura voastră actuală: cu RDS failover de 40s, deploy-uri, și 3 incidente în 4 zile, ai arde bugetul de 4 minute dintr-un singur failover. Un SLO pe care nu-l poți ține demoralizează și blochează shipping-ul.
+    - **99,9% (43 min/lună)** e provocator dar realizabil — incidentul checkout de luni (3 crash-uri × ~2 min fiecare + BackOff) ar fi consumat cam 15-20% din bugetul lunar. Exact cât trebuie să doară ca să motiveze acțiunile preventive, fără să paralizeze.
+
+    ## 3. Bugetul de eroare — partea care contează cu adevărat
+
+    99,9% = 43 min/lună de erori "permise". Folosiți-l ca instrument de decizie:
+
+    - **Buget rămas > 50%** → echipa poate ship-ui feature-uri fără frică
+    - **Buget sub 25%** → prioritate la fiabilitate, feature freeze parțial pe serviciu
+    - **Buget epuizat** → doar fix-uri de fiabilitate până se recuperează
+
+    Practic, incidentul de luni ar fi ars ~15-20% din buget → nu blochează nimic, dar apare în review-ul lunar.
+
+    ## 4. Implementare practică
+
+    Cu Prometheus + ingress metrics pe care deja le aveți:
+
+    ```promql
+    # SLI availability (30d rolling)
+    sum(rate(nginx_ingress_controller_requests{service="checkout", status!~"5.."}[30d]))
+    /
+    sum(rate(nginx_ingress_controller_requests{service="checkout"}[30d]))
+    ```
+
+    Alertare pe **rata de ardere a bugetului**, nu pe SLO-ul brut (alertele pe SLO brut sunt prea lente):
+
+    - **Fast burn (14,4x):** ard 2% din buget în 1h → pagină on-call — înseamnă incident activ
+    - **Slow burn (6x):** ard 5% în 6h → tichet — degradare persistentă
+
+    ## 5. Ce să NU faci
+
+    - Nu promite SLO-ul clienților ca SLA contractual încă — mai întâi măsoară-l 2-3 luni, vezi ce realizezi real, apoi negociază
+    - Nu pune 100% pe nimic — blochează orice deploy
+    - Nu defini SLO doar pe availability — un serviciu "up" dar cu 5s latență e o experiență proastă
+
+    ## Concret
+
+    | SLO | Țintă | Fereastră |
+    |---|---|---|
+    | Availability (non-5xx pe requesturi valide) | 99,9% | 30 zile rolling |
+    | Latency fast path | 99% < 1s | 30 zile rolling |
+    | Latency autorizare plată | 99% < 3s | 30 zile rolling |
+
+    Începe cu astea în mod "informal" (dashboard + alerte pe burn rate), măsoară 2 luni, apoi formalizezi. Vrei configurația completă de alerte pe burn rate pentru Prometheus?
+- user: |
+    error budget pe 30 de zile la 99,9%, cate minute inseamna?
+  assistant: |
+    **43,2 minute** pe 30 de zile.
+
+    Calculul:
+
+    ```
+    30 zile × 24h × 60 min = 43.200 minute totale
+    43.200 × 0,1% = 43,2 minute de eroare permise
+    ```
+
+    Pentru referință rapidă, la alte ferestre:
+
+    | Fereastră | Timp total | Buget la 99,9% |
+    |---|---|---|
+    | 24h | 1.440 min | 1,44 min |
+    | 7 zile | 10.080 min | 10 min |
+    | 28 zile (4 săptămâni) | 40.320 min | 40,3 min |
+    | 30 zile | 43.200 min | **43,2 min** |
+    | 90 zile (trimestru) | 129.600 min | 129,6 min |
+
+    Două observații practice:
+
+    1. **43 de minute sună mult până când vezi cât consumă un incident.** Incidentul checkout de luni: 3 crash-uri × ~2 min de downtime fiecare + fereastra BackOff ≈ 10-15 minute → **25-35% din bugetul lunar** dintr-un singur incident dimineața. Un singur failover RDS de 40s cu pod-uri omorâte (cazul payments) ar fi adăugat încă 2-3 minute.
+
+    2. **Bugetul se consumă pe erori parțiale, nu doar pe downtime total.** Dacă 1% din requesturi eșuează timp de o oră, ai ars ~0,6 minute de buget (1% × 60 min) — de asta SLI-ul pe rată de requesturi e mai corect decât "serviciul era down X minute".
+
+    Dacă vrei să urmărești asta automat, metrica standard e "error budget remaining":
+
+    ```promql
+    # buget rămas (%)
+    1 - (
+      (1 - (
+        sum(rate(nginx_ingress_controller_requests{service="checkout", status!~"5.."}[30d]))
+        /
+        sum(rate(nginx_ingress_controller_requests{service="checkout"}[30d]))
+      )) / 0.001
+    ) * 100
+    ```
+
+    Când valoarea coboară sub 25%, declanșezi politica de "fiabilitate first" discutată mai devreme.
+- user: |
+    scrie un mesaj pe slack pt echipa de produs despre incidentele saptamanii, non-tehnic
+  assistant: |
+    Salut, echipa! 👋
+
+    Un rezumat scurt al săptămânii din partea noastră, fără jargon tehnic — pentru că ați simțit probabil efectele și merită să știți ce s-a întâmplat:
+
+    **Ce a fost:**
+
+    🛒 **Luni — checkout-ul a picat intermitent** (~2 ore, dimineața). Coșurile de cumpărături s-au acumulat în memorie până a umplut serverul. Am găsit cauza și am reparat-o — era o listă de sesiuni care nu se mai curăța niciodată.
+
+    🔍 **Marți — erori intermitente la căutare** (~1% din căutări). O problemă de comunicare între două componente, ca un telefon care se închide exact când suni. Reparat.
+
+    💳 **Miercuri — plățile au fost indisponibile ~1 minut.** Baza de date a făcut o comutare automată de siguranță, iar serverul nostru a reacționat prea dur — a repornit tot, deși nu era nevoie. Am corectat reacția.
+
+    **Ce înseamnă pentru voi:**
+
+    - Toate cele 3 probleme au fost **reparate** — nu mai sunt active
+    - Nicio dată de client nu a fost afectată
+    - Din aceste incidente am scos o listă de **8 măsuri preventive** (alerte mai bune, configurare standardizată) pe care le executăm în săptămânile următoare
+
+    **Ce ne-am propus în continuare:**
+
+    Vrem ca data viitoare să aflăm de probleme **înainte** să le simțiți voi sau clienții — punem alarme care ne trezesc la primele semne, nu după ce ceva crapă.
+
+    Întrebări? Suntem aici. Și dacă ați primit reclamații de la clienți legate de astea, ne-ar ajuta să le știm — ne ajută să prioritizăm. 🙏
+- user: |
+    mai scurt si fara emoji
+  assistant: |
+    Salut, echipa!
+
+    Rezumat al săptămânii din partea noastră:
+
+    **Luni** — checkout-ul a picat intermitent ~2 ore dimineața. Cauza: sesiunile de coș se acumulau în memorie până a umplut serverul. Reparat.
+
+    **Marți** — erori intermitente la căutare (~1% din căutări). Problemă de comunicare între componente. Reparat.
+
+    **Miercuri** — plățile au fost indisponibile ~1 minut din cauza unei comutări automate a bazei de date. Serverul nostru a reacționat prea dur și a repornit deși nu era nevoie. Corectat.
+
+    Toate cele 3 probleme sunt rezolvate, nicio dată de client nu a fost afectată. Am scos din ele 8 măsuri preventive pe care le executăm în săptămânile următoare — în principal alerte mai bune, ca să aflăm de probleme înainte să le simțiți voi sau clienții.
+
+    Dacă ați primit reclamații legate de astea, spuneți-ne — ne ajută la prioritizare.
+- user: |
+    helm: acum avem values separate per environment copiate de mana. kustomize sau helmfile?
+  assistant: |
+    Recomandarea mea: **rămâi la Helm și rezolvă problema cu structura de values, nu cu un alt tool.** Kustomize și helmfile rezolvă ambele o problemă reală, dar cea a voastră — values copiate de mână — se rezolvă mai simplu.
+
+    ## Mai întâi: ce problemă ai de fapt
+
+    "Values separate per environment copiate de mână" — problema e **duplicarea și drift-ul**, nu tool-ul. Dacă ai `values-prod.yaml`, `values-staging.yaml`, `values-dev.yaml` în care 80% din conținut se repetă și modifici în 3 locuri, orice tool care păstrează structura asta doar mută problema.
+
+    ## Opțiunea 1 (recomandat): values ierarhice, zero tool-uri noi
+
+    Helm suportă nativ suprapunerea de values, de la cel mai generic la cel mai specific:
+
+    ```bash
+    helm upgrade --install checkout ./charts/checkout \
+      -f values/common.yaml \        # 80% — shared între toate env-urile
+      -f values/staging.yaml \       # diferențele env-ului
+      -f values/staging-eu.yaml      # (opțional) diferențele de regiune
+    ```
+
+    Structura:
+
+    ```
+    values/
+      common.yaml        # replicas, resources, env vars comune
+      dev.yaml           # doar ce diferă: 1 replica, limits mici
+      staging.yaml       # doar ce diferă
+      prod.yaml          # doar ce diferă: minReplicas, limits, alerte
+    ```
+
+    Regula de aur: **un fișier de environment conține doar ce diferă de common.** Dacă ai 200 de linii în `prod.yaml` și 10 diferă, ai pierdut punctul. Cu asta, "copiat de mână" dispare — modifici în common, ajunge peste tot.
+
+    Plus, pentru valorile care chiar diferă, verifică drift-ul:
+
+    ```bash
+    helm diff upgrade checkout ./charts/checkout -f values/common.yaml -f values/prod.yaml
+    ```
+
+    (plugin-ul `helm-diff` — obligatoriu oricum, vezi mai jos)
+
+    ## Opțiunea 2: helmfile — dacă ai multe releases
+
+    Helmfile are sens când ai **multe charts de gestionat dintr-un singur loc** — și cu 25 de servicii, e cazul vostru:
+
+    ```yaml
+    # helmfile.yaml
+    releases:
+    - name: checkout
+      namespace: shop
+      chart: ./charts/checkout
+      values:
+      - values/common.yaml
+      - values/{{ .Environment.Name }}.yaml
+
+    environments:
+      dev: {}
+      staging: {}
+      prod: {}
+    ```
+
+    ```bash
+    helmfile -e prod apply
+    ```
+
+    Avantaje: un singur comand pentru tot clusterul, diff-uri pe toate releases, environments first-class. Dezavantaje: încă un layer de abstractizare, curba de învățare pentru echipă, și template-uri Go în YAML care devin greu de citit dacă exagerezi.
+
+    ## Opțiunea 3: kustomize — doar dacă vrei să renunți la Helm
+
+    Kustomize nu se combină natural cu Helm (există post-rendering, dar e complicat). Are sens doar dacă ați renunța la charts și ați trece pe manifests raw + overlays per environment. Pentru voi asta înseamnă rescrierea a 25 de servicii — nu merită doar pentru values management.
+
+    ## Recomandarea concretă
+
+    1. **Acum:** restructurează values pe common + per-env (o zi de lucru pentru 25 de servicii, mecanic)
+    2. **Instalează helm-diff** și fă `helm diff upgrade` parte din proces înainte de orice apply pe prod
+    3. **Dacă gestionarea a 25 de releases din mână devine dureroasă** (deploy-uri în ordine, versiuni divergente între env-uri) → adaugă helmfile deasupra structurii existente. Structura de values de la pasul 1 se reutilizează identic în helmfile.
+    4. **CI/CD:** indiferent de variantă, apply-urile pe prod ar trebui să meargă prin pipeline (GitLab CI/GitHub Actions/ArgoCD), nu de pe laptop — asta elimină definitiv "copiat de mână"
+
+    Dacă întrebi "ArgoCD?" — e pasul următor logic (GitOps, sync automat din git), dar e o decizie mai mare; pentru problema actuală, pașii 1-2 sunt suficienti. Vrei un exemplu de structură completă de repo cu values ierarhice pentru unul din serviciile voastre?
+- user: |
+    mergem pe helmfile. structura de foldere completa pt dev, staging, prod
+  assistant: |
+    # Structură completă repo Helmfile
+
+    ```
+    k8s-deploy/
+    ├── helmfile.yaml                      # entrypoint: environments + releases
+    ├── environments/
+    │   ├── dev/
+    │   │   ├── values.yaml                # defaults dev (toate serviciile)
+    │   │   └── overrides/                 # (opțional) per-serviciu, doar diferențe
+    │   │       └── checkout.yaml
+    │   ├── staging/
+    │   │   ├── values.yaml
+    │   │   └── overrides/
+    │   │       └── checkout.yaml
+    │   └── prod/
+    │       ├── values.yaml
+    │       └── overrides/
+    │           ├── checkout.yaml
+    │           └── payments.yaml
+    ├── charts/                            # charts-urile voastre proprii
+    │   ├── checkout/
+    │   │   ├── Chart.yaml
+    │   │   ├── values.yaml                # defaults serviciu (base)
+    │   │   └── templates/
+    │   ├── search/
+    │   ├── payments/
+    │   └── ... (25 total)
+    ├── vendor/                            # charts externe versionate
+    │   └── ingress-nginx.yaml             # ca Chart.yaml cu dependencies
+    └── .gitlab-ci.yml / .github/          # pipeline per environment
+    ```
+
+    ## helmfile.yaml
+
+    ```yaml
+    ---
+    environments:
+      dev:
+        missingFileHandler: Warn
+      staging:
+        missingFileHandler: Warn
+      prod:
+        missingFileHandler: Error
+
+    # defaults per environment, aplicate tuturor releases
+    helmDefaults:
+      wait: true
+      timeout: 300
+      createNamespace: false
+
+    templates:
+      shop-service: &shop-service
+        namespace: shop
+        chart: ./charts/{{`{{ .Release.Name }}`}}
+        version: {{ .Environment.Values | get "chartVersion" nil }}
+        # values în ordinea de suprapunere: base → env → override per serviciu
+        values:
+          - charts/{{`{{ .Release.Name }}`}}/values.yaml
+          - environments/{{`{{ .Environment.Name }}`}}/values.yaml
+          - environments/{{`{{ .Environment.Name }}`}}/overrides/{{`{{ .Release.Name }}`}}.yaml
+        # secrets injectate din SSM/Vault, nu în git
+        secrets:
+          - secrets/{{`{{ .Environment.Name }}`}}/{{`{{ .Release.Name }}`}}.yaml
+
+    releases:
+      # infrastructură — doar unde trebuie, cu label separat
+      - name: ingress-nginx
+        namespace: ingress-nginx
+        chart: ./vendor/ingress-nginx
+        version: 4.11.0
+        labels:
+          tier: infra
+        values:
+          - environments/{{`{{ .Environment.Name }}`}}/infra/ingress-nginx.yaml
+
+      # cele 25 de servicii — un bloc fiecare, minimal
+      - <<: *shop-service
+        name: checkout
+        labels:
+          tier: services
+          criticality: high
+
+      - <<: *shop-service
+        name: search
+        labels:
+          tier: services
+          criticality: medium
+
+      - <<: *shop-service
+        name: payments
+        labels:
+          tier: services
+          criticality: high
+
+      # ... restul de 22
+    ```
+
+    ## Exemplu: values ierarhice pentru checkout
+
+    **`charts/checkout/values.yaml`** — base, valori neutre:
+
+    ```yaml
+    replicaCount: 2
+    image:
+      repository: <registry>/checkout
+      tag: latest          # întotdeauna suprascris per env
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        memory: 1Gi
+    ```
+
+    **`environments/dev/values.yaml`** — tot ce e specific dev, pentru toate serviciile:
+
+    ```yaml
+    image:
+      tag: dev-latest
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+    autoscaling:
+      enabled: false
+    ```
+
+    **`environments/prod/values.yaml`**:
+
+    ```yaml
+    image:
+      tag: ""              # obligatoriu setat per release în pipeline, niciodată latest
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 4
+      maxReplicas: 15
+      targetCPUUtilizationPercentage: 75
+    ```
+
+    **`environments/prod/overrides/checkout.yaml`** — doar ce diferă de prod-ul generic:
+
+    ```yaml
+    # checkout are nevoie de mai multă memorie (leak-ul reparat, dar calibrat)
+    resources:
+      limits:
+        memory: 1536Mi
+    ```
+
+    ## Reguli care fac structura să funcționeze
+
+    1. **Override-urile per serviciu conțin doar diferențe.** Dacă un fișier de override are >20 de linii, probabil valoarea respectivă ar trebui mutată în base sau în env values.
+    2. **`missingFileHandler: Error` pe prod** — un override referențiat greșit crapă la plan, nu la deploy.
+    3. **Secrets nu în git** — helmfile are suport nativ pentru `helm-secrets` cu SSM/Vault/SOPS. Fișierele din `secrets/` sunt doar referințe.
+    4. **Tag-ul de imagine vine din pipeline**, nu e hardcodat — la deploy, CI-ul injectează `--set image.tag=$CI_COMMIT_SHA` sau scrie valoarea în override-ul de env (GitOps-friendly).
+
+    ## Comenzi de zi cu zi
+
+    ```bash
+    # vezi ce s-ar schimba (obligatoriu înainte de prod)
+    helmfile -e prod diff
+
+    # aplică un singur serviciu
+    helmfile -e prod --label name=checkout apply
+
+    # aplică doar serviciile critice
+    helmfile -e prod --label criticality=high apply
+
+    # tot environment-ul
+    helmfile -e staging apply
+    ```
+
+    ## Pipeline (schimbarea tag-ului = deploy)
+
+    ```yaml
+    # .gitlab-ci.yml (schiță)
+    deploy-staging:
+      stage: deploy
+      script:
+        - helmfile -e staging --label name=$SERVICE apply --set image.tag=$CI_COMMIT_SHA
+      environment: staging
+
+    deploy-prod:
+      stage: deploy
+      script:
+        - helmfile -e prod diff --set image.tag=$CI_COMMIT_SHA
+        - helmfile -e prod --label name=$SERVICE apply --set image.tag=$CI_COMMIT_SHA
+      environment: prod
+      when: manual        # aprobare manuală spre prod
+    ```
+
+    ## Ordinea de migrare
+
+    1. Începe cu **2-3 servicii** (checkout, search, payments — le cunoașteți bine după săptămâna asta)
+    2. Rulează `helmfile diff` vs. ce e deployat acum — corectează diferențele până diff e curat
+    3. Adaugă restul de 22 treptat, câte 5-6 pe săptămână
+    4. Când totul e în helmfile, **interziceți `helm upgrade` manual** pe cluster (RBAC sau convenție) — altfel drift-ul revine
+
+    Vrei și configurația helm-secrets cu SSM pentru partea de credentials, sau exemplul de CI complet?
+- user: |
+    ```
+    Error: UPGRADE FAILED: another operation (install/upgrade/rollback) is in progress
+    in ./helmfile.yaml: failed processing release checkout-service: command "/usr/local/bin/helm" exited with non-zero status
+    ```
+  assistant: |
+    E o stare blocată de Helm: un upgrade anterior a eșuat la mijloc (timeout, conexiune întreruptă, pod-uri care nu au ajuns Ready) și release-ul a rămas în stare `pending-upgrade`. Helm refuză orice operațiune nouă pe acel release până cureți starea.
+
+    ## Diagnostic
+
+    ```bash
+    # vezi istoricul release-ului — caută status pending-upgrade / pending-install / pending-rollback
+    helm history checkout-service -n shop
+
+    # confirmă ce release-uri sunt blocate în tot clusterul
+    helm list -n shop -a | grep -i pending
+    ```
+
+    ## Fix
+
+    **Varianta 1: rollback la ultima revizie bună** (preferat — păstrezi istoricul curat):
+
+    ```bash
+    # identifică ultima revizie cu status deployed din history
+    helm rollback checkout-service <ultima-revizie-deployed> -n shop --wait --timeout 300s
+    ```
+
+    **Varianta 2: dacă rollback-ul și el dă aceeași eroare** — ștergi secretul care ține lock-ul. Helm ține starea în secrets de tip `sh.helm.release.v1.<release>.v<N>`:
+
+    ```bash
+    kubectl get secrets -n shop | grep sh.helm.release.v1.checkout-service
+
+    # găsește secretul reviziei pending (cea mai mare versiune cu status pending)
+    # și șterge DOAR acea revizie:
+    kubectl delete secret sh.helm.release.v1.checkout-service.v<NR> -n shop
+    ```
+
+    Apoi rulează din nou `helmfile apply` — va crea o revizie nouă, curată.
+
+    **Varianta 3 (nucleară, evită):** `helm uninstall` + reinstall — pierzi istoricul și, la charts cu `helm.sh/resource-policy: keep` sau hooks, poți lăsa resurse orfane. Folosește-o doar dacă 1 și 2 eșuează ambele.
+
+    ## De ce s-a blocat — verifică și asta
+
+    Starea pending apare de obicei din:
+
+    1. **`--wait` cu timeout prea mic** — helmfile-ul vostru are `wait: true, timeout: 300`. Dacă checkout-service (JVM) nu devine Ready în 300s, upgrade-ul crapă la mijloc. După incidentele cu OOM de săptămâna asta, verifică dacă pod-urile pornesc suficient de repede:
+
+    ```bash
+    kubectl get pods -n shop -l app.kubernetes.io/instance=checkout-service
+    ```
+
+    2. **Un alt proces helm rulat simultan** — doi oameni sau CI + om pe același release. De aici importanța ca apply-urile să treacă doar prin pipeline (punctul din migrare).
+
+    3. **CrashLoopBackOff pe pod-urile noi** — upgrade-ul așteaptă Ready, pod-ul nu ajunge niciodată, timeout, stare pending. Dacă e cazul, `kubectl describe pod` îți spune de ce (OOMKilled din nou?).
+
+    ## Prevenție
+
+    - Mărește `timeout` la 600 în `helmDefaults` pentru serviciile Java — pornirea JVM + readiness pe noduri aglomerate poate depăși 300s
+    - Asigură-te că deploy-urile pe un release merg exclusiv prin CI — un singur writer per release
+    - Adaugă în pipeline un pas de pre-check: `helm history` + fail fast dacă există stare pending, cu mesaj clar pentru on-call
+
+    După curățare, rulează `helmfile -e prod --label name=checkout-service diff` înainte de apply, ca să vezi exact ce va schimba.
+- user: |
+    terraform: vreau un node group nou de spot pt EKS, cod complet
+  assistant: |
+    # Terraform: Spot Node Group pentru EKS
+
+    Cod complet cu variabilă dedicată, IAM role proprie și configurare pentru mix de instance types (esențial la spot — diversitatea crește șansa de capacitate):
+
+    ## `variables.tf`
+
+    ```hcl
+    variable "cluster_name" {
+      description = "Numele clusterului EKS"
+      type        = string
+    }
+
+    variable "subnet_ids" {
+      description = "Subnet-urile unde se creează node group-ul (private recommended)"
+      type        = list(string)
+    }
+
+    variable "spot_node_group" {
+      description = "Configurare spot node group"
+      type = object({
+        name            = string
+        min_size        = number
+        max_size        = number
+        desired_size    = number
+        instance_types  = list(string)
+        labels          = map(string)
+        kubernetes_version = optional(string)
+      })
+      default = {
+        name           = "spot-services"
+        min_size       = 3
+        max_size       = 10
+        desired_size   = 6
+        instance_types = ["m5.xlarge", "m5a.xlarge", "m6i.xlarge", "m6a.xlarge"]
+        labels = {
+          workload-type = "spot-tolerant"
+          capacity-type = "spot"
+        }
+      }
+    }
+    ```
+
+    ## `main.tf`
+
+    ```hcl
+    data "aws_eks_cluster" "this" {
+      name = var.cluster_name
+    }
+
+    # IAM role pentru node group — separat de cel on-demand, ca să poți
+    # restricționa permisiuni diferit dacă e nevoie
+    resource "aws_iam_role" "spot_nodes" {
+      name = "${var.cluster_name}-spot-node-role"
+
+      assume_role_policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [{
+          Action = "sts:AssumeRole"
+          Effect = "Allow"
+          Principal = {
+            Service = "ec2.amazonaws.com"
+          }
+        }]
+      })
+    }
+
+    # Politici obligatorii pentru ca nodurile să se înregistreze în cluster
+    resource "aws_iam_role_policy_attachment" "spot_nodes_worker" {
+      role       = aws_iam_role.spot_nodes.name
+      policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+    }
+
+    resource "aws_iam_role_policy_attachment" "spot_nodes_cni" {
+      role       = aws_iam_role.spot_nodes.name
+      policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+    }
+
+    resource "aws_iam_role_policy_attachment" "spot_nodes_ecr" {
+      role       = aws_iam_role.spot_nodes.name
+      policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+    }
+
+    # SSM — opțional dar recomandat (acces la noduri fără SSH)
+    resource "aws_iam_role_policy_attachment" "spot_nodes_ssm" {
+      role       = aws_iam_role.spot_nodes.name
+      policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    }
+
+    resource "aws_eks_node_group" "spot" {
+      cluster_name    = data.aws_eks_cluster.this.name
+      node_group_name = var.spot_node_group.name
+      node_role_arn   = aws_iam_role.spot_nodes.arn
+      subnet_ids      = var.subnet_ids
+
+      # ASTA e esențialul: capacity type SPOT
+      capacity_type  = "SPOT"
+      instance_types = var.spot_node_group.instance_types
+
+      scaling_config {
+        desired_size = var.spot_node_group.desired_size
+        min_size     = var.spot_node_group.min_size
+        max_size     = var.spot_node_group.max_size
+      }
+
+      # etichete k8s pe noduri — pentru nodeSelector/affinity în deployments
+      labels = var.spot_node_group.labels
+
+      update_config {
+        max_unavailable = 2   # la upgrade-uri, evacuează max 2 noduri simultan
+      }
+
+      # versiunea nodurilor = versiunea clusterului (implicit)
+      # version = var.spot_node_group.kubernetes_version
+
+      tags = {
+        Name              = "${var.cluster_name}-spot"
+        "k8s.io/cluster-autoscaler/enabled" = "true"
+        "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
+      }
+
+      lifecycle {
+        # instance_types se schimbă frecvent la spot — ignoră drift-ul
+        # ca să nu recreeze node group-ul la fiecare plan
+        ignore_changes = [instance_types]
+      }
+
+      depends_on = [
+        aws_iam_role_policy_attachment.spot_nodes_worker,
+        aws_iam_role_policy_attachment.spot_nodes_cni,
+        aws_iam_role_policy_attachment.spot_nodes_ecr,
+      ]
+    }
+    ```
+
+    ## `outputs.tf`
+
+    ```hcl
+    output "spot_node_group_arn" {
+      value = aws_eks_node_group.spot.arn
+    }
+
+    output "spot_node_group_status" {
+      value = aws_eks_node_group.spot.status
+    }
+    ```
+
+    ## Utilizare
+
+    ```hcl
+    module "spot_nodes" {
+      source = "./modules/spot-node-group"
+
+      cluster_name = "shop-prod"
+      subnet_ids   = module.vpc.private_subnets
+
+      spot_node_group = {
+        name           = "spot-services"
+        min_size       = 3
+        max_size       = 10
+        desired_size   = 6
+        instance_types = ["m5.xlarge", "m5a.xlarge", "m6i.xlarge", "m6a.xlarge"]
+        labels = {
+          workload-type = "spot-tolerant"
+          capacity-type = "spot"
+        }
+      }
+    }
+    ```
+
+    ## Cum direcționezi workload-urile pe spot
+
+    În deployment-urile serviciilor spot-tolerante (search, batch, CI):
+
+    ```yaml
+    spec:
+      template:
+        spec:
+          nodeSelector:
+            capacity-type: spot
+          # opțional: toleranță dacă adaugi taint pe noduri
+          tolerations:
+          - key: "spot-instance"
+            operator: "Exists"
+            effect: "NoSchedule"
+    ```
+
+    ## Note importante
+
+    1. **Diversitatea instance types e critică la spot.** Cu un singur tip, când capacitatea dispare, pierzi tot node group-ul. Cu 4 tipuri din 2 familii (m5/m6i Intel, m5a/m6a AMD), riscul scade drastic. Terraform le tratează ca un singur pool — AWS alege cel mai ieftin disponibil.
+
+    2. **`ignore_changes = [instance_types]`** — AWS modifică uneori tipurile disponibile; fără asta, `terraform plan` îți arată recreezări nedorite.
+
+    3. **Cluster Autoscaler vs Karpenter.** Node group-ul ăsta funcționează cu Cluster Autoscaler (tag-urile `k8s.io/cluster-autoscaler/*` sunt pentru el). Dacă ajungeți la Karpenter (recomandarea de la discuția de costuri), Karpenter gestionează nodurile direct și node group-ul devine redundant — țineți cont în planificare.
+
+    4. **PDB-uri înainte de migrare** — repet punctul din discuția de costuri: fără PodDisruptionBudget, o întrerupere spot poate lua mai multe pod-uri din același serviciu simultan.
+
+    5. **Nu pune pe spot:** ingress-nginx, monitoring, baze de date, servicii cu stare. Folosește `nodeSelector: capacity-type: on-demand` (sau lipsa selectorului + taint pe spot) pentru ele.
+
+    Vrei și configurația de taints pe nodurile spot (ca să forțezi explicit opt-in per serviciu), sau exemplul de PodDisruptionBudget pentru serviciile migrate?
+- user: |
+    ```
+    Error: creating EKS Node Group (shop-prod:spot-general): InvalidParameterException: Instance type t3.large is not supported for capacity type SPOT in this configuration. Specify at least 2 instance types with similar vCPU and memory.
+    ```
+  assistant: |
+    Eroarea e clară: **node group-urile EKS de tip SPOT cer minim 2 instance types cu vCPU/memorie similare** — AWS le folosește ca pool comun, ca să aibă de unde alege când capacitatea spot dispare pentru un tip. Tu ai trimis un singur tip (`t3.large`), sau tipuri prea diferite între ele.
+
+    ## Fix-ul
+
+    ```hcl
+    instance_types = ["t3.large", "t3a.large"]
+    ```
+
+    `m5.xlarge` + `m5a.xlarge` merge pentru că sunt identice ca vCPU/memorie (4 vCPU / 16GB), doar CPU vendor diferă (Intel vs AMD). Regula practică: **același size din familii echivalente**:
+
+    | Combinări valide | vCPU / RAM |
+    |---|---|
+    | `t3.large` + `t3a.large` | 2 / 8 |
+    | `t3.xlarge` + `t3a.xlarge` | 4 / 16 |
+    | `m5.xlarge` + `m5a.xlarge` + `m6i.xlarge` + `m6a.xlarge` | 4 / 16 |
+    | `m5.large` + `m5a.large` + `m6a.large` | 2 / 8 |
+
+    **Combinări care NU merg:** `t3.large` + `m5.xlarge` (2 vCPU vs 4 vCPU — prea diferite), sau `t3.large` singur.
+
+    ## Două recomandări în plus
+
+    **1. Gândește-te dacă vrei chiar t3 (burstable).** T3 folosește credite CPU — sub load constant, CPU-ul e throttled la nivelul baseline (~30% pentru t3.large). Pentru servicii web cu trafic variabil e ok, dar pentru servicii cu CPU constant (search la vârfuri, procesări) vezi throttling fără să înțelegi de ce. Dacă node group-ul ăsta e pentru serviciile generale din `shop`, m5/m6a large sau xlarge e alegere mai sigură:
+
+    ```hcl
+    instance_types = ["m5.large", "m5a.large", "m6a.large"]
+    ```
+
+    **2. Nu pune un singur size "ca să fie simplu".** Dacă vrei flexibilitate între 2 și 4 vCPU, creează **două node groups spot** (unul large, unul xlarge) — EKS nu permite mixul în același group, dar Karpenter (recomandarea de la discuția de costuri) rezolvă elegant exact asta: un singur pool, orice combinație de tipuri, alege automat cel mai ieftin disponibil.
+
+    Aplică fix-ul, `terraform plan` ar trebui să treacă. Dacă după creare vezi nodurile, verifică-le:
+
+    ```bash
+    kubectl get nodes -L node.kubernetes.io/instance-type,capacity-type
+    ```
+- user: |
+    ce tipuri de instante pun in mix ca sa nu le pierdem pe toate deodata cand AWS le ia inapoi?
+  assistant: |
+    Principiul: AWS alocă capacitate spot în **pool-uri separate per tip de instanță, per AZ**. Două tipuri din familii diferite = pool-uri diferite = probabilitate mică ca AWS să recupereze capacitatea din toate simultan. Deci vrei diversitate pe **familie și generație**, nu doar pe vendor.
+
+    ## Mix-ul recomandat pentru profilul vostru (echivalent 4 vCPU / 16GB)
+
+    ```hcl
+    instance_types = [
+      "m5.xlarge",   # Intel, generația 5
+      "m5a.xlarge",  # AMD, generația 5
+      "m6a.xlarge",  # AMD, generația 6
+      "m6i.xlarge",  # Intel, generația 6
+    ]
+    ```
+
+    De ce funcționează ăsta:
+
+    - **2 vendori CPU** (Intel + AMD) — pool-urile fizice sunt pe hardware diferit
+    - **2 generații** (m5 + m6) — capacitatea se eliberează independent
+    - **Prețuri spot similare** — AWS alege oricum cel mai ieftin, deci toate 4 sunt folosite efectiv
+
+    ## Ce să eviți
+
+    **1. Tipuri din aceeași "familie fizică".** `m5.xlarge` + `m5d.xlarge` + `m5n.xlarge` par diferite, dar partajează în mare parte același hardware/pool — când AWS recuperează m5, le pierzi pe toate trei aproape simultan.
+
+    **2. Un singur vendor.** Doar Intel (m5+m6i) sau doar AMD (m5a+m6a) = diversitate pe jumătate.
+
+    **3. Prea multe tipuri.** Peste ~6-8 tipuri, AWS alege doar cele mai ieftine 2-3 oricum, iar restul sunt decorativ. 4-6 e sweet spot.
+
+    **4. Tipuri foarte ieftine "doar că-s ieftine".** Dacă adaugi un tip cu discount spot mare dar capacitate volatilă (ex. a1, m6g — Graviton), verifică mai întâi că imaginile și workload-urile voastre merg pe ARM. Graviton (m7g) e excelent la preț, dar e o decizie separată, nu un mix de urgență.
+
+    ## Verifică înainte de alegere: Spot Placement Score
+
+    Consola AWS → EC2 → Spot Requests → **Spot placement score** — dă-i cerințele tale (vCPU, memorie, regiune) și îți arată un scor 0-10 pentru fiecare combinație de tipuri. Testează mix-ul propus acolo înainte de apply.
+
+    Și **Spot Advisor** (aceeași secțiune) arată rata de întrerupere per tip — evită tipurile cu >10-15% (de obicei cele foarte populare/ieftine).
+
+    ## Strategia completă anti-pierdere-totală
+
+    Diversitatea tipurilor e doar un strat. Celelalte:
+
+    1. **PDB-uri pe servicii** (deja discutat) — chiar dacă pierzi un nod, serviciul rămâne sus
+    2. **Bază on-demand garantată** — minReplicas pe node group on-demand acoperă serviciile critice; spot-ul doar extinde capacitatea
+    3. **Cluster Autoscaler / Karpenter cu fallback** — Karpenter e superior aici: când un tip spot dispare, încearcă automat alt tip, și poate căde pe on-demand dacă spot-ul e sec
+    4. **Toleranță la întreruperi la nivel de aplicație** — pod-urile trebuie să supraviețuiască evacuării în 2 minute: fără sesiuni locale (aveți deja migrarea spre Redis pe lista de tichete), terminare graceful, replici suficiente
+
+    ## Concluzie practică
+
+    ```hcl
+    instance_types = ["m5.xlarge", "m5a.xlarge", "m6a.xlarge", "m6i.xlarge"]
+    ```
+
+    cu PDB-uri + bază on-demand pentru serviciile critice. Cu asta, scenariul "pierdem tot spot-ul deodată" devine practic imposibil — cel mai rău caz realist e pierderea unui tip (25% din nodurile spot), acoperit de rescheduling pe restul.
+- user: |
+    managerul vrea raport lunar de cost pe servicii si echipe. ce tool?
+  assistant: |
+    Pentru cost per serviciu și per echipă pe EKS, răspunsul scurt: **OpenCost (sau Kubecost, varianta comercială)** pentru alocarea per pod/serviciu, combinat cu **AWS CUR + tag-uri** pentru partea de infrastructură. Niciun tool singur nu acoperă ambele niveluri.
+
+    ## Nivelul 1: cost per pod/serviciu — OpenCost
+
+    **OpenCost** (open-source, CNCF project, dezvoltat de echipa Kubecost) e standardul de facto pentru alocarea costurilor Kubernetes:
+
+    - Împarte costul nodurilor pe pod-uri, în funcție de **requests** de CPU/memorie — de aici importanța calibrării requests/limits (tichetul #4 din postmortem devine relevant și pentru cost, nu doar pentru stabilitate)
+    - Adună costul real al nodurilor din AWS API (EC2 pricing, spot vs on-demand)
+    - Exportă metrici Prometheus — deci dashboard-uri Grafana gratuite
+
+    ```bash
+    helm install opencost opencost/opencost -n opencost \
+      --set opencost.prometheus.internalPrometheusHost=http://prometheus.monitoring.svc
+    ```
+
+    Apoi ai direct: cost per namespace, per deployment, per label. Cu label-uri `team: checkout-team` pe deployment-uri, raportul "cost per echipă" iese natural.
+
+    **Kubecost** = același motor + UI comercial, alerte pe cost, rapoarte programate, saved reports. Gratuit pentru un cluster (Kubecost Free), plătit de la ~$450/lună pentru mai multe. Pentru un cluster, varianta free e suficientă ca să începi.
+
+    ## Nivelul 2: cost total AWS — CUR + tag-uri
+
+    OpenCost vede doar ce e în Kubernetes. Dar aveți și RDS, S3, transfer de date, load balancers — astea nu se alocă per pod. Soluția:
+
+    1. **Activează Cost and Usage Report (CUR)** în Billing → export în S3, cu amortizare activată
+    2. **Tag-uri obligatorii pe toate resursele**: `team`, `service`, `environment` — și **cost allocation tags** activate în Billing console ca să apară în rapoarte
+    3. **Athena + QuickSight** (sau Grafana cu plugin Athena) peste CUR pentru rapoarte
+
+    Aici e partea care durează: dacă resursele nu sunt tag-uite consistent, raportul per echipă va avea o categorie mare "unallocated". Pentru voi: node group-urile Terraform de ieri, RDS-urile, load balancer-ele — toate au nevoie de `team`/`service` tags. Terraform face asta ușor cu `default_tags`:
+
+    ```hcl
+    provider "aws" {
+      default_tags {
+        tags = {
+          managed-by = "terraform"
+          # team/service se setează per modul
+        }
+      }
+    }
+    ```
+
+    ## Recomandarea concretă pentru voi
+
+    | Nevoie | Tool | Efort |
+    |---|---|---|
+    | Cost per serviciu/pod (cele 25) | OpenCost + label-uri | 1-2 zile |
+    | Cost per echipă (K8s) | OpenCost, grupat pe label `team` | inclus |
+    | RDS, S3, transfer, LB | CUR + tag-uri + Athena/Grafana | 2-3 zile + disciplină de tag-uri |
+    | Raport lunar automat | Dashboard Grafana programat pe email, sau Kubecost saved reports | 1 zi |
+
+    **Ordinea de implementare:**
+
+    1. **Săptămâna 1:** OpenCost instalat + label-uri `team`/`service` pe toate deployment-urile (aveți helmfile acum — adaugi label-urile în template, o singură schimbare)
+    2. **Săptămâna 1-2:** CUR activat + audit de tag-uri pe resursele non-K8s
+    3. **Săptămâna 2-3:** dashboard Grafana "Cost lunar" cu două view-uri: per serviciu (OpenCost) și per echipă (OpenCost + CUR)
+    4. **Luna 1:** primul raport cu date complete; stabiliți cu managerul ce decizii se iau pe baza lui (altfel raportul devine decorativ)
+
+    ## Două avertismente
+
+    1. **Costurile shared (ingress, monitoring, noduri de sistem) trebuie alocate explicit** — OpenCost le distribuie proporțional, dar decideți și documentați metoda, altfel echipele se ceartă la fiecare raport
+    2. **Spot-ul face costul variabil lunar** — după migrarea de 60% pe spot, costul per serviciu va fluctua cu prețurile spot. Media pe 3 luni e mai corectă pentru comparații între echipe decât luna curentă.
+
+    Bonus: OpenCost vă va arăta imediat efectul economiei spot (~$9-11k/an discutate) și va face vizibile serviciile cu requests supra-dimensionate — exact ce aveți nevoie pentru tichetul #4. Vrei structura de label-uri standard (team/service/criticality) de adăugat în template-ul helmfile?
+- user: |
+    kubecost. cum il instalez cu helmfile-ul nostru?
+  assistant: |
+    # Kubecost în helmfile-ul vostru
+
+    Se integrează direct în structura existentă — e un chart extern, deci intră în `vendor/` + un release cu label `tier: infra`.
+
+    ## 1. Adaugă chart-ul în helmfile
+
+    **`helmfile.yaml`** — adaugă la releases:
+
+    ```yaml
+    repositories:
+      - name: kubecost
+        url: https://kubecost.github.io/cost-analyzer/
+
+    releases:
+      # ... releases existente ...
+
+      - name: kubecost
+        namespace: kubecost
+        chart: kubecost/cost-analyzer
+        version: 2.2.0          # pichetată, ca tot restul
+        labels:
+          tier: infra
+        values:
+          - environments/{{`{{ .Environment.Name }}`}}/infra/kubecost.yaml
+        secrets:
+          - secrets/{{`{{ .Environment.Name }}`}}/kubecost.yaml
+    ```
+
+    ## 2. Values per environment
+
+    **`environments/dev/infra/kubecost.yaml`** — dev, minimal:
+
+    ```yaml
+    global:
+      prometheus:
+        enabled: false          # NU instala Prometheus-ul lui Kubecost
+        fqdn: http://prometheus.monitoring.svc   # Prometheus-ul vostru existent
+        # dacă Prometheus-ul e în alt namespace, ajustează fqdn-ul
+
+    prometheus:
+      server:
+        persistentVolume:
+          enabled: false
+
+    kubecostProductConfigs:
+      productKey:
+        enabled: true
+        key: {{ env "KUBECOST_LICENSE_KEY" | quote }}   # din env, nu în git
+      clusterName: shop-dev
+
+    # dev: resurse mici
+    cost-analyzer:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+
+    reporting:
+      productAnalytics: false   # dev: fără telemetrie
+    ```
+
+    **`environments/prod/infra/kubecost.yaml`**:
+
+    ```yaml
+    global:
+      prometheus:
+        enabled: false
+        fqdn: http://prometheus.monitoring.svc
+
+    prometheus:
+      server:
+        persistentVolume:
+          enabled: false
+
+    kubecostProductConfigs:
+      productKey:
+        enabled: true
+        key: {{ env "KUBECOST_LICENSE_KEY" | quote }}
+      clusterName: shop-prod
+      # alerte de cost, dacă luați varianta plătită
+      # defaultInstallList:
+      #   - aggregatedCosts
+
+    cost-analyzer:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 512Mi
+        limits:
+          memory: 2Gi
+      persistentVolume:
+        enabled: true
+        size: 32Gi              # istoric de costuri — mic, dar persistent
+
+    ingress:
+      enabled: true
+      className: nginx
+      hosts:
+        - kubecost.shop.example.ro
+      tls:
+        - hosts: [kubecost.shop.example.ro]
+          secretName: kubecost-tls
+    ```
+
+    ## 3. Secretul pentru licență
+
+    Cu helm-secrets + SSM (configurarea discutată la migrare):
+
+    ```bash
+    # stochează licența în SSM
+    aws ssm put-parameter --name /k8s/kubecost/license-key \
+      --type SecureString --value "<cheia-din-kubecost.com>"
+    ```
+
+    **`secrets/prod/kubecost.yaml`** (criptat cu SOPS, sau referință SSM):
+
+    ```yaml
+    kubecostProductConfigs:
+      productKey:
+        key: <decrypted-by-helm-secrets>
+    ```
+
+    Alternativa mai simplă, fără helm-secrets: variabilă de environment în pipeline (`KUBECOST_LICENSE_KEY`) citită prin `{{ env "KUBECOST_LICENSE_KEY" }}` din values — funcționează și nu pune nimic în git.
+
+    ## 4. Punctul delicat: Prometheus-ul vostru
+
+    Kubecost are nevoie de metrici `container_*` din Prometheus. Două verificări:
+
+    1. **Scrape-ul kube-state-metrics și cAdvisor e activ** (la kubelet/prometheus standard din kube-prometheus-stack, e implicit)
+    2. **Retention minim 8 zile** pe Prometheus-ul vostru — Kubecost calculează costuri pe 7 zile rolling; dacă retention-ul e mai mic, costurile apar incomplete
+
+    Dacă Prometheus-ul vostru e sub dimensionat, Kubecost face query-uri grele — monitorizează-l după instalare. Alternativa (Prometheus dedicat de la Kubecost, `global.prometheus.enabled: true`) costă ~10-20GB storage în plus, dar izolează load-ul — decizie de luat după ce vezi impactul.
+
+    ## 5. Deploy și verificare
+
+    ```bash
+    # fetch chart + plan
+    helmfile -e prod --label name=kubecost diff
+
+    # apply
+    helmfile -e prod --label name=kubecost apply
+
+    # verifică
+    kubectl get pods -n kubecost
+    kubectl port-forward -n kubecost svc/kubecost-cost-analyzer 9090:9090
+    # → http://localhost:9090
+    ```
+
+    ## 6. Label-urile de echipă — pasul care face raportul
+
+    Ca raportul "per echipă" să iasă din prima, deployment-urile serviciilor au nevoie de label-uri pe pod template. În template-ul helmfile (`shop-service`), adaugă:
+
+    ```yaml
+    templates:
+      shop-service: &shop-service
+        # ...
+        set:
+          podLabels:
+            team: {{ .Environment.Values | get (printf "teams.%s" .Release.Name) "unknown" }}
+    ```
+
+    cu maparea în `environments/prod/values.yaml`:
+
+    ```yaml
+    teams:
+      checkout: checkout-team
+      search: discovery-team
+      payments: payments-team
+      # ...
+    ```
+
+    Fără astea, Kubecost arată costuri per namespace — util, dar nu per echipă cum vrea managerul.
+
+    ## Ordinea
+
+    1. Instalează Kubecost cu values-urile de mai sus (o oră)
+    2. Adaugă label-urile `team` pe template-ul helmfile + maparea per env (o zi, include redeploy-ul celor 25 de servicii)
+    3. După 24-48h de date, primul dashboard e funcțional — exportă raportul lunar din UI (Saved Reports la varianta plătită, sau screenshot/scheduler Grafana la free)
+
+    Un detaliu: Kubecost Free e limitat la un cluster și 15 zile de istoric — suficient pentru raportul lunar cerut, dar dacă managerul va vrea trend-uri pe 6 luni sau alerte de cost, treceți pe Kubecost Business (~$450/lună) sau rămâneți pe OpenCost pur (gratuit, fără UI-ul frumos). Pentru început, Free e alegerea corectă.
+- user: |
+    rezuma-mi toate incidentele din luna asta intr-un tabel: serviciu, simptom, cauza, fix
+  assistant: |
+    # Incidente — noiembrie 2026
+
+    | # | Data | Serviciu | Simptom | Cauză | Fix |
+    |---|---|---|---|---|---|
+    | 1 | 09.11 | checkout-service | 3× OOMKilled (exit 137), CrashLoopBackOff, ~2h degradat | Memory leak: `CartSessionCache` = `ConcurrentHashMap` fără evicție/expirare → 1,2M entry-uri (~600MB) până la limita de 1Gi | Cache limitat: `maximumSize(50_000)` + `expireAfterAccess(30min)` (Caffeine); limită memorie mărită temporar; migrare spre Redis în plan (tichet #2) |
+    | 2 | 10.11 | search | 502 intermitent ~1% din requesturi: `upstream prematurely closed connection` | Keepalive race: Node.js `keepAliveTimeout` default 5s < nginx upstream keepalive 60s — conexiuni închise exact la request | `server.keepAliveTimeout = 65000` + `headersTimeout = 66000` pe toate serviciile Node (tichet #8) |
+    | 3 | 12.11 | payments | 502 în burst ~40s: `connect() failed (111: Connection refused)` | RDS failover (40s) → `/health` cu verificare DB → liveness eșuat → kubelet a omorât toate pod-urile → serviciul întreg a repornit | Probe separate: liveness fără dependențe externe (`/actuator/health/liveness`), DB scos din readiness, retry pe cereri; alertare pe `/actuator/health` complet |
+    | 4 | 12.11 | notification-service | OOMKilled ×6, limită 256Mi atinsă permanent | Celery: prefetch default 4 × 8 workeri = 32 mesaje × ~2,7MB (PDF-uri base64) în memorie simultan + limits ghicite | `worker_prefetch_multiplier = 1`, `worker_max_tasks_per_child = 100`, limită 512Mi; refactor: PDF-uri în S3, referințe în mesaje (în plan) |
+
+    ## Pattern-uri comune
+
+    Toate 4 au cauze diferite, dar același tip de problemă de fond: **configurații default nepotrivite pentru Kubernetes** (cache nelimitat, keepalive default, health check cu dependențe, prefetch default) + **limits/requests ghicite, nu măsurate**.
+
+    ## Măsuri preventive derivate (din postmortem + incidentele noi)
+
+    | Acțiune | Ar fi prevenit |
+    |---|---|
+    | Alerte pe memorie (80% heap) și pe restart-uri (tichete #3, #6) | #1, #4 — depistate cu zile înainte de crash |
+    | Audit requests/limits + VPA (tichet #4) | #1, #4 |
+    | Template deployment: probes separate, preStop, graceful shutdown | #3, parțial #2 |
+    | keepAliveTimeout explicit pe servicii Node (tichet #8) | #2 |
+    | PDB-uri + migrare spot cu PDB (în plan) | reduce impactul viitoarelor întreruperi spot |
+
+    **Bilanț:** 4 incidente în 4 zile, toate remediate, nicio pierdere de date. Timp total de degradare: ~3 ore cumulat. Error budget checkout consumat: ~25-35% din luna curentă.
+- user: |
+    pt review-ul trimestrial: 3 lucruri care au mers bine si 3 de imbunatatit
+  assistant: |
+    # Review trimestrial Q4 2026 — Platformă / Infrastructură
+
+    ## Ce a mers bine
+
+    **1. Diagnosticare rapidă și corectă la incidente.** Toate cele 4 incidente din noiembrie au fost diagnosticate la cauza rădăcină în câteva ore, nu doar mitigate. Heap dump la checkout, corelație log nginx ↔ keepalive la search, identificarea liveness-ului ca vinovat la payments. Am documentat totul în postmortem + runbook reutilizabil (502 pe ingress), deci următorul incident de același tip se rezolvă în minute, nu ore.
+
+    **2. Decizii de arhitectură luate pe date, nu pe instinct.** Migrarea sesiunilor spre Redis, calibrarea HPA (60% → 75% + minReplicas 4), mix-ul de instance types spot ales pe diversitate de pool-uri, alegerea helmfile vs kustomize — fiecare decizie a avut un calcul sau un criteriu explicit în spate. Economia de ~$11.800/an (spot + savings plan) a fost dimensionată cu pași de validare, nu estimată din cap.
+
+    **3. Incidentele s-au transformat în sisteme, nu doar în fix-uri.** Fiecare incident a produs: postmortem cu acțiuni owner-uite, tichete Jira cu acceptance criteria, runbook, și SLO cu error budget definit pentru checkout. Cauzele comune (configurații default nepotrivite, limits ghicite) au fost identificate și transformate în 8 acțiuni preventive care acoperă toate cele 25 de servicii, nu doar cele lovite.
+
+    ## De îmbunătățit
+
+    **1. Detectarea e în urma remedierii.** Toate cele 4 incidente au fost depistate la crash sau de la useri — alertele pe memorie și restart-uri (tichetele #3, #6) nu erau încă active. Două OOM-uri consecutive (checkout, notification) au urmat exact același tipar pe care alertele l-ar fi prins cu zile înainte. **Acțiune:** alertele de detectiv au prioritate maximă în sprint-ul următor, înainte de orice optimizare.
+
+    **2. Configurație de bază neuniformă pe cele 25 de servicii.** Fiecare incident a fost o variantă a aceleiași probleme: valori default sau ghicite (cache fără limite, keepalive default, health check cu DB, limits de 256Mi). Fără template standard de deployment, al 5-lea incident va fi aceeași poveste pe un alt serviciu. **Acțiune:** template de deployment (probes separate, preStop, graceful shutdown, limits calibrate) aplicat obligatoriu la toate serviciile, cu audit de conformitate la final de trimestru.
+
+    **3. Infrastructura de deploy era fragilă înainte de helmfile.** Values copiate de mână per environment, deploy-uri manuale, stare pending blocată de Helm fără procedură clară — riscuri care abia acum au fost eliminate sistematic. **Acțiune:** finalizați migrarea celor 25 de servicii în helmfile (2-3 sunt gata), interziceți apply-urile manuale pe prod, și documentați procedura de recovery pentru stări blocate.
+
+    ## Linie de fond
+
+    Trimestrul a fost unul de "descoperire prin incident" — 4 incidente în 4 zile au expus sistematic golurile de configurație. Tendința e bună: fiecare incident a lăsat în urmă un mecanism (alertă, template, runbook, SLO), nu doar un fix punctual. Obiectivul trimestrului următor e să mutăm de la reacție la prevenție: alertele active înainte de primul incident, nu după al patrulea.
+question_plan:
+- id: q1
+  type: exact
+  ask: ce limita am pus pana la urma pe cache-ul de la checkout?
+  gold_turns:
+  - 4
+- id: q2
+  type: distractor
+  ask: de ce murea notification-service?
+  gold_turns:
+  - 15
+  - 14
+  note: 'two OOM incidents: 1-4 checkout vs 14-15'
+- id: q3
+  type: distractor
+  ask: de ce dadea 502 pe search?
+  gold_turns:
+  - 7
+  - 6
+  note: 'two 502s: search 6-7 vs payments 18-20'
+- id: q4
+  type: ambiguous
+  ask: si cel cu payments?
+  gold_turns:
+  - 19
+  - 20
+- id: q5
+  type: decision
+  ask: la cat am ramas cu targetul de cpu pe hpa-ul de la search?
+  gold_turns:
+  - 21
+  outdated_turns:
+  - 8
+  - 9
+- id: q6
+  type: paraphrase
+  ask: cat timp avem voie sa fim cazuti pe luna la checkout?
+  gold_turns:
+  - 24
+  - 23
+- id: q7
+  type: exact
+  ask: cat economisim cu spot pe noduri?
+  gold_turns:
+  - 12
+  - 13
+- id: q8
+  type: decision
+  ask: ce am zis sa facem cu verificarea bazei de date din probe?
+  gold_turns:
+  - 20
+- id: q9
+  type: error-only
+  ask: another operation (install/upgrade/rollback) is in progress - cum am deblocat?
+  gold_turns:
+  - 29
+- id: q10
+  type: exact
+  ask: what instance types did we pick for the spot node group?
+  lang: en
+  gold_turns:
+  - 32
+  - 31
+- id: q11
+  type: paraphrase
+  ask: cum facem garzile sa fie corecte de sarbatori?
+  gold_turns:
+  - 11
+- id: q12
+  type: decision
+  ask: ce tool alesesem pentru rapoartele de cost?
+  gold_turns:
+  - 34
+  - 33
+- id: q13
+  type: semantic
+  ask: ce era cu memoria de la checkout, ce obiecte umpleau heap-ul?
+  gold_turns:
+  - 3
+- id: s1
+  type: standalone
+  ask: explain the CAP theorem briefly
+  lang: en
+- id: s2
+  type: standalone
+  ask: cum scriu un for in bash peste fisierele dintr-un folder?
+- id: s3
+  type: standalone
+  ask: recomanda-mi o carte buna de SF
+questions:
+- id: q1
+  type: exact
+  prompt: |
+    ce limita am pus pana la urma pe cache-ul de la checkout?
+  gold:
+  - turn: 4
+    quote: '`maximumSize(50_000)` înseamnă că, peste limită, Caffeine aruncă entry-uri **chiar dacă sunt active**.'
+- id: q2
+  type: distractor
+  prompt: |
+    de ce murea notification-service?
+  gold:
+  - turn: 15
+    quote: '**Prefetch default = 4** (`worker_prefetch_multiplier=4`) × **8 workeri concurenți** = **32 de mesaje trase în memorie simultan** per pod.'
+- id: q3
+  type: distractor
+  prompt: |
+    de ce dadea 502 pe search?
+  gold:
+  - turn: 7
+    quote: '**keepAliveTimeout = 5 secunde**'
+  - turn: 6
+    quote: suspectul principal e **race condition pe keepalive connections** între nginx și upstream.
+- id: q4
+  type: ambiguous
+  prompt: |
+    si cel cu payments?
+  gold:
+  - turn: 19
+    quote: '**liveness probe-ul a omorât containerul**'
+  - turn: 20
+    quote: '## Liveness: niciodată DB (asta e sigur)'
+- id: q5
+  type: decision
+  prompt: |
+    la cat am ramas cu targetul de cpu pe hpa-ul de la search?
+  gold:
+  - turn: 21
+    quote: Bună decizie — 75% + minReplicas 4 e un compromis rezonabil
+  outdated:
+  - turn: 9
+    quote: 'iată HPA-ul complet cu ținta 60% și scale-up agresiv:'
+- id: q6
+  type: paraphrase
+  prompt: |
+    cat timp avem voie sa fim cazuti pe luna la checkout?
+  gold:
+  - turn: 24
+    quote: '**43,2 minute** pe 30 de zile.'
+- id: q7
+  type: exact
+  prompt: |
+    cat economisim cu spot pe noduri?
+  gold:
+  - turn: 13
+    quote: economie totală urcă la **~$11.800/an (~49%)**, față de ~$9.180 doar cu spot.
+- id: q8
+  type: decision
+  prompt: |
+    ce am zis sa facem cu verificarea bazei de date din probe?
+  gold:
+  - turn: 20
+    quote: '## Readiness: recomand să scoți și de aici'
+- id: q9
+  type: error-only
+  prompt: |
+    another operation (install/upgrade/rollback) is in progress - cum am deblocat?
+  gold:
+  - turn: 29
+    quote: release-ul a rămas în stare `pending-upgrade`
+- id: q10
+  type: exact
+  lang: en
+  prompt: |
+    what instance types did we pick for the spot node group?
+  gold:
+  - turn: 32
+    quote: '"m5a.xlarge",  # AMD, generația 5'
+- id: q11
+  type: paraphrase
+  prompt: |
+    cum facem garzile sa fie corecte de sarbatori?
+  gold:
+  - turn: 11
+    quote: '## Soluția mai bună: separă sărbătorile "prime" de rotația obișnuită'
+- id: q12
+  type: decision
+  prompt: |
+    ce tool alesesem pentru rapoartele de cost?
+  gold:
+  - turn: 34
+    quote: '# Kubecost în helmfile-ul vostru'
+- id: q13
+  type: semantic
+  prompt: |
+    ce era cu memoria de la checkout, ce obiecte umpleau heap-ul?
+  gold:
+  - turn: 3
+    quote: Găsit — e un cache de sesiuni de coș care crește nelimitat.

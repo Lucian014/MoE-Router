@@ -1,0 +1,183 @@
+id: pr01-facturare-srl
+category: coding
+lang: ro
+turns:
+  - user: |
+      salut, fac o aplicatie de facturare pt firma (SRL mic, cam 200 facturi pe luna). FastAPI + Postgres + SQLAlchemy 2. vreau structura de proiect si modelele pt clienti, produse, facturi si linii de factura. da-mi fisierele complete
+  - user: |
+      numerotarea facturilor trebuie sa fie continua pe serie, gen FCT-2026-0001, fara goluri (asa zice contabila ca e legal). cum fac sa nu iasa doua facturi cu acelasi numar daca emit doi useri in acelasi timp?
+  - user: |
+      da-mi tot fisierul de serviciu pt emiterea facturii cu varianta pe care o recomanzi
+  - user: |
+      am primit asta azi pe staging cand doi colegi au emis deodata:
+
+      ```
+      sqlalchemy.exc.IntegrityError: (psycopg.errors.UniqueViolation) duplicate key value violates unique constraint "uq_invoice_series_number"
+      DETAIL:  Key (series, number)=(FCT, 137) already exists.
+      [SQL: INSERT INTO invoices (series, number, client_id, issue_date, due_date, total_net, total_vat, total) VALUES (%(series)s, %(number)s, ...)]
+      ```
+  - user: |
+      deci care e mai ok la noi, tabela de serii cu SELECT FOR UPDATE sau secventa postgres? nu vreau goluri
+  - user: |
+      tva: avem produse cu 19%, 9% si 5%. rotunjirea se face pe fiecare linie sau pe total pe cota? contabila zice ca pe total pe cota
+  - user: |
+      ok facem cum zice contabila. rescrie functia de calcul a totalurilor
+  - user: |
+      de ce iese diferenta de 1 ban fata de ce calculeaza contabila in excel? uite o factura:
+
+      ```
+      produs,cant,pret_unitar,cota
+      Ulei motor 5L,3,89.99,19
+      Filtru ulei,3,24.35,19
+      Antigel 4L,2,41.10,19
+      Manopera,1.5,120.00,19
+      app: total_net=591.37 total_vat=112.36 total=703.73
+      excel: total_net=591.37 total_vat=112.36 total=703.74
+      ```
+
+      in cod avem float peste tot la preturi
+  - user: |
+      scrie-mi un mail catre clientul Agroserv ca factura FCT-2026-0137 a fost emisa gresit (am pus cantitate 30 in loc de 3) si o stornam si emitem una noua. politicos dar scurt
+  - user: |
+      mai scurt si fara sa ne cerem scuze de 3 ori
+  - user: |
+      cum se face corect stornarea in aplicatie? factura cu minus pe aceeasi serie sau alta serie?
+  - user: |
+      implementeaza stornarea, endpoint + serviciu, cod complet
+  - user: |
+      trebuie sa trimitem facturile in e-Factura la ANAF. ce format e, UBL 2.1? cum arata un XML minim valid pt RO?
+  - user: |
+      fa-mi generatorul de XML UBL din modelele noastre, complet
+  - user: |
+      validatorul anaf zice asa:
+
+      ```
+      E: [BR-RO-111] Daca Codul tarii vanzatorului este "RO", atunci subdiviziunea tarii vanzatorului (BT-39) trebuie sa fie codificata folosind ISO 3166-2:RO
+      E: [BR-RO-100] Codul postal al vanzatorului trebuie sa aiba 6 cifre
+      ```
+  - user: |
+      am pus judetul "Iasi" si codul postal 700259 si tot da prima eroare
+  - user: |
+      cum ma autentific la api-ul lor? e oauth2?
+  - user: |
+      tokenul expira? cum fac refresh automat fara sa ma loghez manual cu certificatul
+  - user: |
+      altceva: traduce in engleza termenii si conditiile astea pt un client nou din germania
+
+      ```
+      1. Plata facturilor se face in termen de 30 de zile de la data emiterii, prin transfer bancar.
+      2. Pentru intarzierea la plata se percep penalitati de 0,1% pe zi din suma datorata, fara ca valoarea penalitatilor sa depaseasca suma asupra careia sunt calculate.
+      3. Reclamatiile privind cantitatea sau calitatea produselor se fac in scris in maximum 5 zile lucratoare de la receptie.
+      4. Dreptul de proprietate asupra bunurilor se transfera cumparatorului la data platii integrale.
+      5. Orice litigiu se solutioneaza pe cale amiabila, iar in caz contrar de instantele competente de la sediul vanzatorului.
+      ```
+  - user: |
+      punctul 2 cum l-ai tradus? suna ok juridic in engleza sau e prea literal?
+  - user: |
+      revenim la app. vreau un raport lunar: total facturat pe client si tva colectat pe cote. query SQL
+  - user: |
+      e lent, 4 secunde pe 60k de facturi. uite explain:
+
+      ```
+      Sort  (cost=18734.22..18784.22 rows=20000 width=72) (actual time=4012.551..4013.090 rows=187 loops=1)
+        ->  HashAggregate  (cost=15402.00..15652.00 rows=20000 width=72) (actual time=4009.102..4011.877 rows=187 loops=1)
+              ->  Hash Join  (cost=812.00..14652.00 rows=60000 width=40) (actual time=10.334..3881.410 rows=58233 loops=1)
+                    ->  Seq Scan on invoice_lines l  (cost=0.00..11240.00 rows=412000 width=28) (actual time=0.011..2961.200 rows=411822 loops=1)
+                    ->  Hash  (cost=612.00..612.00 rows=16000 width=20) (actual time=10.201..10.202 rows=5021 loops=1)
+                          ->  Seq Scan on invoices i  (cost=0.00..612.00 rows=16000 width=20) (actual time=0.009..8.877 rows=5021 loops=1)
+                                Filter: ((issue_date >= '2026-10-01'::date) AND (issue_date < '2026-11-01'::date))
+      ```
+  - user: |
+      putem face si un dashboard simplu cu graficele astea? ce lib de grafice recomanzi in react?
+  - user: |
+      nu, ma razgandesc, nu bagam react doar pt asta. facem server-side cu jinja si chart.js. da-mi template-ul si endpointul
+  - user: |
+      scrie 4 teste pytest esentiale pt numerotare, inclusiv unul de concurenta cu 2 threaduri. doar testele, fara explicatii lungi
+  - user: |
+      testul de concurenta pica:
+
+      ```
+      FAILED tests/test_numbering.py::test_concurrent_numbering - sqlalchemy.exc.OperationalError: (psycopg.errors.DeadlockDetected) deadlock detected
+      DETAIL:  Process 48211 waits for ShareLock on transaction 912384; blocked by process 48212.
+      Process 48212 waits for ShareLock on transaction 912383; blocked by process 48211.
+      ```
+  - user: |
+      cum fac backup zilnic la postgres pe vps, automat, si sa pastrez ultimele 14
+  - user: |
+      am incercat restore pe alt server si zice:
+
+      ```
+      pg_restore: error: input file appears to be a text format dump. Please use psql.
+      ```
+  - user: |
+      contabila intreaba: avem 3 facturi neincasate, 12.400 lei cu 45 de zile intarziere, 8.750 lei cu 30 de zile si 21.300 lei cu 12 zile. cu penalitatea din contract (0,1% pe zi) cat iese pe fiecare si total?
+  - user: |
+      si cu plafonarea la valoarea facturii se schimba ceva?
+  - user: |
+      vrem mailuri automate de reamintire la 7, 14 si 30 de zile dupa scadenta. cu ce programez asta, celery? cron?
+  - user: |
+      nu vreau redis si celery doar pt atat. mergem pe APScheduler in procesul aplicatiei. da-mi codul
+  - user: |
+      pe staging mailurile de reamintire pleaca de cate doua ori, uneori de patru ori
+  - user: |
+      aha, rulam cu gunicorn cu 4 workeri uvicorn
+  - user: |
+      scrie textele mailurilor: unul politicos la 7 zile si unul mai ferm la 30 de zile, care mentioneaza penalitatile
+  - user: |
+      Agroserv zice ca nu vede facturile noastre in SPV de 2 saptamani. cum verific din aplicatie daca au ajuns?
+  - user: |
+      am interogat starea pt una din ele si primesc:
+
+      ```json
+      {"stare": "nok", "id_descarcare": "4021877", "Errors": [{"errorMessage": "E: [BR-RO-030] Identificatorul de inregistrare in scopuri de TVA al cumparatorului (BT-48) trebuie sa inceapa cu prefixul tarii, iar cumparatorul nu este inregistrat in scopuri de TVA conform registrului"}]}
+      ```
+  - user: |
+      deci problema e ca am pus CIF-ul lor cu RO in fata? ei nu sunt platitori de tva
+  - user: |
+      ok am corectat. acum vrem multi-firma: aceeasi aplicatie pt 3 SRL-uri din grup. cum schimb modelele?
+  - user: |
+      fiecare firma cu seriile ei. ce schimb la numerotare?
+  - user: |
+      colegul nou zice ca tabela de serii cu FOR UPDATE e complicata si ca pg_advisory_xact_lock pe (firma, serie) e mai simplu si tot fara goluri. trecem pe advisory lock, e ok?
+  - user: |
+      da-mi implementarea cu advisory lock, completa, si ce scot din varianta veche
+  - user: |
+      cum migrez datele existente cu alembic fara downtime? avem deja 60k facturi
+  - user: |
+      alembic upgrade da asta pe productie:
+
+      ```
+      alembic.util.exc.CommandError: Target database is not up to date.
+      ```
+  - user: |
+      fa-mi un rezumat cu tot ce am facut la aplicatie pana acum pt colegul nou, in 10 puncte
+  - user: |
+      colegul intreaba de ce Decimal peste tot si nu float. explica-i in 3 fraze
+  - user: |
+      pdf-ul facturii: weasyprint sau reportlab?
+  - user: |
+      weasyprint. da-mi template-ul html al facturii cu toate campurile obligatorii in Romania
+  - user: |
+      in pdf diacriticele apar ca niste patratele
+  - user: |
+      ultima pt azi: checklist inainte sa trecem pe e-factura in productie
+question_plan:
+  - {id: q1, type: decision, ask: "cum ziceai ca rezolvam pana la urma numerotarea cand emit doi useri deodata?", gold_turns: [41, 42], outdated_turns: [5, 3], note: "advisory lock replaces FOR UPDATE"}
+  - {id: q2, type: semantic, ask: "de ce ieseau facturile cu un ban diferenta fata de excel?", gold_turns: [8]}
+  - {id: q3, type: exact, ask: "ce trebuia pus la judet in xml ca sa treaca validarea anaf?", gold_turns: [16]}
+  - {id: q4, type: exact, ask: "da-mi iar comanda de restore pt backup", gold_turns: [28]}
+  - {id: q5, type: exact, ask: "cat ieseau penalitatile pe cele 3 facturi?", gold_turns: [29]}
+  - {id: q6, type: multi-hop, ask: "de ce plecau mailurile de mai multe ori?", gold_turns: [34, 33]}
+  - {id: q7, type: paraphrase, ask: "cum am tradus clauza cu dobanda de intarziere pt clientul neamt?", gold_turns: [19, 20]}
+  - {id: q8, type: decision, ask: "graficele le facem pana la urma in react sau cum?", gold_turns: [24], outdated_turns: [23]}
+  - {id: q9, type: error-only, ask: "deadlock detected la testul ala, ce era?", gold_turns: [26]}
+  - {id: q10, type: multi-hop, ask: "ce era de fapt problema cu clientul care nu vedea facturile?", gold_turns: [38, 37]}
+  - {id: q11, type: semantic, ask: "cat tine tokenul de la anaf si cum il reinnoim?", gold_turns: [18]}
+  - {id: q12, type: decision, ask: "cu ce programam pana la urma reamintirile?", gold_turns: [32], outdated_turns: [31]}
+  - {id: q13, type: exact, ask: "ce font am pus ca sa mearga diacriticele in pdf?", gold_turns: [49]}
+  - {id: q14, type: semantic, ask: "ce zicea eroarea de la alembic si ce am facut?", gold_turns: [44]}
+  - {id: q15, type: ambiguous, ask: "si mailul ala scurt catre agroserv il mai ai?", gold_turns: [10]}
+  - {id: q16, type: semantic, ask: "rotunjirea tva se facea pe linie sau cum?", gold_turns: [6, 7]}
+  - {id: s1, type: standalone, ask: "ce diferenta e intre list si tuple in python?"}
+  - {id: s2, type: standalone, ask: "scrie-mi un haiku despre luni dimineata"}
+  - {id: s3, type: standalone, ask: "cat e 17% din 2.340?"}

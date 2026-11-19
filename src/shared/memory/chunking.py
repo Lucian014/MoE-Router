@@ -1,6 +1,7 @@
 """Chunking a turn (docs/rag-planv2.md 4.3): segment -> split what is too long -> merge what is too
 small. The constants live here and only here; changing any of them changes CHUNKER_VERSION, so rows
-produced by different rules are never mixed (chunks.chunker_version).
+produced by different rules are never mixed. chunks.chunker_version stores index_version(): the
+chunker's version plus the BM25 analyzer's (analyzer.version()), so a change to either is seen.
 
 What becomes chunks:
     the answer                                   always              source = "response"
@@ -16,12 +17,25 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from shared.memory.analyzer import version as analyzer_version
 from shared.memory.header import HEADER_MAX_TOKENS, prose_of
 from shared.memory.segment import segment
 from shared.memory.splitters import SPLITTERS
 from shared.memory.tokens import count_tokens
 
 CHUNKER_VERSION = "2"          # 2: Markdown parser + line shapes instead of keyword lists
+
+
+def index_version() -> str:
+    """What chunks.chunker_version stores: "<chunker>+<analyzer>". Only the part before "+" decides
+    the chunks themselves (and so their embeddings); the rest only their BM25 terms."""
+    return f"{CHUNKER_VERSION}+{analyzer_version()}"
+
+
+def same_chunks(stored_version: str) -> bool:
+    """Chunks stored under `stored_version` are cut exactly as the current chunker would cut them
+    (only the analyzer may differ)."""
+    return stored_version.split("+", 1)[0] == CHUNKER_VERSION
 MIN_TOKENS = 50
 MAX_TOKENS = 400          # a target, not a hard limit: merging and atomic blocks can go a little over
 

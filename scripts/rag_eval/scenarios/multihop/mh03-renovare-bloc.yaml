@@ -1,0 +1,79 @@
+id: mh03-renovare-bloc
+category: summarization
+lang: ro
+turns:
+  - user: |
+      Sunt administratorul unei asociații de proprietari (bloc P+10, 44 de apartamente) și ne apucăm de reabilitarea termică. Te rog să-mi rezumi procesul-verbal de la ultima ședință:
+
+      ```
+      PROCES-VERBAL – Adunarea generală, 12 martie
+      Prezenți: 31 de proprietari din 44.
+      1. Ing. Dorin Vlase (firma ProTerm Construct) a prezentat oferta pentru reabilitare: 1.480.000 lei cu TVA, termen 7 luni, termoizolație 10 cm vată bazaltică pe fațade, 20 cm pe terasă.
+      2. Dl. Costache (ap. 38, etaj 10) a semnalat infiltrații pe terasă de doi ani. S-a propus refacerea hidroizolației odată cu termoizolația.
+      3. Finanțare: 60% prin programul județean, 40% de la proprietari. Cota medie estimată: 13.450 lei/apartament.
+      4. Dna. Marinescu (ap. 7) a cerut o eșalonare pentru pensionari. Se va discuta cu banca.
+      5. Vot: 27 pentru, 3 împotrivă, 1 abținere – oferta ProTerm se aprobă cu condiția unei a doua oferte comparative.
+      ```
+  - user: |
+      Rezumă-mi și asta, e un email primit de la a doua firmă:
+
+      ```
+      Bună ziua,
+      Vă transmitem oferta Izomax Grup pentru reabilitarea blocului: 1.390.000 lei cu TVA, termen 9 luni. Folosim polistiren grafitat EPS 80 de 12 cm pe fațade și 20 cm XPS pe terasă. Hidroizolația terasei NU este inclusă; o putem oferta separat, estimativ 96.000 lei. Garanție 5 ani la lucrări.
+      Cu stimă, Andrei Pop
+      ```
+  - user: |
+      Ce diferență e între vată bazaltică și polistiren grafitat, pe scurt?
+  - user: |
+      Fă-mi un tabel comparativ cu cele două oferte, ca să-l pun la avizier.
+  - user: |
+      Dl. Costache insistă că problema lui e urgentă și nu poate aștepta lucrarea mare.
+  - user: |
+      Am primit raportul expertului care a fost pe terasă, rezumă-mi-l:
+
+      ```
+      RAPORT CONSTATARE – terasa bloc, scara A
+      Membrana bituminoasă existentă (din 1998) prezintă fisuri și desprinderi pe aprox. 35% din suprafață, concentrate deasupra apartamentelor 37–40. Sifonul de terasă de pe latura est este colmatat; apa stagnează în zonă pe aprox. 12 mp. Se recomandă intervenție provizorie imediată: desfundarea sifonului și petic de membrană pe zona afectată (cost estimat 6.800 lei), urmată de refacerea completă a hidroizolației la reabilitare.
+      ```
+  - user: |
+      Cum se calculează cota fiecărui apartament, după suprafață sau egal?
+  - user: |
+      Scrie-mi un anunț scurt pentru avizier despre ședința următoare, pe 9 aprilie la ora 19.
+  - user: |
+      Dna. Marinescu a revenit, zice că sunt 9 apartamente cu pensionari care nu pot plăti cota deodată.
+  - user: |
+      Banca ne-a trimis condițiile, rezumă-le:
+
+      ```
+      Credit pentru asociații de proprietari – condiții orientative
+      Valoare: până la 600.000 lei. Dobândă: IRCC + 2,9%. Perioadă: maximum 10 ani. Garanție: cesiunea veniturilor din cotele de întreținere. Rambursare lunară, inclusă în lista de plată.
+      Pentru 9 apartamente × 13.450 lei, rata estimată pe 10 ani: aprox. 145 lei/lună/apartament.
+      ```
+  - user: |
+      Ce documente ne trebuie pentru dosarul de finanțare județeană?
+  - user: |
+      Procesul-verbal de azi, rezumă-l te rog:
+
+      ```
+      PROCES-VERBAL – Adunarea generală, 9 aprilie
+      Prezenți: 36 de proprietari din 44.
+      1. S-au comparat ofertele. Oferta Izomax + hidroizolație separată ar fi 1.486.000 lei, practic egală cu ProTerm, dar cu termen mai lung și garanție mai scurtă.
+      2. Vot: 33 pentru ProTerm Construct, 2 pentru Izomax, 1 abținere.
+      3. Intervenția provizorie pe terasă se face imediat din fondul de reparații, nu se așteaptă reabilitarea.
+      4. Pentru cele 9 apartamente se aprobă creditul bancar; restul plătesc în 3 tranșe.
+      ```
+  - user: |
+      Fă-mi o listă de pași pentru următoarele 3 luni.
+  - user: |
+      Un proprietar de la etajul 4 întreabă dacă poate să-și schimbe singur geamurile acum sau să aștepte.
+  - user: |
+      Scrie-mi un email către toți proprietarii cu deciziile luate.
+  - user: |
+      Ce greșeli fac de obicei asociațiile la reabilitări?
+question_plan:
+  - {type: multi-hop, ask: "Ce s-a recomandat pentru problema domnului Costache?", gold_turn: 6, note: "Costache in 1/5, report in 6 doesn't name him"}
+  - {type: multi-hop, ask: "Cât costa intervenția urgentă pentru apartamentul de la etajul 10?", gold_turn: 6, note: "ap. 38 etaj 10 in 1"}
+  - {type: multi-hop, ask: "Ce soluție am găsit pentru cererea doamnei Marinescu?", gold_turn: 10, note: "Marinescu in 1/9, bank terms in 10"}
+  - {type: multi-hop, ask: "Ce lipsea din oferta lui Andrei Pop față de cealaltă?", gold_turn: 2, note: "Andrei Pop only signs the email; also the comparison in 4"}
+  - {type: multi-hop, ask: "Cu ce firmă a lucrat ing. Vlase și a câștigat-o până la urmă?", gold_turn: 12, note: "Vlase -> ProTerm in 1, vote in 12"}
+  - {type: multi-hop, ask: "Cât ar plăti lunar pensionarii care nu pot achita cota deodată?", gold_turn: 10, note: "pensioners in 1/9, rate in 10"}

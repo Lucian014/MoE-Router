@@ -1,0 +1,2742 @@
+id: pr02-churn-analysis
+category: coding
+lang: en
+turns:
+- user: |
+    hi, I'm building a churn model for our subscription app (about 60k active customers). here's what the data looks like, help me clean it:
+
+    ```
+    >>> df.head()
+       customer_id tenure_months    plan  MonthlyCharges  support_tickets_90d  last_login_days  churned
+    0      C10021            12   basic           9.99                    0                3        0
+    1      C10022        1 yr    family          17.99                    2               41        1
+    2      C10023                   premium         14.99                    1                7        0
+    3      C10024     7 months   basic          -9.99                    0                1        0
+    4      C10025            30  premium         14.99                    5               90        1
+    >>> df.info()
+    RangeIndex: 61840 entries, 0 to 61839
+    Data columns (total 7 columns):
+     #   Column               Non-Null Count  Dtype
+     0   customer_id          61840 non-null  object
+     1   tenure_months        60112 non-null  object
+     2   plan                 61840 non-null  object
+     3   MonthlyCharges       61840 non-null  float64
+     4   support_tickets_90d  61840 non-null  int64
+     5   last_login_days      61530 non-null  float64
+     6   churned              61840 non-null  int64
+    ```
+  assistant: |
+    Nice dataset to work with — a few clear issues jump out. Here's what I see and how to fix each:
+
+    **1. `tenure_months` is a mess (object dtype, mixed formats)**
+    Values like `"1 yr"`, `"7 months"`, and blanks are mixed with plain numbers. Parse everything to months:
+
+    ```python
+    import numpy as np
+    import pandas as pd
+
+    def parse_tenure(val):
+        if pd.isna(val):
+            return np.nan
+        s = str(val).strip().lower()
+        if s.endswith('yr') or s.endswith('year'):
+            return float(s.split()[0]) * 12
+        if s.endswith('month'):
+            return float(s.split()[0])
+        try:
+            return float(s)
+        except ValueError:
+            return np.nan
+
+    df['tenure_months'] = df['tenure_months'].apply(parse_tenure)
+    ```
+
+    **2. `plan` has stray whitespace**
+    ```python
+    df['plan'] = df['plan'].str.strip().str.lower()
+    print(df['plan'].value_counts(dropna=False))  # check for typos like 'premuim'
+    ```
+
+    **3. `MonthlyCharges` has negative values**
+    `-9.99` is almost certainly a sign error (or refund artifact). Check scale first:
+    ```python
+    print((df['MonthlyCharges'] < 0).sum())
+    df.loc[df['MonthlyCharges'] < 0, 'MonthlyCharges'] = df.loc[df['MonthlyCharges'] < 0, 'MonthlyCharges'].abs()
+    ```
+    If negatives are rare (<1%), taking the absolute value is safe; if they're common, investigate the source before assuming.
+
+    **4. Missing values**
+    - `tenure_months` (~1,700 missing): impute with the median, or add a `tenure_missing` indicator flag — missing tenure can itself be predictive.
+    - `last_login_days` (~310 missing): these may be customers who *never* logged in. If so, impute with a high value (e.g., `df['last_login_days'].max() + 1`) rather than the median, and flag them:
+
+    ```python
+    df['login_was_missing'] = df['last_login_days'].isna().astype(int)
+    df['last_login_days'] = df['last_login_days'].fillna(df['last_login_days'].max() + 1)
+    ```
+
+    **5. Sanity checks before modeling**
+    ```python
+    print(df['customer_id'].duplicated().sum())   # duplicates?
+    print(df['churned'].value_counts(normalize=True))  # class balance
+    print(df[['tenure_months', 'MonthlyCharges', 'last_login_days']].describe())
+    ```
+
+    Also worth checking: outliers in `last_login_days` (is 90 the cap or the true max?), and whether `support_tickets_90d` has any impossible values.
+
+    One modeling note: with 60k rows and ~2–3% churn-adjacent missingness, dropping rows is wasteful — imputation with indicator flags will serve you better. Want help with feature engineering next (e.g., tickets per month of tenure, login recency buckets)?
+- user: |
+    tenure_months has stuff like "12 months", "1 yr", blanks. give me the full cleaning function
+  assistant: |
+    Here's a robust function that handles all those cases:
+
+    ```python
+    import re
+    import numpy as np
+    import pandas as pd
+
+    def clean_tenure(val):
+        """Convert tenure values ('12 months', '1 yr', 24, '2 years', '', None) to months (float)."""
+        # Handle blanks / NaN
+        if pd.isna(val):
+            return np.nan
+        if isinstance(val, str) and val.strip() in ('', '-', 'na', 'n/a', 'none', 'null'):
+            return np.nan
+
+        s = str(val).strip().lower()
+
+        # Extract the numeric part
+        match = re.search(r'(\d+(?:\.\d+)?)', s)
+        if not match:
+            return np.nan
+        num = float(match.group(1))
+
+        # Detect the unit
+        if re.search(r'\b(yr|yrs|year|years|y)\b', s):
+            return num * 12
+        if re.search(r'\b(mo|mos|month|months|m)\b', s):
+            return num
+        # No unit found — assume it's already in months
+        return num
+
+    df['tenure_months'] = df['tenure_months'].apply(clean_tenure)
+    ```
+
+    Then verify nothing weird slipped through:
+
+    ```python
+    print(df['tenure_months'].isna().sum())          # how many couldn't be parsed
+    print(df['tenure_months'].describe())            # check range is sensible
+    print(df.loc[df['tenure_months'] > 600, 'tenure_months'])  # implausible values (50+ yrs)
+    ```
+
+    A few notes on the design choices:
+
+    - **Regex-based unit detection** is safer than `str.endswith('yr')` — it catches `"1 yr"`, `"2 years"`, `"1yr"` (no space), and won't misfire on `"12 months"`.
+    - **Unadorned numbers are assumed to be months**, since that's the column name. If your data has bare numbers that are actually years, you'd see it in the describe check (values like 1, 2, 3 mixed with 12, 24, 36).
+    - **Anything unparseable becomes NaN** rather than raising, so one bad row doesn't kill the whole run — then you can decide whether to impute (median + missing flag) or drop.
+
+    If you want, I can wrap this into a full pipeline function that also cleans `plan`, fixes negative `MonthlyCharges`, and handles the `last_login_days` missingness in one pass.
+- user: |
+    MonthlyCharges has negative values, about 40 rows. drop them?
+  assistant: |
+    With only 40 rows out of 61,840 (0.06%), dropping won't hurt your model either way — but I'd suggest **flipping the sign instead**, because negatives are almost certainly data-entry errors (a missing minus or a stray keystroke), not real refunds:
+
+    ```python
+    neg_mask = df['MonthlyCharges'] < 0
+    print(df.loc[neg_mask, ['plan', 'MonthlyCharges', 'tenure_months']])
+
+    df['charge_was_negative'] = neg_mask.astype(int)  # optional flag
+    df.loc[neg_mask, 'MonthlyCharges'] = df.loc[neg_mask, 'MonthlyCharges'].abs()
+    ```
+
+    Why abs over drop:
+
+    - **The magnitude is probably correct.** A `-9.99` basic-plan customer is very likely a real $9.99 basic customer. Dropping them throws away 40 customers whose features (tenure, tickets, logins) are still valid.
+    - **Check before deciding.** Look at those 40 rows first — if the negatives cluster on one plan with charges matching that plan's normal price, it's clearly a sign error. If they look random or have weird magnitudes (e.g., `-200.00` when nothing else costs $200), the error might be in the value itself, and dropping is safer.
+    - **The flag costs nothing.** If the sign error correlates with some upstream system quirk, the flag lets the model pick up on it; if not, it's harmless.
+
+    If you just want the simplest defensible choice: dropping 40 rows is statistically negligible and totally fine. But abs() + flag is slightly better practice. Either way, don't leave them negative — a negative charge will silently distort any model that treats charges linearly.
+- user: |
+    finance says the negative ones are refunds. keep them but flag them. update the function
+  assistant: |
+    Since they're real refunds, the right move is to keep the negative values (they carry signal — refunded customers may be churn risks) and add a flag. Here's the full cleaning function, updated:
+
+    ```python
+    import re
+    import numpy as np
+    import pandas as pd
+
+    def clean_tenure(val):
+        """Convert tenure values ('12 months', '1 yr', 24, '', None) to months (float)."""
+        if pd.isna(val):
+            return np.nan
+        if isinstance(val, str) and val.strip().lower() in ('', '-', 'na', 'n/a', 'none', 'null'):
+            return np.nan
+
+        s = str(val).strip().lower()
+        match = re.search(r'(\d+(?:\.\d+)?)', s)
+        if not match:
+            return np.nan
+        num = float(match.group(1))
+
+        if re.search(r'\b(yr|yrs|year|years|y)\b', s):
+            return num * 12
+        if re.search(r'\b(mo|mos|month|months|m)\b', s):
+            return num
+        return num
+
+
+    def clean_df(df):
+        df = df.copy()
+
+        # --- tenure_months ---
+        df['tenure_months'] = df['tenure_months'].apply(clean_tenure)
+        df['tenure_was_missing'] = df['tenure_months'].isna().astype(int)
+        df['tenure_months'] = df['tenure_months'].fillna(df['tenure_months'].median())
+
+        # --- plan ---
+        df['plan'] = df['plan'].str.strip().str.lower()
+
+        # --- MonthlyCharges: negatives are refunds, keep them, flag them ---
+        df['is_refund'] = (df['MonthlyCharges'] < 0).astype(int)
+
+        # --- last_login_days ---
+        df['login_was_missing'] = df['last_login_days'].isna().astype(int)
+        df['last_login_days'] = df['last_login_days'].fillna(df['last_login_days'].max() + 1)
+
+        return df
+
+    df = clean_df(df)
+    ```
+
+    Two modeling notes on the refunds:
+
+    1. **The flag matters more than the sign.** Many models (logistic regression, neural nets) will treat a negative charge as "less than free," which distorts things. The `is_refund` flag lets the model learn the refund effect explicitly. For tree-based models (XGBoost, RandomForest), the negative value itself is fine as-is.
+
+    2. **Consider adding a derived column** so you can use charges safely in any model:
+    ```python
+    df['charge_abs'] = df['MonthlyCharges'].abs()
+    ```
+    Then use `charge_abs` + `is_refund` as features instead of raw `MonthlyCharges`. Same information, no sign weirdness.
+
+    Quick verification after cleaning:
+    ```python
+    print(df['is_refund'].sum())                      # should be ~40
+    print(df[['tenure_months', 'MonthlyCharges', 'last_login_days']].describe())
+    print(df['plan'].value_counts())
+    ```
+- user: |
+    churn rate is 6.8%. what metric should I look at instead of accuracy?
+  assistant: |
+    With a 6.8% churn rate, a model that predicts "no churn" for everyone scores 93.2% accuracy while catching zero churners — so accuracy is useless here. Here's what to use instead:
+
+    **Primary metric: PR-AUC (average precision)**
+    ```python
+    from sklearn.metrics import average_precision_score
+    average_precision_score(y_test, y_proba)
+    ```
+    Precision-recall AUC focuses on the minority class and is much more informative than ROC-AUC when positives are rare. For reference, a random model scores ~0.068 (the base rate), so anything meaningfully above that is real signal. ROC-AUC is fine as a secondary check, but it can look flattering on imbalanced data.
+
+    **Threshold-dependent metrics: precision and recall on the churn class**
+    ```python
+    from sklearn.metrics import classification_report
+    print(classification_report(y_test, y_pred))
+    ```
+    The real question is the tradeoff: recall = what fraction of churners you catch; precision = how many of your flagged customers actually churn. Which matters more depends on your intervention.
+
+    **Most useful in practice: capture rate at a fixed budget**
+    Since you'll likely target the highest-risk customers with retention offers (emails, discounts, outreach), evaluate the model the way you'll use it:
+    ```python
+    # What fraction of actual churners are in the top 10% of predicted risk?
+    top_k = int(0.10 * len(y_test))
+    capture = y_test.iloc[np.argsort(y_proba)[-top_k:]].mean() * (top_k / y_test.mean() / 0.10) / 10
+    # simpler: lift in top decile
+    ```
+    Or just report: "the top 10% riskiest customers contain X% of all churners" — with a 6.8% base rate, a good model might capture 30–40% there. That number is what stakeholders care about.
+
+    **One practical note:** with 6.8% positives and ~61k rows, you have ~4,200 churners — enough to work with, but keep them all in the test set. Use stratified splits (`train_test_split(..., stratify=y)`) and stratified k-fold if you cross-validate.
+
+    If you tell me what the retention intervention costs (e.g., a discount vs. an email), I can help you pick a threshold that maximizes expected value rather than an abstract metric.
+- user: |
+    write the full training script: logistic regression baseline + XGBoost, stratified 5-fold CV, report PR-AUC
+  assistant: |
+    Here's a complete script. It assumes `df` is the raw dataframe; cleaning is included so it runs end-to-end:
+
+    ```python
+    import re
+    import numpy as np
+    import pandas as pd
+    from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+    from sklearn.pipeline import Pipeline
+    from sklearn.compose import ColumnTransformer
+    from sklearn.preprocessing import StandardScaler, OneHotEncoder
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+    from xgboost import XGBClassifier
+    from sklearn.metrics import average_precision_score, make_scorer
+
+    # ------------------------------------------------------------------
+    # 1. Cleaning (from earlier)
+    # ------------------------------------------------------------------
+    def clean_tenure(val):
+        if pd.isna(val):
+            return np.nan
+        if isinstance(val, str) and val.strip().lower() in ('', '-', 'na', 'n/a', 'none', 'null'):
+            return np.nan
+        s = str(val).strip().lower()
+        match = re.search(r'(\d+(?:\.\d+)?)', s)
+        if not match:
+            return np.nan
+        num = float(match.group(1))
+        if re.search(r'\b(yr|yrs|year|years|y)\b', s):
+            return num * 12
+        return num
+
+    def clean_df(df):
+        df = df.copy()
+        df['tenure_months'] = df['tenure_months'].apply(clean_tenure)
+        df['tenure_was_missing'] = df['tenure_months'].isna().astype(int)
+        df['tenure_months'] = df['tenure_months'].fillna(df['tenure_months'].median())
+        df['plan'] = df['plan'].str.strip().str.lower()
+        df['is_refund'] = (df['MonthlyCharges'] < 0).astype(int)
+        df['charge_abs'] = df['MonthlyCharges'].abs()
+        df['login_was_missing'] = df['last_login_days'].isna().astype(int)
+        df['last_login_days'] = df['last_login_days'].fillna(df['last_login_days'].max() + 1)
+        return df
+
+    df = clean_df(df)
+
+    # ------------------------------------------------------------------
+    # 2. Features / target
+    # ------------------------------------------------------------------
+    TARGET = 'churned'
+    DROP = ['customer_id', 'MonthlyCharges', TARGET]   # use charge_abs + is_refund instead
+    y = df[TARGET]
+    X = df.drop(columns=DROP)
+
+    numeric_features = ['tenure_months', 'charge_abs', 'support_tickets_90d', 'last_login_days']
+    binary_features = ['is_refund', 'tenure_was_missing', 'login_was_missing']
+    categorical_features = ['plan']
+
+    # ------------------------------------------------------------------
+    # 3. Preprocessing
+    # ------------------------------------------------------------------
+    numeric_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler()),
+    ])
+
+    categorical_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore')),
+    ])
+
+    preprocessor = ColumnTransformer([
+        ('num', numeric_pipeline, numeric_features),
+        ('bin', 'passthrough', binary_features),
+        ('cat', categorical_pipeline, categorical_features),
+    ])
+
+    # ------------------------------------------------------------------
+    # 4. Models
+    # ------------------------------------------------------------------
+    pos_weight = (y == 0).sum() / (y == 1).sum()  # ~13.8 for 6.8% churn
+
+    logreg = Pipeline([
+        ('prep', preprocessor),
+        ('clf', LogisticRegression(max_iter=1000, class_weight='balanced', random_state=42)),
+    ])
+
+    xgb = Pipeline([
+        ('prep', preprocessor),
+        ('clf', XGBClassifier(
+            n_estimators=400,
+            learning_rate=0.05,
+            max_depth=4,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            scale_pos_weight=pos_weight,
+            eval_metric='aucpr',
+            tree_method='hist',
+            random_state=42,
+            n_jobs=-1,
+        )),
+    ])
+
+    # ------------------------------------------------------------------
+    # 5. Stratified 5-fold CV, PR-AUC
+    # ------------------------------------------------------------------
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    scoring = {
+        'pr_auc': make_scorer(average_precision_score, needs_proba=True),
+        'roc_auc': 'roc_auc',
+    }
+
+    for name, model in [('Logistic Regression', logreg), ('XGBoost', xgb)]:
+        results = cross_validate(model, X, y, cv=cv, scoring=scoring, n_jobs=-1)
+        print(f"\n{name}")
+        print(f"  PR-AUC : {results['test_pr_auc'].mean():.4f} ± {results['test_pr_auc'].std():.4f}")
+        print(f"  ROC-AUC: {results['test_roc_auc'].mean():.4f} ± {results['test_roc_auc'].std():.4f}")
+
+    print(f"\nBaseline (random) PR-AUC ≈ churn rate = {y.mean():.4f}")
+    ```
+
+    Notes on the choices:
+
+    - **`scale_pos_weight` for XGBoost** and `class_weight='balanced'` for logistic regression both compensate for the 6.8% imbalance — without them, the models will under-predict churn. This trades precision for recall, which is usually what you want for retention.
+    - **`eval_metric='aucpr'`** aligns XGBoost's internal evaluation with your primary metric.
+    - **`charge_abs` + `is_refund`** replace raw `MonthlyCharges` per the refund discussion; `MonthlyCharges` is dropped.
+    - **`handle_unknown='ignore'`** in the one-hot encoder means an unseen plan value in production won't crash the pipeline.
+    - **PR-AUC baseline** is the churn rate (~0.068) — compare against that, not 0.5.
+
+    If XGBoost clearly beats the baseline, next steps would be hyperparameter tuning (Optuna or `GridSearchCV` on `max_depth`, `learning_rate`, `n_estimators`) and a held-out test set for the final threshold/capture-rate analysis. Want me to add the holdout evaluation and top-decile capture rate?
+- user: |
+    on my work laptop:
+
+    ```
+    xgboost.core.XGBoostError: XGBoost Library (libxgboost.so) could not be loaded.
+    Likely causes:
+      * OpenMP runtime is not installed
+      - vcomp140.dll or libgomp-1.dll for Windows
+      - libomp.dylib for Mac OSX
+    ```
+
+    IT won't let me install system libraries
+  assistant: |
+    Two good options, depending on how much friction you want:
+
+    **Option 1 (fastest): swap to scikit-learn's HistGradientBoostingClassifier**
+
+    It's XGBoost-quality performance (same histogram-based algorithm), already installed with sklearn, and needs no extra system libraries:
+
+    ```python
+    from sklearn.ensemble import HistGradientBoostingClassifier
+
+    xgb = Pipeline([
+        ('prep', preprocessor),
+        ('clf', HistGradientBoostingClassifier(
+            max_iter=400,
+            learning_rate=0.05,
+            max_depth=4,
+            l2_regularization=1.0,
+            class_weight='balanced',   # supported since sklearn 1.2
+            random_state=42,
+        )),
+    ])
+    ```
+
+    Two small differences from the XGBoost version:
+
+    - It handles NaNs natively, so the imputers are optional (harmless to keep).
+    - If your sklearn is older than 1.2, `class_weight` isn't supported — use `sample_weight` in `fit`, or just drop it and rely on the PR-AUC metric (histogram boosting is often robust enough without it).
+
+    **Option 2 (if you specifically want XGBoost): install it via conda in your user space**
+
+    The pip wheel of XGBoost expects the OS to provide the OpenMP runtime; the conda-forge build **bundles it**, so no system install or admin rights needed:
+
+    ```bash
+    # Miniforge installs entirely in your home directory, no sudo
+    curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
+    bash Miniforge3-MacOSX-arm64.sh -b -p $HOME/miniforge3
+
+    $HOME/miniforge3/bin/conda create -n churn python=3.11 xgboost scikit-learn pandas -c conda-forge
+    conda activate churn
+    ```
+
+    (Use `Miniforge3-MacOSX-x86_64.sh` instead if your laptop is Intel.)
+
+    **My recommendation:** go with Option 1. For a 60k-row tabular problem, `HistGradientBoostingClassifier` will land within noise of XGBoost, and it keeps your environment simple — which matters when IT is restrictive. If you later need XGBoost-specific features (custom objectives, very large data), set up the conda env then.
+- user: |
+    fine, let's go with LightGBM instead, it installs from pip. rewrite the script
+  assistant: |
+    Here's the full script with LightGBM:
+
+    ```python
+    import re
+    import numpy as np
+    import pandas as pd
+    from sklearn.model_selection import StratifiedKFold, cross_validate
+    from sklearn.pipeline import Pipeline
+    from sklearn.compose import ColumnTransformer
+    from sklearn.preprocessing import StandardScaler, OneHotEncoder
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+    from lightgbm import LGBMClassifier
+    from sklearn.metrics import average_precision_score, make_scorer
+
+    # ------------------------------------------------------------------
+    # 1. Cleaning (unchanged)
+    # ------------------------------------------------------------------
+    def clean_tenure(val):
+        if pd.isna(val):
+            return np.nan
+        if isinstance(val, str) and val.strip().lower() in ('', '-', 'na', 'n/a', 'none', 'null'):
+            return np.nan
+        s = str(val).strip().lower()
+        match = re.search(r'(\d+(?:\.\d+)?)', s)
+        if not match:
+            return np.nan
+        num = float(match.group(1))
+        if re.search(r'\b(yr|yrs|year|years|y)\b', s):
+            return num * 12
+        return num
+
+    def clean_df(df):
+        df = df.copy()
+        df['tenure_months'] = df['tenure_months'].apply(clean_tenure)
+        df['tenure_was_missing'] = df['tenure_months'].isna().astype(int)
+        df['tenure_months'] = df['tenure_months'].fillna(df['tenure_months'].median())
+        df['plan'] = df['plan'].str.strip().str.lower()
+        df['is_refund'] = (df['MonthlyCharges'] < 0).astype(int)
+        df['charge_abs'] = df['MonthlyCharges'].abs()
+        df['login_was_missing'] = df['last_login_days'].isna().astype(int)
+        df['last_login_days'] = df['last_login_days'].fillna(df['last_login_days'].max() + 1)
+        return df
+
+    df = clean_df(df)
+
+    # ------------------------------------------------------------------
+    # 2. Features / target
+    # ------------------------------------------------------------------
+    TARGET = 'churned'
+    DROP = ['customer_id', 'MonthlyCharges', TARGET]
+    y = df[TARGET]
+    X = df.drop(columns=DROP)
+
+    numeric_features = ['tenure_months', 'charge_abs', 'support_tickets_90d', 'last_login_days']
+    binary_features = ['is_refund', 'tenure_was_missing', 'login_was_missing']
+    categorical_features = ['plan']
+
+    # ------------------------------------------------------------------
+    # 3. Preprocessing
+    # ------------------------------------------------------------------
+    numeric_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler()),
+    ])
+
+    categorical_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore')),
+    ])
+
+    preprocessor = ColumnTransformer([
+        ('num', numeric_pipeline, numeric_features),
+        ('bin', 'passthrough', binary_features),
+        ('cat', categorical_pipeline, categorical_features),
+    ])
+
+    # ------------------------------------------------------------------
+    # 4. Models
+    # ------------------------------------------------------------------
+    pos_weight = (y == 0).sum() / (y == 1).sum()  # ~13.8 for 6.8% churn
+
+    logreg = Pipeline([
+        ('prep', preprocessor),
+        ('clf', LogisticRegression(max_iter=1000, class_weight='balanced', random_state=42)),
+    ])
+
+    lgbm = Pipeline([
+        ('prep', preprocessor),
+        ('clf', LGBMClassifier(
+            n_estimators=400,
+            learning_rate=0.05,
+            num_leaves=31,
+            max_depth=4,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            scale_pos_weight=pos_weight,
+            random_state=42,
+            n_jobs=-1,
+            verbose=-1,   # suppress the "[Info] ..." training logs
+        )),
+    ])
+
+    # ------------------------------------------------------------------
+    # 5. Stratified 5-fold CV, PR-AUC
+    # ------------------------------------------------------------------
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    scoring = {
+        'pr_auc': make_scorer(average_precision_score, needs_proba=True),
+        'roc_auc': 'roc_auc',
+    }
+
+    for name, model in [('Logistic Regression', logreg), ('LightGBM', lgbm)]:
+        results = cross_validate(model, X, y, cv=cv, scoring=scoring, n_jobs=-1)
+        print(f"\n{name}")
+        print(f"  PR-AUC : {results['test_pr_auc'].mean():.4f} ± {results['test_pr_auc'].std():.4f}")
+        print(f"  ROC-AUC: {results['test_roc_auc'].mean():.4f} ± {results['test_roc_auc'].std():.4f}")
+
+    print(f"\nBaseline (random) PR-AUC ≈ churn rate = {y.mean():.4f}")
+    ```
+
+    Changes from the XGBoost version:
+
+    - **`LGBMClassifier` params**: `num_leaves` replaces `max_depth` as the main complexity control (LightGBM is leaf-wise), though I set both — `max_depth=4` keeps it conservative on 60k rows. `scale_pos_weight` works the same way as XGBoost.
+    - **`verbose=-1`** silences LightGBM's chatty per-iteration logging, which otherwise floods the CV output.
+    - **`needs_proba=True`** in the PR-AUC scorer: note that in recent scikit-learn versions this is deprecated in favor of `response_method="predict_proba"` — if you get a `FutureWarning`, just swap it.
+
+    One heads-up: on macOS, the pip LightGBM wheel can also complain about a missing OpenMP runtime (`libomp`), same class of problem as XGBoost. If that happens, `pip install lightgbm` from conda-forge via Miniforge is the fallback — but recent wheels generally bundle it, so try as-is first.
+- user: |
+    results:
+
+    ```
+    model     PR-AUC (mean ± sd)   ROC-AUC
+    logreg    0.312 ± 0.011        0.781
+    lgbm      0.441 ± 0.014        0.842
+    ```
+
+    is 0.44 good?
+  assistant: |
+    Yes — 0.44 is solidly good for this problem. Here's how to read it:
+
+    **The right comparison is the baseline, not 1.0.** With a 6.8% churn rate, a random model scores ~0.068 PR-AUC. LightGBM at 0.44 is **~6.5× better than random**. PR-AUC is bounded above by the prevalence of the positive class in a practical sense — even a perfect model rarely hits 1.0 on imbalanced data, because precision is capped by how many churners actually exist in each risk region. For churn prediction, 0.4+ is a respectable result; published benchmarks on telecom-style churn data typically land in the 0.3–0.5 range.
+
+    **The gap between the models is the more interesting signal.** LightGBM (0.441) beats logistic regression (0.312) by a wide margin — that tells you there are real non-linearities and interactions (e.g., tenure × plan, tickets × login recency) that the linear model can't capture. It also means feature engineering on the logistic model has headroom if you want an interpretable model for stakeholders.
+
+    **The number that actually matters for your business:** what fraction of churners you catch in the top decile of predicted risk. PR-AUC of 0.44 with this base rate suggests something like 35–45% capture in the top 10%, but you should measure it directly:
+
+    ```python
+    from sklearn.model_selection import cross_val_predict
+
+    proba = cross_val_predict(lgbm, X, y, cv=cv, method='predict_proba')[:, 1]
+    order = np.argsort(proba)[::-1]
+
+    for frac in [0.05, 0.10, 0.20]:
+        k = int(frac * len(y))
+        captured = y.iloc[order[:k]].sum() / y.sum()
+        precision = y.iloc[order[:k]].mean()
+        print(f"Top {frac:.0%}: capture {captured:.1%} of churners, precision {precision:.1%}")
+    ```
+
+    That gives you the slide-ready version: "contact the top 10% riskiest customers and you reach X% of everyone who will churn, with Y% of contacted customers actually churning."
+
+    **Two caveats before you celebrate:**
+
+    1. **Check for leakage.** A jump this large over the linear baseline is usually legit, but verify that no feature encodes post-churn information (e.g., `last_login_days` computed *after* the churn event, or support tickets logged during a cancellation flow). If `last_login_days` dominates feature importance by a huge margin, look at how it's calculated.
+    2. **The ±0.014 std is healthy** — stable across folds, no sign of a flaky split.
+
+    Next steps I'd suggest: hold out a test set, fit the final LightGBM, check calibration (`CalibratedClassifierCV` — important if these probabilities feed a cost/benefit calculation), and inspect feature importances. Want me to write that final evaluation script?
+- user: |
+    how do I pick a threshold? a retention offer costs us 15 EUR per customer, a churned customer costs about 180 EUR on average
+  assistant: |
+    This is a nice setup because the math gives you a direct answer. The logic: contact a customer if the expected savings exceed the offer cost.
+
+    **The basic threshold**
+
+    If you contact a customer with churn probability `p`:
+    - Expected loss if you do nothing: `p × 180 EUR`
+    - Cost of the offer: `15 EUR`
+
+    Contact when `p × 180 > 15`, i.e. **p > 15/180 ≈ 0.083**.
+
+    So the threshold is ~8.3% predicted churn probability — notably *below* the base rate of 6.8%... wait, actually just above it. That tells you something important: **at these economics, you should contact almost everyone at or above average risk.** The offer is cheap relative to churn (12:1), so the model's job is mostly ranking, not thresholding.
+
+    **The refinement that matters: the offer isn't 100% effective**
+
+    The calculation above assumes the offer always prevents churn, which it won't. If the offer saves a fraction `s` of would-be churners, expected savings per contacted customer are `p × 180 × s`, so:
+
+    ```
+    threshold = 15 / (180 × s)
+    ```
+
+    - Save rate 50% → threshold ≈ 0.167
+    - Save rate 25% → threshold ≈ 0.333
+    - Save rate 10% → threshold ≈ 0.833
+
+    You probably don't know `s` yet — that's the number to estimate, either from past retention campaigns or a small A/B test. If you can't estimate it, run the threshold as a function of `s` and show stakeholders the table; it makes the "we need to measure offer effectiveness" conversation concrete.
+
+    **Code**
+
+    ```python
+    from sklearn.model_selection import cross_val_predict
+
+    OFFER_COST = 15
+    CHURN_COST = 180
+
+    proba = cross_val_predict(lgbm, X, y, cv=cv, method='predict_proba')[:, 1]
+
+    def expected_value(p, save_rate):
+        # EV of contacting vs not contacting
+        return p * CHURN_COST * save_rate - OFFER_COST
+
+    for save_rate in [0.10, 0.25, 0.50, 1.00]:
+        thr = OFFER_COST / (CHURN_COST * save_rate)
+        contacted = proba >= thr
+        n = contacted.sum()
+        ev = expected_value(proba[contacted], save_rate).sum()
+        print(f"save_rate={save_rate:.0%}: threshold={thr:.3f}, "
+              f"contact {n:,} customers ({n/len(proba):.1%}), "
+              f"expected net value €{ev:,.0f}")
+    ```
+
+    **One critical prerequisite: calibration**
+
+    This whole approach treats the model's output as a real probability, so check calibration before trusting it — `scale_pos_weight` distorts predicted probabilities (they'll be inflated):
+
+    ```python
+    from sklearn.calibration import calibration_curve
+    import matplotlib.pyplot as plt
+
+    frac_pos, mean_pred = calibration_curve(y, proba, n_bins=10, strategy='quantile')
+    plt.plot(mean_pred, frac_pos, marker='o')
+    plt.plot([0, 1], [0, 1], '--')  # perfect calibration
+    plt.xlabel('Predicted churn probability'); plt.ylabel('Actual churn rate')
+    ```
+
+    If the curve is off the diagonal, wrap the model: `CalibratedClassifierCV(lgbm, method='isotonic', cv=5)` — fit it on training data only, then re-derive the threshold from calibrated probabilities. Isotonic works well with your ~4,200 positives.
+
+    **Bottom line:** threshold ≈ 0.083 if offers always work, higher if they don't. Get the save rate estimated, calibrate the probabilities, and the threshold falls out of the arithmetic rather than being a judgment call.
+- user: |
+    write me the math for that threshold step by step, I need to show it to my manager
+  assistant: |
+    Here's the derivation, written so it can go straight into a slide or doc:
+
+    ---
+
+    ## Churn Model Threshold: Expected Value Analysis
+
+    ### Setup
+
+    | Symbol | Meaning | Value |
+    |---|---|---|
+    | `C_offer` | Cost of retention offer per contacted customer | €15 |
+    | `C_churn` | Average cost of losing a customer | €180 |
+    | `p` | Model-predicted churn probability for a customer | 0 to 1 |
+    | `s` | Effectiveness of the offer (fraction of would-be churners who stay because of it) | unknown, 0–1 |
+
+    ### Step 1: Cost of doing nothing
+
+    For a customer with churn probability `p`, if we take no action, the expected cost is:
+
+    ```
+    E[do nothing] = p × C_churn
+    ```
+
+    *Example: a customer with p = 0.20 has an expected loss of 0.20 × €180 = €36.*
+
+    ### Step 2: Cost of making the offer
+
+    If we make the offer, two things can happen:
+
+    - The customer would have churned (probability `p`), but the offer saves them with probability `s`. This happens with probability `p × s`, and we pay the offer cost.
+    - Otherwise, the offer changes nothing, and we pay the offer cost regardless.
+
+    The offer costs €15 in **every** case — it's a fixed spend. The benefit is the churn we prevent:
+
+    ```
+    E[offer] = C_offer  +  p × (1 − s) × C_churn
+    ```
+
+    *(Expected cost = the €15 we always spend, plus the churn cost we still incur when the offer fails to save them.)*
+
+    ### Step 3: Compare the two options
+
+    Making the offer is worthwhile when its expected cost is lower than doing nothing:
+
+    ```
+    C_offer + p × (1 − s) × C_churn  <  p × C_churn
+    ```
+
+    Subtract `p × (1 − s) × C_churn` from both sides:
+
+    ```
+    C_offer  <  p × C_churn − p × (1 − s) × C_churn
+    C_offer  <  p × C_churn × [1 − (1 − s)]
+    C_offer  <  p × C_churn × s
+    ```
+
+    ### Step 4: Solve for the threshold
+
+    ```
+    p  >  C_offer / (C_churn × s)
+    ```
+
+    **The decision rule: contact every customer whose predicted churn probability exceeds `C_offer / (C_churn × s)`.**
+
+    ### Step 5: Plug in the numbers
+
+    **Best case (offer always works, s = 1):**
+
+    ```
+    p > 15 / (180 × 1) = 0.083  →  contact everyone above 8.3% risk
+    ```
+
+    **With realistic offer effectiveness:**
+
+    | Offer save rate `s` | Threshold | Interpretation |
+    |---|---|---|
+    | 100% | 8.3% | Contact everyone at/above average risk |
+    | 50% | 16.7% | Contact top ~25–30% riskiest |
+    | 25% | 33.3% | Contact top ~10% riskiest |
+    | 10% | 83.3% | Only contact near-certain churners |
+
+    ### Key takeaway
+
+    The offer-to-churn cost ratio is 12:1 (€15 vs €180), so retention outreach is almost always worth it — **even a weak offer that saves only 1 in 12 targeted customers breaks even.** The main open question is the offer's actual save rate `s`, which determines how wide we cast the net. We recommend a pilot A/B test (offer vs. no offer on a random subset of high-risk customers) to measure `s` directly.
+
+    ---
+
+    Two notes for you (not the manager):
+
+    1. **Step 2's framing** — "offer cost is paid regardless, benefit is prevented churn" — is the version least likely to get challenged. An alternative framing (expected savings minus cost) gives the identical threshold, so if your manager prefers "expected benefit = p × s × €180 vs. cost €15," it's the same math.
+    2. **The pilot test recommendation at the end is the real ask.** Without measuring `s`, the threshold is a range, not a number — and the A/B test also validates that the model's high-risk group actually churns more, which closes the loop on the whole project.
+- user: |
+    marketing says they can only call 500 customers a month, out of the 60k. how does that change things?
+  assistant: |
+    A fixed capacity constraint actually **simplifies** the decision: the threshold becomes irrelevant. You're not choosing "who's above a probability cutoff" — you're choosing **the 500 highest-risk customers, full stop.** The model's only job is ranking quality at the very top.
+
+    **What changes conceptually**
+
+    - The threshold is now *derived*, not chosen: it's whatever the predicted probability of the 500th-ranked customer happens to be. If that's 35%, you call everyone ≥35%; if it's 12%, same logic.
+    - Metrics like PR-AUC across the whole dataset matter less. What matters is **precision@500** — of your top 500, how many actually churn. That's the number to optimize and report.
+    - The earlier threshold table (contact everyone above 8.3%) is moot — you couldn't afford that many calls anyway. In a sense, marketing's constraint resolves the "save rate unknown" problem: at 12:1 economics, calling the top 500 is almost certainly positive-EV for any plausible save rate.
+
+    **The math for your manager**
+
+    With 500 calls/month at precision `P` (fraction of called customers who would have churned) and save rate `s`:
+
+    ```
+    Expected churners among called:   500 × P
+    Expected saves:                   500 × P × s
+    Monthly benefit:                  500 × P × s × €180
+    Monthly cost:                     500 × €15 = €7,500
+    Net monthly value:                500 × P × s × 180 − 7,500
+    ```
+
+    Break-even: `P × s > 0.083`. So if your top-500 precision is even 25% and the offer saves 1 in 3, that's `0.25 × 0.33 = 0.083` — right at break-even, and anything better is pure gain. Realistically top-500 precision with your model should be well above 25%.
+
+    **Measure it directly:**
+
+    ```python
+    from sklearn.model_selection import cross_val_predict
+
+    proba = cross_val_predict(lgbm, X, y, cv=cv, method='predict_proba')[:, 1]
+    top500 = np.argsort(proba)[-500:]          # or sort descending, take first 500
+
+    precision_at_500 = y.iloc[top500].mean()
+    print(f"Precision@500: {precision_at_500:.1%}")
+    print(f"Churners captured: {y.iloc[top500].sum()} of {y.sum()} "
+          f"({y.iloc[top500].sum() / y.sum():.1%} of all churn)")
+    ```
+
+    **Two things to flag:**
+
+    1. **Check the churn window.** If 6.8% is *annual* churn, that's ~340 churners/month across the base — meaning your 500 calls could potentially touch every churner. If it's *monthly*, ~4,200 churners/month and 500 calls covers ~12%. The interpretation of precision@500 changes accordingly, so confirm with whoever owns the churn definition.
+    2. **Calibration matters less now, ranking matters more.** Since you're taking the top 500 regardless, inflated probabilities from `scale_pos_weight` don't distort the *selection* — but they would distort the EV forecast, so still calibrate before quoting expected savings to finance.
+
+    One strategic note: at 500/month you're covering <1% of the base monthly, so this is a "rescue the riskiest" program, not broad retention. If it proves out, the next conversation is cheaper interventions (email/in-app offers) for the mid-risk tier — the model already ranks everyone, so expanding down the list is straightforward.
+- user: |
+    ok so we rank by score and take the top 500 each month. write the scoring + export to csv code
+  assistant: |
+    Here's a scoring script you can run monthly. It fits the final model on all data, scores everyone, and exports the top 500 with the context the call team needs:
+
+    ```python
+    import numpy as np
+    import pandas as pd
+    from sklearn.calibration import CalibratedClassifierCV
+
+    # ------------------------------------------------------------------
+    # 1. Fit the final model on ALL data (CV is done; now use every row)
+    # ------------------------------------------------------------------
+    # Calibrated so the exported probabilities are real probabilities,
+    # not the inflated ones from scale_pos_weight
+    calibrated = CalibratedClassifierCV(lgbm, method='isotonic', cv=5)
+    calibrated.fit(X, y)
+
+    # ------------------------------------------------------------------
+    # 2. Score everyone
+    # ------------------------------------------------------------------
+    proba = calibrated.predict_proba(X)[:, 1]
+
+    scores = pd.DataFrame({
+        'customer_id': df['customer_id'],
+        'plan': df['plan'],
+        'tenure_months': df['tenure_months'],
+        'charge_abs': df['charge_abs'],
+        'support_tickets_90d': df['support_tickets_90d'],
+        'last_login_days': df['last_login_days'],
+        'churn_probability': proba,
+    })
+
+    # ------------------------------------------------------------------
+    # 3. Rank and take the top 500
+    # ------------------------------------------------------------------
+    scores = scores.sort_values('churn_probability', ascending=False).reset_index(drop=True)
+    scores['rank'] = scores.index + 1
+
+    N_CALLS = 500
+    call_list = scores.head(N_CALLS).copy()
+
+    # ------------------------------------------------------------------
+    # 4. Export
+    # ------------------------------------------------------------------
+    from datetime import datetime
+
+    stamp = datetime.now().strftime('%Y-%m-%d')
+    call_list.to_csv(f'churn_call_list_{stamp}.csv', index=False)
+    scores.to_csv(f'churn_scores_all_{stamp}.csv', index=False)  # full scores for the mid-risk tier later
+
+    print(f"Call list: {len(call_list)} customers")
+    print(f"Probability range: {call_list['churn_probability'].min():.3f} – {call_list['churn_probability'].max():.3f}")
+    print(f"Plan mix:\n{call_list['plan'].value_counts()}")
+    ```
+
+    Design decisions worth knowing:
+
+    - **`CalibratedClassifierCV` wraps the model** so the exported `churn_probability` is trustworthy for the EV math you showed your manager. It refits internally, so this takes ~5× longer than one fit — fine for a monthly job on 60k rows.
+    - **Two files, not one.** The full scores CSV costs nothing to produce and means the mid-risk email tier (and any backtesting against actual outcomes) doesn't need the model re-run.
+    - **The call list includes the raw features** (tickets, login days, plan) so agents have context on the call — a customer with 5 tickets and 90 days inactive needs a different conversation than a 3-year loyal one.
+
+    **Two operational gotchas:**
+
+    1. **Exclude customers already contacted or recently saved.** If someone got an offer last month, they shouldn't reappear. Keep a `last_contacted` column and filter: `scores[~scores['customer_id'].isin(recently_contacted)]` before taking the top 500.
+    2. **This scores the same `df` the model trained on** — fine for the first run, but for real monthly scoring you'll get fresh feature snapshots (new ticket counts, new login recency). Structure it as a function now so next month is just `score_customers(new_df)`:
+
+    ```python
+    def score_customers(df_new, model=calibrated):
+        df_clean = clean_df(df_new)
+        X_new = df_clean.drop(columns=['customer_id', 'MonthlyCharges'])
+        proba = model.predict_proba(X_new)[:, 1]
+        out = df_new[['customer_id']].copy()
+        out['churn_probability'] = proba
+        return out.sort_values('churn_probability', ascending=False)
+    ```
+
+    Last thing: set up the feedback loop now — after each month, join actual churn outcomes back onto the call list to measure precision@500 and save rate for real. That's what turns this from a one-off model into a program with a track record.
+- user: |
+    now SQL: monthly cohort retention from subscriptions(user_id, start_date, end_date, plan). start_date and end_date are text in this table unfortunately
+  assistant: |
+    Here's a PostgreSQL version (I'll note dialect differences below). It treats a customer as retained in a given month if their subscription was active at any point during that month:
+
+    ```sql
+    with subs as (
+        select
+            user_id,
+            plan,
+            start_date::date  as start_dt,
+            end_date::date    as end_dt          -- NULL = still active
+        from subscriptions
+    ),
+
+    cohorts as (
+        -- one row per user: their cohort month and whether they're still active
+        select
+            user_id,
+            date_trunc('month', start_dt) as cohort_month,
+            (end_dt is null or end_dt >= current_date) as is_active_now
+        from subs
+        where start_dt::text >= '2024-01-01'   -- optional: bound the cohort window
+    ),
+
+    activity as (
+        -- every month a subscription was live, from cohort month onward
+        select
+            s.user_id,
+            date_trunc('month', s.start_dt) as cohort_month,
+            gs.month                        as activity_month,
+            (extract(year  from gs.month) - extract(year  from date_trunc('month', s.start_dt))) * 12
+          + (extract(month from gs.month) - extract(month from date_trunc('month', s.start_dt)))
+            as months_since_start
+        from subs s
+        cross join lateral generate_series(
+            date_trunc('month', s.start_dt),
+            date_trunc('month', coalesce(s.end_dt, current_date)),
+            interval '1 month'
+        ) as gs(month)
+        where s.start_dt >= date_trunc('month', s.start_dt)  -- no-op, keeps intent clear
+    )
+
+    select
+        a.cohort_month,
+        a.months_since_start,
+        count(distinct a.user_id)                          as active_users,
+        c.cohort_size,
+        round(100.0 * count(distinct a.user_id) / c.cohort_size, 1) as retention_pct
+    from activity a
+    join (
+        select user_id, cohort_month, count(*) as cohort_size
+        from cohorts
+        group by user_id, cohort_month
+    ) c using (user_id, cohort_month)
+    where a.months_since_start between 0 and 12
+    group by a.cohort_month, a.months_since_start, c.cohort_size
+    order by a.cohort_month, a.months_since_start;
+    ```
+
+    This gives you the classic triangle: cohort month down the rows, months-since-start across, retention % in the cells.
+
+    **Key decisions baked in — adjust to your definitions:**
+
+    1. **"Active in month M"** = the subscription overlapped at least one day of that month (`generate_series` from start month to end month). A stricter alternative: active only if the subscription covered the *whole* month (`end_dt >= month_end`), which shows lower, steeper churn curves. Pick one and be consistent — the overlap definition is more common for subscriptions.
+    2. **`end_date IS NULL` = still active**, so they appear in every month up to today. If NULL means something else in your data, check first.
+    3. **Users with multiple subscription rows** (plan changes, win-backs) will be counted once per cohort via `count(distinct user_id)`, but their activity union across rows. If a user can have overlapping rows, dedupe first.
+
+    **Dialect notes:**
+
+    - **MySQL**: replace `::date` with `STR_TO_DATE(start_date, '%Y-%m-%d')`, `date_trunc('month', x)` with `DATE_FORMAT(x, '%Y-%m-01')`, and `generate_series` with a numbers/calendar table join.
+    - **BigQuery**: `PARSE_DATE('%Y-%m-%d', start_date)`, `DATE_TRUNC(x, MONTH)`, and `GENERATE_DATE_ARRAY` + `UNNEST` instead of `generate_series`.
+    - **Snowflake**: `TO_DATE(start_date)`, `DATE_TRUNC('MONTH', x)`, and `GENERATOR` / a calendar table.
+
+    **First thing to check:** what the text format actually is. Run:
+
+    ```sql
+    select start_date from subscriptions limit 20;
+    ```
+
+    If it's `YYYY-MM-DD`, the `::date` cast works. If it's `DD/MM/YYYY` or `Jan 2024` style, the cast will error or silently misparse — tell me the format and your database, and I'll adjust the parsing.
+- user: |
+    ```
+    ERROR:  function date_trunc(unknown, text) does not exist
+    LINE 3:   date_trunc('month', start_date) AS cohort,
+              ^
+    HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+    ```
+  assistant: |
+    The error says `start_date` is still text when it hits `date_trunc` — you need to cast it to a date first. The `::date` cast from my snippet apparently didn't make it into the version you ran (your line reads `date_trunc('month', start_date)` directly on the text column).
+
+    Fix it like this:
+
+    ```sql
+    select
+        date_trunc('month', start_date::date) as cohort,
+        ...
+    ```
+
+    Or cast once in a CTE and reuse it, which is cleaner:
+
+    ```sql
+    with subs as (
+        select
+            user_id,
+            plan,
+            start_date::date as start_dt,
+            end_date::date   as end_dt
+        from subscriptions
+    )
+    select
+        date_trunc('month', start_dt) as cohort,
+        ...
+    from subs
+    ```
+
+    **If the cast itself errors** (`invalid input syntax for type date`), the text isn't in `YYYY-MM-DD` format. Check what you're dealing with:
+
+    ```sql
+    select start_date, end_date from subscriptions limit 20;
+    ```
+
+    Then use explicit parsing instead of `::date`:
+
+    ```sql
+    -- DD/MM/YYYY
+    to_date(start_date, 'DD/MM/YYYY')
+
+    -- MM/DD/YYYY
+    to_date(start_date, 'MM/DD/YYYY')
+
+    -- 'Jan 2024' style
+    to_date(start_date, 'Mon YYYY')
+    ```
+
+    One more gotcha: if any rows have empty strings (`''`) rather than true NULLs, the cast will fail on those too. Handle them with:
+
+    ```sql
+    nullif(trim(start_date), '')::date
+    ```
+
+    Paste a few sample values if it still misbehaves and I'll match the format exactly.
+- user: |
+    plot the cohort retention as a seaborn heatmap, full code
+  assistant: |
+    Here's the full script — it runs the cohort query, pivots into the triangle, and plots it:
+
+    ```python
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from sqlalchemy import create_engine
+
+    # ------------------------------------------------------------------
+    # 1. Run the cohort query
+    # ------------------------------------------------------------------
+    engine = create_engine('postgresql+psycopg2://user:password@localhost:5432/mydb')
+
+    query = """
+    with subs as (
+        select
+            user_id,
+            start_date::date as start_dt,
+            end_date::date   as end_dt
+        from subscriptions
+    ),
+    cohorts as (
+        select
+            user_id,
+            date_trunc('month', start_dt) as cohort_month
+        from subs
+    ),
+    activity as (
+        select
+            s.user_id,
+            date_trunc('month', s.start_dt) as cohort_month,
+            gs.month as activity_month
+        from subs s
+        cross join lateral generate_series(
+            date_trunc('month', s.start_dt),
+            date_trunc('month', coalesce(s.end_dt, current_date)),
+            interval '1 month'
+        ) as gs(month)
+    )
+    select
+        a.cohort_month,
+        (extract(year from a.activity_month) - extract(year from a.cohort_month)) * 12
+      + (extract(month from a.activity_month) - extract(month from a.cohort_month))
+        as months_since_start,
+        count(distinct a.user_id) as active_users
+    from activity a
+    group by a.cohort_month, months_since_start
+    """
+
+    df = pd.read_sql(query, engine)
+
+    # ------------------------------------------------------------------
+    # 2. Pivot to cohort triangle: cohort_month x months_since_start
+    # ------------------------------------------------------------------
+    df['cohort_month'] = pd.to_datetime(df['cohort_month'])
+
+    cohort_sizes = (
+        df[df['months_since_start'] == 0]
+        .groupby('cohort_month')['active_users'].first()
+    )
+
+    retention = df.pivot_table(
+        index='cohort_month',
+        columns='months_since_start',
+        values='active_users',
+    ).div(cohort_sizes, axis=0) * 100
+
+    # ------------------------------------------------------------------
+    # 3. Plot
+    # ------------------------------------------------------------------
+    sns.set_theme(style='white')
+
+    fig, ax = plt.subplots(figsize=(14, 8))
+    sns.heatmap(
+        retention,
+        annot=True,              # show numbers in cells
+        fmt='.0f',               # whole percentages
+        cmap='RdYlGn',           # red = low retention, green = high
+        vmin=0, vmax=100,
+        linewidths=0.5,
+        cbar_kws={'label': 'Retention %'},
+        ax=ax,
+    )
+
+    ax.set_title('Monthly Cohort Retention', fontsize=16, pad=12)
+    ax.set_xlabel('Months Since Start')
+    ax.set_ylabel('Cohort Month')
+
+    # format y labels as YYYY-MM
+    ax.set_yticklabels([d.strftime('%Y-%m') for d in retention.index], rotation=0)
+
+    plt.tight_layout()
+    plt.savefig('cohort_retention.png', dpi=150)
+    plt.show()
+    ```
+
+    Notes on the choices:
+
+    - **`months_since_start == 0` defines cohort size** — everyone was active in their first month by construction, so that column is always 100% and everything else is relative to it.
+    - **The triangle will have NaN in the upper-right** (recent cohorts haven't lived enough months yet) — the heatmap renders those as blank cells automatically, which is what you want. Don't fill them with 0.
+    - **`fmt='.0f'`** keeps cells readable; switch to `'.1f'` if you want a decimal.
+    - **`cmap='RdYlGn'`** is intuitive for stakeholders, but it's not colorblind-safe — `'viridis'` or `'mako'` are safer alternatives if that matters for your audience.
+
+    **Optional variant — hide the numbers when the grid is large.** With 24+ cohorts × 12+ months, annotations become unreadable. Either drop `annot=True`, or annotate only every few months:
+
+    ```python
+    # annotate only months 0, 1, 3, 6, 12
+    annot_mask = retention.columns.isin([0, 1, 3, 6, 12])
+    sns.heatmap(retention, annot=annot_mask, ...)
+    ```
+
+    If you'd rather see absolute user counts instead of percentages (useful for spotting that a big recent cohort is dominating), plot `df.pivot_table(...)` directly without the `.div(cohort_sizes)` step.
+- user: |
+    explain SHAP values to me like I'm a product manager
+  assistant: |
+    SHAP values answer one question for each customer: **"how much did each factor push this person's churn prediction up or down?"**
+
+    **The core idea**
+
+    Your model says a customer has a 45% churn probability. That's a number, but it doesn't tell you *why*. SHAP breaks that 45% into contributions from each feature, like an itemized receipt:
+
+    ```
+    Base rate (average customer):        6.8% churn risk
+
+      87 days since last login:        +22%   ← biggest driver
+      5 support tickets in 90 days:    +14%
+      Family plan:                      +3%
+      30 months tenure:                 −8%   ← loyalty is protecting them
+      Basic charge €17.99:              −1%
+
+      Final prediction:                ~37%... (roughly, contributions don't
+                                                always add linearly, but they do add up)
+    ```
+
+    Every prediction gets its own breakdown like this. "SHAP" stands for SHapley Additive exPlanations — the game-theory part just means the credit is split *fairly* among features, so no feature gets blamed for something another feature caused.
+
+    **Why you'd care, as a PM**
+
+    1. **Trust and sanity-checking.** Before anyone acts on the model, you want to see it's using sensible signals (login recency, support tickets) and not a weird artifact (e.g., customer ID). If SHAP shows the model relies on something nonsensical, you just caught a bug before it cost you.
+
+    2. **Better retention conversations.** Your call list isn't just "these 500 people might churn" — it's "this person churned-risk is driven by 3 unresolved support tickets." That changes what the agent says on the call. You could even route customers differently: ticket-driven churners go to support recovery, inactivity-driven ones get a re-engagement offer.
+
+    3. **Product insights, not just saves.** Aggregate SHAP across all customers shows what *drives churn overall*. If "days since last login" dominates everything, the real product lever is engagement, and the retention calls are a band-aid. That's a roadmap conversation, not a CRM one.
+
+    4. **Stakeholder explanations.** When finance asks "why should we trust this model?" or legal asks "is it using anything inappropriate?", SHAP plots are the answer — no math degree required to read them.
+
+    **The two plots you'd actually look at**
+
+    - **Summary plot (global):** every feature ranked by overall impact, showing whether high values push churn up or down. One picture of how the model thinks.
+    - **Waterfall / force plot (local):** the itemized receipt for one customer. This is what you'd show for "why is this specific person on the call list?"
+
+    **One honest caveat:** SHAP explains what the *model* uses, not what *causes* churn. If the model learned that support tickets predict churn, that doesn't prove tickets cause churn (angry customers might both file tickets and churn for other reasons). It's a flashlight, not a lever — but for explaining predictions and auditing a model, it's the best tool going.
+
+    If you want, I can add a SHAP summary plot to your LightGBM pipeline — it's about five lines of code.
+- user: |
+    the top SHAP feature is support_tickets_90d. the product team asks if that means support is causing churn
+  assistant: |
+    Short answer: **no — and it's important they understand why, because acting on that misreading could waste a quarter.**
+
+    **What SHAP actually says**
+
+    `support_tickets_90d` being the top feature means: *customers who file more tickets are more likely to churn, and the model uses that to predict.* That's a correlation the model found in the data. It says nothing about whether tickets **cause** churn.
+
+    **Why the causal reading is probably wrong (or at least incomplete)**
+
+    The most likely story is a **confounder**: something else makes customers both file tickets and churn. Examples:
+
+    - A buggy feature or billing problem makes the product frustrating → customers file tickets *and* churn because the product is broken. The ticket didn't cause the churn; the underlying problem did.
+    - Unhappy customers in general are more engaged with support *and* more likely to leave — tickets are a *symptom* of dissatisfaction, not its cause.
+    - Even the reverse direction is possible: customers who were already mentally checked out file a ticket as a last resort, get a mediocre answer, and leave.
+
+    If product "fixes" support (faster responses, fewer tickets) without fixing the underlying issues, churn won't move — and you'll have spent the effort proving SHAP isn't causal.
+
+    **There's also a useful signal hiding in the direction**
+
+    Check the SHAP dependence plot: does risk rise with *every* ticket, or is there a threshold? Often you'll see 0–1 tickets is neutral or even protective (engaged customers getting help), while 3+ is strongly predictive. That pattern suggests "unresolved problems piling up" — which points at *resolution quality*, not ticket volume. Support might be fine; the product issues generating tickets might be the real target.
+
+    **How to actually answer the causal question**
+
+    1. **Segment the tickets.** Join ticket categories/resolution data if you have it. If churn concentrates in billing complaints vs. how-do-I questions, that tells you where the product problem lives.
+    2. **Look at resolution.** Tickets resolved quickly and satisfactorily vs. reopened/escalated — if only the bad-resolution tickets predict churn, support is part of the solution, not the problem.
+    3. **The real test: an experiment.** Randomize a proactive intervention (e.g., personal outreach after a customer's 2nd ticket) and measure churn vs. control. That's the only thing that converts correlation into a causal claim — same logic as the save-rate A/B test you're already planning for the retention offers.
+    4. **Check timing.** If you have ticket timestamps, see whether churn risk rises *after* unresolved tickets or whether tickets are just an early marker of customers who were leaving anyway.
+
+    **How I'd frame it to product:**
+
+    > "Support tickets are the model's strongest *early warning signal* — customers with 3+ tickets in 90 days are at much higher risk. That makes tickets a great trigger for intervention, but it doesn't mean support is causing churn. More likely, both tickets and churn are symptoms of product problems. If we fix the issues generating the tickets, both should improve — and we can test that directly."
+
+    The reframe that lands well with PMs: **SHAP found you a smoke detector, not an arsonist.** The detector is valuable — but you still need to find the fire.
+- user: |
+    write a short paragraph for the report about that, correlation vs causation, no jargon
+  assistant: |
+    Support tickets are the model's strongest warning sign: customers who file more tickets are more likely to cancel. This does not mean that support is causing customers to leave. More likely, both are symptoms of the same underlying problem — customers hit an issue in the product, contact support about it, and some of them eventually give up. In other words, tickets are a smoke detector, not the fire. The practical implication is twofold: tickets are an excellent early trigger for reaching out to at-risk customers, and reducing churn for good will mean finding and fixing the product issues that generate the tickets in the first place. We recommend reviewing what those tickets are about, and testing whether proactive outreach after a customer's second ticket measurably reduces cancellations.
+- user: |
+    different thing, summarize this article for me:
+
+    ```
+    Why subscribers leave: lessons from five streaming services
+    Across the five services we studied, involuntary churn - failed payments, expired cards - accounted for 20 to 40 percent of all cancellations, a share most teams underestimate because it never shows up in exit surveys. Among voluntary cancellations, the most cited reason was price increases, followed by "nothing new to watch" in the month before cancelling. Customers who contacted support twice or more within a month were 3.1 times as likely to cancel, but the effect disappeared when the issue was resolved on the first contact. Annual plans cut churn by roughly half compared with monthly plans, though part of the effect is selection: committed customers choose annual plans. Win-back campaigns recovered 8 to 12 percent of churned users within six months, with personalized content recommendations outperforming discounts. The authors recommend separating involuntary and voluntary churn in every model and dashboard, and treating first-contact resolution as a retention metric.
+    ```
+  assistant: |
+    Here's a summary:
+
+    **Key findings from the study of five streaming services:**
+
+    - **Involuntary churn is huge and invisible.** Failed payments and expired cards cause 20–40% of all cancellations — and most teams miss it because these customers never appear in exit surveys.
+    - **Top voluntary reasons:** price increases first, then "nothing new to watch" in the month before cancelling.
+    - **Support matters — but resolution is what counts.** Customers with 2+ support contacts in a month were 3.1× more likely to cancel, but that risk vanished when the issue was resolved on first contact.
+    - **Annual plans halve churn**, though partly because already-committed customers pick them (selection effect, not pure causation).
+    - **Win-backs work modestly:** 8–12% of churned users return within six months, and personalized content recommendations beat discounts at bringing them back.
+
+    **The authors' two recommendations:** separate involuntary and voluntary churn in every model and dashboard, and treat first-contact resolution as a retention metric.
+
+    **Relevance to your churn project:** this maps directly onto what you're building. The support-ticket finding echoes your SHAP results — and the "effect disappears with first-contact resolution" detail strengthens the case for checking ticket *resolution* data, not just counts. The involuntary churn point is worth flagging too: if your `churned` label includes failed-payment cancellations, that's a distinct segment worth separating, since it needs a dunning/payment-retry fix rather than a retention offer.
+- user: |
+    write a LinkedIn post about our churn project, 120 words, no buzzwords
+  assistant: |
+    We built a churn model for our subscription app. 60,000 customers, 6.8% monthly churn. The model ranks customers by cancellation risk, and the retention team calls the top 500 each month.
+
+    A few things we learned along the way:
+
+    The data was messier than expected — tenure recorded as "1 yr" and "7 months" in the same column, negative charges that turned out to be refunds. Cleaning took longer than modeling, as usual.
+
+    Our best model catches about 4 in 10 churners in the top 10% of its rankings.
+
+    The strongest warning sign is support tickets. That doesn't mean support causes churn — more likely both are symptoms of product problems. We're now looking at what those tickets are actually about.
+
+    Next step: measure whether the calls actually save customers.
+- user: |
+    too salesy. again, more like an engineer talking
+  assistant: |
+    We shipped a churn model for our subscription app. ~60k customers, 6.8% churn rate, so accuracy was useless as a metric — we used PR-AUC and top-decile capture instead.
+
+    Most of the work was data cleaning. Tenure was free-text ("1 yr", "7 months", blanks), and 40 customers had negative charges, which finance confirmed were refunds, not errors. We kept them and flagged them.
+
+    LightGBM beat logistic regression by a wide margin (PR-AUC 0.44 vs 0.31), which mostly means the relationships aren't linear.
+
+    Top feature is support_tickets_90d. Correlation, not causation — we're checking ticket categories and resolution data before anyone concludes support is the problem.
+
+    Retention calls the top 500 monthly. Threshold came from offer cost vs. churn cost, not a default 0.5.
+- user: |
+    back to the model. the March data has a bug: the plan column is empty for everyone who upgraded that month. retrain without March?
+  assistant: |
+    Don't drop March — that's the bluntest tool and it costs you a whole month of churn outcomes (~8% of your data, plus a hole in any seasonality the model might learn). The bug only affects one column for a subset of rows, so fix it at that level.
+
+    **First choice: recover the data.** These are customers who *upgraded*, which means their old plan exists somewhere — last month's snapshot, a billing table, or a plan-change log. If you can join on `customer_id`, you can backfill the pre-upgrade plan (or the new one, whichever definition your model uses — just be consistent):
+
+    ```python
+    # if you have a previous snapshot or plan history table
+    march_fix = plan_history[['customer_id', 'plan']]
+    df = df.merge(march_fix, on='customer_id', how='left', suffixes=('', '_recovered'))
+    df['plan'] = df['plan'].fillna(df['plan_recovered'])
+    ```
+
+    This is worth 30 minutes of asking around before anything else — it's the only option that loses nothing.
+
+    **Second choice: treat the missingness as a signal.** "Upgraded this month" is probably *predictive* (upgraders are engaged — or possibly at risk if the upgrade didn't stick). Don't throw that away:
+
+    ```python
+    df['plan_was_missing'] = df['plan'].isna().astype(int)
+    df['plan'] = df['plan'].fillna('unknown_upgrade')
+    ```
+
+    LightGBM handles this fine — the missing indicator and the `unknown_upgrade` category let the model learn whether upgraders churn differently. One-hot encoding with `handle_unknown='ignore'` already in your pipeline means no surprises.
+
+    **Third choice (only if recovery fails and you distrust the flag): drop just the affected rows**, not the month:
+
+    ```python
+    march_mask = (df['month'] == '2025-03') & df['plan'].isna()
+    df = df[~march_mask]
+    ```
+
+    This loses only the upgraders, not every March customer.
+
+    **Two follow-ups:**
+
+    1. **Check whether the bug exists in other months.** If the upgrade pipeline has been silently blanking plans for a while, you have a bigger data-quality issue — and your production scoring pipeline will hit it too. Whatever fix you choose needs to go into `clean_df()` so monthly scoring handles it identically.
+    2. **Fix it upstream.** A model can cope with this, but the reporting and the call-list exports can't — anyone filtering by plan in March gets wrong numbers.
+
+    If you tell me what tables you have access to (billing, plan history, monthly snapshots), I can write the exact backfill join.
+- user: |
+    without March PR-AUC drops from 0.44 to 0.41. weird?
+  assistant: |
+    Not weird at all — it's exactly what should happen, and it's actually informative. Three things are going on:
+
+    **1. You deleted a signal-rich segment.** The March rows with missing plans are *upgraders* — customers who just changed plans. That's an unusually informative group: they're engaged enough to upgrade, and their post-upgrade behavior tells the model something about churn risk around plan changes. Dropping them didn't just remove 8% of your rows; it removed a disproportionately interesting 8%.
+
+    **2. You lost a month of churn outcomes.** March churners are gone from training. If churn has any seasonality (billing cycles, New Year resolution effects, etc.), the model now has a gap in its calendar knowledge.
+
+    **3. Part of the drop may be noise.** Your CV standard deviation was ±0.014, so a 0.03 drop is roughly 2 standard deviations — likely real, but not dramatically so. Don't over-interpret the exact number.
+
+    The useful takeaway: **the 0.44 → 0.41 gap is a rough measure of how much value was in those upgrader rows.** That's evidence the "plan missing = upgraded" flag was earning its keep, which strengthens the case for the fix I suggested rather than the deletion:
+
+    ```python
+    df['plan_was_missing'] = df['plan'].isna().astype(int)
+    df['plan'] = df['plan'].fillna('unknown_upgrade')
+    ```
+
+    Retrain with that and you should land back at ~0.44 or better — you keep the upgrader signal *and* the March outcomes, without needing the buggy plan values at all.
+
+    And it reinforces the recovery option: if you can backfill the real plans from a plan-history table, you get the flag's benefit *plus* the actual plan values, which should beat both numbers you have now.
+
+    One caution: don't tune your choice of fix by re-running CV repeatedly and keeping the best score — with the same folds, that starts to overfit your validation. Pick the approach on principle (recover > flag > drop), verify once, and move on.
+- user: |
+    calibration check: the group the model says has 20% churn probability actually churns at 9%. how do I fix that?
+  assistant: |
+    That's the classic signature of `scale_pos_weight` doing its job too well — it inflates the predicted probabilities to push the model toward catching churners, so the outputs are no longer real probabilities. Predicted 20% / actual 9% means the model is overestimating risk by roughly 2× in that region.
+
+    **The fix: recalibrate on held-out data.** You need a mapping from "what the model says" to "what actually happens," learned on data the model didn't train on:
+
+    ```python
+    from sklearn.calibration import CalibratedClassifierCV
+    from sklearn.model_selection import train_test_split
+
+    # hold out a calibration set the base model never sees
+    X_train, X_calib, y_train, y_calib = train_test_split(
+        X, y, test_size=0.25, stratify=y, random_state=42
+    )
+
+    lgbm.fit(X_train, y_train)
+
+    # isotonic learns a flexible step-function correction
+    calibrated = CalibratedClassifierCV(lgbm, method='isotonic', cv='prefit')
+    calibrated.fit(X_calib, y_calib)
+    ```
+
+    Key points:
+
+    - **`cv='prefit'`** calibrates the already-trained model on the held-out set. This is important — calibrating on the training data (or with cross-fitting on all data) under-corrects, because the model has already seen those labels.
+    - **Isotonic vs. sigmoid:** isotonic is more flexible and better with your ~4,200 positives; sigmoid (Platt scaling) is safer if the calibration set is small. With ~15k calibration rows and ~1,000 positives, isotonic is fine.
+    - **Verify after:** bin the calibrated probabilities and check predicted vs. actual per bin:
+
+    ```python
+    from sklearn.calibration import calibration_curve
+
+    proba_cal = calibrated.predict_proba(X_calib)[:, 1]
+    frac_pos, mean_pred = calibration_curve(y_calib, proba_cal, n_bins=10, strategy='quantile')
+    # mean_pred should now track frac_pos closely
+    ```
+
+    **Two things to check before you blame calibration:**
+
+    1. **Was the 20%/9% measured on training data?** If you binned predictions on the same rows the model fit, some gap is expected from overfitting. The number that matters is on held-out data.
+    2. **Is the gap uniform or region-specific?** If 20%→9% but 5%→4.8% and 40%→38%, only the upper region is off, which isotonic handles well. If everything is inflated ~2×, that's the `scale_pos_weight` scaling and even a simple correction would do.
+
+    **One strategic note:** recalibrating will *lower* everyone's predicted probabilities, which means fewer customers clear any fixed threshold — but the *ranking* doesn't change, so your top-500 call list is unaffected. What changes is the EV math you show finance: expected saves were overstated by the same 2× factor. Better to find that out now than after the first monthly report.
+
+    Also worth deciding: since ranking is what drives the call list, an alternative is to drop `scale_pos_weight` entirely and accept a lower-recall model — its probabilities will be nearly calibrated out of the box. But given your capacity-constrained top-500 setup, keeping the weighting plus calibration is the better combination: same ranking, honest numbers.
+- user: |
+    isotonic or Platt for 60k rows?
+  assistant: |
+    **Isotonic.** With 60k rows and ~4,200 positives, you have more than enough data for it, and it will fit the correction better than Platt.
+
+    The tradeoff in one line: Platt fits a single sigmoid (one shape for the whole curve), isotonic fits an arbitrary monotonic step function. Platt is more robust when data is scarce because it can't overfit; isotonic is more accurate when data is plentiful because it can learn any monotone distortion — including the non-uniform kind, where your 20% region is off by 2× but the 5% region is nearly fine.
+
+    Rules of thumb:
+
+    - **< ~1,000 positives** → Platt (isotonic gets jagged and overfits)
+    - **> ~1,000–2,000 positives** → isotonic (you're here, comfortably)
+    - **In between or unsure** → fit both, plot the calibration curves, and check whether they disagree in the regions that matter (your top-500 probability range)
+
+    One caveat specific to your setup: isotonic is a step function, so it can produce **ties** — many customers mapped to the exact same calibrated probability. That's harmless for your top-500 selection (the underlying ranking is preserved within ties, and LightGBM scores rarely collide anyway), but if you ever sort strictly by calibrated probability, add a secondary sort key like the raw score.
+
+    Also: isotonic extrapolates flat outside the range of calibration data. If your calibration set has few customers above ~40% predicted risk, probabilities up there get clipped to the edge of what it saw — fine for your use case, just don't quote calibrated numbers for extreme-risk customers beyond the data's support.
+- user: |
+    isotonic then. update the whole pipeline file
+  assistant: |
+    Here's the complete pipeline file with isotonic calibration integrated:
+
+    ```python
+    """
+    Churn prediction pipeline: cleaning, training, calibration, scoring.
+    Monthly flow: run CV evaluation to monitor health, then score_customers()
+    for the retention call list.
+    """
+    import re
+    from datetime import datetime
+
+    import numpy as np
+    import pandas as pd
+    from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+    from sklearn.compose import ColumnTransformer
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import average_precision_score, make_scorer, roc_auc_score
+    from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import OneHotEncoder, StandardScaler
+    from lightgbm import LGBMClassifier
+
+    RANDOM_STATE = 42
+    N_CALLS = 500
+    OFFER_COST = 15
+    CHURN_COST = 180
+
+    # ------------------------------------------------------------------
+    # 1. Cleaning
+    # ------------------------------------------------------------------
+    def clean_tenure(val):
+        """Convert tenure values ('12 months', '1 yr', 24, '', None) to months (float)."""
+        if pd.isna(val):
+            return np.nan
+        if isinstance(val, str) and val.strip().lower() in ('', '-', 'na', 'n/a', 'none', 'null'):
+            return np.nan
+        s = str(val).strip().lower()
+        match = re.search(r'(\d+(?:\.\d+)?)', s)
+        if not match:
+            return np.nan
+        num = float(match.group(1))
+        if re.search(r'\b(yr|yrs|year|years|y)\b', s):
+            return num * 12
+        return num
+
+
+    def clean_df(df):
+        df = df.copy()
+
+        # tenure
+        df['tenure_months'] = df['tenure_months'].apply(clean_tenure)
+        df['tenure_was_missing'] = df['tenure_months'].isna().astype(int)
+        df['tenure_months'] = df['tenure_months'].fillna(df['tenure_months'].median())
+
+        # plan (handles the March upgrade bug: missing plan = upgraded that month)
+        df['plan'] = df['plan'].str.strip().str.lower()
+        df['plan_was_missing'] = df['plan'].isna().astype(int)
+        df['plan'] = df['plan'].fillna('unknown_upgrade')
+
+        # charges: negatives are refunds (per finance), keep and flag
+        df['is_refund'] = (df['MonthlyCharges'] < 0).astype(int)
+        df['charge_abs'] = df['MonthlyCharges'].abs()
+
+        # login recency
+        df['login_was_missing'] = df['last_login_days'].isna().astype(int)
+        df['last_login_days'] = df['last_login_days'].fillna(df['last_login_days'].max() + 1)
+
+        return df
+
+
+    # ------------------------------------------------------------------
+    # 2. Feature setup
+    # ------------------------------------------------------------------
+    TARGET = 'churned'
+    DROP = ['customer_id', 'MonthlyCharges', TARGET]
+
+    numeric_features = ['tenure_months', 'charge_abs', 'support_tickets_90d', 'last_login_days']
+    binary_features = ['is_refund', 'tenure_was_missing', 'login_was_missing', 'plan_was_missing']
+    categorical_features = ['plan']
+
+    numeric_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler()),
+    ])
+
+    categorical_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore')),
+    ])
+
+    preprocessor = ColumnTransformer([
+        ('num', numeric_pipeline, numeric_features),
+        ('bin', 'passthrough', binary_features),
+        ('cat', categorical_pipeline, categorical_features),
+    ])
+
+
+    def make_lgbm(y):
+        pos_weight = (y == 0).sum() / (y == 1).sum()
+        return Pipeline([
+            ('prep', preprocessor),
+            ('clf', LGBMClassifier(
+                n_estimators=400,
+                learning_rate=0.05,
+                num_leaves=31,
+                max_depth=4,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                scale_pos_weight=pos_weight,
+                random_state=RANDOM_STATE,
+                n_jobs=-1,
+                verbose=-1,
+            )),
+        ])
+
+
+    # ------------------------------------------------------------------
+    # 3. CV evaluation (health check — run periodically)
+    # ------------------------------------------------------------------
+    def evaluate_cv(df):
+        data = clean_df(df)
+        y = data[TARGET]
+        X = data.drop(columns=DROP)
+
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+        scoring = {
+            'pr_auc': make_scorer(average_precision_score, response_method='predict_proba'),
+            'roc_auc': 'roc_auc',
+        }
+        results = cross_validate(make_lgbm(y), X, y, cv=cv, scoring=scoring, n_jobs=-1)
+        print(f"PR-AUC : {results['test_pr_auc'].mean():.4f} ± {results['test_pr_auc'].std():.4f}")
+        print(f"ROC-AUC: {results['test_roc_auc'].mean():.4f} ± {results['test_roc_auc'].std():.4f}")
+        print(f"Baseline (random) PR-AUC ≈ {y.mean():.4f}")
+        return results
+
+
+    # ------------------------------------------------------------------
+    # 4. Final training with isotonic calibration
+    # ------------------------------------------------------------------
+    def train(df):
+        """
+        Split -> fit base model -> isotonic-calibrate on held-out set.
+        Returns (calibrated_model, calibration_report).
+        """
+        data = clean_df(df)
+        y = data[TARGET]
+        X = data.drop(columns=DROP)
+
+        # 60k rows / ~4.2k positives: plenty for isotonic
+        X_fit, X_calib, y_fit, y_calib = train_test_split(
+            X, y, test_size=0.25, stratify=y, random_state=RANDOM_STATE
+        )
+
+        model = make_lgbm(y_fit)
+        model.fit(X_fit, y_fit)
+
+        calibrated = CalibratedClassifierCV(model, method='isotonic', cv='prefit')
+        calibrated.fit(X_calib, y_calib)
+
+        # calibration report on the held-out set
+        proba = calibrated.predict_proba(X_calib)[:, 1]
+        frac_pos, mean_pred = calibration_curve(
+            y_calib, proba, n_bins=10, strategy='quantile'
+        )
+        report = pd.DataFrame({
+            'predicted': mean_pred,
+            'actual': frac_pos,
+            'n': np.bincount(
+                pd.qcut(proba, 10, labels=False, duplicates='drop'), minlength=10
+            )[:len(frac_pos)],
+        })
+        print("Calibration check (held-out):")
+        print(report.to_string(index=False))
+
+        pr = average_precision_score(y_calib, proba)
+        roc = roc_auc_score(y_calib, proba)
+        print(f"\nHeld-out PR-AUC: {pr:.4f} | ROC-AUC: {roc:.4f}")
+
+        return calibrated, report
+
+
+    # ------------------------------------------------------------------
+    # 5. Monthly scoring + call list export
+    # ------------------------------------------------------------------
+    def score_customers(df_new, model, recently_contacted_ids=None):
+        """
+        Score customers and return the top-N call list.
+        recently_contacted_ids: iterable of customer_ids to exclude
+        (contacted or saved in recent months).
+        """
+        data = clean_df(df_new)
+        proba = model.predict_proba(data.drop(columns=DROP))[:, 1]
+
+        scores = pd.DataFrame({
+            'customer_id': data['customer_id'],
+            'plan': data['plan'],
+            'tenure_months': data['tenure_months'],
+            'charge_abs': data['charge_abs'],
+            'support_tickets_90d': data['support_tickets_90d'],
+            'last_login_days': data['last_login_days'],
+            'churn_probability': proba,
+        })
+
+        if recently_contacted_ids is not None:
+            scores = scores[~scores['customer_id'].isin(recently_contacted_ids)]
+
+        scores = scores.sort_values('churn_probability', ascending=False).reset_index(drop=True)
+        scores['rank'] = scores.index + 1
+
+        call_list = scores.head(N_CALLS).copy()
+
+        stamp = datetime.now().strftime('%Y-%m-%d')
+        call_list.to_csv(f'churn_call_list_{stamp}.csv', index=False)
+        scores.to_csv(f'churn_scores_all_{stamp}.csv', index=False)
+
+        print(f"Call list: {len(call_list)} customers | "
+              f"probability range {call_list['churn_probability'].min():.3f}–"
+              f"{call_list['churn_probability'].max():.3f}")
+        return call_list, scores
+
+
+    # ------------------------------------------------------------------
+    # Usage
+    # ------------------------------------------------------------------
+    if __name__ == '__main__':
+        # df = pd.read_csv(...)  # your raw data
+
+        # 1. health check
+        evaluate_cv(df)
+
+        # 2. train + calibrate
+        calibrated_model, calib_report = train(df)
+
+        # 3. monthly scoring (pass recently contacted IDs to exclude them)
+        call_list, all_scores = score_customers(df, calibrated_model)
+    ```
+
+    What changed and why:
+
+    - **`train()` replaces the naive fit**: 75/25 stratified split, base LightGBM fit on the 75%, isotonic calibration via `cv='prefit'` on the untouched 25%. The calibration report (predicted vs. actual per decile) prints so you can eyeball that the 20%→9% distortion is gone.
+    - **`evaluate_cv()` is separate from `train()`** — CV is a monitoring tool, not part of the monthly scoring path. Note it uses `response_method='predict_proba'` (the non-deprecated scorer form).
+    - **`score_customers()` takes `recently_contacted_ids`** so the exclusion of already-contacted customers is part of the pipeline, not a manual step.
+    - **The March plan fix is in `clean_df()`** (`plan_was_missing` flag + `unknown_upgrade` fill), so training and monthly scoring handle it identically.
+    - **Calibrated probabilities flow into the export**, so the EV math for finance uses honest numbers. Ranking is unchanged, so the top-500 selection is the same as it would have been uncalibrated.
+
+    One reminder for the first run: compare the held-out PR-AUC from `train()` against the CV number — they should be close (±0.01–0.02). If the held-out score is notably lower, that's a sign of drift or leakage worth investigating before you trust the call list.
+- user: |
+    for monitoring in production which drift metrics should I track?
+  assistant: |
+    For a churn model with monthly scoring and delayed labels, you need three layers of monitoring — feature drift, prediction drift, and outcome drift. Here's what to track and why:
+
+    **1. Feature drift: PSI per feature (primary metric)**
+
+    Population Stability Index compares each feature's distribution this month vs. a training baseline:
+
+    ```python
+    def psi(expected, actual, bins=10):
+        """PSI between training distribution and current distribution."""
+        breakpoints = np.quantile(expected, np.linspace(0, 1, bins + 1))
+        breakpoints[0], breakpoints[-1] = -np.inf, np.inf
+        e_pct = np.histogram(expected, breakpoints)[0] / len(expected)
+        a_pct = np.histogram(actual, breakpoints)[0] / len(actual)
+        e_pct, a_pct = np.clip(e_pct, 1e-6, None), np.clip(a_pct, 1e-6, None)
+        return np.sum((a_pct - e_pct) * np.log(a_pct / e_pct))
+    ```
+
+    Thresholds: **< 0.1 stable, 0.1–0.25 investigate, > 0.25 act.** Track it for every model feature — especially `support_tickets_90d`, `last_login_days`, and `plan` (a new plan tier or the March-style bug will show up here immediately). Also track the **missing-value rate** per column — a spike is often a pipeline bug, not real drift, and it's the cheapest early-warning signal you have.
+
+    **2. Prediction drift: score distribution**
+
+    Track the mean/median/deciles of `churn_probability` month over month, plus the **predicted churn rate** (mean probability). If the average predicted risk jumps from 7% to 12%, either your customer base changed or something upstream broke — both need attention. Also monitor the **top-500 cutoff value**: if the 500th-highest probability drops sharply, the model is finding fewer risky customers, which changes what the call list means.
+
+    Prediction drift without feature drift is a red flag for concept drift; feature drift without prediction drift usually means the change doesn't affect the model much.
+
+    **3. Outcome drift: the real test, once labels arrive**
+
+    Churn labels mature with a lag, so evaluate on cohorts whose outcomes are known:
+
+    - **PR-AUC on each matured monthly cohort** — this is your headline metric. A slow decline is normal model aging; a sudden drop means something broke or the world changed.
+    - **Calibration by decile** — predicted vs. actual churn rate per bin. Your model already had one calibration failure; this is how you catch the next one. Recalibrate when the gap exceeds a few points.
+    - **Precision@500** — the business metric. If it degrades, the call list is losing value even if aggregate PR-AUC looks fine.
+
+    **4. Data quality gates (run before scoring, fail loudly)**
+
+    Not drift exactly, but the most common production failure mode: row count vs. expected, no duplicate `customer_id`, `churned` in {0, 1}, charge values in a plausible range, categorical values within known sets (or count of new ones). A schema change upstream will kill your pipeline before drift ever gets a chance to.
+
+    **Practical setup**
+
+    - Baseline = training data distributions; compare each monthly batch against it.
+    - Alert on: PSI > 0.25 on any feature, missing-rate > 2× baseline, predicted rate outside ±30% of baseline, PR-AUC drop > 0.03 on a matured cohort.
+    - Plot monthly PR-AUC and precision@500 as a run chart — trends matter more than single points.
+    - Retraining trigger: sustained PR-AUC decline or persistent PSI > 0.25 on top features — not a calendar schedule. With your data volume, retraining is cheap; the discipline is in checking that the new model actually beats the old one on the same matured cohorts before swapping it in.
+
+    One churn-specific note: watch for **label definition drift** too. If the business changes how `churned` is defined (e.g., starts counting failed-payment cancellations differently), your outcome metrics will shift for reasons that have nothing to do with the model. That change won't show up in PSI — it shows up as a sudden calibration jump, so keep the line of communication open with whoever owns the churn definition.
+- user: |
+    PSI for tenure_months came out 0.31 last month. is that bad?
+  assistant: |
+    0.31 is above the 0.25 action threshold, so it warrants investigation — but "bad" depends on *why* it drifted, and for `tenure_months` there's a very common benign explanation. Here's how to tell which case you're in:
+
+    **First: look at the direction and shape of the shift**
+
+    ```python
+    import matplotlib.pyplot as plt
+
+    plt.hist(train_tenure, bins=np.arange(0, 72, 6), alpha=0.5, density=True, label='training')
+    plt.hist(current_tenure, bins=np.arange(0, 72, 6), alpha=0.5, density=True, label='last month')
+    plt.legend(); plt.xlabel('tenure_months'); plt.ylabel('density')
+    ```
+
+    Two patterns to distinguish:
+
+    1. **Mass shifted toward low tenure** (more 0–6 month customers than training). This is the classic *growth signature*: if your subscriber base is growing, new customers dilute the tenure distribution every month. It's real drift, but it's the business doing well, not a problem. A model trained on a mature base will slightly overestimate risk for a younger base — new customers do churn more, so this direction usually makes predictions *more* conservative, not wrong.
+    2. **Mass shifted toward high tenure, or a spike in one bin.** More suspicious — could mean a stalled acquisition month, or a data bug (e.g., the tenure parser misreading a format, "1 yr" suddenly landing as 1 month instead of 12, or missing values getting imputed differently). A single-bin spike is almost always a pipeline bug, not customer behavior.
+
+    **Second: rule out a data bug before accepting the drift**
+
+    Given your tenure column's history (free text, mixed units, blanks), check the raw values first:
+
+    ```python
+    print(df['tenure_was_missing'].mean())   # missing rate vs. training baseline
+    print(df.loc[df['tenure_months'] < 1, 'tenure_months'].value_counts())
+    ```
+
+    A missing-rate jump or a pile-up at exactly 1 or 12 months means the parser, not the customers, changed. This is exactly the failure mode PSI is good at catching — and it's the one where the fix is upstream, not a retrain.
+
+    **Third: check whether it actually matters**
+
+    PSI on a feature only matters if it moved the model's outputs or hurt its performance:
+
+    - Did the **predicted churn rate** move beyond its normal range last month?
+    - Did **PR-AUC on the most recent matured cohort** drop?
+    - Did the **top-500 cutoff** shift?
+
+    If all three are stable, the tenure drift is real but harmless — log it, keep watching. If predictions shifted, the drift is biting.
+
+    **What to do in each case**
+
+    - **Growth-driven shift + stable performance:** nothing. But consider whether the training baseline should be a rolling window (e.g., last 3–6 months) instead of the original training set — for a growing subscription business, a fixed baseline will drift upward on PSI forever even with a perfectly healthy model.
+    - **Data bug:** fix the parser/pipeline, rescore the month. Don't retrain on corrupted features.
+    - **Real shift + degraded performance:** that's your retraining trigger — add recent months to training and recalibrate.
+
+    One more note: check the other features' PSIs from the same run. If *only* tenure moved, the growth/bug explanations above are likely. If several features moved together in ways consistent with "the base got younger" (shorter tenure, lower charge_abs, fewer support tickets), that's coherent cohort change. If features moved in *incoherent* directions, suspect the pipeline before the business.
+- user: |
+    this keeps showing up, should I care?
+
+    ```
+    /home/ana/churn/features.py:58: SettingWithCopyWarning:
+    A value is trying to be set on a copy of a slice from a DataFrame.
+    Try using .loc[row_indexer,col_indexer] = value instead
+      df_active["tenure_bucket"] = pd.cut(df_active["tenure_months"], bins=[0, 6, 12, 24, 120])
+    ```
+  assistant: |
+    Yes, care about it — not because it's breaking anything today, but because it's a warning that pandas **can't tell whether you're modifying a copy or a view**, and in the "view" case your assignment silently does nothing. That's the dangerous scenario: `tenure_bucket` might not exist in `df_active` at all, or worse, might exist in some code paths and not others.
+
+    **What's happening**
+
+    Somewhere above line 58, `df_active` was created by slicing, e.g.:
+
+    ```python
+    df_active = df[df['status'] == 'active']
+    df_active["tenure_bucket"] = pd.cut(...)   # <- warning here
+    ```
+
+    `df[df['status'] == 'active']` may return a *view* into the original dataframe rather than a new object, so pandas can't guarantee the write lands where you think it does.
+
+    **The fix: make the copy explicit**
+
+    ```python
+    df_active = df[df['status'] == 'active'].copy()
+    df_active["tenure_bucket"] = pd.cut(df_active["tenure_months"], bins=[0, 6, 12, 24, 120])
+    ```
+
+    That's it — one `.copy()` and the warning disappears because now pandas knows for certain it's a separate frame. The memory cost is trivial at your data sizes.
+
+    **Why not just silence it?** You could (`pd.options.mode.chained_assignment = None`), but that turns off the one signal that catches this class of bug. The failure mode it protects against — assignments that silently don't happen — produces wrong features rather than errors, which is exactly the kind of thing that would show up later as "why does the model score differently in production?"
+
+    **Quick audit while you're in there:** grep `features.py` for other slice-then-assign patterns — this warning usually shows up in a few places once it shows up in one:
+
+    ```bash
+    grep -n "df\[" features.py | grep -v "\.loc\|\.iloc"
+    ```
+
+    Any line of the form `df[mask][col] = ...` or `df[df.x > 0][col] = ...` has the same problem. The general rule: **filter and assign in one `.loc` call, or `.copy()` immediately after filtering.**
+- user: |
+    write the executive summary for the CEO, one page
+  assistant: |
+    # Churn Prediction & Retention Program — Executive Summary
+
+    ## The problem
+    We lose about 6.8% of our 60,000 active subscribers each month — roughly 4,200 customers, or an estimated €750k+ in annualized value at €180 per lost customer. Until now, retention outreach was not targeted: we had no way to know *which* customers were about to leave.
+
+    ## What we built
+    A machine learning model that scores every customer monthly on their likelihood to cancel, using data we already have: tenure, plan, support tickets, and login activity. The retention team contacts the 500 highest-risk customers each month by phone, at a cost of €15 per call.
+
+    ## How well it works
+    - The model's top-10% riskiest customers contain roughly **4 in 10 of everyone who actually churns** — about 6× better than random selection.
+    - On a held-out test the model reliably ranks risk, and its probability estimates have been calibrated so financial projections use real numbers, not inflated ones.
+    - The strongest early warning sign is support tickets: customers with repeated unresolved tickets are far more likely to cancel. This gives us an actionable trigger — and points to product issues worth fixing at the source.
+
+    ## The economics
+    Each call costs €15; a saved customer is worth ~€180. Even if our offers only convince 1 in 12 contacted churners to stay, the program breaks even. At plausible save rates, the top-500 program is expected to return several euros for every euro spent. **The single biggest unknown is the actual save rate, which we can only learn by running the program and measuring it.**
+
+    ## What we need
+    1. **Run the pilot:** 500 calls/month for 3 months, with a small randomized holdout group so we can measure the true save rate.
+    2. **A feedback loop:** churn outcomes joined back to the call list monthly, so we can report savings with confidence.
+    3. **Data fix upstream:** a plan-history table to repair a known data gap affecting customers who upgrade mid-month.
+
+    ## Risks and honest caveats
+    - The model finds correlation, not cause. Support tickets predict churn; they don't prove support causes it. We are investigating ticket categories before recommending product changes.
+    - Predictions will degrade over time as customer behavior shifts. We have monitoring in place and will retrain when — not before — the data says so.
+    - Calling 500 of 60,000 customers is a rescue program, not broad retention. If the pilot proves out, cheaper channels (email, in-app offers) can extend coverage to the mid-risk tier using the same model.
+
+    ## Bottom line
+    The model is built, validated, and ready. The economics strongly favor acting. What we need now is a measured pilot to convert model output into proven saved revenue — and a decision on expanding to lower-cost channels if it works.
+- user: |
+    translate the exec summary into Romanian for the Bucharest office
+  assistant: |
+    # Program de Predicție și Retenție a Churn-ului — Rezumat Executiv
+
+    ## Problema
+    Pierdem aproximativ 6,8% din cei 60.000 de abonați activi în fiecare lună — adică circa 4.200 de clienți, sau o valoare anualizată estimată la peste 750.000 € la o pierdere de 180 € per client. Până acum, campaniile de retenție nu au fost țintite: nu aveam nicio modalitate de a ști *cei* clienți sunt pe cale să plece.
+
+    ## Ce am construit
+    Un model de machine learning care evaluează lunar fiecare client în funcție de probabilitatea de anulare a abonamentului, folosind date pe care le avem deja: vechimea, planul, tichetele de suport și activitatea de autentificare. Echipa de retenție contactează telefonic cei 500 de clienți cu risc cel mai ridicat în fiecare lună, la un cost de 15 € per apel.
+
+    ## Cât de bine funcționează
+    - Cei mai riscanți 10% dintre clienți, conform modelului, conțin aproximativ **4 din 10 dintre cei care chiar renunță** — de circa 6 ori mai bine decât o selecție aleatorie.
+    - Pe un set de test separat, modelul clasifică riscul în mod fiabil, iar estimările sale de probabilitate au fost calibrate, astfel încât proiecțiile financiare folosesc cifre reale, nu umflate.
+    - Cel mai puternic semnal de avertizare timpurie îl reprezintă tichetele de suport: clienții cu tichete nerezolvate repetate sunt mult mai predispuși să anuleze. Astfel obținem un declanșator acționabil — și indicăm probleme de produs care merită rezolvate la sursă.
+
+    ## Economia programului
+    Fiecare apel costă 15 €; un client salvat valorează ~180 €. Chiar dacă ofertele noastre conving doar 1 din 12 clienți contactați care ar fi renunțat, programul ajunge pe break-even. La rate de salvare realiste, se așteaptă ca programul top-500 să returneze mai mulți euro pentru fiecare euro cheltuit. **Cea mai mare necunoscută este rata efectivă de salvare, pe care o putem afla doar rulând programul și măsurându-l.**
+
+    ## De ce avem nevoie
+    1. **Rularea pilotului:** 500 de apeluri/lună timp de 3 luni, cu un mic grup de control randomizat, pentru a putea măsura rata reală de salvare.
+    2. **O buclă de feedback:** rezultatele de churn reunite lunar cu lista de apeluri, pentru a putea raporta economiile cu încredere.
+    3. **Corectarea datelor la sursă:** un tabel cu istoricul planurilor, pentru a repara o lacună cunoscută care afectează clienții care fac upgrade în cursul lunii.
+
+    ## Riscuri și precizări oneste
+    - Modelul găsește corelații, nu cauze. Tichetele de suport prezic churn-ul, dar nu dovedesc că suportul îl cauzează. Investigăm categoriile de tichete înainte de a recomanda modificări de produs.
+    - Predicțiile se vor degrada în timp, pe măsură ce comportamentul clienților se schimbă. Avem monitorizare implementată și vom reantrena modelul când — nu înainte — datele vor indica acest lucru.
+    - Contactarea a 500 de clienți din 60.000 este un program de salvare, nu o retenție de masă. Dacă pilotul se dovedește reușit, canalele mai ieftine (e-mail, oferte în aplicație) pot extinde acoperirea către segmentul cu risc mediu folosind același model.
+
+    ## Concluzie
+    Modelul este construit, validat și gata de utilizare. Economia programului susține cu tărie acțiunea. Ce ne trebuie acum este un pilot măsurat, care să transforme rezultatele modelului în venituri salvate dovedite — și o decizie privind extinderea către canale mai ieftine, dacă pilotul funcționează.
+- user: |
+    "churn" in Romanian sounds odd in that text, what do people actually use?
+  assistant: |
+    Good instinct — in that text I actually used "churn" as an anglicism, which is common in Romanian tech/telecom jargon, but it reads oddly in a formal document for a general office audience.
+
+    What people actually use in Romanian business contexts:
+
+    - **"Pierderea clienților"** / **"pierderea abonaților"** — the clearest, safest choice for an executive summary. Everyone understands it, no jargon.
+    - **"Dezabonare"** — natural for subscription cancellation specifically ("rata de dezabonări" = churn rate). Very common in streaming/subscription contexts.
+    - **"Abandon"** — used ("rata de abandon"), but slightly more associated with shopping carts and funnels than subscriptions.
+    - **"Reziliere"** — technically correct for contract termination, but it's legal register; too formal/stiff for a CEO summary.
+    - **"Churn"** untranslated — genuinely common in Romanian SaaS/telecom teams (people say "rata de churn" in meetings), but it's team jargon, not exec-summary language.
+
+    For your document, I'd use **"pierderea abonaților"** for the concept and **"dezabonare"** for the individual act, and introduce the term once:
+
+    > **Program de retenție și predicție a pierderii abonaților (churn)**
+
+    That way the English term is anchored once in parentheses — useful since the team's dashboards and meetings will say "churn" anyway — and the rest of the text stays in plain Romanian. So for example: "Pierdem aproximativ 6,8% din abonați lunar" and "tichetele de suport prezic pierderea abonaților" instead of "prezic churn-ul".
+
+    Want me to reissue the full summary with those substitutions?
+- user: |
+    the CEO asks how much money the model saves per month. use the numbers we had for the offer cost and the lost customer
+  assistant: |
+    Honest answer first: **we can't give one number yet, because it depends on two quantities we haven't measured — but we can bound it, and the bound is what the CEO needs.**
+
+    **The math (monthly, top-500 call list):**
+
+    ```
+    Cost of program:     500 calls × €15              = €7,500
+    Expected churners
+    among the called:    500 × P        (P = precision@500)
+    Expected saves:      500 × P × s    (s = save rate of the offer)
+    Monthly value:       500 × P × s × €180
+    Net savings:         500 × P × s × €180  −  €7,500
+    ```
+
+    **What we know vs. don't:**
+
+    - **P (precision@500):** our top-10% captures ~40% of churners at ~27% precision; the top 500 is the very top of that ranking, so P ≈ 30–40% is a reasonable estimate. We should measure it exactly on the first matured cohort.
+    - **s (save rate):** completely unknown until the pilot runs. This is the dominant uncertainty.
+
+    **Scenario table for the CEO:**
+
+    | Save rate s | P = 30% | P = 40% |
+    |---|---|---|
+    | 20% | €7,500 value → **~€0 net** | €10,800 value → **+€3,300 net** |
+    | 33% | €8,900 → **+€1,400** | €14,400 → **+€6,900** |
+    | 50% | €13,500 → **+€6,000** | €18,000 → **+€10,500** |
+
+    **How I'd phrase it:**
+
+    > "The program costs €7,500/month. Depending on how effective the retention offers prove to be, expected gross savings range from roughly €7,500 to €18,000 per month — so net savings between break-even and about €10,000/month (€120k/year). The break-even bar is low: we need the offers to save only 1 in 12 contacted customers who would have churned. The 3-month pilot with a randomized holdout will replace these estimates with measured numbers."
+
+    **Two things to stress:**
+
+    1. **The downside is capped and small** (worst realistic case ≈ break-even, i.e., we lose at most a few thousand euros while *learning the save rate*), while the upside is €100k+/year — that asymmetry is the actual argument for the pilot.
+    2. **Don't quote a single savings figure to the CEO yet.** Anyone who quotes "the model saves €X/month" before the holdout measurement is inventing the save rate. The credible position is: bounded estimate now, measured number in ~4–6 weeks when the first cohort's outcomes mature.
+
+    Also worth one line: the model's *indirect* value — knowing that support tickets are the top churn driver — may ultimately be worth more than the call program, but that's a product investment, not a monthly savings figure.
+- user: |
+    don't forget the 500 calls limit
+  assistant: |
+    Good catch to make it explicit — the 500-call cap was baked into the math (every line starts with 500), but it deserves to be stated as its own conclusion, because it's the **binding constraint on the whole program**:
+
+    **The cap puts a hard ceiling on savings, regardless of how good the model or offer is:**
+
+    ```
+    Max would-be churners reached:   500 calls × P (~30–40%)  ≈ 150–200/month
+    Absolute ceiling (perfect offer, s = 100%):
+                                     200 × €180               ≈ €36,000/month gross
+    Realistic range (s = 20–50%):    €7,500–18,000/month gross
+    Program cost:                    €7,500/month
+    ```
+
+    So the complete picture for the CEO:
+
+    > "The model identifies far more at-risk customers than we can call. We predict roughly 4,200 churners per month, but capacity limits us to 500 calls — so the program can touch at most ~5% of monthly churners, capping gross savings at ~€36k/month even if every offer worked perfectly. Within that cap, expected net savings are €0–10k/month depending on the save rate. **The model is not the bottleneck — calling capacity is.**"
+
+    That last sentence is the strategic point, and it actually strengthens the ask:
+
+    1. **The pilot is de-risked by the cap.** Worst case costs €7,500/month for three months — €22.5k total — to learn the save rate. Small bet.
+    2. **The upside is unlocked by cheaper channels, not better modeling.** If the pilot shows a healthy save rate, the same scores can drive email/in-app offers to the next 5,000 riskiest customers at near-zero marginal cost. That's where the €100k+/year figures live — the phone program is the provenance-limited test bed, not the end state.
+    3. **It also justifies the ranking quality.** With only 500 slots, every slot wasted on a low-risk customer is expensive — which is exactly why precision@500 is the metric we optimize and report.
+
+    One nuance worth a sentence if the CEO asks "why not just call more?": calling is €15/customer and presumably agent time is the constraint. If capacity could be raised, the threshold math says any customer above ~8% risk (at s=100%) is worth a call — so there's headroom, but only after the pilot proves the save rate.
+- user: |
+    to validate it properly: holdout group with no calls. how many months until we'd see an effect?
+  assistant: |
+    Good instinct — this is the right design. The answer depends on the effect size, so let me run the power math with our numbers.
+
+    **The setup**
+
+    Each month: 500 customers get calls, and a holdout group of 500 equally-high-risk customers gets nothing. Because we only call the top 500, the treated group's monthly churn rate will be very high — roughly precision@500 ≈ 30–40%. The offer reduces that by `s × P`.
+
+    **How big is the detectable difference?**
+
+    | Scenario | Treated churn/month | Holdout churn/month | Sample needed per arm (80% power) |
+    |---|---|---|---|
+    | Optimistic: P=40%, s=50% | 20% | 40% | ~250 |
+    | Realistic: P=35%, s=33% | 23% | 35% | ~500 |
+    | Pessimistic: P=30%, s=20% | 29% | 35% | ~950 |
+
+    (Standard two-proportion power calculation, α=0.05.)
+
+    **Timeline:**
+
+    - **Best case:** one month of calls gives 500 per arm — enough for the realistic scenario. Add ~1 month for churn labels to mature (you need to know who actually cancelled). **First readout: ~2–3 months.**
+    - **Realistic planning number:** pool 2–3 months of cohorts (1,000–1,500 per arm), which detects even the pessimistic scenario. **Solid answer: ~4 months** — 3 months of calls + 1 month maturation.
+
+    **Design recommendations:**
+
+    1. **Holdout size = 500/month, pooled across months.** Don't make it bigger — those are customers getting no rescue, which is a real cost. 500/month is statistically sufficient when pooled.
+    2. **Randomize within the top 500**, not below it. If you hold out customers ranked 501–1000, you're measuring the offer on a different risk population than the program targets.
+    3. **Pre-commit the analysis:** primary metric = churn rate treated vs. holdout after 60 days, one test, one look. If you check monthly and stop at the first significant month, you'll overstate the effect (sequential peeking bias). If leadership wants interim reads, use a proper sequential design or just accept the caveat.
+    4. **Log the save rate per call outcome** (saved / churned / unreachable) — unreachable customers dilute `s` and explaining that split will be half the readout.
+
+    **What to tell the CEO:** "We'll have a statistically credible answer on whether the calls work in about 4 months — with an early directional read at 2–3. The cost of knowing is ~750 customers who don't get called, which at worst-case economics is a few thousand euros — cheap for a number that determines whether we scale this to €100k+/year."
+- user: |
+    outline for the presentation, 8 slides
+  assistant: |
+    # Churn Prediction & Retention Program — 8-Slide Outline
+
+    **Slide 1: The problem**
+    - 6.8% of 60k subscribers churn monthly ≈ 4,200 customers ≈ €750k+/year at €180 each
+    - Retention today is untargeted — we don't know who's about to leave
+    - *One line of context: this is the deck's only "burning platform" slide; keep it short*
+
+    **Slide 2: What we built**
+    - Model scores every customer monthly on churn risk, using data we already have (tenure, plan, support tickets, login activity)
+    - Retention team calls the top 500 highest-risk customers each month (€15/call)
+    - Built, validated, calibrated — ready to run
+    - *Show the pipeline as a simple 3-box diagram: data → score → call list*
+
+    **Slide 3: Does it work?**
+    - Top 10% riskiest customers contain ~40% of all churners — ~6× better than random
+    - Probabilities calibrated: predicted 20% risk means ~20% actually churn
+    - Validated on held-out data the model never saw
+    - *One chart: capture rate by decile (bar chart, deciles 1–10)*
+
+    **Slide 4: What drives churn**
+    - #1 signal: support tickets — customers with repeated unresolved tickets are far more likely to cancel
+    - Important caveat: correlation, not causation — tickets are the smoke detector, not the fire
+    - Action: investigating ticket categories; possible product fixes at the source
+    - *This slide preempts the "so support is broken?" question before it's asked*
+
+    **Slide 5: The economics**
+    - Call costs €15, saved customer worth €180 → break-even at saving just 1 in 12 contacted churners
+    - Monthly: €7,500 cost vs. €7,500–18,000 expected gross savings → net €0–10k/month
+    - Hard cap: 500 calls touch only ~5% of monthly churners — capacity, not the model, is the limit
+    - *Table: net savings by save rate (the scenario table)*
+
+    **Slide 6: How we'll know it works — the pilot**
+    - 3 months, 500 calls/month, randomized holdout of 500 high-risk customers who get no call
+    - Statistically credible answer in ~4 months; directional read at 2–3
+    - Cost of knowing: ~750 customers uncalled ≈ a few thousand euros worst case
+    - *Frame as: small, capped bet that buys the number that decides everything else*
+
+    **Slide 7: If it works — scaling**
+    - Same scores drive near-zero-cost channels: email/in-app offers to the next 5,000 riskiest customers
+    - Phone program = test bed; email tier = where €100k+/year lives
+    - Also feeds product: churn drivers point at what to fix (e.g., ticket-generating issues)
+
+    **Slide 8: The ask**
+    1. Approve 3-month pilot (500 calls/month + holdout)
+    2. Commit to the feedback loop: outcomes joined to call list monthly
+    3. Data fix: plan-history table to repair the upgrade data gap
+    - Bottom line: *model is ready, economics favor acting, pilot converts predictions into proven saved revenue*
+
+    ---
+
+    **General notes:**
+    - Slides 3–5 are the evidence core; slide 5's scenario table is the one slide finance will remember — consider it the handout slide.
+    - Keep one number per slide as the takeaway (40% capture / 1-in-12 break-even / 4 months to answer).
+    - Expect the two predictable questions: "why not call more people?" (slide 5 cap + slide 7) and "is support causing churn?" (slide 4). Both are answered before they're asked.
+    - If the CEO only sees one slide, it should be slide 5 — that's the decision slide; everything else is support.
+- user: |
+    make slide 5 about how we pick who gets called
+  assistant: |
+    # Slide 5: How we decide who gets called
+
+    **The principle: rank everyone, call the top 500**
+
+    - The model scores all 60,000 customers monthly; we call the 500 highest-risk
+    - With capacity capped at 500, there's no threshold to tune — the cutoff is simply "the 500th riskiest customer" (currently ~35% predicted risk)
+    - Already-contacted or recently-saved customers are excluded before ranking
+
+    **Why ranking, not a fixed rule**
+
+    - Rules like "3+ support tickets" miss customers whose risk comes from other signals (inactivity, tenure, plan)
+    - The model weighs all signals together — and its top-500 selection captures ~4 in 10 of everyone who will churn
+    - Every wasted call slot is expensive: a low-risk customer in the list displaces a high-risk one
+
+    **The economics check behind the list**
+
+    - Call costs €15; a saved customer is worth €180 → break-even at saving just 1 in 12 contacted churners
+    - At current selection quality, expected net savings: €0–10k/month depending on offer effectiveness
+    - Hard cap: 500 calls touch only ~5% of monthly churners — **calling capacity, not the model, is the limit**
+
+    *Visual suggestion: a funnel — 60,000 scored → exclusions → top 500 → with the churn-probability distribution shaded, highlighting where the top-500 cutoff sits. The scenario table (net savings by save rate) can move to an appendix slide for finance.*
+
+    ---
+
+    Notes on the change:
+
+    - This slide now answers "how does the sausage get made," which builds more trust with a CEO than the savings table alone — and the economics survive in compressed form (the 1-in-12 line and the cap).
+    - The full scenario table should move to an appendix slide — it's still the finance handout, just not the main flow.
+    - If the CEO asks "why not a simple rule?" — the answer is on the slide: rules miss multi-signal risk. If they ask "why not call more?" — the cap line plus slide 7 (scaling to email) covers it.
+- user: |
+    update: since last week the retention offer is a 25 EUR discount instead of the 15 EUR one. does the top-500 approach still make sense?
+  assistant: |
+    Yes — the top-500 approach survives intact, because it was driven by the **capacity constraint**, not the offer cost. The ranking logic doesn't change at all. What changes is the economics around it:
+
+    **What stays the same**
+
+    - **The selection.** You still can't call more than 500, so the cutoff is still "the 500th riskiest customer." The model's job is ranking, and a more expensive offer doesn't change who's riskiest.
+    - **The cap.** 500 calls × P (~30–40%) still touches only ~150–200 would-be churners per month. Capacity remains the binding constraint.
+
+    **What changes in the math**
+
+    ```
+    Break-even save rate:   25 / 180 = 13.9%   (was 8.3% → now save 1 in 7.2, was 1 in 12)
+    Program cost:           500 × €25 = €12,500/month   (was €7,500)
+    Net savings range:      €7,500–18,000 gross − €12,500 = **−€5,000 to +€5,500/month**
+    ```
+
+    So the program's economics got tighter: at the pessimistic end you're now running at a loss rather than break-even. The updated scenario table:
+
+    | Save rate s | P = 30% | P = 40% |
+    |---|---|---|
+    | 20% | €10,800 − €12,500 = **−€1,700** | €14,400 − €12,500 = **+€1,900** |
+    | 33% | €17,800 − €12,500 = **+€5,300** | €23,800 − €12,500 = **+€11,300** |
+    | 50% | €27,000 − €12,500 = **+€14,500** | €36,000 − €12,500 = **+€23,500** |
+
+    **Three things worth flagging:**
+
+    1. **The richer offer probably has a higher save rate — that's the whole question now.** A €25 discount should retain more people than the €15 one. If `s` rises proportionally (or more), the program is *better* despite the higher cost. If it doesn't, you're paying €5k/month more for nothing. This makes the **pilot's holdout measurement more valuable, not less** — and ideally the pilot compares save rates, since marketing changed the offer mid-stream.
+
+    2. **Check how the €25 is actually accounted.** A *discount* isn't usually a cash outlay like a call — it's forgone revenue, and often only for customers who **accept and stay**. If the €25 is only spent on saves, the real cost per contacted customer is `P × s × €25`, not €25 flat — which makes the economics considerably better than the table above. Worth 10 minutes with finance to pin down which model is right, because it changes the break-even meaningfully.
+
+    3. **The threshold math still says "call almost everyone risky."** Even at €25, break-even is 13.9% risk (at s=100%) — well below the ~35% risk of your 500th-ranked customer. The offer is still cheap relative to churn; nobody in the top 500 is borderline.
+
+    **For the CEO slide:** update the numbers to "€12,500/month cost, net −€5k to +€23k/month depending on save rate, break-even at saving 1 in 7" — and add one line: *"the new offer raises the bar; the pilot will tell us whether the bigger discount earns its extra cost."*
+- user: |
+    recompute the monthly savings with that
+  assistant: |
+    Here's the recomputation with the €25 offer, both accounting treatments since it matters which one finance uses:
+
+    **Case A: €25 paid per call made (flat cost, conservative)**
+
+    ```
+    Program cost:      500 × €25 = €12,500/month
+    Gross savings:     500 × P × s × €180
+    Net:               500 × P × s × 180 − 12,500
+    ```
+
+    | Save rate s | P = 30% | P = 35% | P = 40% |
+    |---|---|---|---|
+    | 20% | **−€1,700** | **−€175** | **+€1,900** |
+    | 33% | **+€5,300** | **+€7,950** | **+€11,300** |
+    | 50% | **+€14,500** | **+€18,250** | **+€23,500** |
+
+    Break-even: `s = 25 / (180 × P)` → 46% at P=30%, 40% at P=35%, 35% at P=40%. That's a high bar — the offer needs to save roughly 2 in 5 contacted churners.
+
+    **Case B: €25 discount only granted to customers who accept and stay**
+
+    The discount cost applies only to saves, so:
+
+    ```
+    Cost:      500 × P × s × €25
+    Value:     500 × P × s × €180
+    Net:       500 × P × s × (180 − 25) = 500 × P × s × €155
+    ```
+
+    Every save is worth a flat **€155 net**, so the program is profitable for *any* save rate above zero:
+
+    | Save rate s | P = 30% | P = 35% | P = 40% |
+    |---|---|---|---|
+    | 20% | **+€4,650** | **+€5,425** | **+€6,200** |
+    | 33% | **+€7,673** | **+€8,951** | **+€10,230** |
+    | 50% | **+€11,625** | **+€13,563** | **+€15,500** |
+
+    Break-even: any s > 0. The only risk is wasted agent time, not the discount.
+
+    **Which case applies?** This is now the single most important question for the program's economics:
+
+    - If the discount is applied to the *next billing cycle* and customers who churn before it never receive it → **Case B**, and the richer offer is almost strictly better than the €15 one.
+    - If it's a code/credit granted at call time regardless of subsequent behavior → **Case A**, and the offer change made the program riskier.
+
+    **My recommendation for the CEO number:** quote Case A as the conservative bound ("net between −€5k and +€23.5k/month, break-even at saving ~2 in 5") and note that if the discount only lands on stayers, the program is profitable at any save rate. Then let the pilot's holdout measure `s` — and log *when* the discount is granted, so you'll know empirically which case you're in after month one.
+- user: |
+    dockerize the scoring job: Dockerfile + requirements.txt
+  assistant: |
+    Here's a production-ready setup for the monthly scoring job:
+
+    **requirements.txt**
+
+    ```
+    pandas==2.2.3
+    numpy==2.1.3
+    scikit-learn==1.5.2
+    lightgbm==4.5.0
+    sqlalchemy==2.0.36
+    psycopg2-binary==2.9.10
+    joblib==1.4.2
+    ```
+
+    Pin exact versions — the whole point of containerizing is that the model scores identically next month. (`psycopg2-binary` is fine in containers; the "binary wheels not for production" caveat doesn't really apply here.)
+
+    **Dockerfile**
+
+    ```dockerfile
+    FROM python:3.12-slim
+
+    # LightGBM needs OpenMP runtime; slim images don't include it
+    RUN apt-get update && \
+        apt-get install -y --no-install-recommends libgomp1 && \
+        rm -rf /var/lib/apt/lists/*
+
+    WORKDIR /app
+
+    # install deps first so Docker caches the layer
+    COPY requirements.txt .
+    RUN pip install --no-cache-dir -r requirements.txt
+
+    # app code
+    COPY pipeline.py scoring.py ./
+
+    # don't run as root
+    RUN useradd -m scorer
+    USER scorer
+
+    # scores and call lists land here; mount a volume in production
+    RUN mkdir -p /app/output
+    VOLUME ["/app/output"]
+
+    CMD ["python", "scoring.py"]
+    ```
+
+    **scoring.py** — the entrypoint that ties the pipeline together:
+
+    ```python
+    import os
+    import pandas as pd
+    from sqlalchemy import create_engine
+    from pipeline import train, score_customers
+
+    DB_URL = os.environ["DB_URL"]          # fail loudly if not configured
+    OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "/app/output")
+
+    def main():
+        engine = create_engine(DB_URL)
+        df = pd.read_sql("select * from customer_features_current", engine)
+
+        calibrated_model, report = train(df)
+
+        recently_contacted = pd.read_sql(
+            "select customer_id from retention_contacts where contacted_at > now() - interval '60 days'",
+            engine,
+        )["customer_id"].tolist()
+
+        call_list, all_scores = score_customers(
+            df, calibrated_model, recently_contacted_ids=recently_contacted
+        )
+
+        # move exports into the mounted volume
+        import shutil, glob
+        for f in glob.glob("churn_*.csv"):
+            shutil.move(f, os.path.join(OUTPUT_DIR, f))
+
+        print("Scoring complete.")
+
+    if __name__ == "__main__":
+        main()
+    ```
+
+    **Build and run:**
+
+    ```bash
+    docker build -t churn-scorer .
+
+    docker run --rm \
+      -e DB_URL="postgresql+psycopg2://user:pass@host:5432/mydb" \
+      -v $(pwd)/output:/app/output \
+      churn-scorer
+    ```
+
+    **Notes on the choices:**
+
+    - **`libgomp1` is the one system dependency LightGBM actually needs** — this is the containerized answer to the OpenMP problem that pushed you off XGBoost on your laptop. It's a 200KB package, no admin concerns.
+    - **`python:3.12-slim`** keeps the image ~400MB. If you want it smaller later, `python:3.12-slim` + multi-stage gets you to ~250MB, but for a monthly job it's not worth the complexity.
+    - **Model persistence:** this retrains each run, which is fine at 60k rows (~a minute). If you later want to *score with last month's model* and retrain separately, add `joblib.dump(calibrated_model, '/app/output/model.joblib')` and split the jobs.
+    - **Secrets:** `DB_URL` via env var, never baked into the image. In production, pass it from your secret manager, not the command line (it shows in `ps` and shell history).
+    - **Scheduling:** run it with cron on a VM, or a Kubernetes CronJob if you have a cluster. Either way the container is the unit — same image, same scores, no "works on my machine."
+
+    One thing to add before this is really production-grade: the data-quality gates from the monitoring discussion (row count, duplicate IDs, schema check) should run at the top of `main()` and exit non-zero on failure, so a bad upstream table fails loudly instead of producing a silently wrong call list. Want me to add that?
+- user: |
+    ```
+    Step 6/9 : RUN python -c "import lightgbm"
+    Traceback (most recent call last):
+      File "<string>", line 1, in <module>
+      File "/usr/local/lib/python3.12/site-packages/lightgbm/__init__.py", line 8, in <module>
+        from .basic import Booster, Dataset, Sequence, register_logger
+    OSError: libgomp.so.1: cannot open shared object file: No such file or directory
+    ```
+  assistant: |
+    That error means `libgomp1` didn't get installed before the import test — either the apt-get line is missing from your Dockerfile, or it runs *after* the LightGBM install. The fix is ordering: system deps first, then pip, then the import check.
+
+    Here's the corrected Dockerfile with a verification step built in:
+
+    ```dockerfile
+    FROM python:3.12-slim
+
+    # 1. System deps FIRST — LightGBM needs the OpenMP runtime
+    RUN apt-get update && \
+        apt-get install -y --no-install-recommends libgomp1 && \
+        rm -rf /var/lib/apt/lists/*
+
+    WORKDIR /app
+
+    # 2. Python deps
+    COPY requirements.txt .
+    RUN pip install --no-cache-dir -r requirements.txt
+
+    # 3. Verify the import works BEFORE copying app code — fails fast here,
+    #    not at 2am when the monthly job runs
+    RUN python -c "import lightgbm; print('lightgbm OK:', lightgbm.__version__)"
+
+    # 4. App code
+    COPY pipeline.py scoring.py ./
+
+    RUN useradd -m scorer
+    USER scorer
+
+    RUN mkdir -p /app/output
+    VOLUME ["/app/output"]
+
+    CMD ["python", "scoring.py"]
+    ```
+
+    **If it still fails after this**, the likely cause is that your base image or a later layer is somehow removing the library. Two diagnostics:
+
+    ```bash
+    # build with the fix, then check the library actually exists in the image
+    docker run --rm churn-scorer ls -la /usr/lib/x86_64-linux-gnu/libgomp.so.1
+    ```
+
+    If the file is missing despite `libgomp1` being installed, check whether anything between apt-get and the test does `apt-get remove` or uses a different final base image (multi-stage builds are a common culprit — the runtime stage needs its own `libgomp1` install, the builder stage's install doesn't carry over).
+
+    One more possibility if you're on an ARM Mac (Apple Silicon): the `python:3.12-slim` ARM64 image puts libgomp at the same path, so the fix is identical — but if you're building with `--platform=linux/amd64` emulation and it's still failing, rebuild natively. The x86 emulation layer occasionally mangles apt installs.
+
+    The `RUN python -c "import lightgbm"` smoke test is worth keeping permanently, by the way — it converts this exact failure from a runtime surprise into a build-time error, which is the right place for it.
+- user: |
+    schedule it monthly on our Airflow, DAG code please
+  assistant: |
+    Here's a DAG for Airflow 2.x using the Docker setup we built:
+
+    ```python
+    """
+    Monthly churn scoring DAG.
+    Runs the dockerized scoring job on the 1st of each month,
+    with a data-quality gate before scoring and an alert on failure.
+    """
+    from datetime import datetime, timedelta
+
+    from airflow import DAG
+    from airflow.providers.docker.operators.docker import DockerOperator
+    from airflow.operators.bash import BashOperator
+    from airflow.utils.trigger_rule import TriggerRule
+
+    DB_URL = "{{ var.churn.db_url }}"          # store in Airflow Variables/Connections, not code
+    OUTPUT_DIR = "/data/churn/output"          # shared volume mounted on the Airflow worker
+
+    default_args = {
+        "owner": "data-team",
+        "retries": 2,
+        "retry_delay": timedelta(minutes=30),
+        "email_on_failure": True,
+        "email": ["data-team@yourcompany.com"],
+        "execution_timeout": timedelta(hours=2),
+    }
+
+    with DAG(
+        dag_id="churn_monthly_scoring",
+        description="Score customers, export top-500 retention call list",
+        schedule="0 6 1 * *",              # 06:00 on the 1st of each month
+        start_date=datetime(2025, 1, 1),
+        catchup=False,
+        default_args=default_args,
+        tags=["churn", "retention", "monthly"],
+    ) as dag:
+
+        # 1. Data-quality gate: fail loudly before wasting a run on bad data
+        dq_check = BashOperator(
+            task_id="data_quality_gate",
+            bash_command=f"""
+            docker run --rm \
+              -e DB_URL="{DB_URL}" \
+              -e DQ_CHECK_ONLY=1 \
+              churn-scorer:latest
+            """,
+        )
+
+        # 2. Scoring job
+        score = DockerOperator(
+            task_id="score_customers",
+            image="churn-scorer:latest",
+            api_version="auto",
+            auto_remove=True,
+            environment={
+                "DB_URL": DB_URL,
+                "OUTPUT_DIR": "/app/output",
+            },
+            volumes=[f"{OUTPUT_DIR}:/app/output"],
+            command=["python", "scoring.py"],
+            docker_url="unix://var/run/docker.sock",
+            network_mode="bridge",
+        )
+
+        # 3. Post-run check: call list exists and has the expected row count
+        validate_output = BashOperator(
+            task_id="validate_output",
+            bash_command=f"""
+            python - <<'EOF'
+            import pandas as pd, glob, sys
+            files = sorted(glob.glob("{OUTPUT_DIR}/churn_call_list_*.csv"))
+            if not files:
+                sys.exit("No call list produced!")
+            df = pd.read_csv(files[-1])
+            if len(df) < 450:
+                sys.exit(f"Call list too small: {{len(df)}} rows (expected ~500)")
+            if df["churn_probability"].isna().any():
+                sys.exit("NaN probabilities in call list")
+            print(f"OK: {{len(df)}} customers, "
+                  f"prob range {{df.churn_probability.min():.3f}}-{{df.churn_probability.max():.3f}}")
+            EOF
+            """,
+            trigger_rule=TriggerRule.ALL_SUCCESS,
+        )
+
+        # 4. Notification on failure (in addition to email)
+        alert = BashOperator(
+            task_id="notify_failure",
+            bash_command='echo "Churn scoring failed - check Airflow logs" | tee /dev/stderr',
+            trigger_rule=TriggerRule.ONE_FAILED,
+        )
+
+        dq_check >> score >> validate_output >> alert
+    ```
+
+    Notes on the design:
+
+    - **`schedule="0 6 1 * *"`** — 6 AM on the 1st, after month-end data lands. Adjust to whenever your feature snapshot is actually ready; scoring on stale features is the classic silent failure here.
+    - **`catchup=False`** — if Airflow is down for two weeks, you don't want it backfilling three months of call lists on restart.
+    - **The DQ gate runs the same image** with a check-only flag — add that branch to `scoring.py` (row count, duplicate IDs, schema, missing-rate checks from the monitoring plan, `sys.exit(1)` on failure). One image, two modes, no drift between gate and job.
+    - **`validate_output` catches the failure mode the job itself won't**: the run "succeeds" but the call list is empty or tiny because of an upstream change. The 450-row floor gives slack for exclusions of recently-contacted customers.
+    - **`DB_URL` via Airflow Variable** — better yet, use a Connection or a secrets backend; don't put credentials in the DAG file or `docker run` command line.
+    - **`DockerOperator` needs the Docker socket** mounted on your Airflow workers (`docker_url` line) and the `apache-airflow-providers-docker` package installed. If your Airflow runs on Kubernetes, tell me — the idiomatic version there is a `KubernetesPodOperator` instead, and I'd rewrite it.
+    - **The `alert` task** is a stub — wire it to Slack via `SlackWebhookOperator` or your on-call tool; email alone gets ignored.
+
+    One scheduling consideration: if the pilot's holdout measurement needs outcomes joined back monthly, that's a second task (or second DAG) downstream of scoring — same cadence, and it keeps the feedback loop from depending on someone remembering to run a notebook.
+- user: |
+    and a README for the repo
+  assistant: |
+    # Churn Scoring Pipeline
+
+    Monthly churn-risk scoring for the subscription app. Scores all active customers, exports the top-500 retention call list, and tracks model health over time.
+
+    ## What it does
+
+    1. **Cleans** raw customer data (mixed-format tenure, refund charges, missing plans from mid-month upgrades)
+    2. **Scores** every customer with a calibrated LightGBM model (isotonic calibration — predicted probabilities are real probabilities)
+    3. **Exports** the top 500 highest-risk customers for the retention team's monthly calls, plus full scores for all customers
+    4. **Validates** the output (row counts, no NaN probabilities) before anyone acts on it
+
+    ## Repo layout
+
+    ```
+    ├── pipeline.py        # cleaning, training, calibration, scoring functions
+    ├── scoring.py         # entrypoint: pull data, score, export (used by Docker)
+    ├── Dockerfile
+    ├── requirements.txt
+    ├── dags/
+    │   └── churn_monthly_scoring.py   # Airflow DAG (monthly, 1st at 06:00)
+    └── output/            # exported CSVs (mounted volume in production)
+    ```
+
+    ## Outputs
+
+    | File | Contents | Consumer |
+    |---|---|---|
+    | `churn_call_list_YYYY-MM-DD.csv` | Top 500 customers with risk score, plan, tenure, tickets, login recency | Retention team |
+    | `churn_scores_all_YYYY-MM-DD.csv` | All customers, ranked | Backtesting, mid-risk email tier |
+
+    ## Key numbers & decisions
+
+    - **Churn rate:** 6.8% monthly → accuracy is useless; we optimize **PR-AUC** and **precision@500**
+    - **Offer economics:** €25 offer vs. €180 lost customer → break-even at saving ~1 in 7 contacted churners
+    - **Capacity:** 500 calls/month is the binding constraint — the model ranks, the cutoff is the 500th customer
+    - **Calibration:** `scale_pos_weight` inflates raw probabilities; isotonic calibration on a held-out 25% fixes it. **Never use raw LightGBM probabilities for financial estimates.**
+    - **Refunds:** negative `MonthlyCharges` are real refunds (per finance) — kept and flagged via `is_refund`, never dropped or sign-flipped
+    - **Missing plan = mid-month upgrade** (known March-style bug) — flagged via `plan_was_missing`, filled with `unknown_upgrade`
+
+    ## Running locally
+
+    ```bash
+    docker build -t churn-scorer .
+
+    docker run --rm \
+      -e DB_URL="postgresql+psycopg2://user:pass@host:5432/mydb" \
+      -v $(pwd)/output:/app/output \
+      churn-scorer
+    ```
+
+    Or without Docker:
+
+    ```bash
+    pip install -r requirements.txt
+    export DB_URL="postgresql+psycopg2://..."
+    python scoring.py
+    ```
+
+    ## Production (Airflow)
+
+    The DAG `churn_monthly_scoring` runs on the 1st of each month:
+
+    1. **Data-quality gate** — row count, duplicate IDs, schema, missing rates; fails loudly before scoring
+    2. **Scoring** — `DockerOperator` running the same image
+    3. **Output validation** — call list exists, ≥450 rows, no NaN probabilities
+    4. **Failure alert** — email + on-call channel
+
+    Requires the Docker socket on Airflow workers and `apache-airflow-providers-docker`. `DB_URL` comes from Airflow Variables/secrets — never commit credentials.
+
+    ## Model health & monitoring
+
+    Tracked monthly (see `evaluate_cv()` and the monitoring plan):
+
+    - **PSI per feature** vs. training baseline (>0.25 = investigate; check for data bugs before assuming real drift)
+    - **Predicted churn rate** month over month (alert outside ±30% of baseline)
+    - **PR-AUC on matured cohorts** (alert on drop >0.03)
+    - **Calibration by decile** — recalibrate when predicted vs. actual diverges by more than a few points
+    - **Precision@500** — the business metric
+
+    **Retraining trigger:** sustained PR-AUC decline or persistent PSI >0.25 on top features — not a calendar schedule. Validate any new model against the old one on the same matured cohorts before swapping.
+
+    ## Pilot & measurement
+
+    The 3-month pilot runs 500 calls/month against a randomized holdout of 500 equally-high-risk customers (no calls). Primary metric: churn rate treated vs. holdout after 60 days. Credible readout at ~4 months. **Do not peek monthly and stop at the first significant result** — pre-committed single analysis.
+
+    After each month, join actual churn outcomes back onto the call list to measure precision@500 and the save rate. This feedback loop is what turns model output into a measured savings number for finance.
+
+    ## Known issues / TODO
+
+    - [ ] Plan-history table needed upstream to repair the upgrade data gap properly (currently handled by flag)
+    - [ ] DQ gate branch in `scoring.py` (`DQ_CHECK_ONLY=1`) — implement checks
+    - [ ] Wire `notify_failure` to Slack instead of echo
+    - [ ] Mid-risk email tier using the full-scores export (blocked on pilot results)
+
+    ## Contacts
+
+    - Model/pipeline: data team
+    - Call list operations: retention team
+    - Churn label definition: whoever owns it — **confirm before any change**, it silently breaks outcome metrics
+question_plan:
+- id: q1
+  type: decision
+  ask: which model did we end up with and why not the first one?
+  gold_turns:
+  - 8
+  - 7
+  outdated_turns:
+  - 6
+- id: q2
+  type: decision
+  ask: what did we do with the negative charges in the end?
+  gold_turns:
+  - 4
+  outdated_turns:
+  - 3
+- id: q3
+  type: error-only
+  ask: date_trunc(unknown, text) does not exist - what was the fix?
+  gold_turns:
+  - 15
+- id: q4
+  type: exact
+  ask: how many people can marketing call per month?
+  gold_turns:
+  - 12
+  - 13
+- id: q5
+  type: decision
+  ask: how much does the model save us a month?
+  gold_turns:
+  - 40
+  outdated_turns:
+  - 34
+  - 35
+- id: q6
+  type: semantic
+  ask: why did the docker image fail to build?
+  gold_turns:
+  - 42
+- id: q7
+  type: semantic
+  ask: what did that article say about why people cancel?
+  gold_turns:
+  - 20
+- id: q8
+  type: paraphrase
+  ask: the probabilities were off, how did we deal with it?
+  gold_turns:
+  - 25
+  - 26
+  - 27
+- id: q9
+  type: paraphrase
+  ask: should I worry about the tenure shift we saw?
+  gold_turns:
+  - 29
+- id: q10
+  type: semantic
+  ask: what did we tell product about the support tickets thing?
+  gold_turns:
+  - 18
+  - 19
+- id: q11
+  type: ambiguous
+  ask: the empty column thing - what did we decide?
+  gold_turns:
+  - 23
+  - 24
+- id: q12
+  type: semantic
+  ask: remind me how we got the cutoff from the offer cost
+  gold_turns:
+  - 10
+  - 11
+- id: q13
+  type: exact
+  ask: what word do they use for churn in Romanian?
+  gold_turns:
+  - 33
+- id: q14
+  type: distractor
+  ask: the shared library error on my laptop, what was missing?
+  gold_turns:
+  - 7
+  note: 'two libgomp-like errors: 7 (xgboost, laptop) vs 42 (docker)'
+- id: s1
+  type: standalone
+  ask: what's the difference between mean and median?
+- id: s2
+  type: standalone
+  ask: regex to validate an email address?
+- id: s3
+  type: standalone
+  ask: 3-day itinerary for Lisbon
+questions:
+- id: q1
+  type: decision
+  prompt: |
+    which model did we end up with and why not the first one?
+  gold:
+  - turn: 8
+    quote: 'Here''s the full script with LightGBM:'
+  - turn: 7
+    quote: The pip wheel of XGBoost expects the OS to provide the OpenMP runtime
+  outdated:
+  - turn: 6
+    quote: from xgboost import XGBClassifier
+- id: q2
+  type: decision
+  prompt: |
+    what did we do with the negative charges in the end?
+  gold:
+  - turn: 4
+    quote: Since they're real refunds, the right move is to keep the negative values
+  outdated:
+  - turn: 3
+    quote: I'd suggest **flipping the sign instead**
+- id: q3
+  type: error-only
+  prompt: |
+    date_trunc(unknown, text) does not exist - what was the fix?
+  gold:
+  - turn: 15
+    quote: date_trunc('month', start_date::date) as cohort,
+- id: q4
+  type: exact
+  prompt: |
+    how many people can marketing call per month?
+  gold:
+  - turn: 12
+    quote: you're choosing **the 500 highest-risk customers, full stop.**
+  - turn: 13
+    quote: N_CALLS = 500
+- id: q5
+  type: decision
+  prompt: |
+    how much does the model save us a month?
+  gold:
+  - turn: 40
+    quote: Every save is worth a flat **€155 net**
+  outdated:
+  - turn: 34
+    quote: 500 × P × s × €180  −  €7,500
+- id: q6
+  type: semantic
+  prompt: |
+    why did the docker image fail to build?
+  gold:
+  - turn: 42
+    quote: That error means `libgomp1` didn't get installed before the import test
+- id: q7
+  type: semantic
+  prompt: |
+    what did that article say about why people cancel?
+  gold:
+  - turn: 20
+    quote: '**Involuntary churn is huge and invisible.**'
+- id: q8
+  type: paraphrase
+  prompt: |
+    the probabilities were off, how did we deal with it?
+  gold:
+  - turn: 25
+    quote: '**The fix: recalibrate on held-out data.**'
+  - turn: 27
+    quote: 'Here''s the complete pipeline file with isotonic calibration integrated:'
+- id: q9
+  type: paraphrase
+  prompt: |
+    should I worry about the tenure shift we saw?
+  gold:
+  - turn: 29
+    quote: 0.31 is above the 0.25 action threshold, so it warrants investigation
+- id: q10
+  type: semantic
+  prompt: |
+    what did we tell product about the support tickets thing?
+  gold:
+  - turn: 18
+    quote: 'Short answer: **no — and it''s important they understand why'
+  - turn: 19
+    quote: This does not mean that support is causing customers to leave.
+- id: q11
+  type: ambiguous
+  prompt: |
+    the empty column thing - what did we decide?
+  gold:
+  - turn: 23
+    quote: Don't drop March — that's the bluntest tool
+  - turn: 24
+    quote: the 0.44 → 0.41 gap is a rough measure of how much value was in those upgrader rows.
+- id: q12
+  type: semantic
+  prompt: |
+    remind me how we got the cutoff from the offer cost
+  gold:
+  - turn: 10
+    quote: Contact when `p × 180 > 15`, i.e. **p > 15/180 ≈ 0.083**.
+  - turn: 11
+    quote: E[offer] = C_offer  +  p × (1 − s) × C_churn
+- id: q13
+  type: exact
+  prompt: |
+    what word do they use for churn in Romanian?
+  gold:
+  - turn: 33
+    quote: '**"Pierderea clienților"** / **"pierderea abonaților"**'
+- id: q14
+  type: distractor
+  prompt: |
+    the shared library error on my laptop, what was missing?
+  gold:
+  - turn: 7
+    quote: The pip wheel of XGBoost expects the OS to provide the OpenMP runtime

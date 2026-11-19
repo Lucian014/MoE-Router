@@ -1,0 +1,46 @@
+# Requests that need nothing from the conversation's history: asked in EVERY session, they measure
+# the noise RAG adds (fragments that are sent although no earlier turn is relevant).
+#   far   unrelated to any session (a haiku, a capital, a recipe)
+#   near  same broad domain as many sessions (general Python / SQL / stats / writing), but a new
+#         question: the hard case for a threshold
+prompts:
+  - {kind: far, lang: ro, prompt: "scrie-mi un haiku despre luni dimineata"}
+  - {kind: far, lang: ro, prompt: "care e capitala Australiei?"}
+  - {kind: far, lang: ro, prompt: "scrie o poezie scurta despre toamna"}
+  - {kind: far, lang: ro, prompt: "recomanda-mi o carte buna de SF"}
+  - {kind: far, lang: ro, prompt: "cat e 17% din 2.340?"}
+  - {kind: far, lang: ro, prompt: "o reteta rapida de clatite fara lapte?"}
+  - {kind: far, lang: ro, prompt: "cum scot o pata de vin rosu de pe o camasa alba?"}
+  - {kind: far, lang: ro, prompt: "ce sa vizitez o zi in Sibiu?"}
+  - {kind: far, lang: ro, prompt: "traduce in engleza: 'Multumesc pentru rabdare, revin cu un raspuns maine.'"}
+  - {kind: far, lang: ro, prompt: "spune-mi o gluma cu programatori"}
+  - {kind: far, lang: ro, prompt: "cate calorii are o banana?"}
+  - {kind: far, lang: ro, prompt: "scrie un mesaj de la multi ani pentru bunica mea, care face 80 de ani"}
+  - {kind: far, lang: ro, prompt: "de ce e cerul albastru?"}
+  - {kind: far, lang: ro, prompt: "ce diferenta e intre vreme si clima?"}
+  - {kind: far, lang: en, prompt: "Give me a 3-day itinerary for Lisbon"}
+  - {kind: far, lang: en, prompt: "Explain the CAP theorem briefly"}
+  - {kind: far, lang: en, prompt: "What's a good name for a golden retriever puppy?"}
+  - {kind: far, lang: en, prompt: "How long should I boil an egg for a runny yolk?"}
+  - {kind: far, lang: en, prompt: "Write a limerick about a cat who hates Mondays"}
+  - {kind: far, lang: en, prompt: "What's the difference between a crocodile and an alligator?"}
+  - {kind: far, lang: en, prompt: "Who painted The Starry Night?"}
+  - {kind: far, lang: en, prompt: "Suggest a 20-minute bodyweight workout"}
+  - {kind: near, lang: ro, prompt: "ce diferenta e intre list si tuple in python?"}
+  - {kind: near, lang: ro, prompt: "cum scriu un for in bash peste fisierele dintr-un folder?"}
+  - {kind: near, lang: ro, prompt: "cum fac un tabel pivot in excel?"}
+  - {kind: near, lang: ro, prompt: "ce e un decorator in python, cu un exemplu?"}
+  - {kind: near, lang: ro, prompt: "cum fac un commit doar cu o parte din modificarile dintr-un fisier in git?"}
+  - {kind: near, lang: ro, prompt: "ce inseamna complexitatea O(n log n)?"}
+  - {kind: near, lang: ro, prompt: "scrie un regex care valideaza un numar de telefon romanesc"}
+  - {kind: near, lang: ro, prompt: "cum calculez media ponderata in excel?"}
+  - {kind: near, lang: ro, prompt: "rescrie mai politicos: 'trimite-mi raportul pana diseara'"}
+  - {kind: near, lang: en, prompt: "What's the difference between mean and median?"}
+  - {kind: near, lang: en, prompt: "Regex to validate an email address?"}
+  - {kind: near, lang: en, prompt: "How do I reverse a linked list in Python?"}
+  - {kind: near, lang: en, prompt: "What's the difference between INNER JOIN and LEFT JOIN?"}
+  - {kind: near, lang: en, prompt: "Explain what a p-value is in one paragraph"}
+  - {kind: near, lang: en, prompt: "How do I center a div with CSS?"}
+  - {kind: near, lang: en, prompt: "What's the difference between a process and a thread?"}
+  - {kind: near, lang: en, prompt: "Write a docstring for a function that merges two sorted lists"}
+  - {kind: near, lang: en, prompt: "Summarize the difference between REST and GraphQL in 3 bullet points"}

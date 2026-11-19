@@ -27,7 +27,7 @@ from database import TurnRepository, dispose_engine, get_session
 from memory.indexer import IndexResult, index_turn
 from shared.config import get_lifecycle_settings, get_memory_settings, get_rabbitmq_settings
 from shared.lifecycle import Stopped, install_stop_signals, retry, set_ready
-from shared.memory.chunking import CHUNKER_VERSION
+from shared.memory.chunking import index_version
 from shared.memory.embedding import EmbeddingClient, OllamaEmbeddingClient
 from shared.rabbitmq import RabbitMQClient
 
@@ -86,7 +86,7 @@ async def reindex(force: bool) -> None:
         if force:
             pending = await turns.list_ids()
         else:
-            pending = [t.id for t in await turns.list_to_index(CHUNKER_VERSION, embedder.model, limit=None)]
+            pending = [t.id for t in await turns.list_to_index(index_version(), embedder.model, limit=None)]
     print(f"[*] {len(pending)} turn(s) to index")
     for turn_id in pending:
         try:
@@ -126,7 +126,7 @@ async def main() -> None:
     )
     set_ready(lifecycle.ready_file, True)
     print(f"[*] Memory service listening on {rabbit.memory_queue} (embeddings: {embedder.model} "
-          f"on {embedder.host}, chunker v{CHUNKER_VERSION}, dead letters: {rabbit.memory_queue}.dlq)")
+          f"on {embedder.host}, index v{index_version()}, dead letters: {rabbit.memory_queue}.dlq)")
 
     await stop.wait()
     print("[*] SIGTERM received, shutting down")

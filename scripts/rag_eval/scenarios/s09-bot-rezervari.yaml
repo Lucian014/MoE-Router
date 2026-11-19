@@ -1,0 +1,131 @@
+id: s09-bot-rezervari
+category: coding
+lang: ro
+turns:
+  - user: |
+      Vreau să fac un bot de Telegram pentru rezervări la frizeria unui prieten, „Frizeria Bărbosu”. În Python. Ce bibliotecă folosesc și cum structurez proiectul?
+  - user: |
+      Ok, mergem pe python-telegram-bot v21. Scrie-mi un /start care salută clientul pe nume și îi arată trei butoane: Rezervă, Rezervările mele, Contact.
+  - user: |
+      Programul frizeriei e luni–vineri 10:00–19:00, sâmbătă 10:00–14:00, duminică închis. O programare durează 30 de minute. Cum generez sloturile libere pentru o zi?
+  - user: |
+      Unde țin rezervările? Ceva simplu, e un singur VPS mic și deocamdată un singur frizer.
+  - user: |
+      Bine, SQLite. Scrie-mi schema și funcțiile de salvare și citire a rezervărilor.
+  - user: |
+      ```
+      Traceback (most recent call last):
+        File "/opt/barbosu/bot/handlers.py", line 88, in confirma_rezervare
+          await salveaza_rezervare(user_id, zi, ora)
+        File "/opt/barbosu/bot/db.py", line 41, in salveaza_rezervare
+          conn.execute("INSERT INTO rezervari (user_id, zi, ora) VALUES (?, ?, ?)", (user_id, zi, ora))
+      sqlite3.OperationalError: database is locked
+      ```
+  - user: |
+      Dacă trec pe Postgres scap de problema asta definitiv? Merită pentru un proiect atât de mic?
+  - user: |
+      Am decis: trecem pe Postgres, că oricum prietenul meu o să vrea și o pagină web de programări mai târziu. Rescrie funcțiile de salvare și citire cu asyncpg.
+  - user: |
+      Cum împiedic două rezervări pe același slot direct la nivel de bază de date, nu doar în cod?
+  - user: |
+      Vreau și anulare: clientul poate anula până cu 2 ore înainte de programare. Rescrie handler-ul pentru „Rezervările mele” cu un buton de anulare la fiecare rezervare.
+  - user: |
+      Vreau ca mesajele botului să fie și în engleză, pentru turiști. Tradu-mi textele astea:
+      - „Bună, {nume}! Cu ce te putem ajuta azi?”
+      - „Alege ziua în care vrei să vii.”
+      - „Rezervarea ta a fost confirmată: {zi}, ora {ora}. Te așteptăm!”
+      - „Nu mai sunt locuri libere în ziua aleasă. Încearcă altă zi.”
+      - „Rezervarea a fost anulată. Sperăm să te vedem curând.”
+    domain: translation
+  - user: |
+      Cum aleg limba în care răspunde botul? După language_code-ul din Telegram?
+  - user: |
+      Rescrie /start să folosească textele în funcție de limbă. Dă-mi doar ce se schimbă, nu tot fișierul.
+  - user: |
+      Am pus botul pe VPS cu webhook prin nginx. Telegram zice: „Wrong response from the webhook: 502 Bad Gateway”. De unde încep?
+  - user: |
+      Asta e configul nginx și cum pornesc aplicația:
+
+      ```nginx
+      server {
+          listen 443 ssl;
+          server_name barbosu.ro;
+
+          location /tg/ {
+              proxy_pass http://127.0.0.1:8443/;
+              proxy_set_header Host $host;
+          }
+      }
+      ```
+
+      ```ini
+      [Service]
+      WorkingDirectory=/opt/barbosu
+      ExecStart=/opt/barbosu/.venv/bin/uvicorn app:api --host 127.0.0.1
+      Restart=always
+      ```
+  - user: |
+      În logul nginx apare asta de fiecare dată când Telegram trimite un update:
+
+      ```
+      2026/10/02 18:14:09 [error] 1182#1182: *57 connect() failed (111: Connection refused) while connecting to upstream, client: 91.108.6.84, server: barbosu.ro, request: "POST /tg/webhook HTTP/1.1", upstream: "http://127.0.0.1:8443/webhook"
+      ```
+  - user: |
+      Am verificat cu ss -ltnp: uvicorn ascultă pe 8000. Deci în unit-ul systemd lipsește --port, nu?
+  - user: |
+      Merge acum. Vreau un reminder automat trimis clientului cu 2 ore înainte de programare.
+  - user: |
+      Frizerul vrea să primească el pe Telegram, în fiecare dimineață la 9, lista programărilor din ziua respectivă. Cum fac?
+  - user: |
+      Unde țin tokenul botului? Acum e scris direct în bot.py și vreau să pun proiectul pe GitHub.
+  - user: |
+      Schimbare de regulă: anularea se poate face cu cel puțin 3 ore înainte, nu 2. Și când cineva anulează, frizerul trebuie să primească o notificare. Rescrie handler-ul de anulare.
+  - user: |
+      ```
+      Traceback (most recent call last):
+        File "/opt/barbosu/.venv/lib/python3.12/site-packages/telegram/ext/_application.py", line 1325, in process_update
+          await coroutine
+        File "/opt/barbosu/bot/handlers.py", line 142, in anuleaza_rezervare
+          frizer_id = context.bot_data["frizer"].id
+      AttributeError: 'NoneType' object has no attribute 'id'
+      ```
+  - user: |
+      Prietenul meu vrea să adauge un al doilea frizer, Sorin. Fiecare frizer cu programul lui. Cum schimb schema bazei de date?
+  - user: |
+      Sorin lucrează doar marți–sâmbătă, între 12:00 și 20:00. Rescrie generarea sloturilor ca să țină cont de frizer și de programul fiecăruia.
+  - user: |
+      Clientul trebuie să aleagă întâi frizerul. Fă-mi rezervarea cu un ConversationHandler: frizer → zi → oră → confirmare.
+  - user: |
+      ```
+      telegram.error.BadRequest: Button_data_invalid
+      ```
+  - user: |
+      Cum fac callback_data mai scurt fără să pierd informația?
+  - user: |
+      Vreau statistici: câte programări pe lună are fiecare frizer. Scrie-mi query-ul SQL.
+  - user: |
+      Și rata de anulare pe frizer, în același format?
+  - user: |
+      Scrie-mi un mesaj scurt pe care frizeria să-l pună pe Instagram ca să anunțe că se pot face programări prin Telegram.
+    domain: text-rewrite
+  - user: |
+      Mai scurt și mai prietenos, cu 2-3 emoji.
+    domain: text-rewrite
+  - user: |
+      Înapoi la bot: cineva a făcut 200 de rezervări false într-o seară. Cum pun o limită?
+  - user: |
+      Rescrie salvarea rezervării ca să verifice și limita: maximum 2 rezervări active per client. Păstrează constrângerea pe slot de mai devreme.
+  - user: |
+      Ce ar trebui să mai verific înainte să-l las pe prietenul meu să-l folosească cu clienți reali?
+question_plan:
+  - {id: q1, type: multi-hop, turn: 17, ask: "Ce cauza până la urmă eroarea de la webhook-ul Telegram?", note: "simptomul e în 14 (502), rezolvarea în 17 (portul din systemd)"}
+  - {id: q2, type: decision, turn: 8, outdated: [5], ask: "Ce bază de date folosim pentru rezervări?"}
+  - {id: q3, type: decision, turn: 21, outdated: [10], ask: "Cu cât timp înainte poate un client să-și anuleze programarea?"}
+  - {id: q4, type: exact, turn: 24, ask: "Care e programul lui Sorin?"}
+  - {id: q5, type: error-only, turn: 33, outdated: [8], ask: "traceback din funcția de salvare (numele din codul generat la 33), fără text"}
+  - {id: q6, type: paraphrase, turn: 19, ask: "Cum află frizerul dimineața ce clienți are?"}
+  - {id: q7, type: exact, turn: 26, ask: "De ce primeam Button_data_invalid?"}
+  - {id: q8, type: semantic, turn: 2, ask: "Ce butoane avea meniul de la /start?"}
+  - {id: q9, type: ambiguous, turn: 28, ask: "Mai dă-mi o dată query-ul ăla cu programările pe lună."}
+  - {id: q10, type: semantic, turn: 11, ask: "Cum ai tradus în engleză mesajul de confirmare a rezervării?"}
+questions: []

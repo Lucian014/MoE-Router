@@ -13,9 +13,11 @@ manual check):
           ...
         assistant: |
           ...
+        domain: translation          # optional: this turn's category when it differs from the
+                                     # session's (a topic switch); the gold for routing
     questions:                       # each asked as turn len(turns) + 1, independently
       - id: q1
-        type: semantic               # semantic | exact | ambiguous | code-pasted | error-only
+        type: semantic               # see QUESTION_TYPES
         lang: ro                     # optional, defaults to the session's
         prompt: |
           ...
@@ -25,9 +27,11 @@ manual check):
           - {turn: 2, quote: "..."}
 
 A quote must appear verbatim in that turn's prompt or answer, inside a part that becomes a chunk
-(the answer; or code, a log, a long text pasted in the prompt). Check the files with:
+(the answer; or code, a log, a long text pasted in the prompt). Keys the loader doesn't know
+(e.g. `question_plan`, left by a scenario) are ignored. Check the files with:
 
     python scripts/rag_eval/dataset.py            # every file in data/sessions/
+    python scripts/rag_eval/dataset.py scripts/rag_eval/data/multihop
 """
 import sys
 from dataclasses import dataclass, field
@@ -38,16 +42,29 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
+from router.domain_schema import LABELS as CATEGORIES
 from shared.memory.chunking import ChunkDraft, chunk_turn
 
 DATA_DIR = Path(__file__).resolve().parent / "data" / "sessions"
-QUESTION_TYPES = ("semantic", "exact", "ambiguous", "code-pasted", "error-only")
+QUESTION_TYPES = (
+    "semantic",      # about the meaning, in words close to the answer's
+    "paraphrase",    # the same, but sharing (almost) no words with the answer
+    "exact",         # a number, identifier, name, error code
+    "ambiguous",     # "and for the other one?": only the session makes it answerable
+    "code-pasted",   # code pasted before the question
+    "error-only",    # only an error / traceback, gold on the turn with the faulty code
+    "multi-hop",     # the gold turn doesn't name what is asked ("that was it"): an earlier turn does
+    "decision",      # what was decided in the end; the earlier choice is `outdated`
+    "distractor",    # several turns look alike (same error family, same topic): only a rare token
+                     # (an identifier, a number, a code) tells the gold one apart
+)
 
 
 @dataclass(frozen=True)
 class Turn:
     user: str
     assistant: str
+    domain: str | None = None        # set on a topic switch; None = the session's category
 
 
 @dataclass(frozen=True)
@@ -88,7 +105,7 @@ def load_session(path: Path) -> Session:
     lang = raw.get("lang", "ro")
     return Session(
         id=raw["id"], category=raw["category"], lang=lang,
-        turns=[Turn(t["user"], t["assistant"]) for t in raw["turns"]],
+        turns=[Turn(t["user"], t.get("assistant") or "", t.get("domain")) for t in raw["turns"]],
         questions=[Question(id=q["id"], type=q["type"], lang=q.get("lang", lang), prompt=q["prompt"],
                             gold=_golds(q["gold"]), outdated=_golds(q.get("outdated")))
                    for q in raw.get("questions", [])],
@@ -134,6 +151,13 @@ def gold_ords(turn: Turn, drafts: list[ChunkDraft], gold: Gold) -> list[int]:
 
 def check(session: Session) -> list[str]:
     problems = []
+    if session.category not in CATEGORIES:
+        problems.append(f"{session.id}: unknown category {session.category!r}")
+    for n, t in enumerate(session.turns, start=1):
+        if not t.assistant.strip():
+            problems.append(f"{session.id}: turn {n} has no answer (generate.py unfinished?)")
+        if t.domain is not None and t.domain not in CATEGORIES:
+            problems.append(f"{session.id}: turn {n} has unknown domain {t.domain!r}")
     drafts = [chunk_turn(t.user, t.assistant) for t in session.turns]
     ids = set()
     for q in session.questions:
@@ -160,7 +184,7 @@ def check(session: Session) -> list[str]:
 
 
 def main() -> int:
-    sessions = load_dataset()
+    sessions = load_dataset(Path(sys.argv[1]) if len(sys.argv) > 1 else DATA_DIR)
     problems = [p for s in sessions for p in check(s)]
     turns = sum(len(s.turns) for s in sessions)
     questions = sum(len(s.questions) for s in sessions)

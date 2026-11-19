@@ -1,0 +1,134 @@
+id: s11-rezumate-sedinte
+category: summarization
+lang: en
+turns:
+  - user: |
+      Summarize these notes from our Q3 planning meeting in 5 bullets:
+
+      Q3 Planning — Platform Team. Attendees: Elena (lead), Marcus, Priya, Tomás, Wen. Date: June 24.
+
+      Elena opened by reviewing Q2: the billing rewrite shipped two weeks late but without incidents, and the on-call load dropped by roughly a third after the alert cleanup. The main complaint from other teams is still slow deploys: a full deploy of the monolith takes around 40 minutes, mostly in integration tests.
+
+      Database: we are on Postgres 12, which goes out of support in November. Marcus presented the migration plan to Postgres 16 using logical replication, with a cutover window of under ten minutes. The team agreed to complete the migration by end of October, before the holiday traffic. Marcus owns it; Wen will help with the replication monitoring.
+
+      Deploys: Tomás proposed splitting the integration test suite into four parallel shards and caching the Docker layers in CI. His estimate is that this brings a full deploy under 15 minutes. Agreed as a Q3 goal, owner Tomás, target date September 15.
+
+      Hiring: we have budget for two backend engineers. Priya will run the interview loop with Elena; the job ads go out in the first week of July.
+
+      Observability: the current log retention is 7 days, which was too short during the May investigation. We will raise it to 30 days and move older logs to cold storage. Wen owns this, no fixed date, but before the end of the quarter.
+
+      Risks raised: the migration and the deploy work both need Marcus's time for review; if hiring is slow, one of them will slip. Elena asked everyone to flag blockers in the weekly sync instead of waiting for the retro.
+
+      Next meeting: September 30, Q4 planning.
+  - user: |
+      Who owns what? Make a table of the action items with owner and deadline.
+  - user: |
+      Now this postmortem. Give me a 3-sentence executive summary for the CEO:
+
+      Incident Postmortem — Payments outage, September 14. Severity: SEV-1. Author: Priya.
+
+      Summary: Between 14:02 and 14:49 UTC, card payments failed for all customers on the web checkout and in the mobile app. The outage lasted 47 minutes. Roughly 3,100 payment attempts failed; about 60 percent of those customers retried successfully after recovery.
+
+      Timeline: At 14:02 the TLS certificate on the internal payments gateway pay-gw-02 expired. Every call from the checkout service to the gateway started failing the TLS handshake. The error rate alert fired at 14:04, but it was routed to #ops-legacy, a Slack channel that nobody has watched since the team reorganization in April. The on-call engineer, Tomás, learned about the problem at 14:31 from a customer support escalation. He identified the expired certificate at 14:40, issued a new one manually and restarted the gateway; payments recovered at 14:49.
+
+      Root cause: the certificate on pay-gw-02 was issued by hand two years ago, outside our automated renewal, so it was never renewed. Its sibling pay-gw-01 had been migrated to automated renewal last year; pay-gw-02 was missed because it was not in the inventory spreadsheet.
+
+      Contributing factors: the alert routing to a dead channel delayed detection by 27 minutes; the runbook for the gateway still described the old manual certificate process; and there was no synthetic check exercising a real payment end to end.
+
+      Action items: renew and automate certificates on all internal gateways, with an expiry alert 21 days ahead — owner Priya, due October 1. Audit every alert route and remove #ops-legacy — owner Wen, due September 30. Add a synthetic payment check every minute — owner Tomás, due October 15. Update the gateway runbook — owner Marcus.
+  - user: |
+      What was the actual root cause, and what was only a contributing factor? Be precise.
+  - user: |
+      Rewrite the summary for customers: no internal names, no system names, apologetic but not dramatic.
+    domain: text-rewrite
+  - user: |
+      Here are the Q4 planning notes. Summarize them the same way as the Q3 ones:
+
+      Q4 Planning — Platform Team. Attendees: Elena (lead), Marcus, Priya, Tomás, Wen. Date: September 30.
+
+      Elena started with the September incident: the postmortem actions are on track, and she asked that they take priority over new work until they are closed. The CEO has asked for a monthly reliability report starting in November; Elena will write it with Priya.
+
+      Database: the Postgres 16 migration is postponed to January. The logical replication tests showed a replication lag of up to 40 seconds under peak write load, and the team does not want to risk a cutover during the holiday traffic. Postgres 12 extended support has been purchased until March as a bridge. Marcus still owns the migration; the new target is January 20.
+
+      Deploys: the test sharding is done and a full deploy now takes about 18 minutes, close to but not under the 15-minute goal. The remaining time is in the Docker image build. Tomás will try a smaller base image and a remote build cache; no fixed date.
+
+      Hiring: the company announced a hiring freeze for Q4. The only exception for our team is one SRE position, approved because of the incident. The two backend positions from Q3 are cancelled; one candidate who had reached the final round will be contacted again in Q1.
+
+      Cost: the cloud bill grew 22 percent since June, mostly from the larger log retention and the new staging environment that is never shut down. Wen will set up automatic shutdown of staging outside working hours, due October 31.
+
+      Risks: the SRE hire will take at least two months; until then the on-call rotation stays at four people, which Elena considers the minimum. Marcus is again the bottleneck for reviews.
+
+      Next meeting: December 16.
+  - user: |
+      What changed between the Q3 and the Q4 plans? Only the differences.
+  - user: |
+      Which Q3 action items are not mentioned at all in the Q4 notes?
+  - user: |
+      Summarize these customer emails, grouped by theme:
+
+      1. From Marta Ilves, Lindqvist Logistics: "The invoices we downloaded in September are missing the VAT number, so our accounting can't book them. We need corrected PDFs for September and August."
+
+      2. From Daniel Okafor, Brightside Dental: "Our payment failed on September 14 around 2 pm and we were charged twice when we retried later. Please refund one of the charges."
+
+      3. From Sophie Laurent, Atelier Laurent: "The CSV export breaks when a product name contains a semicolon. All the columns after it shift by one."
+
+      4. From Kenji Watanabe, Nordpeak Outdoor: "Your checkout was down for almost an hour last week, during our biggest sale. We would like to understand what happened and what you are doing to prevent it."
+
+      5. From Ana Ribeiro, Casa Ribeiro: "Could you add an option to export invoices in bulk as one ZIP file? Downloading them one by one takes forever."
+
+      6. From Lukas Brenner, Brenner & Söhne: "The CSV export of orders uses commas as decimal separators in some columns and dots in others. Excel can't read it properly."
+  - user: |
+      Which of these complaints could be related to the payments incident?
+  - user: |
+      Draft a one-paragraph update for the company all-hands that combines the incident, the Q4 plan and the customer feedback.
+    domain: text-rewrite
+  - user: |
+      Shorter, max 60 words.
+    domain: text-rewrite
+  - user: |
+      Turn the Q4 notes into a checklist I can paste into Jira, one line per task.
+  - user: |
+      What risks do you see in the Q4 plan that nobody mentioned in the meeting?
+    domain: brainstorming
+question_plan:
+  - {id: q6, type: semantic, turn: 5, ask: "What did we tell customers about the incident?"}
+  - {id: q7, type: semantic, turn: 2, ask: "Who owned the deploy speed-up in the Q3 action items table?"}
+questions:
+  - id: q1
+    type: exact
+    prompt: |
+      How long did the payments outage last?
+    gold:
+      - {turn: 3, quote: "The outage lasted 47 minutes."}
+  - id: q2
+    type: multi-hop
+    prompt: |
+      Why did it take so long before anyone noticed payments were failing?
+    gold:
+      - {turn: 3, quote: "it was routed to #ops-legacy"}
+  - id: q3
+    type: decision
+    prompt: |
+      When are we migrating to Postgres 16 now?
+    gold:
+      - {turn: 6, quote: "the Postgres 16 migration is postponed to January"}
+    outdated:
+      - {turn: 1, quote: "complete the migration by end of October"}
+  - id: q4
+    type: exact
+    prompt: |
+      What was wrong with the Lindqvist Logistics invoices?
+    gold:
+      - {turn: 9, quote: "missing the VAT number"}
+  - id: q5
+    type: paraphrase
+    prompt: |
+      Are we allowed to bring new people onto the team next quarter?
+    gold:
+      - {turn: 6, quote: "the company announced a hiring freeze for Q4"}
+  - id: q8
+    type: exact
+    prompt: |
+      Which internal gateway had the expired certificate?
+    gold:
+      - {turn: 3, quote: "the TLS certificate on the internal payments gateway pay-gw-02 expired"}

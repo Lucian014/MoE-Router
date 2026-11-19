@@ -395,6 +395,38 @@ def test_indexer_writes_chunks_once_and_reindexes_on_new_rules(sid, app_db):
     run(go())
 
 
+def test_indexer_recomputes_only_the_terms_when_only_the_analyzer_changed(sid, app_db):
+    from memory.indexer import index_turn
+    from shared.memory.chunking import CHUNKER_VERSION, index_version
+
+    embedder = FakeEmbedder()
+
+    async def go():
+        try:
+            async with app_db.get_session() as s:
+                await ChatSessionRepository(s).ensure(sid)
+                turn_id = await TurnRepository(s).create(sid, 1, "cum verific parola la login?", ANSWER)
+            await index_turn(turn_id, embedder)
+            async with db() as s:            # rows written before the analyzer was versioned, stale terms
+                await s.execute(text("UPDATE chunks SET chunker_version = :v, terms = '{stale}' "
+                                     "WHERE turn_id = :t"), {"v": CHUNKER_VERSION, "t": turn_id})
+                before = {c.id: list(c.embedding) for c in await ChunkRepository(s).list_for_turn(turn_id)}
+            calls = len(embedder.calls)
+            result = await index_turn(turn_id, embedder)
+        finally:
+            await app_db.dispose_engine()
+
+        assert result.status == "reanalyzed" and result.chunks == len(before)
+        assert len(embedder.calls) == calls                                  # no embedding call
+        async with db() as s:
+            chunks = await ChunkRepository(s).list_for_turn(turn_id)
+        assert {c.id: list(c.embedding) for c in chunks} == before          # same rows, same vectors
+        assert {c.chunker_version for c in chunks} == {index_version()}
+        assert all(c.terms != ["stale"] for c in chunks) and any("verify_password" in c.terms for c in chunks)
+
+    run(go())
+
+
 # ------------------------------------------------------------------ the router's retrieval (R2 + R3)
 class TopicEmbedder(FakeEmbedder):
     """Texts about tokens point one way, everything else another."""
@@ -472,8 +504,8 @@ def test_cluster_eval_seeds_and_clones_sessions(app_db):
         assert len(copied_chunks) == len(original_chunks) > 0
         assert {c.turn_id for c in copied_chunks} == {t.id for t in copies}       # re-pointed to the copies
         assert state.domain == "math"
-        gold_turn = question.gold[0].turn
-        assert gold and all(c.turn == gold_turn for c in copied_chunks if c.id in gold)
+        gold_turns = {g.turn for g in question.gold}
+        assert gold and all(c.turn in gold_turns for c in copied_chunks if c.id in gold)
 
     run(go())
 
@@ -486,7 +518,9 @@ def test_cluster_eval_ask_reads_presence_from_the_reply(app_db):
     from dataset import load_dataset
 
     session = next(s for s in load_dataset() if s.id.startswith("s03"))
-    question = session.questions[0]                          # gold in turn 1, out of the recent turns
+    recent = 2                                               # the gateway reports 2 whole turns
+    question = next(q for q in session.questions                # every gold turn older than those
+                    if all(g.turn <= len(session.turns) - recent for g in q.gold))
     sent = []
 
     async def go():
@@ -500,7 +534,7 @@ def test_cluster_eval_ask_reads_presence_from_the_reply(app_db):
                 sent.append(body)
                 gold = await cluster_eval.gold_chunk_ids(uuid.UUID(body["session_id"]), session, question)
                 return httpx.Response(200, json={"response": "16.7%", "model": "m", "latency_ms": 900.0, "routing": {
-                    "rag_variant": body["variant"], "recent_turns": 2, "retrieved_chunk_ids": sorted(gold),
+                    "rag_variant": body["variant"], "recent_turns": recent, "retrieved_chunk_ids": sorted(gold),
                     "context_tokens": 2000, "classify_ms": 30.0, "retrieval": {"embed_ms": 80.0}}})
 
             async with httpx.AsyncClient(transport=httpx.MockTransport(gateway)) as http:

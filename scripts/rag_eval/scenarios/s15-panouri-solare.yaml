@@ -1,0 +1,112 @@
+id: s15-panouri-solare
+category: open-qa
+lang: en
+turns:
+  - user: |
+      What's the difference between monocrystalline and polycrystalline solar panels?
+  - user: |
+      What does "kWp" mean on an installer's quote?
+  - user: |
+      Our roof faces south-east with a 35 degree pitch. Is that good for solar?
+  - user: |
+      Roughly how much does a 5 kWp system produce per year in Cluj-Napoca?
+  - user: |
+      What is an inverter actually doing?
+  - user: |
+      String inverter or microinverters: which is better for a roof where a chimney shades part of it in the afternoon?
+  - user: |
+      What is net metering, and how does the prosumer status work in Romania?
+  - user: |
+      We got two quotes:
+
+      ```
+      Quote A: 6.2 kWp, 14 x 445 W panels, Huawei SUN2000-6KTL-M1 string inverter, 10-year inverter warranty, 27,400 lei installed
+      Quote B: 5.4 kWp, 12 x 450 W panels, Enphase IQ8+ microinverters, 25-year microinverter warranty, 31,900 lei installed
+      ```
+
+      Which one is better value?
+  - user: |
+      Calculate the price per kWp for both quotes.
+    domain: math
+  - user: |
+      Our yearly consumption is 4,800 kWh. Which system covers it, given what you said about production in Cluj?
+    domain: math
+  - user: |
+      What's a realistic payback period for quote A? We pay about 1.1 lei per kWh.
+    domain: math
+  - user: |
+      Should we add a battery? What size would make sense for us?
+  - user: |
+      LFP or NMC batteries for a house?
+  - user: |
+      How long do panels last, and what does "degradation 0.4% per year" mean in practice?
+  - user: |
+      Over 25 years at 0.4% per year, how much less would quote A's system produce in year 25 than in year 1?
+    domain: math
+  - user: |
+      Do panels still work in winter, or when there's snow on them?
+  - user: |
+      Do I need a building permit in Romania for panels on the roof of a house?
+  - user: |
+      What's the "Casa Verde Fotovoltaice" program and is it still worth applying?
+  - user: |
+      We decided on quote A, but asked the installer to replace the inverter with a hybrid one so we can add a battery later. Which hybrid inverters are common at that size?
+  - user: |
+      What's the difference between on-grid, off-grid and hybrid systems?
+  - user: |
+      How do I monitor production day to day?
+  - user: |
+      Our neighbor's system shuts down by itself on sunny days, usually around noon, and comes back a few minutes later. Any idea why?
+  - user: |
+      He showed me the inverter's log:
+
+      ```
+      2026-07-12 12:41:07  ALARM   2001  Grid Overvoltage   Vac=253.4V
+      2026-07-12 12:46:12  RECOVER 2001  Grid Overvoltage
+      2026-07-12 13:02:55  ALARM   2001  Grid Overvoltage   Vac=254.1V
+      2026-07-12 13:08:01  RECOVER 2001  Grid Overvoltage
+      ```
+  - user: |
+      The installer says the AC cable from his inverter to the meter is 35 m long and only 4 mm². Could that explain it?
+  - user: |
+      How should we clean the panels, and is it even worth it?
+  - user: |
+      Is hail a real risk? What does the hail rating on a panel datasheet mean?
+  - user: |
+      What kind of insurance should we get for the system?
+  - user: |
+      Do the panels need to be grounded? What about lightning protection?
+  - user: |
+      Explain how a heat pump would work together with the solar system.
+  - user: |
+      If a heat pump adds about 3,000 kWh per year, is quote A still enough?
+    domain: math
+  - user: |
+      And if we get an electric car later and drive 12,000 km per year?
+    domain: math
+  - user: |
+      What would our total yearly consumption be with both the heat pump and the car?
+    domain: math
+  - user: |
+      Give me a list of questions to ask the installer before we sign the contract.
+    domain: brainstorming
+question_plan:
+  - {id: q2, type: decision, turn: 19, ask: "Which offer did we go with, and what did we change in it?"}
+  - {id: q3, type: multi-hop, turn: 24, ask: "Why did the neighbor's inverter keep switching off?", note: "symptom in 22-23, explanation in 24"}
+  - {id: q4, type: paraphrase, turn: 16, ask: "If it's freezing but sunny, do I still get electricity?"}
+  - {id: q5, type: exact, turn: 9, ask: "What was the price per kWp of quote A?"}
+  - {id: q6, type: semantic, turn: 1, ask: "What did you say is the difference between the two panel types?"}
+  - {id: q8, type: paraphrase, turn: 11, ask: "When would we get our money back on the installation?"}
+questions:
+  - id: q1
+    type: exact
+    prompt: |
+      How many panels were in the second quote?
+    gold:
+      - {turn: 8, quote: "12 x 450 W panels"}
+  - id: q7
+    type: exact
+    prompt: |
+      What error code did the neighbor's inverter show?
+    gold:
+      - {turn: 23, quote: "ALARM   2001  Grid Overvoltage   Vac=253.4V"}

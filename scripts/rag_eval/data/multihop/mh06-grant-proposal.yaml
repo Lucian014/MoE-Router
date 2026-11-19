@@ -1,0 +1,408 @@
+id: mh06-grant-proposal
+category: text-rewrite
+lang: en
+turns:
+- user: |
+    I'm writing a grant proposal for a small NGO that teaches coding to teenagers in rural Romania. Can you make this summary more compelling? Keep it under 150 words.
+
+    ```
+    Our organization, CodeSat, has been running coding clubs in villages in Vaslui county since 2021. We have 14 clubs and about 230 students. We want to expand to Iasi and Neamt counties. We need money for laptops, internet and trainers. The project lasts 24 months.
+    ```
+  assistant: |
+    Here's a revised version:
+
+    ---
+
+    Since 2021, CodeSat has opened doors to the digital world for teenagers in rural Vaslui county, Romania—communities where opportunity often ends at the village limits. What began as a handful of coding clubs has grown to 14 active clubs serving 230 students, proving that talent is everywhere, even when resources are not.
+
+    Our students aren't just learning to code; they're building futures their villages have never seen. Now, we're ready to scale. Over 24 months, we will expand into Iași and Neamț counties, bringing hands-on tech education to hundreds more young people.
+
+    Your support will fund the essentials that make this possible: laptops, reliable internet, and trained local instructors. Together, we can ensure that a teenager's postcode no longer determines their access to the skills shaping tomorrow's economy.
+
+    ---
+
+    Want me to adjust the tone (more formal/emotional) or add specific outcomes like numbers of new students?
+- user: |
+    The funder, the Northbridge Foundation, has a rule that the summary must mention measurable outcomes. Rewrite it with that in mind.
+  assistant: |
+    Here's the revised version with measurable outcomes built in:
+
+    ---
+
+    Since 2021, CodeSat has opened doors to the digital world for teenagers in rural Vaslui county, Romania—communities where opportunity often ends at the village limits. What began as a handful of coding clubs has grown to 14 active clubs serving 230 students, proving that talent is everywhere, even when resources are not.
+
+    Over the next 24 months, we will expand into Iași and Neamț counties with clear, measurable goals: launching 20 new coding clubs, enrolling 400 additional students, and training 12 local instructors. We will track attendance, course completion rates (target: 85%), and student-built projects, reporting progress to Northbridge Foundation every six months.
+
+    Your support will fund the essentials that make this possible: laptops, reliable internet, and trained trainers. Together, we can ensure a teenager's postcode no longer determines their access to the skills shaping tomorrow's economy.
+
+    ---
+
+    Note: I've included example targets (20 clubs, 400 students, 85% completion)—please adjust these to match your actual projections, as funders will expect you to deliver on them.
+- user: |
+    What's the difference between outputs and outcomes in a grant proposal?
+  assistant: |
+    Great question—funders care a lot about this distinction.
+
+    **Outputs** are the direct, countable products of your activities—what you *do*. They're fully within your control.
+
+    **Outcomes** are the changes that happen *because of* your work—what your participants gain. They reflect actual impact, and they're harder to achieve and measure.
+
+    **Applied to CodeSat:**
+
+    | Outputs | Outcomes |
+    |---|---|
+    | 20 new clubs launched | Students can build a working app or website |
+    | 400 students enrolled | 85% of students demonstrate improved digital skills (pre/post assessment) |
+    | 12 trainers trained | X% of graduates pursue further tech education or employment |
+    | 500 laptops distributed | Students report increased confidence and career aspirations |
+
+    **Why it matters:** A proposal full of outputs but no outcomes reads like activity without purpose. Funders like Northbridge want to know their money *changes something*, not just that you'll be busy. The strongest proposals state outputs (which show you can execute) and outcomes (which show the execution matters).
+
+    **One practical tip:** Outcomes should be specific and measurable too—"students gain skills" is weak; "70% of participants pass a standardized coding assessment" is fundable. And be realistic: only claim outcomes you can actually measure and attribute to your program.
+- user: |
+    Our board member Elena read the draft and said the tone is "too sad", like we're asking for charity. Here's the paragraph she flagged:
+
+    ```
+    Children in these villages have no future. Their parents are poor, the schools are falling apart, and nobody cares about them. Without our help they will never leave the village.
+    ```
+  assistant: |
+    Elena's instinct is right—and it's not just about tone. That paragraph uses what's called "deficit framing," which research consistently shows turns funders off. It paints the community as helpless, implies residents are passive, and subtly positions your organization as the only actor that matters. Worse, it contradicts the rest of your proposal, which celebrates what students are already achieving.
+
+    Here's a strengths-based rewrite:
+
+    ---
+
+    > In rural Vaslui county, teenagers are eager to build careers in technology—but opportunities to learn digital skills rarely reach beyond the county's towns. CodeSat bridges that gap, bringing coding education directly into village communities where ambition already exists and is waiting for a chance.
+
+    **Why this works better:**
+
+    - **Leads with agency, not pity.** Students are "eager to build careers," not victims waiting to be rescued.
+    - **Identifies a gap, not a tragedy.** "Opportunities rarely reach" is a solvable infrastructure problem, not a hopeless situation.
+    - **Keeps the urgency.** The need is still clear—funders won't think the problem is solved.
+    - **Positions CodeSat as a partner**, not a savior.
+
+    A useful rule of thumb: describe the *barrier*, never the *brokenness*. "The nearest IT high school is 40 km away" is compelling and respectful; "nobody cares about them" is neither. If you want to convey hardship, use concrete facts (distances, lack of broadband, school resources) rather than emotional absolutes like "no future" or "never."
+- user: |
+    Rewrite that paragraph.
+  assistant: |
+    Here's the rewritten paragraph:
+
+    ---
+
+    > In rural Vaslui county, teenagers are eager to build careers in technology—but opportunities to learn digital skills rarely reach beyond the county's towns. The nearest IT-focused high school can be 40 km away, and reliable internet at home is still the exception. CodeSat bridges that gap, bringing coding education directly into village communities where ambition already exists and is waiting for a chance.
+
+    ---
+
+    I added the concrete details (distance, internet access) so the need feels tangible without relying on pity. Adjust the specifics to match your actual data—if you have real figures on broadband coverage or school distances in Vaslui, swap those in, since funders respond well to verifiable facts.
+- user: |
+    Make this sentence shorter: "In the context of the ongoing digital transformation that is affecting all sectors of the economy, it is becoming increasingly important for young people to acquire skills that will allow them to participate in the labour market of the future."
+  assistant: |
+    Here are a few options, from shortest to most detailed:
+
+    **Shortest:**
+    > As the economy digitalizes, young people need tech skills to stay employable.
+
+    **Middle ground:**
+    > Digital skills are now essential for young people entering the future labour market.
+
+    **Keeps more of the original nuance:**
+    > As digital transformation reshapes every sector, young people need new skills to participate in tomorrow's labour market.
+
+    The original is 38 words; these are 12, 14, and 19. The main cuts: "in the context of the ongoing" → "as," and "acquire skills that will allow them to participate" → "need skills to participate." Grant reviewers read dozens of proposals, so tight sentences like these signal confidence.
+- user: |
+    Now the budget justification. The reviewer from the first round, Mr. Hartley, wrote this comment on our previous application:
+
+    ```
+    Reviewer 2: The budget lists 'equipment – 61,000 EUR' without explanation. It is unclear why laptops are needed if schools already have computer labs. The cost per beneficiary appears high.
+    ```
+  assistant: |
+    Mr. Hartley's comment is very answerable—the issue isn't the cost, it's that the previous application didn't explain it. Here's a draft budget justification for the equipment line:
+
+    ---
+
+    > **Equipment – 61,000 EUR**
+    >
+    > This covers laptops and networking equipment for 20 new coding clubs (approximately 3,050 EUR per club).
+    >
+    > **Why laptops rather than existing school computer labs:** Our experience in Vaslui county shows that school labs are rarely viable for coding instruction. Most are equipped with hardware over 8 years old that cannot run modern development tools; many lack administrator access, preventing students from installing software; and labs are typically booked during school hours by regular IT classes, leaving no reliable slots for our clubs. Most importantly, laptops allow students to continue working on projects at home or in community spaces—critical in villages where 68% of households have no computer. (Adjust this figure to your data.)
+    >
+    > **Cost per beneficiary:** The 61,000 EUR equipment investment serves 400 new students directly, a one-time cost of 152 EUR per student. Because equipment remains in use beyond the 24-month project period and will serve subsequent cohorts, the effective cost per beneficiary drops to under 40 EUR within three years. Equipment remains the property of CodeSat and is redeployed as clubs grow.
+
+    ---
+
+    **Three tips before you submit:**
+
+    1. **Verify the lab claims.** Hartley will check whether schools in Iași and Neamț actually have labs. If some do and are usable, acknowledge it and explain why laptops are still needed (portability, home use, take-home continuity).
+    2. **Break down the 61,000 EUR** in a table if the form allows: laptops (X units × Y EUR), routers, projector, etc. Line-item transparency prevents this exact criticism.
+    3. **Address cost per beneficiary proactively**—don't wait for the reviewer to do the math. Showing the multi-year amortization reframes a "high" cost as a durable investment.
+
+    Want me to draft justifications for the other budget lines (internet, trainers) in the same style?
+- user: |
+    Here is our current budget text, please rewrite it so it answers those concerns:
+
+    ```
+    Equipment: 61,000 EUR. Trainers: 84,000 EUR. Internet: 9,600 EUR. Travel: 12,400 EUR. Total: 167,000 EUR.
+    ```
+
+    Facts you can use: the school labs have 2010-era desktops that can't run modern IDEs, 9 of 14 schools have no lab at all, laptops stay with the clubs after the project, and we expect 520 students over 24 months.
+  assistant: |
+    Here's the rewritten budget text:
+
+    ---
+
+    > **Budget Justification – Total: 167,000 EUR (24 months)**
+    >
+    > **Equipment – 61,000 EUR**
+    > Funds laptops and networking equipment for 20 new coding clubs (~3,050 EUR per club). Existing school infrastructure cannot support coding instruction: school computer labs contain 2010-era desktops that cannot run modern development environments, and 9 of the 14 schools where we currently operate have no lab at all. Laptops are essential so that every student has reliable access to up-to-date tools, both during club sessions and for independent practice. All equipment remains the permanent property of the clubs after the project ends, serving future cohorts of students at no additional cost.
+    >
+    > **Trainers – 84,000 EUR**
+    > Covers salaries and training for 12 local instructors delivering weekly sessions across 20 clubs over 24 months, plus their initial certification training and ongoing mentoring by CodeSat's senior staff.
+    >
+    > **Internet – 9,600 EUR**
+    > Monthly broadband subscriptions (40 EUR/club/month) for 20 clubs over 24 months. Home internet access is rare in target villages, making club connectivity the primary point of online access for most students.
+    >
+    > **Travel – 12,400 EUR**
+    > Mileage and transport costs for trainers traveling to village schools, plus transport of equipment during setup. Clubs are spread across three rural counties with limited public transport.
+    >
+    > **Cost per beneficiary:** With 520 students expected over 24 months, the total cost is 321 EUR per student. The equipment line—one-time investment of 117 EUR per student—continues to benefit students beyond the project period, reducing its effective long-term cost with each new cohort.
+
+    ---
+
+    **Notes:**
+    - I estimated the internet rate (40 EUR/club/month) and trainer structure (12 instructors)—replace with your actual figures.
+    - The cost-per-beneficiary line directly preempts Hartley's "appears high" comment by doing the math for him and framing equipment as a durable asset.
+    - If the application form has separate fields for the budget table and justification, keep the numbers in the table and this text in the justification field.
+- user: |
+    Give me three possible titles for the project.
+  assistant: |
+    Here are three options, each with a different emphasis:
+
+    1. **"Code Without Borders: Expanding Digital Skills to Rural Romania"**
+       Emphasizes the geographic expansion and removing barriers—clear and professional.
+
+    2. **"From Village to Career: Coding Education for 520 Young People in Northeastern Romania"**
+       Leads with the outcome and includes the concrete beneficiary number, which reviewers like.
+
+    3. **"Talent Is Everywhere: Bringing Coding Clubs to Iași and Neamț Counties"**
+       Echoes your strengths-based framing ("talent is everywhere, even when resources are not") and keeps the project name visible for continuity with your Vaslui work.
+
+    **A tip:** If Northbridge's previous reviewers responded well to measurable language, option 2 is the safest choice—titles that state scale and population help reviewers immediately categorize your proposal. Option 3 is the most distinctive and works well if the foundation values brand recognition, since it ties the expansion to your existing CodeSat identity.
+
+    Want variations in Romanian, or a subtitle format (e.g., a catchy main title with a descriptive subtitle)?
+- user: |
+    I want a short quote from a student for the proposal. Here's what one girl, Bianca from Codăești, wrote to us in Romanian, can you translate and polish it into English without changing the meaning?
+
+    ```
+    Înainte credeam că programarea e doar pentru băieții de la oraș. Acum am făcut un joc cu care se joacă tot satul și vreau să mă fac inginer.
+    ```
+  assistant: |
+    Here's the translation, polished for a proposal quote:
+
+    ---
+
+    > "I used to think coding was only for boys from the city. Now I've made a game that the whole village plays, and I want to become an engineer."
+    > — Bianca, 16, CodeSat student, Codăești
+
+    ---
+
+    The translation stays faithful to her original: "doar pentru băieții de la oraș" is "only for boys from the city," and "vreau să mă fac inginer" is "I want to become an engineer." I didn't embellish anything—the quote is strong precisely because it's plain and specific.
+
+    Two small notes:
+
+    - I added "16" as a placeholder age—use her real age, or drop it if you prefer just her name and village. Reviewers respond well to a name and place; it makes the quote verifiable and real.
+    - This quote does a lot of work in one sentence: it addresses the gender gap, the rural/urban divide, and a concrete achievement. Consider placing it near the beginning of the proposal, right after your opening paragraph, so it frames everything that follows.
+- user: |
+    The sustainability section is too vague. Here's what we have:
+
+    ```
+    After the project ends, we will continue the activity with other funding.
+    ```
+
+    Make it concrete. We have an agreement with two local IT companies, Endava Iasi and a smaller one called Softbinator, to provide volunteer mentors, and the Vaslui county council has promised to cover internet costs from 2028.
+  assistant: |
+    Here's a concrete rewrite:
+
+    ---
+
+    > **Sustainability**
+    >
+    > CodeSat's model is designed to continue beyond the 24-month project period through three complementary mechanisms:
+    >
+    > **1. Local partnerships.** Endava Iași and Softbinator have signed agreements to provide volunteer mentors to our clubs after the project ends. These mentors will support trainers, run career workshops, and maintain a pipeline between clubs and local employers—ensuring instruction continues without salary costs to CodeSat.
+    >
+    > **2. Public co-funding.** The Vaslui County Council has committed in writing to cover internet costs for all clubs from 2028 onward, removing our largest recurring operational expense from the county where we have the longest track record.
+    >
+    > **3. Durable equipment.** All laptops and networking equipment purchased through this grant remain the permanent property of the clubs. As demonstrated in Vaslui, equipment purchased in 2021 is still in active use, meaning no replacement costs are required for at least 3–4 years after the project ends.
+    >
+    > CodeSat will additionally pursue follow-on funding from [EU/national programmes, e.g., Erasmus+, the National Recovery and Resilience Plan] to cover trainer salaries from 2028, and will prioritize transitioning our strongest trainers onto stable contracts as the club network generates local visibility and support.
+
+    ---
+
+    **Two gaps you should address before submitting:**
+
+    1. **The county council commitment only covers Vaslui**—but this project expands into Iași and Neamț. A reviewer will notice that the new clubs aren't covered by the internet pledge. Either secure similar commitments from the Iași and Neamț councils (even a letter of intent helps), or state explicitly how you'll cover internet there (e.g., through follow-on grants or partner companies).
+
+    2. **Trainer salaries are your biggest sustainability risk.** Volunteer mentors support the program but don't replace paid instructors. The follow-on funding paragraph above acknowledges this honestly—vague promises would be worse. If Endava or Softbinator could sponsor specific clubs (e.g., "adopt a club" at ~4,000 EUR/year), that would be a much stronger answer.
+
+    Also: get the county council's promise in writing if it isn't already. Reviewers increasingly ask for letters of commitment as annexes.
+- user: |
+    Does the proposal need a risk section? What would go in it?
+  assistant: |
+    Yes, include one. Most institutional funders expect a risk section, and its absence can itself be flagged as a weakness—Mr. Hartley's style of reviewer will wonder what you're not telling them. A good risk section signals maturity, not fragility. The formula is simple: name the risk honestly, rate its likelihood and impact, and show a concrete mitigation.
+
+    Here's what would go in it for CodeSat:
+
+    | Risk | Likelihood | Mitigation |
+    |---|---|---|
+    | **Trainer recruitment/retention** — finding 12 qualified instructors in rural areas is hard; they may leave for better-paid IT jobs | Medium/High | Recruit locally (university students, teachers, returning professionals); pay competitively; pair each trainer with a volunteer mentor from Endava/Softbinator; train 2–3 reserve instructors |
+    | **School infrastructure** — some partner schools may lack suitable rooms or electricity reliability | Medium | Conduct site assessments before launch; budget includes networking equipment; agreement with each school on a dedicated room signed before the project starts |
+    | **Student dropout** — teens in rural areas may leave school or lose interest | Medium | Attendance tracking from month 1; mentor contact; family engagement events; the 85% completion target is monitored and reported every 6 months |
+    | **Connectivity failures** — rural broadband may be unstable | Medium | 40 EUR/month budget assumes a reliable provider; offline-capable tools and local development environments as backup |
+    | **County council commitment delayed** — the 2028 internet funding may arrive late | Low | CodeSat budgets a contingency or secures bridge funding from partners; commitment exists in writing |
+    | **Currency/inflation** — equipment prices in EUR may shift | Low | Procure equipment in the first 3 months of the project; obtain fixed quotes at contracting |
+
+    **Practical tips:**
+
+    - **Don't list more than 5–7 risks.** A long list looks like anxiety; a short, well-mitigated list looks like control.
+    - **Never list a risk without a mitigation.** An unmitigated risk is just a reason to reject you.
+    - **Avoid the temptation to hide the biggest risk.** Trainer retention is genuinely your weakest point—addressing it head-on with a real plan is far stronger than hoping the reviewer doesn't notice.
+    - If the application form has no dedicated field, put this in an annex or fold the top 3 risks into the project management section.
+
+    Want me to draft this as polished prose for the proposal, in the same style as the budget justification?
+- user: |
+    Write the risks section with three risks and mitigations.
+  assistant: |
+    Here's the risks section, ready to drop into the proposal:
+
+    ---
+
+    > **Risk Management**
+    >
+    > We have identified three principal risks and developed concrete mitigation strategies for each:
+    >
+    > **1. Trainer recruitment and retention (Medium likelihood / High impact).** Recruiting 12 qualified instructors in rural areas is challenging, and skilled trainers may leave for better-paid positions in the IT sector. *Mitigation:* We recruit locally from university students, school teachers, and returning IT professionals, and offer competitive compensation. Each trainer is paired with a volunteer mentor from our partner companies Endava Iași and Softbinator, providing professional community and career pathways that reduce turnover. We will additionally train two reserve instructors during the first project year.
+    >
+    > **2. Student dropout (Medium likelihood / Medium impact).** Teenagers in rural communities face pressure to leave school early or take on work, which may interrupt participation. *Mitigation:* Attendance is tracked from the first month, with trainers following up on any absence within one week. Family engagement events each semester build parental support, and the 85% course completion target is monitored and reported every six months, allowing early corrective action.
+    >
+    > **3. Connectivity failures (Medium likelihood / Medium impact).** Rural broadband in target villages may be unstable, disrupting sessions that depend on internet access. *Mitigation:* The budget assumes a reliable commercial provider at 40 EUR per club per month, verified through quotes obtained during proposal preparation. Trainers use offline-capable development tools and locally installed environments as standard practice, ensuring sessions continue even during outages.
+    >
+    > Risks are reviewed quarterly by CodeSat's project coordinator and reported to the board, with mitigation measures adjusted as needed.
+
+    ---
+
+    **Notes:**
+
+    - I chose the three risks that Hartley-style reviewers are most likely to probe: trainer retention (your real vulnerability), dropout (ties to your measurable outcome), and connectivity (ties to the budget's internet line).
+    - The quarterly review sentence at the end shows risks are actively managed, not just listed—cheap to include, good signal.
+    - If you have actual quotes confirming the 40 EUR/month internet rate, mention that in the annex; it converts a claim into evidence.
+- user: |
+    The executive director wants the whole proposal to sound less academic. Give me general tips.
+  assistant: |
+    Here are the most useful principles, with examples drawn from your own draft:
+
+    **1. Prefer short sentences.** Aim for an average under 20 words. If a sentence has two ideas, split it. Academic writing stacks clauses; grant writing lands one point at a time.
+
+    **2. Cut nominalizations.** Turn nouns back into verbs.
+    - "the implementation of the project" → "we will run the project"
+    - "provision of training to participants" → "we train students"
+
+    **3. Use active voice with real subjects.**
+    - Academic: "It is expected that outcomes will be achieved by participants."
+    - Better: "Students will complete the course."
+
+    **4. Cut filler openers.** Delete phrases like "In the context of," "It is important to note that," "In order to." You already fixed the worst offender in your summary—keep applying that rule everywhere.
+
+    **5. One idea per paragraph, and say the point first.** Academic writing builds to a conclusion; busy reviewers want the conclusion first, then the support. "We need 61,000 EUR for laptops. Here's why: ..." beats a paragraph that reveals its point at the end.
+
+    **6. Replace abstractions with specifics.** "Improved digital competencies" → "students build a working game or website." You've done this well with Bianca's quote—concrete beats conceptual every time.
+
+    **7. Write numbers plainly.** "61,000 EUR" not "the sum of sixty-one thousand euros." "85% of students" not "a substantial majority of participants."
+
+    **8. Read it aloud.** This is the single best test. If you run out of breath or stumble, the sentence is too long or too tangled. Even better: have someone outside your sector read one section and tell you what it says.
+
+    **9. Keep the formality, lose the stiffness.** "Less academic" doesn't mean casual. No contractions needed either way—just write like a competent professional explaining something to a smart person who's short on time. That's exactly what a grant reviewer is.
+
+    **10. Consistency check at the end.** Mixed registers (one academic paragraph next to three plain ones) reads worse than uniformly formal. After editing, re-read the whole document in one pass and smooth the seams.
+
+    If you want, paste a section you think is still too academic and I'll rewrite it as a model.
+- user: |
+    Last thing: write a two-sentence cover note to send with the proposal.
+  assistant: |
+    Here's a two-sentence cover note:
+
+    ---
+
+    > Dear Northbridge Foundation team,
+    >
+    > Please find enclosed CodeSat's application to expand our coding clubs from Vaslui into Iași and Neamț counties, bringing hands-on technology education to 520 young people over 24 months. We would be glad to answer any questions or arrange a visit to one of our existing clubs, and we thank you for your consideration.
+    >
+    > Sincerely,
+    > [Name]
+    > Executive Director, CodeSat
+
+    ---
+
+    The first sentence states exactly what's enclosed and its scale; the second offers engagement (a club visit is a strong, confident touch—reviewers rarely take it, but it signals transparency) and closes politely. If you know the reviewer's or program officer's name, address them directly instead of "team."
+
+    Good luck with the application—I hope the expansion goes through!
+question_plan:
+- type: multi-hop
+  ask: How did we change the paragraph Elena complained about?
+  gold_turn: 5
+  note: Elena in 4, rewrite in 5
+- type: multi-hop
+  ask: How did we answer Mr. Hartley's objection about the laptops?
+  gold_turn: 8
+  note: Hartley in 7, new budget text in 8
+- type: multi-hop
+  ask: What cost per student did the new budget text end up with?
+  gold_turn: 8
+  note: cost per beneficiary concern in 7
+- type: multi-hop
+  ask: What does the rewritten summary promise, so that it fits Northbridge's rules?
+  gold_turn: 2
+  note: rule in 2; ok as 1-hop? keep if gold chunk doesn't name Northbridge
+- type: multi-hop
+  ask: How did the girl from Codăești's quote read in English?
+  gold_turn: 10
+  note: name and village only in the prompt
+- type: multi-hop
+  ask: Who will cover the internet after the grant ends, according to the sustainability section?
+  gold_turn: 11
+  note: county council in 11
+questions:
+- id: q1
+  type: multi-hop
+  prompt: |
+    How did we change the paragraph Elena complained about?
+  gold:
+  - turn: 5
+    quote: I added the concrete details (distance, internet access) so the need feels tangible without relying on pity.
+- id: q2
+  type: multi-hop
+  prompt: |
+    How did we answer Mr. Hartley's objection about the laptops?
+  gold:
+  - turn: 8
+    quote: school computer labs contain 2010-era desktops that cannot run modern development environments
+- id: q3
+  type: multi-hop
+  prompt: |
+    What cost per student did we end up with after Mr. Hartley's comment?
+  gold:
+  - turn: 8
+    quote: the total cost is 321 EUR per student
+- id: q4
+  type: multi-hop
+  prompt: |
+    What targets did we promise in the summary so it would pass the funder's rule?
+  gold:
+  - turn: 2
+    quote: launching 20 new coding clubs, enrolling 400 additional students, and training 12 local instructors
+- id: q5
+  type: multi-hop
+  prompt: |
+    How did the quote from the girl in Codăești read in English?
+  gold:
+  - turn: 10
+    quote: I used to think coding was only for boys from the city.

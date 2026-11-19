@@ -2,218 +2,818 @@ id: s03-probabilitati
 category: math
 lang: ro
 turns:
-  - user: |
-      Am examen la probabilități. Explică-mi formula lui Bayes pe un exemplu.
-    assistant: |
-      Formula lui Bayes îți spune cum actualizezi o probabilitate după ce observi o dovadă:
+- user: |
+    Am examen la probabilități. Explică-mi formula lui Bayes pe un exemplu.
+  assistant: |
+    Formula lui Bayes îți spune cum actualizezi o probabilitate după ce observi o dovadă:
 
-      $$
-      P(A \mid B) = \frac{P(B \mid A)\, P(A)}{P(B)}
-      $$
+    $$
+    P(A \mid B) = \frac{P(B \mid A)\, P(A)}{P(B)}
+    $$
 
-      Exemplul clasic, un test medical:
+    Exemplul clasic, un test medical:
 
-      - boala are prevalența de 1%: $P(D) = 0.01$;
-      - testul o detectează în 99% din cazuri (sensibilitate): $P(T \mid D) = 0.99$;
-      - la oamenii sănătoși dă rezultat fals pozitiv în 5% din cazuri: $P(T \mid \neg D) = 0.05$.
+    - boala are prevalența de 1%: $P(D) = 0.01$;
+    - testul o detectează în 99% din cazuri (sensibilitate): $P(T \mid D) = 0.99$;
+    - la oamenii sănătoși dă rezultat fals pozitiv în 5% din cazuri: $P(T \mid \neg D) = 0.05$.
 
-      Probabilitatea totală a unui test pozitiv:
+    Probabilitatea totală a unui test pozitiv:
 
-      $$
-      P(T) = 0.99 \cdot 0.01 + 0.05 \cdot 0.99 = 0.0099 + 0.0495 = 0.0594
-      $$
+    $$
+    P(T) = 0.99 \cdot 0.01 + 0.05 \cdot 0.99 = 0.0099 + 0.0495 = 0.0594
+    $$
 
-      Deci:
+    Deci:
 
-      $$
-      P(D \mid T) = \frac{0.0099}{0.0594} \approx 0.167
-      $$
+    $$
+    P(D \mid T) = \frac{0.0099}{0.0594} \approx 0.167
+    $$
 
-      Un test pozitiv înseamnă doar aproximativ 16.7% șanse să ai boala. Intuiția greșește pentru că oamenii sănătoși sunt mult mai mulți, iar 5% dintre ei dau tot pozitiv: falsele pozitive sunt de cinci ori mai multe decât adevăratele pozitive.
-  - user: |
-      Și dacă fac testul de două ori și iese pozitiv de ambele dată?
-    assistant: |
-      Presupunând că cele două teste sunt independente, condiționat de starea pacientului, aplici Bayes încă o dată, cu probabilitatea a priori actualizată: după primul test, $P(D) = 0.167$.
+    Un test pozitiv înseamnă doar aproximativ 16.7% șanse să ai boala. Intuiția greșește pentru că oamenii sănătoși sunt mult mai mulți, iar 5% dintre ei dau tot pozitiv: falsele pozitive sunt de cinci ori mai multe decât adevăratele pozitive.
+- user: |
+    Și dacă fac testul de două ori și iese pozitiv de ambele dată?
+  assistant: |
+    Presupunând că cele două teste sunt independente, condiționat de starea pacientului, aplici Bayes încă o dată, cu probabilitatea a priori actualizată: după primul test, $P(D) = 0.167$.
 
-      $$
-      P(D \mid T_1, T_2) = \frac{0.99 \cdot 0.167}{0.99 \cdot 0.167 + 0.05 \cdot 0.833} = \frac{0.1653}{0.1653 + 0.0417} \approx 0.799
-      $$
+    $$
+    P(D \mid T_1, T_2) = \frac{0.99 \cdot 0.167}{0.99 \cdot 0.167 + 0.05 \cdot 0.833} = \frac{0.1653}{0.1653 + 0.0417} \approx 0.799
+    $$
 
-      Al doilea test pozitiv urcă probabilitatea de la 16.7% la aproximativ 80%. Fiecare rezultat pozitiv înmulțește *șansele* (odds) cu raportul de verosimilitate $LR = 0.99 / 0.05 = 19.8$:
+    Al doilea test pozitiv urcă probabilitatea de la 16.7% la aproximativ 80%. Fiecare rezultat pozitiv înmulțește *șansele* (odds) cu raportul de verosimilitate $LR = 0.99 / 0.05 = 19.8$:
 
-      - șansele inițiale: $0.01 / 0.99 \approx 0.0101$;
-      - după un test: $0.0101 \cdot 19.8 \approx 0.2$, adică $P \approx 0.167$;
-      - după două teste: $0.2 \cdot 19.8 \approx 3.96$, adică $P = 3.96 / 4.96 \approx 0.799$.
+    - șansele inițiale: $0.01 / 0.99 \approx 0.0101$;
+    - după un test: $0.0101 \cdot 19.8 \approx 0.2$, adică $P \approx 0.167$;
+    - după două teste: $0.2 \cdot 19.8 \approx 3.96$, adică $P = 3.96 / 4.96 \approx 0.799$.
 
-      Atenție la ipoteza de independență: dacă testul greșește sistematic la aceeași persoană (de exemplu din cauza unei reacții încrucișate), al doilea test aduce mult mai puțină informație.
-  - user: |
-      Bine. Acum distribuția binomială: care e probabilitatea să obțin exact 3 de 6 la 10 aruncări de zar?
-    assistant: |
-      Numărul de apariții ale lui 6 în $n = 10$ aruncări urmează o distribuție binomială cu $p = 1/6$:
+    Atenție la ipoteza de independență: dacă testul greșește sistematic la aceeași persoană (de exemplu din cauza unei reacții încrucișate), al doilea test aduce mult mai puțină informație.
+- user: |
+    Bine. Acum distribuția binomială: care e probabilitatea să obțin exact 3 de 6 la 10 aruncări de zar?
+  assistant: |
+    Numărul de apariții ale lui 6 în $n = 10$ aruncări urmează o distribuție binomială cu $p = 1/6$:
 
-      $$
-      P(X = k) = \binom{n}{k} p^k (1 - p)^{n - k}
-      $$
+    $$
+    P(X = k) = \binom{n}{k} p^k (1 - p)^{n - k}
+    $$
 
-      Pentru $k = 3$:
+    Pentru $k = 3$:
 
-      $$
-      P(X = 3) = \binom{10}{3} \left(\frac{1}{6}\right)^3 \left(\frac{5}{6}\right)^7 = 120 \cdot \frac{1}{216} \cdot 0.2791 \approx 0.155
-      $$
+    $$
+    P(X = 3) = \binom{10}{3} \left(\frac{1}{6}\right)^3 \left(\frac{5}{6}\right)^7 = 120 \cdot \frac{1}{216} \cdot 0.2791 \approx 0.155
+    $$
 
-      Pașii de calcul:
+    Pașii de calcul:
 
-      - $\binom{10}{3} = \frac{10!}{3!\,7!} = 120$;
-      - $(1/6)^3 = 1/216 \approx 0.00463$;
-      - $(5/6)^7 \approx 0.2791$.
+    - $\binom{10}{3} = \frac{10!}{3!\,7!} = 120$;
+    - $(1/6)^3 = 1/216 \approx 0.00463$;
+    - $(5/6)^7 \approx 0.2791$.
 
-      Rezultatul: aproximativ 15.5%. Media distribuției e $np = 10/6 \approx 1.67$, deci 3 de 6 e ceva peste medie, dar nu neobișnuit.
-  - user: |
-      Care e probabilitatea să obțin cel puțin un 6?
-    assistant: |
-      „Cel puțin unul” se calculează cel mai ușor prin complement: probabilitatea să nu apară niciun 6, scăzută din 1.
+    Rezultatul: aproximativ 15.5%. Media distribuției e $np = 10/6 \approx 1.67$, deci 3 de 6 e ceva peste medie, dar nu neobișnuit.
+- user: |
+    Care e probabilitatea să obțin cel puțin un 6?
+  assistant: |
+    „Cel puțin unul” se calculează cel mai ușor prin complement: probabilitatea să nu apară niciun 6, scăzută din 1.
 
-      $$
-      P(X \ge 1) = 1 - P(X = 0) = 1 - \left(\frac{5}{6}\right)^{10} \approx 1 - 0.1615 = 0.8385
-      $$
+    $$
+    P(X \ge 1) = 1 - P(X = 0) = 1 - \left(\frac{5}{6}\right)^{10} \approx 1 - 0.1615 = 0.8385
+    $$
 
-      Deci aproximativ 83.9%.
+    Deci aproximativ 83.9%.
 
-      Același truc apare peste tot: problema zilelor de naștere, „cel puțin o defecțiune într-un sistem cu n componente” etc. Dacă ai aduna direct $P(X=1) + P(X=2) + \dots + P(X=10)$, ai avea zece termeni de calculat, pe când complementul are unul singur.
-  - user: |
-      Explică-mi distribuția Poisson și când o folosesc în loc de binomială.
-    assistant: |
-      Poisson modelează numărul de evenimente într-un interval (de timp, de spațiu) când evenimentele apar independent, cu o rată medie constantă $\lambda$:
+    Același truc apare peste tot: problema zilelor de naștere, „cel puțin o defecțiune într-un sistem cu n componente” etc. Dacă ai aduna direct $P(X=1) + P(X=2) + \dots + P(X=10)$, ai avea zece termeni de calculat, pe când complementul are unul singur.
+- user: |
+    Explică-mi distribuția Poisson și când o folosesc în loc de binomială.
+  assistant: |
+    Poisson modelează numărul de evenimente într-un interval (de timp, de spațiu) când evenimentele apar independent, cu o rată medie constantă $\lambda$:
 
-      $$
-      P(X = k) = \frac{\lambda^k e^{-\lambda}}{k!}, \quad k = 0, 1, 2, \dots
-      $$
+    $$
+    P(X = k) = \frac{\lambda^k e^{-\lambda}}{k!}, \quad k = 0, 1, 2, \dots
+    $$
 
-      Media și varianța sunt egale, ambele $\lambda$.
+    Media și varianța sunt egale, ambele $\lambda$.
 
-      Când o folosești:
+    Când o folosești:
 
-      - numărul de apeluri la un call center într-o oră;
-      - numărul de erori de tipar pe o pagină;
-      - numărul de cereri pe secundă la un server.
+    - numărul de apeluri la un call center într-o oră;
+    - numărul de erori de tipar pe o pagină;
+    - numărul de cereri pe secundă la un server.
 
-      Legătura cu binomiala: dacă $n$ e mare, $p$ e mic, iar $np = \lambda$ rămâne moderat, atunci $\text{Bin}(n, p) \approx \text{Poisson}(np)$. Regula practică din manuale: $n \ge 20$ și $p \le 0.05$. De exemplu, 1000 de piese cu defect în proporție de 0.2% înseamnă $\lambda = 2$, deci $P(X = 0) = e^{-2} \approx 0.135$.
-  - user: |
-      La un magazin vin în medie 4 clienți pe oră. Care e probabilitatea să vină cel mult 2 într-o oră?
-    assistant: |
-      Cu $\lambda = 4$, aduni primii trei termeni:
+    Legătura cu binomiala: dacă $n$ e mare, $p$ e mic, iar $np = \lambda$ rămâne moderat, atunci $\text{Bin}(n, p) \approx \text{Poisson}(np)$. Regula practică din manuale: $n \ge 20$ și $p \le 0.05$. De exemplu, 1000 de piese cu defect în proporție de 0.2% înseamnă $\lambda = 2$, deci $P(X = 0) = e^{-2} \approx 0.135$.
+- user: |
+    La un magazin vin în medie 4 clienți pe oră. Care e probabilitatea să vină cel mult 2 într-o oră?
+  assistant: |
+    Cu $\lambda = 4$, aduni primii trei termeni:
 
-      $$
-      P(X \le 2) = e^{-4}\left(1 + 4 + \frac{4^2}{2}\right) = e^{-4} \cdot 13 \approx 0.0183 \cdot 13 \approx 0.238
-      $$
+    $$
+    P(X \le 2) = e^{-4}\left(1 + 4 + \frac{4^2}{2}\right) = e^{-4} \cdot 13 \approx 0.0183 \cdot 13 \approx 0.238
+    $$
 
-      Detaliat:
+    Detaliat:
 
-      - $P(X=0) = e^{-4} \approx 0.0183$;
-      - $P(X=1) = 4 e^{-4} \approx 0.0733$;
-      - $P(X=2) = 8 e^{-4} \approx 0.1465$.
+    - $P(X=0) = e^{-4} \approx 0.0183$;
+    - $P(X=1) = 4 e^{-4} \approx 0.0733$;
+    - $P(X=2) = 8 e^{-4} \approx 0.1465$.
 
-      Suma: aproximativ 23.8%. Dacă te întreabă pentru o jumătate de oră, rata se scalează: $\lambda = 2$, și refaci calculul cu noul $\lambda$.
-  - user: |
-      Ce e speranța matematică și cum o calculez pentru o variabilă continuă?
-    assistant: |
-      Speranța (media) e valoarea medie pe termen lung a unei variabile aleatoare. Pentru o variabilă discretă e suma valorilor ponderate cu probabilitățile, iar pentru una continuă cu densitatea $f$ devine o integrală:
+    Suma: aproximativ 23.8%. Dacă te întreabă pentru o jumătate de oră, rata se scalează: $\lambda = 2$, și refaci calculul cu noul $\lambda$.
+- user: |
+    Ce e speranța matematică și cum o calculez pentru o variabilă continuă?
+  assistant: |
+    Speranța (media) e valoarea medie pe termen lung a unei variabile aleatoare. Pentru o variabilă discretă e suma valorilor ponderate cu probabilitățile, iar pentru una continuă cu densitatea $f$ devine o integrală:
 
-      $$
-      E[X] = \int_{-\infty}^{\infty} x\, f(x)\, dx
-      $$
+    $$
+    E[X] = \int_{-\infty}^{\infty} x\, f(x)\, dx
+    $$
 
-      Exemplu: distribuția exponențială, cu $f(x) = \lambda e^{-\lambda x}$ pentru $x \ge 0$. Integrând prin părți:
+    Exemplu: distribuția exponențială, cu $f(x) = \lambda e^{-\lambda x}$ pentru $x \ge 0$. Integrând prin părți:
 
-      $$
-      E[X] = \int_0^{\infty} x \lambda e^{-\lambda x}\, dx = \frac{1}{\lambda}
-      $$
+    $$
+    E[X] = \int_0^{\infty} x \lambda e^{-\lambda x}\, dx = \frac{1}{\lambda}
+    $$
 
-      Dacă la magazin vin 4 clienți pe oră, timpul dintre doi clienți consecutivi e exponențial cu $\lambda = 4$, deci în medie $1/4$ oră, adică 15 minute. Poisson numără evenimentele, iar exponențiala măsoară timpul dintre ele: sunt două fețe ale aceluiași proces.
+    Dacă la magazin vin 4 clienți pe oră, timpul dintre doi clienți consecutivi e exponențial cu $\lambda = 4$, deci în medie $1/4$ oră, adică 15 minute. Poisson numără evenimentele, iar exponențiala măsoară timpul dintre ele: sunt două fețe ale aceluiași proces.
 
-      Varianța se calculează cu $\text{Var}(X) = E[X^2] - (E[X])^2$; la exponențială iese $1/\lambda^2$.
-  - user: |
-      Distribuția normală: cum calculez P(X < 110) dacă media e 100 și abaterea standard 15?
-    assistant: |
-      Standardizezi, ca să ajungi la normala standard $N(0, 1)$, care are tabel:
+    Varianța se calculează cu $\text{Var}(X) = E[X^2] - (E[X])^2$; la exponențială iese $1/\lambda^2$.
+- user: |
+    Distribuția normală: cum calculez P(X < 110) dacă media e 100 și abaterea standard 15?
+  assistant: |
+    Standardizezi, ca să ajungi la normala standard $N(0, 1)$, care are tabel:
 
-      $$
-      Z = \frac{X - \mu}{\sigma} = \frac{110 - 100}{15} \approx 0.667
-      $$
+    $$
+    Z = \frac{X - \mu}{\sigma} = \frac{110 - 100}{15} \approx 0.667
+    $$
 
-      $$
-      P(X < 110) = \Phi(0.667) \approx 0.7475
-      $$
+    $$
+    P(X < 110) = \Phi(0.667) \approx 0.7475
+    $$
 
-      Valoarea $\Phi(0.67) \approx 0.7486$ se citește din tabel (sau `scipy.stats.norm.cdf(110, 100, 15)` dă $0.7475$).
+    Valoarea $\Phi(0.67) \approx 0.7486$ se citește din tabel (sau `scipy.stats.norm.cdf(110, 100, 15)` dă $0.7475$).
 
-      Regula 68–95–99.7 te ajută să verifici rapid un rezultat: aproximativ 68% din valori sunt în $\mu \pm \sigma$ (85–115), 95% în $\mu \pm 2\sigma$ (70–130) și 99.7% în $\mu \pm 3\sigma$. Pentru 110, care e sub $\mu + \sigma$, un rezultat de aproximativ 75% e plauzibil.
-  - user: |
-      Ce spune teorema limită centrală?
-    assistant: |
-      Teorema limită centrală (TLC) spune că suma (sau media) multor variabile independente și identic distribuite, cu varianță finită, are distribuția aproximativ normală, **oricare ar fi distribuția inițială**:
+    Regula 68–95–99.7 te ajută să verifici rapid un rezultat: aproximativ 68% din valori sunt în $\mu \pm \sigma$ (85–115), 95% în $\mu \pm 2\sigma$ (70–130) și 99.7% în $\mu \pm 3\sigma$. Pentru 110, care e sub $\mu + \sigma$, un rezultat de aproximativ 75% e plauzibil.
+- user: |
+    Ce spune teorema limită centrală?
+  assistant: |
+    Teorema limită centrală (TLC) spune că suma (sau media) multor variabile independente și identic distribuite, cu varianță finită, are distribuția aproximativ normală, **oricare ar fi distribuția inițială**:
 
-      $$
-      \frac{\bar{X}_n - \mu}{\sigma / \sqrt{n}} \xrightarrow{d} N(0, 1)
-      $$
+    $$
+    \frac{\bar{X}_n - \mu}{\sigma / \sqrt{n}} \xrightarrow{d} N(0, 1)
+    $$
 
-      Consecințe practice:
+    Consecințe practice:
 
-      - media unui eșantion de mărime $n$ are abaterea standard $\sigma / \sqrt{n}$, numită eroarea standard: ca să o înjumătățești, ai nevoie de un eșantion de patru ori mai mare;
-      - de aici vin intervalele de încredere: $\bar{x} \pm 1.96 \cdot \sigma / \sqrt{n}$ pentru 95%;
-      - aproximarea e bună de obicei de la $n \approx 30$, dar pentru distribuții foarte asimetrice ai nevoie de mai mult.
+    - media unui eșantion de mărime $n$ are abaterea standard $\sigma / \sqrt{n}$, numită eroarea standard: ca să o înjumătățești, ai nevoie de un eșantion de patru ori mai mare;
+    - de aici vin intervalele de încredere: $\bar{x} \pm 1.96 \cdot \sigma / \sqrt{n}$ pentru 95%;
+    - aproximarea e bună de obicei de la $n \approx 30$, dar pentru distribuții foarte asimetrice ai nevoie de mai mult.
 
-      Exemplu: 100 de aruncări de zar au suma cu media $350$ și abaterea standard $\sqrt{100 \cdot 35/12} \approx 17.1$, deci suma e între 316 și 384 cu probabilitate de aproximativ 95%.
-  - user: |
-      Mulțumesc, fă-mi o fițuică cu formulele.
-    assistant: |
-      Fițuica:
+    Exemplu: 100 de aruncări de zar au suma cu media $350$ și abaterea standard $\sqrt{100 \cdot 35/12} \approx 17.1$, deci suma e între 316 și 384 cu probabilitate de aproximativ 95%.
+- user: |
+    Mulțumesc, fă-mi o fițuică cu formulele.
+  assistant: |
+    Fițuica:
 
-      - Bayes: $P(A \mid B) = P(B \mid A) P(A) / P(B)$, cu $P(B)$ din formula probabilității totale.
-      - Binomială: $P(X=k) = \binom{n}{k} p^k (1-p)^{n-k}$, media $np$, varianța $np(1-p)$.
-      - „Cel puțin unul”: $1 - P(\text{niciunul})$.
-      - Poisson: $P(X=k) = \lambda^k e^{-\lambda} / k!$, media = varianța = $\lambda$.
-      - Exponențială: $f(x) = \lambda e^{-\lambda x}$, media $1/\lambda$, varianța $1/\lambda^2$.
-      - Speranța continuă: $E[X] = \int x f(x)\,dx$; $\text{Var}(X) = E[X^2] - E[X]^2$.
-      - Normală: $Z = (X - \mu)/\sigma$, apoi tabelul lui $\Phi$; regula 68–95–99.7.
-      - TLC: media eșantionului are abaterea standard $\sigma/\sqrt{n}$; IC 95%: $\bar{x} \pm 1.96\,\sigma/\sqrt{n}$.
+    - Bayes: $P(A \mid B) = P(B \mid A) P(A) / P(B)$, cu $P(B)$ din formula probabilității totale.
+    - Binomială: $P(X=k) = \binom{n}{k} p^k (1-p)^{n-k}$, media $np$, varianța $np(1-p)$.
+    - „Cel puțin unul”: $1 - P(\text{niciunul})$.
+    - Poisson: $P(X=k) = \lambda^k e^{-\lambda} / k!$, media = varianța = $\lambda$.
+    - Exponențială: $f(x) = \lambda e^{-\lambda x}$, media $1/\lambda$, varianța $1/\lambda^2$.
+    - Speranța continuă: $E[X] = \int x f(x)\,dx$; $\text{Var}(X) = E[X^2] - E[X]^2$.
+    - Normală: $Z = (X - \mu)/\sigma$, apoi tabelul lui $\Phi$; regula 68–95–99.7.
+    - TLC: media eșantionului are abaterea standard $\sigma/\sqrt{n}$; IC 95%: $\bar{x} \pm 1.96\,\sigma/\sqrt{n}$.
 
-      Succes la examen!
+    Succes la examen!
+- user: |
+    Revin, mai am trei zile până la examen și lucrez exerciții din culegere. Exercițiul 1: un student răspunde la întâmplare la un test grilă cu 20 de întrebări, fiecare cu 4 variante. Care e probabilitatea să ia cel puțin 10 răspunsuri corecte?
+  assistant: |
+    Binomială cu $n = 20$, $p = 1/4$:
+
+    $$
+    P(X \ge 10) = \sum_{k=10}^{20} \binom{20}{k} \left(\frac{1}{4}\right)^k \left(\frac{3}{4}\right)^{20-k} \approx 0.0139
+    $$
+
+    Adică aproximativ 1.4%. Termenul dominant e $k = 10$:
+
+    $$
+    P(X = 10) = \binom{20}{10} (0.25)^{10} (0.75)^{10} = 184756 \cdot 0.25^{10} \cdot 0.75^{10} \approx 0.0099
+    $$
+
+    iar termenii scad repede după el ($P(X=11) \approx 0.0030$, $P(X=12) \approx 0.00075$ etc.).
+
+    Verificare cu TLC: media e $np = 5$, abaterea standard $\sqrt{np(1-p)} = \sqrt{3.75} \approx 1.94$, deci 10 corecte e la peste $2.3$ abateri standard deasupra mediei — coerent cu o probabilitate mică. Atenție: aproximarea normală dă aici cam 1% în loc de 1.4%, pentru că distribuția e puternic asimetră ($p = 0.25$); la examen, la $n$ atât de mic, calculează exact.
+- user: |
+    Exercițiul 2: timpul de așteptare la ghișeul de la secretariat e exponențial, cu media de 8 minute. Care e probabilitatea să aștept peste 15 minute?
+  assistant: |
+    Media 8 minute înseamnă $\lambda = 1/8$ pe minut. Pentru exponențială, funcția de repartiție e $F(x) = 1 - e^{-\lambda x}$, deci:
+
+    $$
+    P(X > 15) = e^{-15/8} = e^{-1.875} \approx 0.153
+    $$
+
+    Aproximativ 15.3%.
+
+    Două lucruri utile de reținut la exponențială:
+
+    - probabilitățile de tip „peste $t$" se calculează direct ca $e^{-\lambda t}$, fără integrare;
+    - proprietatea lipsei de memorie: $P(X > s + t \mid X > s) = P(X > t)$. Dacă ai așteptat deja 10 minute, probabilitatea să mai aștep încă 15 e tot $e^{-15/8}$, nu se micșorează — detaliu care apare des la exerciții ca capcană.
+- user: |
+    Exercițiul 3: înălțimea studenților e normală, cu media 172 cm și abaterea standard 9 cm. Ce procent dintre studenți au între 165 și 180 cm?
+  assistant: |
+    Standardizezi ambele capete:
+
+    $$
+    z_1 = \frac{165 - 172}{9} \approx -0.78, \qquad z_2 = \frac{180 - 172}{9} \approx 0.89
+    $$
+
+    $$
+    P(165 < X < 180) = \Phi(0.89) - \Phi(-0.78) = \Phi(0.89) - (1 - \Phi(0.78))
+    $$
+
+    Din tabel: $\Phi(0.89) \approx 0.8133$, $\Phi(0.78) \approx 0.7823$, deci:
+
+    $$
+    0.8133 - 0.2177 \approx 0.596
+    $$
+
+    Aproximativ 59.6%.
+
+    Verificare cu regula 68–95–99.7: intervalul e de la $-0.78\sigma$ la $+0.89\sigma$, adică puțin mai îngust decât $\mu \pm \sigma$ (care acoperă 68%), deci un rezultat sub 68% e plauzibil. Atenție la semnul lui $z_1$ negativ — greșeala tipică e să scapi de minus și să faci $\Phi(0.89) - \Phi(0.78)$.
+- user: |
+    Nu înțeleg cum citesc tabelul pentru valori negative ale lui z. Explică-mi pe exercițiul de mai sus.
+  assistant: |
+    Tabelele clasice dau $\Phi(z)$ doar pentru $z \ge 0$. Pentru valori negative folosești simetria densității normale față de 0:
+
+    $$
+    \Phi(-z) = 1 - \Phi(z)
+    $$
+
+    Pe exemplul nostru, aveam nevoie de $\Phi(-0.78)$, adică probabilitatea să fii la stânga lui $-0.78$. Procedura:
+
+    1. Iei valoarea pozitivă: din tabel, $\Phi(0.78) \approx 0.7823$. Asta înseamnă: 78.23% din valori sunt sub 0.78.
+    2. Prin simetrie, partea care rămâne la dreapta lui 0.78 este $1 - 0.7823 = 0.2177$.
+    3. Dar partea de la dreapta lui $+0.78$ e exact aceeași ca partea de la stânga lui $-0.78$ (imagine în oglindă). Deci $\Phi(-0.78) = 0.2177$.
+
+    Intuiția: $-0.78$ e sub medie, deci probabilitatea de a fi sub el trebuie să fie mai mică de 0.5 — iar 0.2177 chiar e. Dacă din tabel iese un număr mai mare de 0.5 pentru un $z$ negativ, ai uitat complementul.
+
+    Apoi continui ca înainte:
+
+    $$
+    P(165 < X < 180) = \Phi(0.89) - \Phi(-0.78) = 0.8133 - 0.2177 \approx 0.596
+    $$
+
+    Un detaliu de verificare: $\Phi(0) = 0.5$ în orice tabel. Dacă $z$ e negativ, rezultatul trebuie să fie sub 0.5; dacă e pozitiv, peste 0.5.
+- user: |
+    Exercițiul 4: dintr-o urnă cu 7 bile albe și 5 negre extrag 3 bile fără întoarcere. Care e probabilitatea să am exact 2 albe?
+  assistant: |
+    Aici e distribuția hipergeometrică (extrageri fără întoarcere, dintr-un total finit):
+
+    $$
+    P(X = 2) = \frac{\binom{7}{2}\binom{5}{1}}{\binom{12}{3}} = \frac{21 \cdot 5}{220} = \frac{105}{220} = \frac{21}{44} \approx 0.477
+    $$
+
+    Logica:
+
+    - numărătorul: alegi cele 2 albe din 7 ($\binom{7}{2} = 21$) și 1 neagră din 5 ($\binom{5}{1} = 5$);
+    - numitorul: orice 3 bile din cele 12 ($\binom{12}{3} = 220$).
+
+    Atenție la capcană: fără întoarcere probabilitățile se schimbă la fiecare extragere, deci **nu** e binomială. Dacă ar fi cu întoarcere, ar fi $\binom{3}{2}(7/12)^2(5/12) \approx 0.427$ — aproape, dar nu identic. Când $N$ e mare față de $n$, cele două coincid practic; aici $n/N = 3/12$ e prea mare ca să le confunzi.
+
+    Verificare plauzibilitate: media e $n \cdot K/N = 3 \cdot 7/12 = 1.75$ albe, deci 2 albe e chiar lângă medie — o probabilitate de ~48% e perfect coerentă.
+- user: |
+    De ce nu e binomială aici? Care e diferența, concret?
+  assistant: |
+    Binomiala cere ca la fiecare extragere probabilitatea de succes să fie aceeași, $p = 7/12$. Asta e adevărat doar dacă întorci bila în urnă. Fără întoarcere, compoziția urnei se schimbă după fiecare extragere:
+
+    - prima bilă albă: $7/12$;
+    - dacă am scos o albă, a doua albă: $6/11$ (au rămas 6 albe din 11 bile);
+    - dacă am scos o neagră, a doua albă: $7/11$.
+
+    Deci probabilitatea de succes la pasul 2 **depinde de ce s-a întâmplat la pasul 1** — extragerile nu mai sunt independente, iar binomiala nu se mai aplică.
+
+    Concret, compară probabilitatea a două albe consecutive:
+
+    $$
+    P(\text{alb, alb}) = \frac{7}{12} \cdot \frac{6}{11} = \frac{42}{132} \approx 0.318
+    $$
+
+    pe când cu întoarcere ar fi:
+
+    $$
+    \frac{7}{12} \cdot \frac{7}{12} = \frac{49}{144} \approx 0.340
+    $$
+
+    Sunt diferite pentru că după ce scoți o bilă albă, în urnă rămân mai puține albe, deci șansele scad.
+
+    Un detaliu contraintuitiv care ajunge deseori la examen: probabilitatea ca a doua bilă să fie albă, **fără să știi ce a ieșit prima**, tot $7/12$ e:
+
+    $$
+    P(\text{a 2-a albă}) = \frac{7}{12}\cdot\frac{6}{11} + \frac{5}{12}\cdot\frac{7}{11} = \frac{42 + 35}{132} = \frac{77}{132} = \frac{7}{12}
+    $$
+
+    Deci marginal, fiecare poziție are aceeași șansă — dar evenimentele sunt corelate între ele, și exact asta face diferența față de binomială.
+- user: |
+    Exercițiul 5: construiește un interval de încredere de 95% pentru medie, știind n = 36, media de selecție 48.5 și s = 6.
+  assistant: |
+    Intervalul de încredere de 95% pentru medie (n mare, deci folosim normala):
+
+    $$
+    \bar{x} \pm z_{0.975} \cdot \frac{s}{\sqrt{n}} = 48.5 \pm 1.96 \cdot \frac{6}{\sqrt{36}} = 48.5 \pm 1.96
+    $$
+
+    Deci:
+
+    $$
+    (46.54,\ 50.46)
+    $$
+
+    Pașii:
+
+    - eroarea standard: $s / \sqrt{n} = 6/6 = 1$;
+    - cuantila pentru 95%: $z_{0.975} = 1.96$ (din tabel, $\Phi(1.96) = 0.975$);
+    - marja de eroare: $1.96 \cdot 1 = 1.96$.
+
+    Interpretarea corectă (se punctează la examen): **nu** probabilitatea ca media reală $\mu$ să fie în acest interval anume, ci: dacă am repeta procedura de multe ori, aproximativ 95% din intervalele construite ar conține $\mu$.
+
+    Două observații utile:
+
+    - dacă $n$ era mic (sub 30) și $s$ e abaterea de selecție (nu $\sigma$ cunoscută), folosești distribuția Student cu $n - 1$ grade de libertate în loc de 1.96 — aici $n = 36$, deci normala e justificată;
+    - marja de eroare scade cu $1/\sqrt{n}$: ca să o înjumătățești, ai nevoie de un eșantion de 4 ori mai mare.
+- user: |
+    Și dacă vreau un interval de 99%? Cum se schimbă lățimea lui?
+  assistant: |
+    Singurul lucru care se schimbă e cuantila: pentru 99% ai nevoie de $z_{0.995} = 2.576$ (adică $\Phi(2.576) = 0.995$), pentru că lasi doar 0.5% în fiecare coadă.
+
+    $$
+    48.5 \pm 2.576 \cdot \frac{6}{\sqrt{36}} = 48.5 \pm 2.576
+    $$
+
+    Deci:
+
+    $$
+    (45.92,\ 51.08)
+    $$
+
+    Intervalul s-a lărgit de la lățimea $2 \cdot 1.96 = 3.92$ la $2 \cdot 2.576 = 5.15$. E schimbul fundamental: mai multă încredere se plătește cu un interval mai lat. Siguranță absolută (100%) ar însemna interval $(-\infty, \infty)$ — inutil.
+
+    Cuantilele de reținut:
+
+    - 90%: $z = 1.645$;
+    - 95%: $z = 1.96$;
+    - 99%: $z = 2.576$.
+
+    Dacă vrei interval mai îngust fără să sacrifici încrederea, singura cale e un eșantion mai mare: de exemplu, la 99% cu $n = 144$, marja ar fi $2.576 \cdot 6/12 \approx 1.29$.
+- user: |
+    Exercițiul 6: profesorul spune că media la examen e 6.5. Pe un eșantion de 25 de studenți am obținut media 7.1, cu s = 1.4. Testează la α = 0.05 dacă media reală e mai mare.
+  assistant: |
+    Test unipartid (coada dreaptă):
+
+    - $H_0: \mu = 6.5$;
+    - $H_1: \mu > 6.5$;
+    - $\alpha = 0.05$.
+
+    Statistica de test:
+
+    $$
+    t = \frac{\bar{x} - \mu_0}{s/\sqrt{n}} = \frac{7.1 - 6.5}{1.4/\sqrt{25}} = \frac{0.6}{0.28} \approx 2.14
+    $$
+
+    Deoarece $n = 25 < 30$ și $\sigma$ nu e cunoscută (folosim $s$), corect e distribuția Student cu $n - 1 = 24$ grade de libertate. Valoarea critică unipartidă: $t_{0.95, 24} \approx 1.711$.
+
+    Decizie: $2.14 > 1.711$, deci **respingem $H_0$** — există dovezi la nivel de 5% că media reală e mai mare de 6.5.
+
+    Dacă profesorul voia normala (unii cursuri folosesc $z$ și la $n$ moderat): $z_{0.95} = 1.645$, iar $2.14 > 1.645$ — aceeași concluzie.
+
+    Structura pe care o vrea orice corector:
+
+    1. ipotezele $H_0$ și $H_1$ (unipartid: semnul $>$ vine din întrebarea „mai mare");
+    2. statistica de test și valoarea ei calculată;
+    3. valoarea critică (sau p-valoarea: $P(T_{24} > 2.14) \approx 0.02 < 0.05$);
+    4. decizia și concluzia **în cuvinte**, nu doar „respingem".
+
+    Capcane tipice: să iei $z_{0.975} = 1.96$ (asta e pentru test bipartid) sau să uiți rădăcina din $s/\sqrt{n}$.
+- user: |
+    Când folosesc t și când z? Mă încurc mereu la asta.
+  assistant: |
+    Regula practică, în ordinea deciziei:
+
+    **Folosești z (normala standard) doar când:**
+    - $\sigma$ e cunoscută (dată în enunț ca abatere a populației), **indiferent de mărimea lui $n$**;
+    - sau $\sigma$ nu e cunoscută, dar $n \ge 30$ (aproximare, $s \approx \sigma$).
+
+    **Folosești t (Student) când:**
+    - $\sigma$ nu e cunoscută și o înlocuiești cu $s$ (abaterea de selecție), iar $n < 30$.
+
+    Semnalul din enunț: dacă vezi litera **s** și un $n$ mic → Student. Dacă vezi **σ** (sau „abaterea populației este...") → normala. Dacă $n$ e mare, diferența devine oricum neglijabilă: $t_{0.975, 30} \approx 2.042$ față de $1.96$, iar la $n = 100$ e deja $1.984$.
+
+    De ce există t-ul: când înlocuiești $\sigma$ cu $s$, faci două surse de eroare pe același eșantion (media $\bar{x}$ variază, dar și $s$ variază). Eșantioanele mici produc uneori un $s$ prea mic, deci $t$ are cozi mai groase decât normala — cuantilele sunt mai mari, ca să compensezi. Pe măsură ce $n$ crește, $s$ estimează tot mai bine $\sigma$, iar $t \to z$.
+
+    Capcana clasică la examen: enunțul dă $s = 1.4$ și $n = 25$, iar studentul trage cu 1.96 din reflex. Corectorul verifică exact asta. Dacă nu ești sigur, alege t: la $n$ mare rezultatul e aproape identic, dar la $n$ mic z-ul dă intervale prea înguste și respingeri prea ușoare ale lui $H_0$.
+- user: |
+    Exercițiul 7: calculează covarianța și coeficientul de corelație pentru datele:
+
+    ```
+    X: 2, 4, 6, 8, 10
+    Y: 3, 7, 8, 12, 15
+    ```
+  assistant: |
+    Media lui X: $\bar{x} = 30/5 = 6$; media lui Y: $\bar{y} = 45/5 = 9$.
+
+    Deviile de la medie:
+
+    | $x_i - \bar{x}$ | $y_i - \bar{y}$ | produs |
+    |---|---|---|
+    | −4 | −6 | 24 |
+    | −2 | −2 | 4 |
+    | 0 | −1 | 0 |
+    | 2 | 3 | 6 |
+    | 4 | 6 | 24 |
+
+    Suma produselor: $58$.
+
+    **Covarianța** (cu împărțire la $n$, varianta populațională):
+
+    $$
+    \text{Cov}(X, Y) = \frac{1}{n}\sum (x_i - \bar{x})(y_i - \bar{y}) = \frac{58}{5} = 11.6
+    $$
+
+    (la unele cursuri se împarte la $n - 1 = 4$, dând 14.5 — verifică ce convenție folosește culegerea ta; corelația iese identică).
+
+    Varianțele: $\text{Var}(X) = 40/5 = 8$, $\text{Var}(Y) = 86/5 = 17.2$.
+
+    **Coeficientul de corelație:**
+
+    $$
+    r = \frac{\text{Cov}(X,Y)}{\sqrt{\text{Var}(X)\,\text{Var}(Y)}} = \frac{58}{\sqrt{40 \cdot 86}} = \frac{58}{\sqrt{3440}} \approx 0.989
+    $$
+
+    Interpretare: $r$ aproape de 1 înseamnă o legătură liniară foarte puternică și pozitivă — pe măsură ce X crește, Y crește aproape perfect liniar.
+
+    Verificări rapide: covarianța pozitivă (majoritatea produselor din tabel sunt pozitive) era de așteptat, iar $|r| \le 1$ întotdeauna — dacă iese peste 1, ai greșit la numitor.
+- user: |
+    Exercițiul 8: calculează Var(2X − 3Y), dacă Var(X) = 4, Var(Y) = 9 și Cov(X, Y) = 1.5.
+  assistant: |
+    Se aplică formula generală:
+
+    $$
+    \text{Var}(aX + bY) = a^2 \text{Var}(X) + b^2 \text{Var}(Y) + 2ab\,\text{Cov}(X, Y)
+    $$
+
+    Cu $a = 2$, $b = -3$:
+
+    $$
+    \text{Var}(2X - 3Y) = 4 \cdot 4 + 9 \cdot 9 + 2 \cdot 2 \cdot (-3) \cdot 1.5 = 16 + 81 - 18 = 79
+    $$
+
+    Capcanele clasice aici:
+
+    - coeficienții intră **la pătrat**: $a^2 = 4$, $b^2 = 9$, nu $a = 2$, $b = -3$;
+    - semnul lui $b$ rămâne în termenul încrucișat: $2ab = 2 \cdot 2 \cdot (-3) = -12$, deci covarianța pozitivă **scade** varianța combinației. Dacă ar fi fost $2X + 3Y$, rezultatul ar fi fost $16 + 81 + 18 = 115$;
+    - nu uita factorul 2 din termenul încrucișat — uitarea lui e cea mai frecventă greșeală.
+
+    Observație: dacă $X$ și $Y$ ar fi fost independente (Cov = 0), varianța ar fi fost doar $16 + 81 = 97$. Covarianța pozitivă a micșorat-o, pentru că $-3Y$ variază „în sens opus" față de $2X$.
+- user: |
+    Am greșit la ăsta: mie mi-a dat 97, iar în barem scrie 79. Unde greșesc?
+  assistant: |
+    Ai calculat doar $4 \cdot 4 + 9 \cdot 9 = 97$ — adică ai tratat $X$ și $Y$ ca și cum ar fi independente și ai sărit peste termenul încrucișat.
+
+    Formula completă e:
+
+    $$
+    \text{Var}(aX + bY) = a^2\text{Var}(X) + b^2\text{Var}(Y) + 2ab\,\text{Cov}(X, Y)
+    $$
+
+    Termenul $2ab\,\text{Cov}(X,Y) = 2 \cdot 2 \cdot (-3) \cdot 1.5 = -18$ lipsește din calculul tău, iar $97 - 18 = 79$, exact valoarea din barem.
+
+    De ce nu poți să-l sari: regula „varianțele se adună" ($\text{Var}(X+Y) = \text{Var}(X) + \text{Var}(Y)$) e valabilă **doar pentru variabile independente** (sau necorelate, Cov = 0). Enunțul îți dă explicit $\text{Cov}(X,Y) = 1.5$ — semn clar că trebuie inclusă. Dacă ar fi vrut independență, nu ți-ar fi dat-o.
+
+    Regulă de siguranță pentru examen: de câte ori vezi Cov dat în enunț la un exercițiu cu varianța unei combinații liniare, acel număr **trebuie** să apară în calcul. Dacă nu l-ai folosit nicăieri, aproape sigur ai pierdut un termen.
+
+    Și semnul contează: aici $b = -3$ e negativ, deci $2ab < 0$, iar covarianța pozitivă scade rezultatul. La $2X + 3Y$ ar fi fost $+18$, deci 115.
+- user: |
+    Exercițiul 9: folosind inegalitatea lui Cebîșev, dă o margine pentru P(|X − 50| ≥ 10), dacă Var(X) = 25.
+  assistant: |
+    Inegalitatea lui Cebîșev spune că, pentru orice distribuție cu medie $\mu$ și varianță $\sigma^2$:
+
+    $$
+    P(|X - \mu| \ge k) \le \frac{\sigma^2}{k^2}
+    $$
+
+    Aici $\sigma^2 = 25$, deci $\sigma = 5$, iar deviația $k = 10$ înseamnă $k = 2$ abateri standard:
+
+    $$
+    P(|X - 50| \ge 10) \le \frac{25}{100} = 0.25
+    $$
+
+    Deci cel mult 25%.
+
+    Două observații importante:
+
+    - enunțul nu dă media explicit, dar $|X - 50|$ sugerează $\mu = 50$ — Cebîșev se aplică întotdeauna în jurul mediei;
+    - inegalitatea e universală (valabilă pentru **orice** distribuție), de aceea marginea e slabă. Dacă $X$ ar fi normală, $P(|Z| \ge 2) \approx 0.045$, mult sub 0.25. Cebîșev plătește generalitatea cu precizie.
+
+    Forma echivalentă, de reținut: $P(|X - \mu| < k\sigma) \ge 1 - 1/k^2$. Pentru $k = 2$: cel puțin 75% din valori sunt la cel mult două abateri de medie; pentru $k = 3$: cel puțin $8/9 \approx 0.889$.
+- user: |
+    Exercițiul 10, cel greu: o fabrică are trei linii, A, B și C, care produc 50%, 30% și 20% din piese, cu rate de defecte de 1%, 2% și 3%. Se alege o piesă și e defectă. Care e probabilitatea să provină de pe linia C?
+  assistant: |
+    Bayes cu probabilitate totală. Notăm $D$ = piesa e defectă.
+
+    **Pasul 1 — probabilitatea totală a defectului:**
+
+    $$
+    P(D) = 0.5 \cdot 0.01 + 0.3 \cdot 0.02 + 0.2 \cdot 0.03 = 0.005 + 0.006 + 0.006 = 0.017
+    $$
+
+    **Pasul 2 — Bayes:**
+
+    $$
+    P(C \mid D) = \frac{P(D \mid C)\,P(C)}{P(D)} = \frac{0.2 \cdot 0.03}{0.017} = \frac{0.006}{0.017} \approx 0.353
+    $$
+
+    Aproximativ 35.3%.
+
+    Interpretare care arată că ai înțeles: linia C produce doar 20% din piese, dar contribuie cu $0.006$ din cele $0.017$ defecte — adică peste o treime. De ce? Pentru că are rata de defecte cea mai mare (3%), de 3 ori mai mare decât a liniei A. Raportul contribuțiilor: $0.005 : 0.006 : 0.006$ — B și C contribuie egal, deși C e mai mică.
+
+    Structura pe care o vrea baremul la astfel de exerciții:
+
+    1. descompunerea în ipoteze: $P(A) = 0.5$, $P(B) = 0.3$, $P(C) = 0.2$ (verifică: suma = 1);
+    2. formula probabilității totale pentru $P(D)$;
+    3. formula lui Bayes cu ipoteza cerută la numărător;
+    4. concluzia în cuvinte.
+
+    Capcană tipică: să pui la numitor doar $P(D \mid C) P(C) = 0.006$, fără celelalte ramuri — asta ar da 1, ceea ce e absurd. Numitorul e întotdeauna probabilitatea totală.
+- user: |
+    Fă-mi un tabel cu toate distribuțiile pe care le-am lucrat până acum: când le folosesc, media și dispersia.
+  assistant: |
+    Iată tabelul cu cele șase distribuții pe care le-ai lucrat:
+
+    | Distribuție | Când o folosești | Media | Dispersia |
+    |---|---|---|---|
+    | **Binomială** $\text{Bin}(n, p)$ | $n$ încercări independente, cu întoarcere, fiecare cu probabilitatea $p$ de succes; numărul de succese | $np$ | $np(1-p)$ |
+    | **Hipergeometrică** | extrageri **fără** întoarcere dintr-o populație finită de $N$ elemente, cu $K$ „succese"; numărul de succese în $n$ extrageri | $n\frac{K}{N}$ | $n\frac{K}{N}\left(1-\frac{K}{N}\right)\frac{N-n}{N-1}$ |
+    | **Poisson** $(\lambda)$ | numărul de evenimente într-un interval de timp/spațiu, cu rată medie $\lambda$ (apeluri, defecte, cereri) | $\lambda$ | $\lambda$ |
+    | **Exponențială** $(\lambda)$ | timpul până la următorul eveniment (partenerul lui Poisson); lipsă de memorie | $1/\lambda$ | $1/\lambda^2$ |
+    | **Normală** $N(\mu, \sigma^2)$ | măsurători continue, sume/media multor variabile (TLC) | $\mu$ | $\sigma^2$ |
+    | **Normala standard** $N(0,1)$ | pentru calcul: $Z = (X-\mu)/\sigma$, apoi tabelul lui $\Phi$ | $0$ | $1$ |
+
+    Semnalele rapide din enunț:
+
+    - „cu întoarcere" / „independent, cu probabilitatea p de fiecare dată" → binomială;
+    - „fără întoarcere" → hipergeometrică;
+    - „în medie λ evenimente pe oră" → Poisson;
+    - „timpul de așteptare" → exponențială (atenție: media e $1/\lambda$, nu $\lambda$);
+    - „normal distribuită, media μ, abaterea σ" → standardizezi și citești din tabel.
+
+    Trucuri de reținut pe lângă tabel:
+
+    - „cel puțin unul": $1 - P(\text{zero})$;
+    - Poisson ≈ binomială când $n$ mare, $p$ mic, $\lambda = np$;
+    - exponențiala: $P(X > t) = e^{-\lambda t}$ direct, fără integrare.
+- user: |
+    Profesorul a anunțat că la examen primim doar tabelul pentru z, nu și pentru t. Cum rezolv atunci exercițiul 6?
+  assistant: |
+    Ai două variante, ambele duc la aceeași concluzie:
+
+    **Varianta 1 — aproximezi cu z (cea pe care probabil o vrea profesorul):**
+
+    Dacă nu primești tabelul lui t, enunțurile de la examen vor fi gândite pentru normală. Folosești $z_{0.95} = 1.645$:
+
+    $$
+    t = \frac{7.1 - 6.5}{1.4/\sqrt{25}} = 2.14 > 1.645 \implies \text{respingem } H_0
+    $$
+
+    **Varianta 2 — argumentezi cu o inegalitate (mai riguros, fără tabel):**
+
+    Știi sigur că $t_{0.95, 24} > z_{0.95} = 1.645$, pentru că Student are cozi mai groase decât normala. Deci dacă statistica ta depășește 1.645, nu e automat o respingere garantată la nivelul exact de 5%... dar în cazul nostru $2.14$ e cu mult peste — depășește chiar și valoarea critică reală a lui t, care la 24 grade de libertate e $1.711$. Concluzia (respingem $H_0$) rămâne neschimbată.
+
+    **Ce merită memorat, ca să fii acoperit:** câteva cuantile ale lui t pentru cazuri mici, ele se repetă la toate culegerile:
+
+    | df | $t_{0.95}$ | $t_{0.975}$ |
+    |---|---|---|
+    | 10 | 1.812 | 2.228 |
+    | 20 | 1.725 | 2.086 |
+    | 24 | 1.711 | 2.064 |
+    | 30 | 1.697 | 2.042 |
+
+    Observă tendința: pe măsură ce df crește, valorile scad spre 1.645 și 1.96. Dacă la examen ai nevoie de un df pe care nu l-ai memorat, poți interpola grosier între valorile din tabel sau să iei valoarea pentru df-ul imediat mai mic (margine sigură: dacă respingi cu cuantila mai mare, respingi sigur și cu cea reală).
+
+    Practic: scrie statistica $t = 2.14$, compar-o cu 1.645 (sau 1.71 dacă ți-l amintești), și menționează într-o frază că folosești aproximarea normală deoarece tabelul Student nu e disponibil. Așa arăți că știi care e distribuția corectă — și asta se punctează chiar dacă aproximezi.
+- user: |
+    Verifică-mi rezolvarea la exercițiul 5:
+
+    ```
+    x̄ = 48.5, s = 6, n = 36
+    eroarea standard = 6 / 36 = 0.167
+    interval: 48.5 ± 1.96 · 0.167 = [48.17, 48.83]
+    ```
+  assistant: |
+    Ai o singură greșeală, dar e una importantă: **eroarea standard e $s/\sqrt{n}$, nu $s/n$.**
+
+    Corect:
+
+    $$
+    \text{eroarea standard} = \frac{s}{\sqrt{n}} = \frac{6}{\sqrt{36}} = \frac{6}{6} = 1
+    $$
+
+    tu ai calculat $6/36 = 0.167$, adică ai uitat rădăcina pătrată.
+
+    Intervalul corect:
+
+    $$
+    48.5 \pm 1.96 \cdot 1 = (46.54,\ 50.46)
+    $$
+
+    Efectul greșelii: intervalul tău e de 12 ori mai îngust decât trebuie. E o eroare periculoasă exact în direcția asta — un interval prea îngust sugerează o precizie pe care nu o ai, iar la teste de ipoteze te-ar face să respingi $H_0$ mult prea ușor.
+
+    Cum să-ți amintești: abaterea mediei scade cu $\sqrt{n}$, nu cu $n$ — e exact concluzia din teorema limită centrală. Verificare rapidă care te-ar fi salvat: $\sqrt{36} = 6$ e un număr „frumos", iar $6/6 = 1$ dă o marjă de eroare de 1.96 — număr rotund, semn că enunțul a fost gândit așa. Când la examen iese un număr urât precum 0.167 din date care arată curat, recheckează formula.
+- user: |
+    Ce întrebări de teorie pică de obicei la examenul ăsta? Dă-mi 5 întrebări scurte, cu răspunsuri.
+  assistant: |
+    Cele mai frecvente întrebări de teorie la un astfel de examen, cu răspunsurile pe care le așteaptă corectorul:
+
+    **1. Enunță formula lui Bayes și spune la ce folosește.**
+
+    $$P(A \mid B) = \frac{P(B \mid A)\,P(A)}{P(B)}$$
+
+    Actualizează probabilitatea unei ipoteze după observarea unei dovezi; numitorul se calculează cu formula probabilității totale.
+
+    **2. Când folosești distribuția Poisson în loc de binomială?**
+
+    Când $n$ e mare, $p$ e mic, iar $\lambda = np$ rămâne moderat (regulă practică: $n \ge 20$, $p \le 0.05$). Binomiala numără succese în $n$ încercări; Poisson numără evenimente pe unitate de timp cu rată constantă.
+
+    **3. Ce înseamnă că exponențiala are proprietatea lipsei de memorie?**
+
+    $P(X > s + t \mid X > s) = P(X > t)$: timpul deja așteptat nu schimbă probabilitatea de a mai aștepta. E singura distribuție continuă cu această proprietate.
+
+    **4. Enunță teorema limită centrală.**
+
+    Suma/media a $n$ variabile i.i.d. cu varianță finită tinde spre o normală, indiferent de distribuția inițială. Consecință: media eșantionului are abaterea standard $\sigma/\sqrt{n}$, de aici intervalele de încredere.
+
+    **5. Care e diferența dintre probabilitatea $P(A \mid B)$ și $P(B \mid A)$? Sunt egale?**
+
+    Nu, în general nu sunt egale. $P(A \mid B)$ e probabilitatea lui A știind că B s-a întâmplat; $P(B \mid A)$ e inversul. Exact această asimetrie corectează formula lui Bayes. Exemplul medical: $P(\text{test pozitiv} \mid \text{bolnav}) = 0.99$, dar $P(\text{bolnav} \mid \text{test pozitiv}) \approx 0.167$.
+
+    Bonus, dacă mai ai loc: diferența dintre $s$ și $\sigma$ (decide între t și z), interpretarea unui interval de încredere, și de ce varianța unei combinații liniare include termenul $2ab\,\text{Cov}$.
+- user: |
+    Actualizează fițuica de la început cu tot ce am lucrat azi.
+  assistant: |
+    Fițuica actualizată:
+
+    **Distribuții**
+
+    - Bayes: $P(A \mid B) = P(B \mid A) P(A) / P(B)$, numitorul din probabilitatea totală.
+    - Binomială: $P(X=k) = \binom{n}{k} p^k (1-p)^{n-k}$; media $np$, varianța $np(1-p)$.
+    - Hipergeometrică (fără întoarcere): $P(X=k) = \binom{K}{k}\binom{N-K}{n-k} / \binom{N}{n}$; media $nK/N$.
+    - Poisson: $P(X=k) = \lambda^k e^{-\lambda}/k!$; media = varianța = $\lambda$; ≈ binomială la $n$ mare, $p$ mic.
+    - Exponențială: $f(x) = \lambda e^{-\lambda x}$; media $1/\lambda$, varianța $1/\lambda^2$; $P(X>t) = e^{-\lambda t}$; lipsă de memorie.
+    - Normală: $Z = (X-\mu)/\sigma$, apoi $\Phi$; regula 68–95–99.7; $\Phi(-z) = 1 - \Phi(z)$.
+
+    **Speranță și varianță**
+
+    - $E[X] = \int x f(x)\,dx$; $\text{Var}(X) = E[X^2] - E[X]^2$.
+    - $\text{Var}(aX + bY) = a^2\text{Var}(X) + b^2\text{Var}(Y) + 2ab\,\text{Cov}(X,Y)$ — termenul încrucișat dispare doar la independență.
+    - $r = \text{Cov}(X,Y) / \sqrt{\text{Var}(X)\text{Var}(Y)}$, mereu $|r| \le 1$.
+
+    **Limite**
+
+    - TLC: abaterea mediei e $\sigma/\sqrt{n}$ (cu rădăcina!); IC: $\bar{x} \pm z \cdot s/\sqrt{n}$.
+    - Cebîșev: $P(|X-\mu| \ge k) \le \sigma^2/k^2$; forma $P(|X-\mu| < k\sigma) \ge 1 - 1/k^2$.
+
+    **Estimare și teste**
+
+    - IC 95%: $z = 1.96$; IC 99%: $z = 2.576$; IC 90%: $z = 1.645$.
+    - Test: $t = (\bar{x} - \mu_0)/(s/\sqrt{n})$; unipartid $z_{0.95} = 1.645$, bipartid $z_{0.975} = 1.96$.
+    - t vs z: $\sigma$ cunoscută → z; $s$ și $n < 30$ → Student (df = $n-1$); $n \ge 30$ → z aproximat.
+    - Structura testului: ipoteze → statistica → valoare critică → decizie + concluzie în cuvinte.
+
+    **Trucuri și capcane**
+
+    - „cel puțin unul": $1 - P(\text{zero})$.
+    - Fără întoarcere → hipergeometrică, nu binomială.
+    - Eroarea standard e $s/\sqrt{n}$, nu $s/n$.
+    - Vezi Cov în enunț → trebuie să apară în calcul.
+    - $z$ negativ → rezultat sub 0.5, altfel ai uitat complementul.
+    - La test unipartid nu lua 1.96.
+
+    Succes peste trei zile!
 questions:
-  - id: q1
-    type: semantic
-    prompt: |
-      La exemplul cu testul medical, cât ieșea probabilitatea să fii bolnav după un singur test pozitiv?
-    gold:
-      - {turn: 1, quote: "Un test pozitiv înseamnă doar aproximativ 16.7% șanse să ai boala."}
-  - id: q2
-    type: semantic
-    prompt: |
-      Cum se schimba rezultatul cu două teste pozitive și ce era raportul de verosimilitate?
-    gold:
-      - {turn: 2, quote: "$LR = 0.99 / 0.05 = 19.8$"}
-  - id: q3
-    type: exact
-    prompt: |
-      Cât era P(X ≤ 2) pentru λ = 4?
-    gold:
-      - {turn: 6, quote: "Suma: aproximativ 23.8%."}
-  - id: q4
-    type: ambiguous
-    prompt: |
-      și la zar, cu cel puțin un 6?
-    gold:
-      - {turn: 4, quote: "Deci aproximativ 83.9%."}
-  - id: q5
-    type: semantic
-    lang: en
-    prompt: |
-      When should I use Poisson instead of the binomial distribution?
-    gold:
-      - {turn: 5, quote: "Regula practică din manuale: $n \\ge 20$ și $p \\le 0.05$."}
-  - id: q6
-    type: semantic
-    prompt: |
-      Care era legătura dintre Poisson și timpul dintre doi clienți?
-    gold:
-      - {turn: 7, quote: "Poisson numără evenimentele, iar exponențiala măsoară timpul dintre ele"}
+- id: q1
+  type: semantic
+  prompt: |
+    La exemplul cu testul medical, cât ieșea probabilitatea să fii bolnav după un singur test pozitiv?
+  gold:
+  - turn: 1
+    quote: Un test pozitiv înseamnă doar aproximativ 16.7% șanse să ai boala.
+  - turn: 2
+    quote: '- după două teste: $0.2 \cdot 19.8 \approx 3.96$, adică $P = 3.96 / 4.96 \approx 0.799$.'
+  - turn: 29
+    quote: Nu, în general nu sunt egale. $P(A \mid B)$ e probabilitatea lui A știind că B s-a întâmplat; $P(B \mid A)$ e
+- id: q2
+  type: semantic
+  prompt: |
+    Cum se schimba rezultatul cu două teste pozitive și ce era raportul de verosimilitate?
+  gold:
+  - turn: 2
+    quote: $LR = 0.99 / 0.05 = 19.8$
+- id: q3
+  type: exact
+  prompt: |
+    Cât era P(X ≤ 2) pentru λ = 4?
+  gold:
+  - turn: 6
+    quote: 'Suma: aproximativ 23.8%.'
+- id: q4
+  type: ambiguous
+  prompt: |
+    și la zar, cu cel puțin un 6?
+  gold:
+  - turn: 4
+    quote: Deci aproximativ 83.9%.
+- id: q5
+  type: semantic
+  lang: en
+  prompt: |
+    When should I use Poisson instead of the binomial distribution?
+  gold:
+  - turn: 5
+    quote: 'Regula practică din manuale: $n \ge 20$ și $p \le 0.05$.'
+  - turn: 26
+    quote: '- exponențiala: $P(X > t) = e^{-\lambda t}$ direct, fără integrare.'
+  - turn: 29
+    quote: Suma/media a $n$ variabile i.i.d. cu varianță finită tinde spre o normală, indiferent de distribuția inițială.
+  - turn: 30
+    quote: '- Exponențială: $f(x) = \lambda e^{-\lambda x}$; media $1/\lambda$, varianța $1/\lambda^2$; $P(X>t) = e^{-\lam'
+- id: q6
+  type: semantic
+  prompt: |
+    Care era legătura dintre Poisson și timpul dintre doi clienți?
+  gold:
+  - turn: 7
+    quote: Poisson numără evenimentele, iar exponențiala măsoară timpul dintre ele
+- id: q7
+  type: distractor
+  prompt: |
+    La exercițiul cu înălțimile, ce procent ieșea între 165 și 180 cm?
+  gold:
+  - turn: 13
+    quote: Aproximativ 59.6%.
+  - turn: 14
+    quote: P(165 < X < 180) = \Phi(0.89) - \Phi(-0.78) = 0.8133 - 0.2177 \approx 0.596
+- id: q8
+  type: exact
+  prompt: |
+    Cât ieșea probabilitatea să aștept peste 15 minute la ghișeu?
+  gold:
+  - turn: 12
+    quote: Aproximativ 15.3%.
+- id: q9
+  type: distractor
+  prompt: |
+    La problema cu liniile de producție, cât era probabilitatea pentru linia C?
+  gold:
+  - turn: 25
+    quote: Aproximativ 35.3%.
+- id: q10
+  type: semantic
+  prompt: |
+    Ce greșisem la eroarea standard în exercițiul 5?
+  gold:
+  - turn: 28
+    quote: eroarea standard e $s/\sqrt{n}$, nu $s/n$.
+  - turn: 30
+    quote: '- $z$ negativ → rezultat sub 0.5, altfel ai uitat complementul.'
+- id: q11
+  type: multi-hop
+  prompt: |
+    Ce termen uitasem la exercițiul 8, cel cu dispersia?
+  gold:
+  - turn: 23
+    quote: ai sărit peste termenul încrucișat
+- id: q12
+  type: paraphrase
+  prompt: |
+    cand aleg t si cand z?
+  gold:
+  - turn: 20
+    quote: 'Folosești z (normala standard) doar când:'
+  - turn: 30
+    quote: '- Test: $t = (\bar{x} - \mu_0)/(s/\sqrt{n})$; unipartid $z_{0.95} = 1.645$, bipartid $z_{0.975} = 1.96$.'
+- id: q13
+  type: decision
+  prompt: |
+    La exercițiul 6, rezolvăm până la urmă cu t sau cu z?
+  gold:
+  - turn: 27
+    quote: Varianta 1 — aproximezi cu z (cea pe care probabil o vrea profesorul)
+  outdated:
+  - turn: 19
+    quote: corect e distribuția Student cu $n - 1 = 24$ grade de libertate
+- id: q14
+  type: exact
+  prompt: |
+    Care erau valorile lui Y la exercițiul 7?
+  gold:
+  - turn: 21
+    quote: 'Y: 3, 7, 8, 12, 15'
+- id: q15
+  type: exact
+  prompt: |
+    Cât era probabilitatea pentru exact 2 bile albe?
+  gold:
+  - turn: 15
+    quote: \frac{21}{44} \approx 0.477

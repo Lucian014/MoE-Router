@@ -1,0 +1,1672 @@
+id: pr03-disertatie
+category: text-rewrite
+lang: ro
+turns:
+- user: |
+    salut, lucrez la disertatie: "Reabilitarea termica a blocurilor din Iasi: impactul asupra consumului de energie". ma ajuti cu un plan pe capitole?
+  assistant: |
+    Salut! Cu plăcere — iată o propunere de plan structurat, adaptată unei disertatii de master pe tema reabilitării termice la blocurile din Iași:
+
+    ## Plan de capitole (propunere)
+
+    ** Capitolul 1. Introducere**
+    - Motivația alegerii temei și contextul (parcul imobil vechi din Iași, majoritatea construit în perioada 1960–1990)
+    - Obiectivele și întrebările de cercetare
+    - Ipoteza de lucru (ex.: reabilitarea termică reduce consumul de energie cu X%)
+    - Delimitarea temei și structura lucrării
+
+    ** Capitolul 2. Cadru teoretic și legislativ**
+    - Concepte-cheie: eficiență energetică, coeficient de transfer termic (U), punți termice, clasa energetică
+    - Cadrul legislativ: Legea 196/2018 privind aprobarea performanței energetice a clădirilor, directivele UE (EPBD), Programul National pentru Eficientizarea Blocurilor
+    - Metode de reabilitare termică: fațade (polistiren, vată minerală), înlocuirea tâmplăriei, acoperișuri, subsoluri
+
+    ** Capitolul 3. Studiu de caz: blocurile din Iași**
+    - Caracterizarea parcului rezidențial din Iași (structura pe perioade de construcție, tipuri de blocuri)
+    - Metodologia cercetării: colectarea datelor (consumuri de la furnizori, chestionare la asociații de proprietari, certificate energetice)
+    - Prezentarea blocurilor analizate (criterii de selecție, stadiul de reabilitare)
+
+    ** Capitolul 4. Analiza rezultatelor**
+    - Compararea consumurilor înainte/după reabilitare (kWh/m²/an)
+    - Impactul pe tipuri de intervenții (fațadă vs. tâmplărie vs. combinații)
+    - Factori de influență: comportamentul utilizatorilor, climatul local, calitatea execuției
+    - Analiza cost–beneficiu: investiție, economii anuale, perioadă de recuperare
+
+    ** Capitolul 5. Discuții și propuneri**
+    - Interpretarea rezultatelor în raport cu literatura de specialitate
+    - Bariere întâmpinate (financiare, administrative, organizatorice)
+    - Recomandări pentru autorități locale și asociații de proprietari
+
+    ** Capitolul 6. Concluzii**
+    - Răspunsul la întrebările de cercetare
+    - Limitări ale studiului și direcții viitoare de cercetare
+
+    **Anexe**: chestionar, tabele de date, certificate energetice, fotografii
+
+    Câteva sfaturi practice:
+    - Pentru date reale, contactează Asociația Intercomunitară de Dezvoltare Durabilă Iași și direcția de urbanism de la Primărie — au informații despre blocurile reabilitate.
+    - Ideal ar fi să ai 3–5 blocuri comparabile (reabilitate vs. nereabilitate) pentru o analiză credibilă.
+
+    Vrei să detaliem vreun capitol sau să discutăm despre metodologia de colectare a datelor?
+- user: |
+    profesorul vrea 5 capitole nu 6. comaseaza 2 cu 3
+  assistant: |
+    Sigur! Iată planul restructurat cu 5 capitole, prin comasarea capitolelor 2 și 3:
+
+    ## Plan revizuit (5 capitole)
+
+    ** Capitolul 1. Introducere**
+    - Motivația alegerii temei și contextul (parcul imobil vechi din Iași, majoritatea construit în perioada 1960–1990)
+    - Obiectivele și întrebările de cercetare
+    - Ipoteza de lucru (ex.: reabilitarea termică reduce consumul de energie cu X%)
+    - Delimitarea temei și structura lucrării
+
+    ** Capitolul 2. Fundamente teoretice, legislative și caracterizarea parcului rezidențial din Iași**
+    - Concepte-cheie: eficiență energetică, coeficient de transfer termic (U), punți termice, clasa energetică
+    - Cadrul legislativ: Legea 196/2018 privind aprobarea performanței energetice a clădirilor, directivele UE (EPBD), Programul Național pentru Eficientizarea Blocurilor
+    - Metode de reabilitare termică: fațade (polistiren, vată minerală), înlocuirea tâmplăriei, acoperișuri, subsoluri
+    - Caracterizarea parcului rezidențial din Iași (structura pe perioade de construcție, tipuri de blocuri)
+
+    ** Capitolul 3. Metodologia cercetării și prezentarea studiului de caz**
+    - Metodologia cercetării: colectarea datelor (consumuri de la furnizori, chestionare la asociații de proprietari, certificate energetice)
+    - Prezentarea blocurilor analizate (criterii de selecție, stadiul de reabilitare)
+
+    ** Capitolul 4. Analiza rezultatelor**
+    - Compararea consumurilor înainte/după reabilitare (kWh/m²/an)
+    - Impactul pe tipuri de intervenții (fațadă vs. tâmplărie vs. combinații)
+    - Factori de influență: comportamentul utilizatorilor, climatul local, calitatea execuției
+    - Analiza cost–beneficiu: investiție, economii anuale, perioadă de recuperare
+
+    ** Capitolul 5. Discuții, propuneri și concluzii**
+    - Interpretarea rezultatelor în raport cu literatura de specialitate
+    - Bariere întâmpinate (financiare, administrative, organizatorice)
+    - Recomandări pentru autorități locale și asociații de proprietari
+    - Concluzii: răspunsul la întrebările de cercetare, limitări ale studiului și direcții viitoare de cercetare
+
+    **Anexe**: chestionar, tabele de date, certificate energetice, fotografii
+
+    Observație: am mutat caracterizarea parcului rezidențial din Iași în capitolul 2, pentru că se potrivește tematic cu partea teoretică și de context, iar capitolul 3 rămâne dedicat metodologiei și studiului de caz. Dacă profesorul preferă altă împărțire în interiorul capitolului comasat (de ex. subcapitole 2.1, 2.2, 2.3), îl pot structura detaliat. Vrei asta?
+- user: |
+    scrie-mi introducerea, cam 1200 de cuvinte
+  assistant: |
+    # Introducere
+
+    Reabilitarea termică a clădirilor de locuințe colective a devenit, în ultimele decenii, una dintre cele mai importante direcții de acțiune în politicile de dezvoltare urbană durabilă din Europa. În contextul în care sectorul rezidențial este responsabil pentru o pondere semnificativă din consumul total de energie al Uniunii Europene, iar obiectivele Pactului Verde European impun reduceri drastice ale emisiilor de gaze cu efect de seră până în 2050, eficiența energetică a clădirilor existente reprezintă o prioritate incontestabilă. România nu face excepție de la această tendință, iar orașele cu un parc imobil vechi, precum Iași, se confruntă cu provocări specifice legate de modernizarea locuințelor construite în perioada comunistă.
+
+    Prezenta disertație, intitulată „Reabilitarea termică a blocurilor din Iași: impactul asupra consumului de energie", își propune să analizeze în mod rigorous efectele intervențiilor de reabilitare termică asupra consumului de energie al blocurilor de locuințe din municipiul Iași, oferind în același timp o perspectivă aplicată, susținută de date reale, asupra eficienței acestor investiții.
+
+    ## Motivația alegerii temei
+
+    Alegerea acestei teme se fundamentează pe mai multe argumente, de natură diferită, care converg spre același punct: actualitatea și relevanța problemei cercetate.
+
+    Un prim argument este de natură statistică și socială. Municipiul Iași, al doilea centru urban al României, dispune de un parc rezidențial colectiv vast, construit în mare parte în perioada 1960–1990, în sistemul de proiectare și execuție specific economiei centralizate. Aceste blocuri — de tipul OT/RSc, T744, T766, 1340 sau 1350 — au fost proiectate cu cerințe termice mult mai permisive decât standardele actuale, folosind materiale cu performanțe scăzute (betoane celulare, zidărie de cărămidă fără izolație, tâmplărie din lemn sau aluminiu fără sticlă termoizolantă). Ca urmare, un număr semnificativ dintre aceste clădiri se încadrează în clasele energetice inferioare (D, E, F), cu consumuri anuale de energie termică ce depășesc cu mult valorile recomandate de standardele europene. La nivelul orașului, acest lucru se traduce prin costuri ridicate suportate de locatari, prin disconfort termic — supraîncălzire vara, pierderi de căldură iarna — și prin degradarea accelerată a fațadelor.
+
+    Un al doilea argument este de natură legislativă și instituțională. România a transpus în legislația națională cerințele europene privind performanța energetică a clădirilor, prin Legea nr. 372/2005 privind performanța energetică a clădirilor, republicată, și prin acte normative conexe, iar în ultimii ani au fost derulate programe naționale de finanțare a reabilitării termice, precum Programul Național pentru Eficientizarea Blocurilor de Locuințe. Municipiul Iași a fost unul dintre orașele active în accesarea acestor fonduri, un număr important de blocuri fiind deja reabilitate sau aflate în diverse stadii de intervenție. Această masă critică de cazuri concrete creează condițiile necesare pentru o analiză empirică relevantă, pe care lucrarea de față o valorifică.
+
+    Un al treilea argument este de natură științifică. Deși literatura de specialitate românească și internațională abordează pe larg problematica eficienței energetice a clădirilor, există relativ puține studii de caz care cuantifică, pe baza consumurilor reale măsurate înainte și după intervenție, impactul reabilitării termice la nivelul unui oraș specific. Multe dintre estimările disponibile se bazează pe calcule teoretice sau pe date agregate la nivel național, care nu surprind particularitățile locale — climatul specific Iașului, structura parcului imobil, comportamentul consumatorilor, calitatea execuției lucrărilor. Lucrarea de față încearcă să contribuie la umplerea acestui gol, prin analiza comparativă a unui eșantion de blocuri reabilitate și nereabilitate din municipiul Iași.
+
+    În fine, un argument de ordin personal: tema se înscrie în domeniul de specializare al programului de master urmat și îmi permite să aplic cunoștințele acumulate într-o analiză aplicată, cu relevanță directă pentru comunitatea locală în care trăiesc.
+
+    ## Obiectivele și întrebările de cercetare
+
+    Obiectivul general al lucrării constă în evaluarea impactului reabilitării termice asupra consumului de energie al blocurilor de locuințe colective din municipiul Iași. Acest obiectiv general se descompune în mai multe obiective specifice:
+
+    - identificarea și caracterizarea principalelor tipuri de blocuri din Iași, din perspectiva performanței termice inițiale;
+    - prezentarea metodelor de reabilitare termică aplicate în practică (izolarea fațadelor, înlocuirea tâmplăriei, izolarea acoperișurilor și a planșeelor peste subsol) și a cadrului legislativ și instituțional care le reglementează;
+    - analiza comparativă a consumurilor de energie înainte și după reabilitare, exprimate în indicatori normalizați (kWh/m²an);
+    - evaluarea economică a intervențiilor, prin analiza cost–beneficiu și estimarea perioadei de recuperare a investiției;
+    - formularea de recomandări pentru autoritățile locale, asociațiile de proprietari și factorii de decizie.
+
+    Din aceste obiective decurg întrebările de cercetare la care lucrarea încearcă să răspundă:
+
+    1. În ce măsură reabilitarea termică reduce consumul real de energie al blocurilor din Iași, raportat la estimările teoretice?
+    2. Care dintre tipurile de intervenții (fațadă, tâmplărie, acoperiș) aduc cea mai semnificativă contribuție la economiile de energie?
+    3. Care este perioada de recuperare a investiției și în ce condiții aceasta este acceptabilă pentru proprietari?
+    4. Ce factori nontechnici — comportamentul utilizatorilor, calitatea execuției, modificarea regimului de temperatură — influențează rezultatele obținute?
+
+    ## Ipoteza de lucru
+
+    Pornind de la literatura de specialitate și de la datele disponibile la nivel național, lucrarea pornește de la următoarea ipoteză: reabilitarea termică completă (fațadă, tâmplărie, acoperiș) a blocurilor construite în perioada 1960–1990 din Iași determină o reducere a consumului de energie termică cu 30–50%, însă economiile reale sunt frecvent inferioare celor estimate teoretic, din cauza comportamentului utilizatorilor (majorarea temperaturii interioare după reabilitare, denumit în literatura de specialitate „efect de revenire"), a calității variabile a execuției și a punților termice reziduale. Verificarea acestei ipoteze pe cazuri concrete din Iași constituie nucleul analizei empirice a lucrării.
+
+    ## Delimitarea temei
+
+    Pentru a asigura profunzimea analizei, tema a fost delimitată atât spațial, cât și tematic. Din punct de vedere spațial, cercetarea se concentrează exclusiv asupra municipiului Iași, fără a extinde concluziile asupra altor localități, cu recunoașterea explicită a faptului că anumite constatări pot fi transferabile, cu precauție, unor orașe cu caracteristici similare. Din punct de vedere tematic, lucrarea se axează pe impactul asupra consumului de energie termică (încălzire și, unde este cazul, preparare apă caldă menajeră), fără a aborda în detaliu aspectele legate de consumul de energie electrică, de confortul acustic sau de estetica urbană, care sunt menționate doar în măsura în care intervin în analiza principală. De asemenea, nu fac obiectul lucrării aspectele de finanțare publică detaliată sau de analiză juridică a programelor de reabilitare, acestea fiind tratate doar în măsura în care contextul o impune.
+
+    ## Structura lucrării
+
+    Pentru atingerea obiectivelor formulate, lucrarea este organizată în cinci capitole, completate de concluzii, bibliografie și anexe.
+
+    **Capitolul 1**, cel de-al doilea din structura efectivă a lucrării după prezenta introducere, intitulat „Fundamente teoretice, legislative și caracterizarea parcului rezidențial din Iași", prezintă conceptele-cheie ale domeniului (eficiență energetică, coeficient de transfer termic, punți termice, clasa energetică), cadrul legislativ național și european aplicabil, principalele metode de reabilitare termică utilizate în practică, precum și caracterizarea parcului rezidențial colectiv din municipiul Iași, structurat pe perioade de construcție și tipologii de blocuri.
+
+    **Capitolul 2** („Metodologia cercetării și prezentarea studiului de caz") descrie metodologia utilizată: criteriile de selecție a blocurilor analizate, sursele de date (consumurile furnizate de operatorii de energie, certificatele energetice, chestionarele aplicate asociațiilor de proprietari) și limitările metodologice asumate.
+
+    **Capitolul 3** („Analiza rezultatelor") prezintă rezultatele analizei comparative a consumurilor înainte și după reabilitare, impactul diferențiat pe tipuri de intervenții, factorii de influență identificați și analiza cost–beneficiu a investițiilor.
+
+    **Capitolul 4** („Discuții, propuneri și concluzii") interpretează rezultatele în raport cu literatura de specialitate, identifică barierele financiare, administrative și organizatorice întâmpinate în procesul de reabilitare, formulează recomandări pentru actorii implicați și sintetizează concluziile principale ale cercetării, împreună cu limitările acesteia și cu direcțiile posibile de continuare.
+
+    Prin această structurare, lucrarea își propune să ofere nu doar o radiografie a situației actuale a blocurilor din Iași, ci și un instrument util de fundamentare a deciziilor viitoare în domeniul reabilitării termice, într-un moment în care, cu fonduri europene semnificative disponibile prin Planul Național de Redresare și Reziliență, orașul se află la o răscruce importantă în procesul de modernizare a locuințelor sale.
+
+    ---
+
+    Cam 1200 de cuvinte. Câteva observații:
+
+    - Am lăsat intenționat ipoteza cu intervalul 30–50% — ajustează-l după datele reale pe care le vei avea.
+    - Am folosit Legea 372/2005 (cea corectă pentru performanța energetică a clădirilor), nu Legea 196/2018 din planul anterior — verifică ce legislație vrei să citezi și armonizează cu planul.
+    - Paragraful despre „structura lucrării" presupune numerotarea capitolelor din planul cu 5 capitole (introducerea nefiind contorizată). Dacă profesorul numără introducerea ca Capitolul 1, spune-mi și reformulez.
+
+    Vrei să ajustez tonul (mai formal/mai puțin formal) sau să scurtez/extind vreo secțiune?
+- user: |
+    e prea generala. baga si datele astea despre Iasi:
+
+    ```
+    Fond locativ Iasi (2021): 152.400 locuinte, din care 71% in blocuri
+    Blocuri construite 1960-1990: 78% din blocuri
+    Blocuri reabilitate termic pana in 2023: aprox. 31%
+    Consum mediu bloc nereabilitat: 160-190 kWh/m2/an (incalzire)
+    Consum mediu dupa reabilitare: 85-105 kWh/m2/an
+    ```
+  assistant: |
+    # Introducere
+
+    Reabilitarea termică a clădirilor de locuințe colective a devenit, în ultimele decenii, una dintre cele mai importante direcții de acțiune în politicile de dezvoltare urbană durabilă din Europa. În contextul în care sectorul rezidențial este responsabil pentru o pondere semnificativă din consumul total de energie al Uniunii Europene, iar obiectivele Pactului Verde European impun reduceri drastice ale emisiilor de gaze cu efect de seră până în 2050, eficiența energetică a clădirilor existente reprezintă o prioritate incontestabilă. România nu face excepție de la această tendință, iar orașele cu un parc imobil vechi, precum Iași, se confruntă cu provocări specifice legate de modernizarea locuințelor construite în perioada comunistă.
+
+    Prezenta disertație, intitulată „Reabilitarea termică a blocurilor din Iași: impactul asupra consumului de energie", își propune să analizeze efectele intervențiilor de reabilitare termică asupra consumului de energie al blocurilor de locuințe din municipiul Iași, oferind o perspectivă aplicată, susținută de date reale, asupra eficienței acestor investiții.
+
+    ## Motivația alegerii temei
+
+    Alegerea acestei teme se fundamentează pe mai multe argumente, de natură diferită, care converg spre același punct: actualitatea și relevanța problemei cercetate.
+
+    Un prim argument este de natură statistică și socială. Municipiul Iași, al doilea centru urban al României, dispune de un fond locativ de aproximativ 152.400 de locuințe (date din 2021), din care circa 71% se află în blocuri de locuințe colective. Este o structură tipică orașelor mari românești dezvoltate în perioada industrializării forțate: majoritatea acestor blocuri — 78% din total — au fost construite între 1960 și 1990, în sistemul de proiectare și execuție specific economiei centralizate. Aceste clădiri — de tipurile OT/RSc, T744, T766, 1340 sau 1350 — au fost proiectate cu cerințe termice mult mai permisive decât standardele actuale, folosind materiale cu performanțe scăzute (betoane celulare, zidărie de cărămidă fără izolație, tâmplărie din lemn sau aluminiu fără sticlă termoizolantă). Ca urmare, un număr semnificativ dintre aceste clădiri se încadrează în clasele energetice inferioare (D, E, F), cu consumuri anuale pentru încălzire care, în cazul blocurilor nereabilitate, se situează în intervalul 160–190 kWh/m²an — valori care depășesc cu mult pragurile recomandate de standardele europene. La nivelul unui oraș întreg, acest lucru se traduce prin costuri ridicate suportate de locatari, prin disconfort termic — supraîncălzire vara, pierderi de căldură iarna — și prin degradarea accelerată a fațadelor.
+
+    Un al doilea argument este de natură legislativă și instituțională. România a transpus în legislația națională cerințele europene privind performanța energetică a clădirilor, prin Legea nr. 372/2005 privind performanța energetică a clădirilor, republicată, și prin acte normative conexe, iar în ultimii ani au fost derulate programe naționale de finanțare a reabilitării termice, precum Programul Național pentru Eficientizarea Blocurilor de Locuințe. Municipiul Iași a fost unul dintre orașele active în accesarea acestor fonduri. Totuși, ritmul intervențiilor rămâne insuficient raportat la dimensiunea problemei: până în 2023, doar aproximativ 31% din blocurile municipiului fuseseră reabilitate termic. Cu alte cuvinte, aproape șapte din zece blocuri din Iași mai așteaptă intervenția, ceea ce face ca evaluarea riguroasă a eficienței reabilitărilor deja realizate să fie nu doar un exercițiu academic, ci un instrument practic de fundamentare a deciziilor viitoare — cu atât mai mult cu cât fonduri europene semnificative sunt disponibile în prezent prin Planul Național de Redresare și Reziliență.
+
+    Un al treilea argument este de natură științifică. Deși literatura de specialitate românească și internațională abordează pe larg problematica eficienței energetice a clădirilor, există relativ puține studii de caz care cuantifică, pe baza consumurilor reale măsurate înainte și după intervenție, impactul reabilitării termice la nivelul unui oraș specific. Multe dintre estimările disponibile se bazează pe calcule teoretice sau pe date agregate la nivel național, care nu surprind particularitățile locale — climatul specific Iașului, structura parcului imobil, comportamentul consumatorilor, calitatea execuției lucrărilor. Lucrarea de față încearcă să contribuie la umplerea acestui gol, prin analiza comparativă a unui eșantion de blocuri reabilitate și nereabilitate din municipiul Iași.
+
+    În fine, un argument de ordin personal: tema se înscrie în domeniul de specializare al programului de master urmat și îmi permite să aplic cunoștințele acumulate într-o analiză aplicată, cu relevanță directă pentru comunitatea locală în care trăiesc.
+
+    ## Obiectivele și întrebările de cercetare
+
+    Obiectivul general al lucrării constă în evaluarea impactului reabilitării termice asupra consumului de energie al blocurilor de locuințe colective din municipiul Iași. Acest obiectiv general se descompune în mai multe obiective specifice:
+
+    - identificarea și caracterizarea principalelor tipuri de blocuri din Iași, din perspectiva performanței termice inițiale;
+    - prezentarea metodelor de reabilitare termică aplicate în practică (izolarea fațadelor, înlocuirea tâmplăriei, izolarea acoperișurilor și a planșeelor peste subsol) și a cadrului legislativ și instituțional care le reglementează;
+    - analiza comparativă a consumurilor de energie înainte și după reabilitare, exprimate în indicatori normalizați (kWh/m²an);
+    - evaluarea economică a intervențiilor, prin analiza cost–beneficiu și estimarea perioadei de recuperare a investiției;
+    - formularea de recomandări pentru autoritățile locale, asociațiile de proprietari și factorii de decizie.
+
+    Din aceste obiective decurg întrebările de cercetare la care lucrarea încearcă să răspundă:
+
+    1. În ce măsură reabilitarea termică reduce consumul real de energie al blocurilor din Iași, raportat la estimările teoretice?
+    2. Care dintre tipurile de intervenții (fațadă, tâmplărie, acoperiș) aduc cea mai semnificativă contribuție la economiile de energie?
+    3. Care este perioada de recuperare a investiției și în ce condiții aceasta este acceptabilă pentru proprietari?
+    4. Ce factori non-tehnici — comportamentul utilizatorilor, calitatea execuției, modificarea regimului de temperatură — influențează rezultatele obținute?
+
+    ## Ipoteza de lucru
+
+    Pornind de la literatura de specialitate și de la datele disponibile la nivel local, lucrarea pornește de la următoarea ipoteză: reabilitarea termică completă (fațadă, tâmplărie, acoperiș) a blocurilor construite în perioada 1960–1990 din Iași determină o reducere a consumului de energie termică cu 30–50% — adică o coborâre de la intervalul tipic de 160–190 kWh/m²an, caracteristic blocurilor nereabilitate, la aproximativ 85–105 kWh/m²an — însă economiile reale sunt frecvent inferioare celor estimate teoretic, din cauza comportamentului utilizatorilor (majorarea temperaturii interioare după reabilitare, fenomen cunoscut în literatura de specialitate drept „efect de revenire"), a calității variabile a execuției și a punților termice reziduale. Verificarea acestei ipoteze pe cazuri concrete din Iași constituie nucleul analizei empirice a lucrării.
+
+    ## Delimitarea temei
+
+    Pentru a asigura profunzimea analizei, tema a fost delimitată atât spațial, cât și tematic. Din punct de vedere spațial, cercetarea se concentrează exclusiv asupra municipiului Iași, fără a extinde concluziile asupra altor localități, cu recunoașterea explicită a faptului că anumite constatări pot fi transferabile, cu precauție, unor orașe cu caracteristici similare. Din punct de vedere tematic, lucrarea se axează pe impactul asupra consumului de energie termică (încălzire și, unde este cazul, prepararea apei calde menajere), fără a aborda în detaliu aspectele legate de consumul de energie electrică, de confortul acustic sau de estetica urbană, care sunt menționate doar în măsura în care intervin în analiza principală. De asemenea, nu fac obiectul lucrării analizele detaliate de finanțare publică sau de natură juridică a programelor de reabilitare, acestea fiind tratate doar în măsura în care contextul o impune.
+
+    ## Structura lucrării
+
+    Pentru atingerea obiectivelor formulate, lucrarea este organizată în cinci capitole, completate de concluzii, bibliografie și anexe.
+
+    **Capitolul 1**, intitulat „Fundamente teoretice, legislative și caracterizarea parcului rezidențial din Iași", prezintă conceptele-cheie ale domeniului (eficiență energetică, coeficient de transfer termic, punți termice, clasa energetică), cadrul legislativ național și european aplicabil, principalele metode de reabilitare termică utilizate în practică, precum și caracterizarea parcului rezidențial colectiv din municipiul Iași — 152.400 de locuințe, din care 71% în blocuri, construite în proporție de 78% în intervalul 1960–1990 — structurat pe perioade de construcție și tipologii de blocuri.
+
+    **Capitolul 2** („Metodologia cercetării și prezentarea studiului de caz") descrie metodologia utilizată: criteriile de selecție a blocurilor analizate, sursele de date (consumurile furnizate de operatorii de energie, certificatele energetice, chestionarele aplicate asociațiilor de proprietari) și limitările metodologice asumate.
+
+    **Capitolul 3** („Analiza rezultatelor") prezintă rezultatele analizei comparative a consumurilor înainte și după reabilitare — de la intervalul 160–190 kWh/m²an la 85–105 kWh/m²an în cazul intervențiilor complete —, impactul diferențiat pe tipuri de intervenții, factorii de influență identificați și analiza cost–beneficiu a investițiilor.
+
+    **Capitolul 4** („Discuții, propuneri și concluzii") interpretează rezultatele în raport cu literatura de specialitate, identifică barierele financiare, administrative și organizatorice care explică de ce doar 31% din blocuri au fost reabilitate până în 2023, formulează recomandări pentru actorii implicați și sintetizează concluziile principale ale cercetării, împreună cu limitările acesteia și cu direcțiile posibile de continuare.
+
+    Prin această structurare, lucrarea își propune să ofere nu doar o radiografie a situației actuale a blocurilor din Iași, ci și un instrument util de fundamentare a deciziilor viitoare în domeniul reabilitării termice, într-un moment în care, cu fonduri europene semnificative disponibile, orașul se află la o răscruce importantă în procesul de modernizare a celor aproximativ 108.000 de locuințe din blocuri care încă așteaptă intervenția.
+
+    ---
+
+    Am integrat toate cele cinci date: fondul locativ (152.400 locuințe, 71% în blocuri) și ponderea blocurilor din 1960–1990 (78%) în motivație și în descrierea capitolului 1, procentul de reabilitare (31%) în motivație și în capitolul 4, iar intervalele de consum (160–190 și 85–105 kWh/m²an) în ipoteză, în capitolul 3 și în paragraful final. Am calculat și ~108.000 de locuințe în blocuri nereabilitate (152.400 × 71% × 69%) — verifică tu cifra dacă vrei să o păstrezi. Vrei și ajustări de ton sau de lungime?
+- user: |
+    rezuma-mi articolul asta, il citez in capitolul 1:
+
+    ```
+    Abstract. We analyse metered heating consumption in 214 multi-family buildings in three Romanian cities before and after thermal retrofitting under the national programme (2009-2019). Retrofitting reduced normalised heating demand by 38% on average (median 41%), with the largest reductions in buildings with the highest pre-retrofit consumption. Savings were lower than the 50-60% predicted by the energy audits; the gap was largest where only facades were insulated and windows were left unchanged. Buildings with individual heat cost allocators showed 9 percentage points higher savings than those billed per square metre. We conclude that audit-based predictions overestimate savings and recommend post-retrofit monitoring as a condition for funding.
+    ```
+  assistant: |
+    Iată rezumatul:
+
+    ## Rezumat
+
+    Studiul analizează consumul real de energie termică (măsurat) în 214 blocuri de locuințe colective din trei orașe românești, înainte și după reabilitarea termică realizată prin programul național, în perioada 2009–2019. Principalele concluzii:
+
+    - **Reducerea medie a consumului normalizat de încălzire a fost de 38%** (mediana 41%), cele mai mari economii înregistrându-se la blocurile cu cel mai ridicat consum inițial.
+    - **Economiile reale au fost mai mici decât cele estimate de auditurile energetice** (care prognozau 50–60%). Diferența a fost cea mai mare în cazul blocurilor unde s-a izolat doar fațada, fără înlocuirea tâmplăriei.
+    - **Modul de facturare contează**: blocurile cu repartitoare individuale de costuri au avut economii cu 9 puncte procentuale mai mari decât cele facturate pe metru pătrat.
+    - Autorii concluzionează că **estimările bazate pe audituri supraestimează economiile** și recomandă ca monitorizarea post-reabilitare să devină condiție pentru acordarea finanțării.
+
+    ## Cum îl poți folosi în Capitolul 1
+
+    E un articol foarte potrivit pentru tine — validează direct ipoteza ta despre diferența dintre estimările teoretice și economiile reale. Exemplu de integrare:
+
+    > „Studii empirice recente realizate pe parcursul programului național de reabilitare confirmă această discrepanță: analiza a 214 blocuri din trei orașe românești (2009–2019) a arătat o reducere medie a consumului de încălzire de doar 38%, față de 50–60% prognozate de auditurile energetice, diferența fiind amplificată în cazul intervențiilor parțiale (izolarea fațadei fără înlocuirea tâmplăriei) și atenuată acolo unde existau repartitoare individuale de costuri (Autorii, An)."
+
+    Două observații:
+
+    - Abstractul nu dă numele autorilor, revistei sau anului — îmi poți trimite pagina titlului, ca să-ți fac și referința bibliografică completă (format APA sau alt stil, cum cere facultatea).
+    - Atenție la o nuanță utilă pentru lucrarea ta: intervalul de 38% din studiu e puțin sub ipoteza ta de 30–50%, dar compatibilă cu ea — merită să menționezi asta în discuții, ca să arăți că ipoteza ta e ancorată în date.
+- user: |
+    inca unul:
+
+    ```
+    Abstract. The rebound effect describes the part of expected energy savings that is taken back by changes in occupant behaviour. Using household survey data from 1,150 apartments in Central and Eastern Europe, we find that after thermal retrofit occupants raise indoor temperatures by 1.2-1.8 degrees C on average and heat previously unheated rooms. The resulting direct rebound effect is estimated at 25-35% of the technically possible savings, higher in low-income households that under-heated before the retrofit. We argue that this "rebound" partly reflects improved thermal comfort and reduced energy poverty, and should not be treated purely as a loss.
+    ```
+  assistant: |
+    Iată rezumatul:
+
+    ## Rezumat
+
+    Studiul analizează „efectul de revenire" (rebound effect) — partea din economiile de energie așteptate care este „recuperată" prin schimbări în comportamentul ocupanților — pe baza datelor de anchetă din 1.150 de apartamente din Europa Centrală și de Est. Principalele concluzii:
+
+    - **După reabilitarea termică, ocupanții cresc temperatura interioară cu 1,2–1,8°C în medie** și încep să încălzească și camerele care înainte rămâneau neîncălzite.
+    - **Efectul de revenire direct este estimat la 25–35% din economiile tehnic posibile**, fiind mai pronunțat la gospodăriile cu venituri mici, care înainte de reabilitare se încălzeau insuficient.
+    - Argumentul central al autorilor: acest „rebound" **nu trebuie tratat pur și simplu ca o pierdere**, ci reflectă parțial o îmbunătățire reală a confortului termic și o reducere a sărăciei energetice.
+
+    ## Cum îl poți folosi în Capitolul 1
+
+    E complementar perfect cu articolul precedent — primul documentează decalajul dintre estimări și realitate, iar acesta explică unul dintre mecanismele care îl produc. Se leagă direct de ipoteza ta despre „efectul de revenire". Exemplu de integrare:
+
+    > „Un mecanism important prin care economiile reale rămân în urma celor estimate este comportamentul ocupanților. Cercetări realizate pe 1.150 de apartamente din Europa Centrală și de Est arată că, după reabilitarea termică, locatarii își majorează temperatura interioară cu 1,2–1,8°C și încep să încălzească spații anterior neîncălzite, efectul de revenire rezultat fiind estimat la 25–35% din economiile tehnic posibile (Autori, An). Autorii subliniază însă că acest fenomen nu trebuie interpretat exclusiv ca o pierdere de eficiență, ci și ca o creștere a confortului termic și o reducere a sărăciei energetice — o nuanță relevantă pentru evaluarea socială a programelor de reabilitare."
+
+    Observații:
+
+    - Ultima parte (despre sărăcia energetică) e valoroasă și pentru Capitolul 4 (discuții) — îți dă o perspectivă critică, nu doar tehnică, ceea ce profesorii apreciază.
+    - La fel ca la articolul anterior, îmi trebuie pagina de titlu pentru referința bibliografică completă.
+    - Atenție la o posibilă confuzie: acest studiu e pe Europa Centrală și de Est în general, nu pe România — formulează-l ca „studii regionale", nu ca date românești, ca să nu te acuze nimeni de citare incorectă.
+- user: |
+    care e diferenta intre cele doua ca rezultate? le pun fata in fata in lucrare
+  assistant: |
+    Bună idee de comparație — cele două studii se completează foarte bine. Iată diferențele esențiale:
+
+    ## Comparație directă
+
+    | Criteriu | Articolul 1 (214 blocuri, România) | Articolul 2 (1.150 apartamente, Europa Centrală și de Est) |
+    |---|---|---|
+    | **Ce măsoară** | Economia reală de energie, măsurată (consum înainte/după) | Comportamentul ocupanților și efectul de revenire |
+    | **Rezultat central** | Reducere medie de 38% (mediană 41%) față de 50–60% prognozate | Rebound de 25–35% din economiile tehnic posibile |
+    | **Unitate de analiză** | Blocul (clădirea) | Apartamentul (gospodăria) |
+    | **Date** | Consumuri măsurate, 2009–2019 | Anchete (chestionare) la gospodării |
+    | **Explicația decalajului** | Intervenții parțiale (fațadă fără tâmplărie), calitatea execuției | Creșterea temperaturii cu 1,2–1,8°C, încălzirea camerelor neîncălzite |
+    | **Factor care îmbunătățește rezultatele** | Repartitoare individuale (+9 puncte procentuale) | — |
+    | **Concluzie de politică publică** | Monitorizare post-reabilitare ca condiție de finanțare | Rebound-ul nu e doar pierdere, ci și confort câștigat / reducerea sărăciei energetice |
+
+    ## Cum se leagă matematic (util pentru lucrare)
+
+    Cele două rezultate sunt, de fapt, coerente între ele. Dacă auditurile prognozau 50–60% economii, iar rebound-ul „mănâncă" 25–35% din economiile tehnic posibile, atunci economiile reale așteptate sunt:
+
+    - 50% × (1 − 0,30 în medie) ≈ **35%**
+    - 60% × (1 − 0,30) ≈ **42%**
+
+    Adică exact în jurul valorii de **38–41%** măsurate de primul studiu. Deci rebound-ul explică o mare parte din decalajul documentat de primul articol — restul se explică prin intervențiile parțiale și calitatea execuției.
+
+    ## Cum le poți prezenta fata în față
+
+    În Capitolul 1 (sau în discuții), poți scrie ceva de genul:
+
+    > „Cercetările empirice oferă o imagine coerentă asupra decalajului dintre estimări și rezultate. Pe de o parte, analiza a 214 blocuri din România arată economii reale de 38%, față de 50–60% prognozate (Articolul 1). Pe de altă parte, studiile comportamentale la nivel regional explică acest decalaj: ocupanții își majorează temperatura cu 1,2–1,8°C după reabilitare, efectul de revenire reprezentând 25–35% din economiile tehnic posibile (Articolul 2). Combinate, cele două rezultate sugerează că rebound-ul comportamental explică o parte substanțială a diferenței, restul fiind atribuibil intervențiilor parțiale și calității execuției."
+
+    ## O nuanță importantă de menționat
+
+    Cele două studii au perspective diferite asupra aceluiași fenomen: primul e **tehnic-economic** (rebound-ul = pierdere de eficiență, trebuie monitorizat), al doilea e **socio-comportamental** (rebound-ul = confort câștigat, nu doar pierdere). Această tensiune interpretativă e excelentă pentru Capitolul 4 — îți dă material de discuție critică și arată că stăpânești literatura.
+
+    Atenție totuși la o limită a comparației: unitățile de analiză diferă (bloc vs. apartament) și eșantioanele nu sunt identice (România vs. regiune), deci nu poți face o corelație strictă între cifre — prezintă-le ca „imagini complementare", nu ca piese ale aceluiași calcul.
+- user: |
+    cum explic efectul de rebound in 2 paragrafe pe intelesul comisiei?
+  assistant: |
+    Iată explicația în două paragrafe, pe înțelesul comisiei:
+
+    ---
+
+    Efectul de revenire (rebound effect) apare atunci când o parte din economiile de energie generate de reabilitarea termică este „consumată" de schimbarea comportamentului locatarilor. Explicația este simplă: înainte de reabilitare, mulți locatari se încălzeau insuficient, tocmai pentru că pierderile de căldură făceau încălzirea scumpă și ineficientă — tolerau temperaturi scăzute, închideau radiatoarele în camerele mai puțin folosite, purtau haine groase în apartament. După izolarea blocului, aceeași sumă de bani cumpără acum mult mai multă căldură, iar locatarii își ajustează în consecință comportamentul: cresc temperatura interioară (studiile regionale indică o creștere medie de 1,2–1,8°C) și încep să încălzească și camerele care înainte rămâneau reci. Astfel, clădirea pierde mai puțină căldură, dar consumă mai multă energie decât ar sugera calculele teoretice, care presupun comportamentul constant al utilizatorilor. Practic, o parte din câștigul de eficiență este „returnat" sub formă de confort suplimentar, nu sub formă de economie bănească.
+
+    Este important de subliniat că acest efect nu trebuie interpretat exclusiv ca o deficiență a programelor de reabilitare. Pentru gospodăriile care înainte trăiau la temperaturi sub standardul de confort, majorarea consumului după reabilitare înseamnă, de fapt, ieșirea dintr-o situație de sărăcie energetică — locuința devine în sfârșit sănătoasă și confortabilă, ceea ce este unul dintre obiectivele sociale ale reabilitării. Cu toate acestea, efectul de revenire are consecințe practice importante pentru evaluarea programelor: el explică de ce economiile reale măsurate (de exemplu, cele de 38% documentate în studiile românești) rămân în urma estimărilor din auditurile energetice (50–60%), motiv pentru care lucrarea de față îl include explicit în ipoteza de cercetare și în interpretarea rezultatelor.
+
+    ---
+
+    Primul paragraf explică mecanismul (ce se întâmplă și de ce), al doilea îl plasează în contextul lucrării tale (de ce contează și cum îl folosești). Dacă vrei, pot face o variantă mai scurtă, de un paragraf, pentru cazul în care spațiul din Capitolul 1 e limitat.
+- user: |
+    citari: facultatea cere APA 7. cum citez un raport ANRE din 2022 de pe site-ul lor?
+  assistant: |
+    În APA 7, un raport al unei organizații de pe site se citează așa:
+
+    ## Referința bibliografică (lista finală)
+
+    **Format general:**
+
+    > Organizație. (An). *Titlul raportului* (dacă există număr de raport, se adaugă între paranteze). Editură/Organizație. URL
+
+    **Exemplu concret pentru ANRE:**
+
+    > Autoritatea Națională de Reglementare în Domeniul Energiei. (2022). *Raport privind rezultatele activității ANRE în anul 2021*. https://www.anre.ro/...
+
+    **Detalii de care să ții cont:**
+
+    - **Autorul este organizația însăși** — se scrie numele complet al instituției, nu „ANRE" la prima trecere în listă. În lista bibliografică poți folosi abrevierea doar dacă e foarte cunoscută, dar varianta sigură e numele complet.
+    - **Titlul se scrie cu italice** (în Word: *cursiv*), doar prima literă cu majusculă (plus nume proprii).
+    - **Data completă**: dacă raportul are zi/lună exactă (ex. publicat pe 15 martie 2022), APA 7 permite: (2022, 15 martie). Pentru rapoarte anuale, anul simplu e suficient.
+    - **URL-ul se scrie complet**, fără „Retrieved from" și fără punct final după link.
+    - Dacă raportul are un număr (ex. „Raport nr. 15/2022"), se pune după titlu: *Titlu* (Raport nr. 15/2022).
+
+    ## Citarea în text
+
+    **Parafrazare:**
+
+    > Consumul de energie termică a înregistrat o scădere semnificativă (Autoritatea Națională de Reglementare în Domeniul Energiei [ANRE], 2022).
+
+    La prima citare se dă numele complet + abrevierea între paranteze pătrate, apoi la citările următoare poți folosi doar:
+
+    > (ANRE, 2022)
+
+    **Citat direct (cu pagină sau secțiune):**
+
+    > (ANRE, 2022, p. 27) — sau, dacă raportul nu are pagini: (ANRE, 2022, secțiunea 3.2)
+
+    ## Observație practică
+
+    Dacă citezi mai multe documente ANRE din același an (raport anual + raport de monitorizare, de exemplu), APA 7 cere să le distingi cu litere mici după an: (ANRE, 2022a), (ANRE, 2022b), în ordinea alfabetică a titlurilor — și în lista bibliografică la fel.
+
+    Dacă îmi dai titlul exact al raportului și URL-ul, îți scriu referința gata formată, pe care o copiezi direct în bibliografie.
+- user: |
+    si un articol de revista cu 6 autori?
+  assistant: |
+    În APA 7, pentru articole cu până la 20 de autori, **îi listezi pe toți** în lista bibliografică — nu se mai folosește regula veche de „primii 6 + et al." din APA 6.
+
+    ## Referința bibliografică (lista finală)
+
+    **Format general:**
+
+    > Autor, A. A., Autor, B. B., Autor, C. C., Autor, D. D., Autor, E. E., & Autor, F. F. (An). Titlul articolului. *Numele Revistei, Volumul*(Număr), pagini. https://doi.org/xxxx
+
+    **Exemplu concret:**
+
+    > Popescu, I., Ionescu, M., Georgescu, A., Dumitrescu, E., Stan, V., & Radu, C. (2022). Evaluarea eficienței energetice a blocurilor reabilitate termic. *Revista de Instalații, 18*(3), 45–58. https://doi.org/10.xxxx/xxxxx
+
+    **Detalii de care să ții cont:**
+
+    - **Toți cei 6 autori** se trec, în ordinea din articol, separați prin virgulă; înaintea ultimului se pune **&** (ampersand), nu „și".
+    - Numele de familie + inițialele prenumelor (Popescu, I.), nu prenumele întregi.
+    - **Titlul articolului** — normal, doar prima literă cu majusculă; **numele revistei și volumul** — cu italice.
+    - Dacă articolul are DOI, se pune la final ca link (https://doi.org/...), fără punct după el. Dacă nu are DOI, dar e online, pui URL-ul.
+
+    ## Citarea în text
+
+    Aici e simplu: de la **3 autori în sus, APA 7 folosește „et al." de la prima citare**:
+
+    > (Popescu et al., 2022)
+
+    sau în frază:
+
+    > Popescu et al. (2022) au arătat că...
+
+    **Citat direct:**
+
+    > (Popescu et al., 2022, p. 51)
+
+    ## Excepție de știut
+
+    Regula „toți autorii în listă" se aplică până la 20 de autori. Dacă un articol are **21+ autori**, atunci listezi primii 19, puneti puncte de suspensie (...), apoi ultimul autor. Nu e cazul tău cu 6, dar e bine să știi dacă întâlnești studii mari de tip meta-analiză.
+
+    Dacă îmi dai datele articolului (autori, an, titlu, revistă, volum, pagini, DOI), ți-l formatez gata pus în bibliografie.
+- user: |
+    un calcul pt studiul de caz: bloc cu 40 de apartamente, suprafata utila incalzita 2.900 m2, consum inainte 182 kWh/m2/an, dupa 96 kWh/m2/an. pretul energiei termice la populatie e cam 0,45 lei/kWh. cat se economiseste pe an?
+  assistant: |
+    Iată calculul pas cu pas, gata de pus în lucrare:
+
+    ## Date de intrare
+
+    | Parametru | Valoare |
+    |---|---|
+    | Apartamente | 40 |
+    | Suprafață utilă încălzită | 2.900 m² |
+    | Consum înainte | 182 kWh/m²/an |
+    | Consum după | 96 kWh/m²/an |
+    | Preț energie termică | 0,45 lei/kWh |
+
+    ## Pasul 1. Reducerea specifică de consum
+
+    182 − 96 = **86 kWh/m²/an**
+
+    În procente: 86 / 182 = **47,3%** reducere — se încadrează în ipoteza ta de 30–50%, chiar în partea superioară a intervalului.
+
+    ## Pasul 2. Economia totală de energie pe an
+
+    86 kWh/m²/an × 2.900 m² = **249.400 kWh/an**
+
+    ## Pasul 3. Economia financiară anuală
+
+    249.400 kWh/an × 0,45 lei/kWh = **112.230 lei/an**
+
+    ## Pasul 4. Raportat la apartament (util pentru discuție)
+
+    112.230 lei / 40 apartamente ≈ **2.806 lei/apartament/an**, adică circa **234 lei/lună** economisiți în medie de fiecare apartament (media pe an, cu consum concentrat în sezonul rece).
+
+    ## Formulare pentru lucrare
+
+    > „În cazul blocului analizat, reabilitarea termică a determinat reducerea consumului specific de la 182 la 96 kWh/m²an (−47,3%), ceea ce corespunde unei economii anuale de aproximativ 249.400 kWh. La prețul de 0,45 lei/kWh al energiei termice, aceasta se traduce printr-o economie financiară de circa 112.230 lei pe an, echivalentul a aproximativ 2.800 de lei per apartament anual."
+
+    ## Două observații utile pentru analiză
+
+    1. **Pentru perioada de recuperare a investiției** (analiza cost–beneficiu din Capitolul 3): dacă afli costul total al reabilitării (de obicei 250–400 lei/m² suprafață construită desfasurată, sau poți lua factura de la asociație), împarți 112.230 lei la acel cost. Atenție: în programele naționale, proprietarii plătesc doar o fracțiune (de regulă 10–20%) din investiție, deci perioada de recuperare *pentru proprietari* e mult mai scurtă decât cea *socială* — merită să le prezinți separat, e un punct care impresionează comisia.
+
+    2. **Prețul de 0,45 lei/kWh e sub costul real de producție** (subvenționat). Poți menționa că, la prețul plătit de furnizor, economiile sociale ar fi mai mari — iar dacă prețul crește, perioada de recuperare se scurtează. Poți face o analiză de sensibilitate cu 2–3 scenarii de preț (0,45 / 0,55 / 0,70 lei/kWh) — un tabel mic de genul acesta arată foarte bine în fața comisiei.
+
+    Vrei să-ți fac tabelul de sensibilitate la preț sau modelul de calcul pentru perioada de recuperare?
+- user: |
+    si in cati ani se recupera investitia daca reabilitarea a costat 1.950.000 lei si 60% a fost finantare nerambursabila?
+  assistant: |
+    Iată calculul, cu ambele perspective — cea socială (costul total) și cea a proprietarilor (ce au plătit efectiv):
+
+    ## Date de intrare
+
+    | Parametru | Valoare |
+    |---|---|
+    | Cost total reabilitare | 1.950.000 lei |
+    | Finanțare nerambursabilă | 60% = 1.170.000 lei |
+    | Contribuție proprietari | 40% = 780.000 lei |
+    | Economie anuală (calculul anterior) | 112.230 lei/an |
+
+    ## Varianta 1. Perioada de recuperare socială (costul total al investiției)
+
+    1.950.000 ÷ 112.230 ≈ **17,4 ani**
+
+    ## Varianta 2. Perioada de recuperare pentru proprietari (contribuția proprie)
+
+    780.000 ÷ 112.230 ≈ **7,0 ani**
+
+    ## Formulare pentru lucrare
+
+    > „Investiția totală în reabilitarea termică a blocului analizat a fost de 1.950.000 lei, din care 60% a fost acoperită din finanțare nerambursabilă, contribuția proprietarilor ridicându-se la 780.000 lei. Raportată la economia anuală de aproximativ 112.230 lei, perioada de recuperare a investiției este de aproximativ 17 ani din perspectiva socială (costul total), respectiv de aproximativ 7 ani din perspectiva proprietarilor. Această diferență subliniază rolul esențial al finanțării publice în viabilitatea economică a proiectelor de reabilitare: fără sprijinul nerambursabil, perioada de recuperare de 17 ani ar depăși durata de viață utilă a unora dintre componentele intervenției (de exemplu, tâmplăria), descurajând proprietarii."
+
+    ## Observații pentru analiză (merită menționate în discuții)
+
+    1. **Cele două perspective sunt ambele legitime, dar spun lucruri diferite.** Cea socială (17 ani) e relevantă pentru autorități și pentru evaluarea programelor publice; cea a proprietarilor (7 ani) explică de ce asociațiile acceptă programul. Faptul că 7 ani e sub durata de viață a măsurilor (30–50 de ani pentru izolația fațadei) face proiectul clar rentabil pentru proprietari.
+
+    2. **Calculul e simplificat — menționează asta ca limitare.** Nu include: creșterea prețului energiei (care ar scurta recuperarea), inflația costurilor, costurile de întreținere ale sistemului (ex. vopsirea fațadei la 15–20 de ani), nici actualizarea (discounting). Dacă vrei să fii riguros, poți adăuga o notă de subsol: „Calculul nu include actualizarea fluxurilor financiare; o analiză cu valoare actualizată netă ar prelungi ușor perioada de recuperare."
+
+    3. **Legătura cu sensibilitatea la preț**: la 0,55 lei/kWh, economia anuală ar fi ~137.170 lei, deci recuperarea socială scade la ~14,2 ani, iar cea a proprietarilor la ~5,7 ani. Dacă faci tabelul de sensibilitate, adaugă și rândul cu perioadele de recuperare — ai într-un singur tabel toată analiza cost–beneficiu.
+
+    Vrei să-ți fac tabelul complet de sensibilitate (preț × economie anuală × cele două perioade de recuperare)?
+- user: |
+    scrie capitolul 2, cadrul legislativ, cam 1500 de cuvinte
+  assistant: |
+    # Capitolul 2. Fundamente teoretice, legislative și caracterizarea parcului rezidențial din Iași
+
+    ## 2.2. Cadrul legislativ al reabilitării termice
+
+    ### 2.2.1. Cadrul european
+
+    Politica Uniunii Europene în domeniul eficienței energetice a clădirilor s-a conturat treptat, începând cu anii 2000, ca răspuns la dubla provocare a dependenței de importurile de energie și a emisiilor de gaze cu efect de seră. Sectorul clădirilor este cel mai mare consumator final de energie din Uniune, fiind responsabil pentru aproximativ 40% din consumul total de energie și pentru circa 36% din emisiile de gaze cu efect de seră, motiv pentru care reglementările europene în acest domeniu au devenit din ce în ce mai exigente.
+
+    Piatra de temelie a acestui cadru a fost **Directiva 2002/91/CE privind performanța energetică a clădirilor (EPBD)**, care a introdus pentru prima dată conceptul de metodologie de calcul a performanței energetice, obligativitatea certificatelor energetice la construire, vânzare sau închiriere a clădirilor și cerința de examinare periodică a centralelor termice. Directiva a fost transpusă în legislația românească prin Legea nr. 372/2005, analizată în continuare.
+
+    **Directiva 2010/31/UE** („recast"-ul EPBD) a consolidat semnificativ cerințele inițiale, stabilind ca toate clădirile noi să fie „clădiri cu consum aproape zero de energie" (nZEB) începând cu 31 decembrie 2020 (cu o derogare de doi ani pentru clădirile publice, din 2019). Mai important pentru tema prezentei lucrări, directiva a introdus obligativitatea statelor membre de a stabili **planuri naționale de renovare a clădirilor existente**, recunoscând explicit că principala provocare nu o reprezintă clădirile noi — care sunt deja reglementate strict — ci fondul construit existent, care se va menține în utilizare decenii de acum înainte.
+
+    **Directiva (UE) 2018/844** de modificare a EPBD a adus o nouă accentuare a reabilitării, obligând statele membre să elaboreze strategii pe termen lung pentru renovarea fondului construit, cu scopul de a decarboniza parcul imobil până în 2050. Pentru România, un stat cu un parc rezidențial vechi și cu rate ridicate de sărăcie energetică, această directivă a avut o importanță deosebită, deoarece a legat explicit eficiența energetică de obiectivele sociale — reducerea sărăciei energetice și îmbunătățirea calității locuirii.
+
+    Cea mai recentă etapă este **Directiva (UE) 2024/1275** (noul EPBD, adoptat în 2024), care impune statele membre să adopte scheme naționale de renovare a clădirilor rezidențiale, cu obiective minime de performanță energetică și cu obligația de a reduce consumul mediu de energie al parcului rezidențial. Deși aplicarea integrală a acestei directive depășește orizontul temporal al studiului de caz din prezenta lucrare, ea confirmă direcția de evoluție a politicii europene: de la reglementarea clădirilor noi la reabilitarea agresivă a fondului existent.
+
+    Pe lângă EPBD, două alte instrumente europene sunt relevante: **Directiva privind eficiența energetică (2012/27/UE, modificată prin 2023/1791)**, care stabilește obiective-cadru de reducere a consumului final de energie, și mecanismele de finanțare — Fondul pentru Modernizare, Fondul de Coeziune și, mai recent, Planul Național de Redresare și Reziliență (PNRR) — care au constituit principala sursă de finanțare nerambursabilă a reabilitărilor termice din România, inclusiv din municipiul Iași.
+
+    ### 2.2.2. Cadrul național: Legea nr. 372/2005
+
+    Transpunerea EPBD în legislația românească s-a realizat prin **Legea nr. 372/2005 privind performanța energetică a clădirilor**, republicată, actul normativ fundamental în domeniu. Legea stabilește cerințele esențiale pe care trebuie să le îndeplinească clădirile, printre care cerința de „economie de energie și izolare termică" ocupă un loc central, și obligă la elaborarea unei metodologii de calcul a performanței energetice a clădirilor.
+
+    Elementele cele mai relevante pentru prezenta lucrare sunt:
+
+    - **Certificatul energetic** — document obligatoriu, întocmit de auditori energetici autorizați, care clasifică clădirea pe o scală de clase energetice (de la A, cea mai performantă, la G). Certificatul energetic este necesar la vânzarea, închirierea, construirea sau finalizarea reabilitării unei clădiri și constituie, în practica studiului de caz, o sursă importantă de date despre starea termică a blocurilor analizate.
+    - **Auditul energetic** — analiza tehnică și economică pe baza căreia se stabilesc măsurile de reabilitare recomandate și se estimează economiile de energie. Așa cum se va arăta în Capitolul 3, decalajul dintre estimările din audituri și consumurile reale măsurate reprezintă unul dintre punctele centrale ale analizei.
+    - **Obligația de a aduce clădirile existente la un nivel minim de performanță** în cazul reabilitărilor majore.
+
+    Aplicarea legii este detaliată de **Indicativul MC 001** (metodologia de calcul a performanței energetice a clădirilor, în versiunile succesive MC 001/2006, MC 001/1-2013 și actualizările ulterioare), care stabilește valorile de referință pentru coeficienții de transfer termic (U) ai elementelor de înveliș, gradul-zile de încălzire (pentru Iași, aproximativ 3.400 °C·zile, unul dintre cele mai ridicate din țară) și indicatorii de consum referențiali. Tot din sfera de aplicare a legii face parte și sistemul de autorizare a auditorilor energetici, gestionat de Ministerul Dezvoltării, Lucrărilor Publice și Administrației.
+
+    ### 2.2.3. Programele naționale de reabilitare termică
+
+    Dacă Legea 372/2005 stabilește „ce" trebuie atins, programele naționale stabilesc „cum" și „cu ce finanțare". Primul program de anvergură a fost lansat prin **Ordonanța de urgență nr. 18/2009 privind creșterea eficienței energetice la blocurile de locuințe**, care a pus bazele mecanismului de finanțare multi-sursă aplicat ulterior: o parte din investiție acoperită din fonduri publice (buget de stat și bugete locale), iar restul suportat de proprietari, prin contribuții lunare colectate de asociațiile de proprietari. Programul a permis reabilitarea a sute de blocuri la nivel național, însă ritmul a fost inegal, iar finanțarea a fost adesea întreruptă de lipsa alocărilor bugetare anuale.
+
+    Un pas important a fost **Legea nr. 196/2018 privind aprobarea Programului național privind creșterea performanței energetice a blocurilor de locuințe**, care a sistematizat cadrul programatic: identificarea blocurilor cu performanță energetică scăzută, prioritizarea intervențiilor, structura finanțării (cu pondere majoritară nerambursabilă) și obligativitatea intervențiilor „de ansamblu" — izolarea învelișului, înlocuirea tâmplăriei, reabilitarea instalațiilor de încălzire — în locul intervențiilor parțiale. Această ultimă cerință răspunde direct uneia dintre concluziile empirice discutate în Capitolul 1: intervențiile parțiale (de exemplu, izolarea fațadei fără înlocuirea tâmplăriei) produc economii mult sub potențial.
+
+    În perioada recentă, finanțarea reabilitărilor a fost dominată de **Planul Național de Redresare și Reziliență (PNRR)**, care alocă fonduri semnificative eficienței energetice a clădirilor publice și rezidențiale, cu cerințe de performanță mai stricte decât programele anterioare (reducerea consumului de energie primară cu minimum 30% pentru clădirile rezidențiale) și cu obligația de a include măsuri de combatere a sărăciei energetice. Pentru municipiul Iași, PNRR reprezintă principala oportunitate de a accelera reabilitarea celor aproximativ 69% din blocuri care nu fuseseră încă intervenite până în 2023.
+
+    ### 2.2.4. Observații critice asupra cadrului legislativ
+
+    Analiza evoluției cadrului legislativ relevă atât progrese, cât și limite cu impact direct asupra rezultatelor reabilitărilor — limite care justifică abordarea empirică a prezentei lucrări.
+
+    În primul rând, cadrul s-a concentrat aproape exclusiv pe **faza de proiectare și finanțare**, neglijând **monitorizarea post-reabilitare**. Legea 372/2005 impune certificarea energetică la finalizarea lucrărilor, dar nu există un mecanism sistematic de verificare a consumurilor reale în anii următori, ceea ce face imposibilă, la nivel de program, evaluarea eficienței reale a investițiilor — exact tipul de evaluare pe care prezenta lucrare o realizează la scara unui studiu de caz.
+
+    În al doilea rând, **estimările din audituri s-au dovedit sistematic optimiste**, după cum documentează studiile citate în Capitolul 1 (economii reale de circa 38% față de 50–60% prognozate). Cadrul legislativ nu include corecții pentru efectul de revenire (rebound) sau pentru calitatea variabilă a execuției, ceea ce duce la așteptări nerealiste ale proprietarilor și, în unele cazuri, la neîncredere în program.
+
+    În al treilea rând, **instabilitatea reglementară și a finanțării** — succesiunea de programe cu reguli diferite (OUG 18/2009, Legea 196/2018, PNRR), întreruperile alocărilor și modificările ponderilor de cofinanțare — a creat costuri administrative ridicate pentru asociațiile de proprietari și pentru autoritățile locale, contribuind la ritmul lent al reabilitării (aproximativ 31% din blocurile din Iași până în 2023).
+
+    În fine, merită remarcat că legislația recentă începe să integreze lecțiile experienței: cerințele PNRR privind intervențiile de ansamblu, măsurile de combatere a sărăciei energetice și, la nivel european, obligația monitorizării din noul EPBD indică o maturizare a cadrului, în sensul în care eficiența energetică nu mai este tratată ca un exercițiu de conformitate tehnică, ci ca un proces măsurabil prin rezultate reale — perspectivă pe care prezenta lucrare o adoptă în analiza studiului de caz din Iași.
+
+    ---
+
+    Cam 1.500 de cuvinte. Câteva avertismente importante înainte de predare:
+
+    1. **Verifică datele legislative la sursă** — am folosit actele normative standard din domeniu (Legea 372/2005, OUG 18/2009, Legea 196/2018, directivele EPBD), dar trebuie să verifici în portalul legislativ (legislatie.just.ro) stadiul actual: modificări recente, republicări, iar pentru MC 001 și PNRR valorile exacte (procentul minim de reducere din PNRR, gradul-zile pentru Iași) — acestea se schimbă și trebuie citate din documentul oficial în vigoare.
+    2. **Gradul-zile pentru Iași** (~3.400 °C·zile) — verifică valoarea exactă din indicativul MC 001 în vigoare înainte de a o păstra.
+    3. **Referințele bibliografice**: directivele europene se citează în APA ca legislație (Directiva (UE) 2018/844 a Parlamentului European și a Consiliului...), iar legile românești conform stilului cerut de facultate — dacă vrei, îți formatez lista completă de referințe pentru acest capitol.
+    4. Dacă profesorul vrea și partea de **concepte teoretice** (coeficient U, punți termice, clase energetice) înainte de cadrul legislativ, spune-mi și o scriu — subcapitolul 2.1 ar fi următorul pas logic.
+- user: |
+    Legea 372/2005 a fost modificata intre timp? mai e in vigoare in forma aia?
+  assistant: |
+    Da, a fost modificată de mai multe ori — și e important să verifici forma actualizată înainte de predare. Ce pot să-ți spun cu încredere:
+
+    ## Ce știu sigur
+
+    - **Legea nr. 372/2005 este încă în vigoare** — nu a fost abrogată, rămâne actul fundamental privind performanța energetică a clădirilor în România.
+    - A suferit **numeroase modificări** de-a lungul anilor, prin diverse ordonanțe de urgență și legi de modificare, iar la un moment dat a fost **republicată** (ultima republicare pe care o cunosc e din 2020, în Monitorul Oficial). De aceea am scris „republicată" în capitol.
+    - Modificările au vizat, printre altele: cerințele pentru clădirile noi (nZEB), regimul certificatelor energetice, sancțiunile pentru neconformare și transpunerea directivelor europene succesive (2010/31/UE, 2018/844).
+
+    ## Ce NU pot să-ți garantez
+
+    Nu am acces în timp real la portalul legislativ, deci nu pot confirma dacă în ultimele luni au apărut modificări noi sau o republicare mai recentă. **Nu cita din memoria mea stadiul exact al legii** — verifică tu, că durează 5 minute:
+
+    ## Cum verifici (exact pentru lucrare)
+
+    1. Intră pe **legislatie.just.ro** (portalul oficial — singura sursă pe care o poți cita ca „forma în vigoare").
+    2. Caută „Legea 372/2005" — portalul îți arată automat **versiunea consolidată în vigoare**, cu toate modificările integrate.
+    3. Verifică antetul: acolo scrie „Republicată" sau „Actualizată la data de..." — folosește exact acea formulare în lucrare.
+    4. Dacă vrei să citezi și istoricul modificărilor, în subsol poți scrie: „Legea nr. 372/2005 privind performanța energetică a clădirilor, publicată în Monitorul Oficial al României, Partea I, nr. 1007 din 28 noiembrie 2005, republicată, cu modificările și completările ulterioare."
+
+    ## Formularea sigură pentru lucrare
+
+    Indiferent ce găsești, formula care nu greșește niciodată este:
+
+    > „Legea nr. 372/2005 privind performanța energetică a clădirilor, **cu modificările și completările ulterioare**"
+
+    Această formulare e standard în lucrări juridice și te protejează: e corectă indiferent câte modificări au intervenit.
+
+    Un sfat bonus: când verifici, uită-te și dacă există **metodologie de aplicare nouă** sau actualizări recente ale **indicativului MC 001** — valorile de referință (coeficienți U, grad-zile) s-au schimbat de-a lungul timpului, iar pentru capitolul tău contează versiunea actuală. Dacă găsești ceva neclar acolo, îmi poți da textul și te ajut să-l interpretezi pentru lucrare.
+- user: |
+    metodologia: fac un chestionar la 120 de locatari din blocuri reabilitate si nereabilitate. fa-mi chestionarul, 15 intrebari
+  assistant: |
+    # Chestionar — Percepția locatarilor asupra reabilitării termice și a consumului de energie
+
+    **Cercetare realizată în cadrul disertației „Reabilitarea termică a blocurilor din Iași: impactul asupra consumului de energie"**
+
+    ---
+
+    *Stimate domn/Stimată doamnă,*
+
+    *Acest chestionar face parte dintr-un studiu academic privind eficiența reabilitării termice a blocurilor din municipiul Iași. Completarea durează aproximativ 5–7 minute. Răspunsurile sunt anonime și confidențiale și vor fi folosite exclusiv în scopuri de cercetare. Nu există răspunsuri corecte sau greșite — ne interesează experiența dumneavoastră reală.*
+
+    *Notă: prin „reabilitare termică" înțelegem izolarea fațadei blocului și/sau înlocuirea tâmplăriei și/sau izolarea acoperișului.*
+
+    ---
+
+    **Secțiunea A. Date generale**
+
+    **1. În ce tip de bloc locuiți?**
+    - ☐ Bloc reabilitat termic
+    - ☐ Bloc nereabilitat termic
+
+    **2. De câți ani locuiți în acest apartament?**
+    - ☐ Mai puțin de 3 ani
+    - ☐ 3–10 ani
+    - ☐ Mai mult de 10 ani
+
+    **3. Câte persoane locuiesc în apartament?**
+    - ☐ 1 ☐ 2 ☐ 3 ☐ 4 sau mai multe
+
+    **4. Care este etajul apartamentului dumneavoastră?**
+    - ☐ Parter ☐ Etaj intermediar ☐ Ultimul etaj
+
+    **5. Cum este asigurat căldura în apartament?**
+    - ☐ Sistem centralizat de încălzire (termoficare)
+    - ☐ Centrală proprie (punct termic / centrală pe gaz)
+    - ☐ Alte surse (electrice etc.)
+
+    **Secțiunea B. Comportamentul de încălzire și consumul**
+
+    **6. Care este temperatura obișnuită din apartamentul dumneavoastră în sezonul rece?**
+    - ☐ Sub 20°C
+    - ☐ 20–22°C
+    - ☐ 23–24°C
+    - ☐ Peste 24°C
+    - ☐ Nu știu / nu am termometru
+
+    **7. Cât de des încălziți toate camerele din apartament în timpul iernii?**
+    - ☐ Întotdeauna
+    - ☐ Doar camerele în care stăm ziua
+    - ☐ Doar una-două camere
+    - ☐ Neregulat, în funcție de posibilități
+
+    **8. Cum apreciați factura dumneavoastră lunară de încălzire în sezonul rece?**
+    - ☐ Foarte mare (reprezintă o povară serioasă pentru buget)
+    - ☐ Mare
+    - ☐ Acceptabilă
+    - ☐ Mică / nesemnificativă
+
+    **Secțiunea C. Confortul termic**
+
+    **9. Cât de mulțumit sunteți de confortul termic al apartamentului în timpul iernii?**
+    (1 = deloc mulțumit, 5 = foarte mulțumit)
+    ☐ 1 ☐ 2 ☐ 3 ☐ 4 ☐ 5
+
+    **10. Ați observat probleme de umezeală sau mucegai pe pereții apartamentului în ultimul an?**
+    - ☐ Da, în mai multe camere
+    - ☐ Da, într-o singură cameră
+    - ☐ Nu
+
+    **11. Cât de mulțumit sunteți de confortul termic al apartamentului în timpul verii (supraîncălzire)?**
+    (1 = deloc mulțumit, 5 = foarte mulțumit)
+    ☐ 1 ☐ 2 ☐ 3 ☐ 4 ☐ 5
+
+    **Secțiunea D. Doar pentru locatarii din blocuri reabilitate**
+
+    **12. Ce lucrări de reabilitare au fost realizate la blocul dumneavoastră?**
+    - ☐ Izolarea fațadei
+    - ☐ Înlocuirea tâmplăriei (ferestre comune/scări)
+    - ☐ Izolarea acoperișului
+    - ☐ Nu știu exact
+
+    **13. După reabilitare, cum s-a modificat factura dumneavoastră de încălzire?**
+    - ☐ A scăzut semnificativ (cu peste 30%)
+    - ☐ A scăzut moderat (10–30%)
+    - ☐ A scăzut puțin (sub 10%)
+    - ☐ A rămas aproximativ la fel
+    - ☐ A crescut
+    - ☐ Nu pot aprecia
+
+    **14. După reabilitare, ați schimbat ceva în modul de încălzire al apartamentului?**
+    - ☐ Da, am crescut temperatura / încălzim mai multe camere decât înainte
+    - ☐ Nu, încălzim la fel ca înainte
+    - ☐ Am scăzut temperatura (ne este acum suficient de cald cu mai puțin)
+
+    **15. Cât de satisfăcut sunteți, în general, de rezultatul reabilitării termice a blocului dumneavoastră?**
+    (1 = deloc satisfăcut, 5 = foarte satisfăcut)
+    ☐ 1 ☐ 2 ☐ 3 ☐ 4 ☐ 5
+
+    *Vă mulțumim pentru timpul acordat!*
+
+    ---
+
+    ## Câteva observații metodologice (pentru subcapitolul de metodologie)
+
+    1. **Întrebarea 1 e de filtrare** — împarte eșantionul în cele două grupuri; întrebările 12–15 se adresează doar grupului reabilitat (menționează asta explicit în metodologie).
+    2. **Întrebările 6, 7 și 14 sunt cele mai valoroase** — măsoară direct efectul de rebound (comportamentul de încălzire), pe care l-ai pus în ipoteză. Întrebarea 14 e practic o măsurare directă a rebound-ului.
+    3. **Întrebarea 13** îți dă percepția economiilor, pe care o poți triangula cu datele reale de consum de la furnizor — dacă percepția și realitatea diverg, e material excelent pentru discuții.
+    4. **Eșantionul de 120**: ideal ar fi ~60 reabilitați / ~60 nereabilitați, aparați pe tip de bloc și zonă. Menționează în metodologie metoda de distribuție (față în față, online, prin administratorii de bloc?).
+    5. **Limitare de declarat**: datele sunt autodeclarate (percepții), nu măsurători — de asta e important să le combini cu consumurile reale de la furnizor.
+
+    Vrei și un model de tabel pentru prezentarea rezultatelor chestionarului sau varianta scurtă (10 întrebări) pentru cazul în care rata de răspuns e o problemă?
+- user: |
+    intrebarea 7 e sugestiva, o reformulezi neutru?
+  assistant: |
+    Ai dreptate — formularea „încălziți toate camerele" sugerează că ar fi normal/sănatos să încălzești tot, ceea ce poate împinge respondenții spre răspunsuri „corecte". Iată o variantă neutră:
+
+    **7. Care camere din apartament sunt încălzite în mod obișnuit în timpul iernii?**
+    - ☐ Toate camerele
+    - ☐ Doar camerele în care activăm ziua (living, bucătărie)
+    - ☐ Doar dormitorul / o parte din camere
+    - ☐ Variază de la o zi la alta
+
+    De ce e neutră:
+
+    - Întreabă **ce se întâmplă de fapt** (fapt descriptiv), nu „cât de des faceți ceva" (care poate fi citit ca evaluare a unui comportament).
+    - Elimină verbul „încălziți" cu sens de acțiune intenționată și descrie starea de fapt („sunt încălzite").
+    - Varianta „variază de la o zi la alta" oferă o ieșire onestă celor cu comportament neregulat, fără să-i eticheteze.
+
+    O alternativă și mai simplă, dacă vrei răspuns binar ușor de tabelat:
+
+    **7. În timpul iernii, camerele din apartament sunt...**
+    - ☐ Încălzite toate
+    - ☐ Încălzite doar în parte
+
+    Recomand prima variantă — păstrează nuanțele, care îți sunt utile la analiza rebound-ului (diferența dintre „toate camerele" și „doar ziua" e exact ceea ce vrei să surprinzi, comparativ între blocuri reabilitate și nereabilitate).
+- user: |
+    am rezultatele:
+
+    ```
+                        multumit de confort   nemultumit   total
+    bloc reabilitat              46                 12         58
+    bloc nereabilitat            27                 35         62
+    total                        73                 47        120
+
+    factura iarna (lei/luna, medie):  reabilitat 312, nereabilitat 468
+    temperatura declarata in casa (C): reabilitat 22.4, nereabilitat 20.1
+    ```
+
+    fa-mi interpretarea
+  assistant: |
+    Iată interpretarea, structurată gata pentru Capitolul 3 (analiza rezultatelor):
+
+    ## 1. Satisfacția față de confortul termic
+
+    Diferența dintre cele două grupuri este netă. În blocurile reabilitate, **46 din 58 de respondeni (79,3%)** se declară mulțumiți de confortul termic, față de doar **27 din 62 (43,5%)** în blocurile nereabilitate — o diferență de aproape 36 de puncte procentuale. Testul chi-pătrat pe tabelul de contingență confirmă că asocierea între statutul de reabilitare și satisfacție este statistic semnificativă (χ² ≈ 16,1; df = 1; p < 0,001), deci diferența nu poate fi atribuită întâmplării la această dimensiune a eșantionului.
+
+    ## 2. Factura de iarnă
+
+    Media auto-declarată a facturii lunare de iarnă este de **312 lei la blocurile reabilitate, față de 468 lei la cele nereabilitate** — o diferență de 156 lei/lună, adică o reducere de circa **33,3%**. Rezultatul este remarcabil de coerent cu literatura citată în Capitolul 1 (studiul pe 214 blocuri românești, care documenta economii reale de 38%) și cu studiul de caz din lucrare (reducere de 47,3% la blocul analizat). Faptul că economia percepută (33%) este mai mică decât cea tehnică posibilă se explică prin rebound — vezi punctul 3.
+
+    ## 3. Temperatura declarată — dovada efectului de revenire
+
+    Locatarii din blocurile reabilitate declară o temperatură interioară medie de **22,4°C, față de 20,1°C** în blocurile nereabilitate — o diferență de **+2,3°C**. Aceasta este o confirmare directă a efectului de revenire: diferența este chiar ușor superioară intervalului de 1,2–1,8°C documentat în literatura regională, ceea ce sugerează că în Iași o parte substanțială din economiile tehnice este „consumată" ca confort suplimentar. Corelând punctele 2 și 3: locatarii plătesc cu 33% mai puțin *în ciuda* faptului că locuiesc la o temperatură cu 2,3°C mai mare — fără reabilitare, menținerea aceleiași temperaturi ar fi costit considerabil mai mult.
+
+    ## Formulare pentru lucrare
+
+    > „Rezultatele chestionarului confirmă ipotezele lucrării. În primul rând, satisfacția față de confortul termic este semnificativ mai ridicată în blocurile reabilitate (79,3% față de 43,5%; χ² = 16,1; p < 0,001). În al doilea rând, factura medie de iarnă este cu aproximativ 33% mai mică în blocurile reabilitate (312 față de 468 lei/lună), valoare compatibilă cu economiile reale documentate în literatura de specialitate (circa 38%), dar inferioară estimărilor din audituri (50–60%). În al treilea rând, temperatura interioară declarată este cu 2,3°C mai ridicată în blocurile reabilitate (22,4 față de 20,1°C), confirmând prezența efectului de revenire: o parte din economiile tehnice este convertită în confort termic suplimentar, nu în reducerea facturilor. Acest rezultat este coerent cu studiul de caz al blocului analizat, unde reducerea consumului specific (47,3%) a depășit reducerea percepută a cheltuielilor."
+
+    ## Limitări de menționat (obligatoriu, comisia le va cere)
+
+    1. **Date autodeclarate**: factura și temperatura sunt percepute, nu măsurate — locatarii rar cunosc consumul exact. Ideal, triangulezi cu consumurile reale de la furnizor (ce ai deja pentru studiul de caz).
+    2. **Temperatura declarată fără măsurători**: subestimează sau supraestimează realul; menționează că e un proxy.
+    3. **Eșantion de conveniență** (probabil): nu e reprezentativ statistic pentru municipiu, rezultatele se generalizează cu precauție.
+    4. **Variabile de control neincluse în tabel**: diferența de factură poate fi influențată și de numărul de persoane, etaj, tip de încălzire — dacă ai aceste date din întrebările 3–5, merită un tabel comparativ între cele două grupuri ca să arăți că eșantioanele sunt comparabile.
+
+    Vrei să-ți fac tabelul comparativ al caracteristicilor eșantionului (etaj, gospodărie, sistem de încălzire) sau graficele pentru prezentare?
+- user: |
+    vreau sa testez legatura intre bloc reabilitat si multumit de confort cu chi-patrat. cum il fac in excel?
+  assistant: |
+    Iată pașii exacți în Excel. Testul se face cu funcția **CHISQ.TEST**, care compară tabelul observat cu cel așteptat.
+
+    ## Pasul 1. Introdu tabelul observat
+
+    | | A | B | C | D |
+    |---|---|---|---|---|
+    | **1** | | Mulțumit | Nemulțumit | Total |
+    | **2** | Reabilitat | 46 | 12 | `=SUMA(B2:C2)` → 58 |
+    | **3** | Nereabilitat | 27 | 35 | `=SUMA(B3:C3)` → 62 |
+    | **4** | Total | `=SUMA(B2:B3)` → 73 | `=SUMA(C2:C3)` → 47 | `=SUMA(D2:D3)` → 120 |
+
+    ## Pasul 2. Calculează tabelul așteptat (sub ipoteza de independență)
+
+    Fiecare celulă așteptată = (totalul rândului × totalul coloanei) / totalul general.
+
+    | | A | B | C |
+    |---|---|---|---|
+    | **6** | Așteptat | Mulțumit | Nemulțumit |
+    | **7** | Reabilitat | `=$D2*B$4/$D$4` → 35,28 | `=$D2*C$4/$D$4` → 22,72 |
+    | **8** | Nereabilitat | `=$D3*B$4/$D$4` → 37,72 | `=$D3*C$4/$D$4` → 24,28 |
+
+    (Scrie formula în B7, apoi trage în dreapta și în jos — referințele mixte fac treaba automat.)
+
+    ## Pasul 3. Calculează p-value
+
+    În orice celulă:
+
+    ```
+    =CHISQ.TEST(B2:C3; B7:C8)
+    ```
+
+    (în funcție de setările Excel, separatorul poate fi virgulă: `=CHISQ.TEST(B2:C3, B7:C8)`)
+
+    Rezultat: **≈ 0,00006**, adică p < 0,001 — asocierea este semnificativă statistic.
+
+    ## Pasul 4 (opțional). Valoarea chi-pătrat propriu-zisă
+
+    CHISQ.TEST îți dă doar p-value; comisia poate vrea și statistica χ². Calculeaz-o astfel:
+
+    - Fă un tabel cu contribuțiile: `=(B2-B7)^2/B7` etc. pentru cele 4 celule, apoi însumează → **χ² ≈ 16,1**
+    - Sau direct, fără tabel intermediar:
+
+    ```
+    =CHISQ.INV.RT(0,00006; 1)
+    ```
+
+    care înapoiază valoarea critică χ² pentru p-ul tău cu 1 grad de libertate (df = (rânduri−1)×(coloane−1) = 1).
+
+    ## Cum raportezi în lucrare
+
+    > χ²(1) = 16,1; p < 0,001
+
+    Deci: există o asociere statistic semnificativă între statutul de reabilitare și satisfacția față de confortul termic.
+
+    ## Două avertismente
+
+    1. **Verifică condiția de aplicare**: toate frecvențele așteptate trebuie să fie ≥ 5. La tine, cea mai mică e 22,72 — ești larg în siguranță, menționează asta într-o notă dacă vrei rigoare maximă.
+    2. **CHISQ.TEST e un test de asociere, nu de cauzalitate** — formularea în lucrare trebuie să fie „există o asociere semnificativă", nu „reabilitarea cauzează satisfacția".
+
+    Dacă folosești Excel în engleză, funcțiile sunt identice (CHISQ.TEST, CHISQ.INV.RT); în versiuni foarte vechi de Excel (înainte de 2010) se folosea CHITEST — nu e cazul, presupun, dar menționez ca să nu te blochezi pe calculatorul facultății.
+- user: |
+    mi-a iesit p = 0.0004. ce scriu in lucrare?
+  assistant: |
+    Perfect, p = 0,0004 e un rezultat excelent — mult sub pragul clasic de 0,05, deci asocierea e clar semnificativă. Iată cum îl raportezi:
+
+    ## În text (stil APA 7)
+
+    Forma standard de raportare este:
+
+    > χ²(1) = 16,1, p < 0,001
+
+    **De ce „p < 0,001" și nu „p = 0,0004"?** Convenția APA e că, pentru valori sub 0,001, se scrie „p < 0,001" (p-value-urile nu se raportează cu mai mult de 3 zecimale). Ambele variante sunt acceptate, dar „p < 0,001" e cea mai curată.
+
+    **Atenție la χ²**: valoarea 16,1 pe care o citeam eu era estimarea mea pe datele tale; dacă tu ai calculat p = 0,0004, verifică și statistica χ² propriu-zisă (cu formula din Pasul 4 de ieri sau adunând contribuțiile celor 4 celule). Dacă îți iese, de exemplu, χ² = 12,5, scrii χ²(1) = 12,5, p < 0,001 — cifrele trebuie să fie ale tale, nu ale mele. Poți verifica coerența: `=CHISQ.DIST.RT(16,1; 1)` în Excel trebuie să-ți dea înapoi ~0,00006; dacă p-ul tău e 0,0004, χ²-ul tău e probabil în jur de 12,3–12,5.
+
+    ## Propunere de frază pentru lucrare
+
+    > „Testul chi-pătrat indică o asociere statistic semnificativă între statutul de reabilitare termică a blocului și satisfacția locatarilor față de confortul termic, χ²(1) = 12,5, p < 0,001. Locatarii din blocurile reabilitate se declară mulțumiți în proporție de 79,3%, față de doar 43,5% în blocurile nereabilitate."
+
+    (înlocuiește 12,5 cu valoarea ta calculată)
+
+    ## Ce NU scrie
+
+    - ❌ „p = 0,0004" în text — corect, dar neconform convenției APA pentru valori foarte mici
+    - ❌ „p = 0" — Excel afișează uneori 0,00E+00 la valori foarte mici; nu înseamnă zero, ci doar că e sub limita de precizie afișată
+    - ❌ „reabilitarea cauzează satisfacția" — testul arată asociere, nu cauzalitate
+
+    ## Un detaliu de rigoare
+
+    Dacă vrei să fii impecabil, adaugă într-o notă dimensiunea efectului — pentru tabele 2×2 se folosește de obicei **phi (φ)**: `=SQRT(χ²/120)`. La χ² ≈ 12,5, φ ≈ 0,32, ceea ce se interpretează ca un efect mediu-mare. O frază de tipul „mărimea efectului (φ = 0,32) indică o asociere moderată" arată comisiei că știi mai mult decât un simplu test de semnificație.
+- user: |
+    coordonatoarea zice sa nu folosesc chi-patrat pe subgrupele pe scari de bloc, ca am celule cu frecvente sub 5, si sa trec pe testul exact Fisher peste tot ca sa fie consecvent. ok?
+  assistant: |
+    Coordonatoarea are perfect dreptate — și e o observație care arată că citește cu atenție. Iată de ce și cum faci trecerea:
+
+    ## De ce are dreptate
+
+    Condiția de aplicare a chi-pătratului e ca **toate frecvențele așteptate să fie ≥ 5** (unii autori acceptă ≥ 1 cu maximum 20% din celule). Pe subgrupele pe scări de bloc, ai tabele mici cu frecvențe mici — chi-pătratul devine nesigur acolo. **Testul exact Fisher nu are această condiție**: funcționează corect indiferent de mărimea frecvențelor, chiar și cu celule de 0–2.
+
+    Și argumentul consecvenței e solid metodologic: e mai bine să folosești un singur test pe toată lucrarea (Fisher peste tot), decât două teste diferite (chi-pătrat pe tabelul mare, Fisher pe subgrupe) — comisia nu-și mai pune întrebarea „de ce ai schimbat testul la jumătate?".
+
+    Bonus: pe tabelul tău mare 2×2 (58 vs. 62), Fisher va da un p apropiat de cel din chi-pătrat (probabil tot p < 0,001), deci nu pierzi nimic.
+
+    ## ⚠️ Capcană în Excel — atenție!
+
+    Excel **nu are o funcție pentru testul exact Fisher**. Și aici e pericolul: există funcția `FISHER` în Excel, dar ea face **altceva complet** (transformarea Fisher pentru corelații — statistică diferită). Dacă o folosești din greșeală, rezultatul va fi absurd.
+
+    ## Cum faci efectiv testul
+
+    **Varianta 1 (recomandat): R sau Python** — dacă ai acces la cineva din facultate care are R, e o linie de cod:
+
+    ```r
+    matrix(c(46, 12, 27, 35), nrow = 2)
+    fisher.test(matrix(c(46, 12, 27, 35), nrow = 2))
+    ```
+
+    **Varianta 2: calculator online de încredere** — GraphPad QuickCalcs (search: „GraphPad Fisher exact test") sau Social Science Statistics. Introdu cele 4 celule, îți dă p-ul exact. E acceptabil academic, cu condiția să menționezi în metodologie software-ul/calculatorul folosit.
+
+    **Varianta 3: în Excel, cu HYPGEOM.DIST** — posibil, dar doar pentru testul unilateral direct; bilateralul (care e standard) cere însumarea mai multor probabilități și e greoi de construit manual. Nu-l recomand la disertatie, risc de greșeală.
+
+    ## Cum raportezi în lucrare
+
+    > „Asocierea între statutul de reabilitare și satisfacția față de confortul termic a fost evaluată prin testul exact Fisher, p < 0,001."
+
+    APA nu cere o formulare standardizată atât de strictă ca la chi-pătrat; esențialul e să numești testul și p-ul. În metodologie, scrie o frază de tipul:
+
+    > „Pentru toate analizele de asociere între variabile categorice s-a utilizat testul exact Fisher, datorită frecvențelor reduse din unele subgrupe analizate, care nu permiteau aplicarea validă a testului chi-pătrat."
+
+    — fraza asta transformă limita (celule mici) într-o decizie metodologică justificată, ceea ce arată maturitate statistică.
+
+    ## Un singur lucru de verificat
+
+    Când refaci analiza cu Fisher pe tabelul mare, compară p-ul cu cel din chi-pătrat (0,0004). Dacă ambele sunt < 0,001, nu se schimbă nimic în interpretare — doar nota de subsol cu testul folosit. Dacă vrei, dă-mi tabelele pe scări de bloc și îți calculez p-urile Fisher ca să le verifici.
+- user: |
+    Fisher pe tabelul mare mi-a dat p = 0.0003. rescrie paragraful de rezultate
+  assistant: |
+    Iată paragraful rescris, cu testul exact Fisher:
+
+    ## Formulare pentru lucrare
+
+    > „Rezultatele chestionarului confirmă ipotezele lucrării. În primul rând, satisfacția față de confortul termic este semnificativ mai ridicată în blocurile reabilitate: 46 din 58 de respondeni (79,3%) se declară mulțumiți, față de doar 27 din 62 (43,5%) în blocurile nereabilitate. Testul exact Fisher indică o asociere statistic semnificativă între statutul de reabilitare a blocului și satisfacția față de confortul termic (p < 0,001). În al doilea rând, factura medie de iarnă este cu aproximativ 33% mai mică în blocurile reabilitate (312 față de 468 lei/lună), valoare compatibilă cu economiile reale documentate în literatura de specialitate (circa 38%), dar inferioară estimărilor din audituri (50–60%). În al treilea rând, temperatura interioară declarată este cu 2,3°C mai ridicată în blocurile reabilitate (22,4 față de 20,1°C), confirmând prezența efectului de revenire: o parte din economiile tehnice este convertită în confort termic suplimentar, nu în reducerea facturilor. Acest rezultat este coerent cu studiul de caz al blocului analizat, unde reducerea consumului specific (47,3%) a depășit reducerea percepută a cheltuielilor."
+
+    ## Observații
+
+    1. **p = 0,0003 → scrii „p < 0,001"**, la fel ca la chi-pătrat, conform convenției APA.
+    2. **Am eliminat χ² și df** — nu se mai raportează statistica chi-pătratului dacă testul folosit e Fisher. Fisher se raportează doar cu p-ul (opțional cu odds ratio, dacă vrei mărimea efectului — vezi mai jos).
+    3. **Dacă vrei mărimea efectului** (echivalentul lui phi de la chi-pătrat), la Fisher se raportează **odds ratio**: la tabelul tău, OR = (46×35)/(12×27) ≈ 4,96, adică șansele de satisfacție sunt de aproape 5 ori mai mari în blocurile reabilitate. O frază opțională: „...asociere semnificativă (testul exact Fisher, p < 0,001; OR = 4,96, IC 95%: [2,2; 11,2])" — intervalele de încredere le iei din calculatorul online unde ai făcut testul (GraphPad le afișează). Verifică valorile exacte acolo, nu le lua de la mine.
+    4. **În metodologie**, asigură-te că fraza despre Fisher (cea discutată anterior) apare înainte de acest paragraf, ca cititorul să știe de ce test vezi p-urile.
+    5. Pe subgrupele pe scări de bloc, folosește aceeași formulare: „testul exact Fisher, p = X" pentru fiecare scară, chiar dacă unele p-uri nu vor fi semnificative din cauza frecvențelor mici — asta e exact ce a anticipat coordonatoarea, și e ok să raportezi și rezultate nesignificative, cu interpretare prudentă.
+
+    Vrei să-ți fac și un model de tabel pentru rezultatele pe scări de bloc (cu coloană de p Fisher), ca să le ai uniform prezentate?
+- user: |
+    scrie capitolul 4, rezultatele, cam 1500 de cuvinte, folosind tot ce am discutat
+  assistant: |
+    # Capitolul 4. Analiza rezultatelor
+
+    ## 4.1. Prezentarea datelor analizate
+
+    Prezentul capitol integrează cele două componente empirice ale cercetării: studiul de caz al unui bloc de locuințe reabilitat termic din municipiul Iași și chestionarul aplicat unui eșantion de 120 de locatari, dintre care 58 locuiesc în blocuri reabilitate termic și 62 în blocuri nereabilitate. Cele două surse de date — consumuri reale măsurate, respectiv percepții și comportamente autodeclarate — sunt de natură complementară și permit o verificare triunghiulară a ipotezei de lucru: datele de consum cuantifică impactul tehnic și economic al reabilitării, iar chestionarul surprinde dimensiunea comportamentală, esențială pentru explicarea decalajului dintre economiile estimate și cele reale.
+
+    Blocul analizat în cadrul studiului de caz cuprinde 40 de apartamente, cu o suprafață utilă încălzită de 2.900 m², și a fost reabilitat termic prin intervenție de ansamblu (izolarea fațadei, înlocuirea tâmplăriei și izolarea acoperișului), în conformitate cu cerințele programului național. Pentru analiza comparativă a satisfacției și a comportamentului de încălzire s-a utilizat testul exact Fisher, datorită frecvențelor reduse din unele subgrupe analizate, care nu permiteau aplicarea validă a testului chi-pătrat.
+
+    ## 4.2. Rezultatele studiului de caz: consumul de energie
+
+    Înainte de reabilitare, blocul analizat înregistra un consum specific de energie termică pentru încălzire de 182 kWh/m²an, valoare situată în partea superioară a intervalului tipic pentru blocurile nereabilitate din Iași (160–190 kWh/m²an) și corespunzătoare unei clase energetice inferioare. După finalizarea lucrărilor, consumul specific a scăzut la 96 kWh/m²an, în interiorul intervalului de referință pentru blocurile reabilitate (85–105 kWh/m²an).
+
+    Reducerea absolută este de 86 kWh/m²an, ceea ce reprezintă o scădere de **47,3%** față de consumul inițial. Raportat la suprafața încălzită, acest echivalează cu o economie anuală de energie termică de aproximativ **249.400 kWh/an**. Rezultatul se încadrează în intervalul de 30–50% formulat în ipoteza lucrării, poziționându-se însă în partea sa superioară — o constatare explicabilă prin caracterul complet al intervenției, care a acoperit simultan toate componentele principale ale învelișului termic. Această concluzie este coerentă cu literatura citată în Capitolul 1, potrivit căreia intervențiile parțiale (de exemplu, izolarea fațadei fără înlocuirea tâmplăriei) produc economii semnificativ mai reduse decât cele prognozate.
+
+    ## 4.3. Analiza cost–beneficiu
+
+    La prețul de 0,45 lei/kWh al energiei termice furnizate populației, economia anuală de 249.400 kWh se traduce printr-o reducere a cheltuielilor de aproximativ **112.230 lei/an**, echivalentul a circa 2.806 lei per apartament pe an (în medie aproximativ 234 lei lunar, cu consum concentrat în sezonul rece).
+
+    Investiția totală în reabilitare a fost de 1.950.000 lei, din care 60% a fost acoperită din finanțare nerambursabilă, contribuția proprietarilor ridicându-se la 780.000 lei. Raportată la economia anuală, perioada de recuperare a investiției este de aproximativ **17,4 ani** din perspectiva socială (costul total), respectiv de aproximativ **7,0 ani** din perspectiva proprietarilor.
+
+    Această dublă perspectivă relevă un aspect esențial pentru politica de reabilitare: fără sprijinul public nerambursabil, perioada de recuperare de 17 ani ar fi aproape prohibitivă pentru o asociație de proprietari, mai ales raportat la durata de viață utilă a unor componente ale intervenției (tâmplăria are o durată de viață de 25–30 de ani). Cu finanțarea nerambursabilă, recuperarea în aproximativ 7 ani — sub durata de viață a tuturor măsurilor — face proiectul clar rentabil pentru proprietari și explică, în parte, aderența relativ bună la program. Se confirmă astfel rolul decisiv al finanțării publice în viabilitatea economică a reabilitărilor termice, aspect cu relevanță directă pentru decizia de extindere a programului la cele aproximativ 69% din blocurile municipiului încă nereabilitate.
+
+    Trebuie subliniat că acest calcul este simplificat: nu include actualizarea fluxurilor financiare, evoluția prețului energiei (o creștere a acestuia ar scurta perioada de recuperare), costurile de întreținere pe durata de viață (de exemplu, reînnoirea finisajelor fațadei la 15–20 de ani) nici variația calității execuției între blocuri. Rezultatele trebuie deci interpretate ca ordine de mărime, nu ca valori exacte.
+
+    ## 4.4. Rezultatele chestionarului
+
+    ### 4.4.1. Satisfacția față de confortul termic
+
+    Distribuția satisfacției față de confortul termic diferențiază net cele două grupuri. În blocurile reabilitate, 46 din 58 de respondeni (79,3%) se declară mulțumiți de confortul termic în sezonul rece, față de doar 27 din 62 (43,5%) în blocurile nereabilitate — o diferență de aproape 36 de puncte procentuale. Testul exact Fisher indică o asociere statistic semnificativă între statutul de reabilitare a blocului și satisfacția față de confortul termic (**p < 0,001**). Deși testul demonstrează asociere, nu cauzalitate, direcția și magnitudinea diferenței, corelate cu diferențele obiective de consum din studiul de caz, susțin interpretarea conform căreia reabilitarea termică îmbunătățește substanțial calitatea percepută a locuirii.
+
+    ### 4.4.2. Cheltuielile de încălzire
+
+    Factura medie lunară de iarnă, auto-declarată de respondeni, este de **312 lei** în blocurile reabilitate, față de **468 lei** în cele nereabilitate — o diferență de 156 lei lunar, adică o reducere de circa **33,3%**. Valoarea este remarcabil de coerentă cu studiul pe 214 blocuri românești citat în Capitolul 1, care documenta economii reale de 38%, dar — așa cum era de așteptat — inferioară estimărilor din auditurile energetice (50–60%).
+
+    Interesant este că reducerea percepută a cheltuielilor (33,3%) este mai mică decât reducerea tehnică a consumului măsurată în studiul de caz (47,3%). Această diferență nu este o contradicție, ci tocmai semnalul comportamental anticipat de ipoteza lucrării, confirmat explicit de datele prezentate mai jos.
+
+    ### 4.4.3. Temperatura interioară și efectul de revenire
+
+    Locatarii din blocurile reabilitate declară o temperatură interioară medie în sezonul rece de **22,4°C**, față de **20,1°C** în blocurile nereabilitate — o diferență de **+2,3°C**. Aceasta constituie o confirmare directă a efectului de revenire (rebound effect): după reabilitare, locatarii își majorează temperatura interioară și, în unele cazuri, extind încălzirea la camere anterior neîncălzite. Diferența observată depășește ușor intervalul de 1,2–1,8°C documentat în literatura regională, ceea ce sugerează că în cazul Iașului — cu ierni lungi și reci — conversia economiilor tehnice în confort termic este deosebit de pronunțată.
+
+    Corelând rezultatele: locatarii din blocurile reabilitate plătesc cu aproximativ o treime mai puțin *în ciuda* faptului că locuiesc la o temperatură cu 2,3°C mai ridicată. Fără reabilitare, menținerea aceleiași temperaturi ar fi presupus cheltuieli considerabil mai mari. Efectul de revenire trebuie deci interpretat, în linie cu literatura citată, nu ca o simplă pierdere de eficiență, ci și ca un câștig real de confort și o reducere a sărăciei energetice — obiective sociale ale programului de reabilitare.
+
+    ## 4.5. Sinteza rezultatelor și verificarea ipotezei
+
+    Rezultatele celor două componente empirice converg și permit un răspuns nuanțat la întrebările de cercetare:
+
+    1. **Reabilitarea termică reduce consumul real de energie cu circa 47%** în cazul intervenției complete analizate (de la 182 la 96 kWh/m²an), valoare situată în intervalul ipotezei (30–50%). Economia percepută de locatari la nivelul facturilor (33%) este mai modestă, din cauza conversiei parțiale a economiilor în confort.
+
+    2. **Economia reală rămâne sub estimările din audituri** (50–60%), confirmând constatările literaturii de specialitate. Mecanismul principal al decalajului, documentat prin diferența de temperatură declarată (+2,3°C), este efectul de revenire; la acesta se adaugă, conform literaturii, calitatea variabilă a execuției și intervențiile parțiale.
+
+    3. **Perioada de recuperare a investiției este de aproximativ 7 ani pentru proprietari** (cu finanțare nerambursabilă de 60%) și de aproximativ 17 ani din perspectivă socială — ceea ce confirmă că modelul de finanțare mixtă este condiția practicată a viabilității programului.
+
+    4. **Satisfacția locatarilor este semnificativ asociată cu reabilitarea** (79,3% față de 43,5%; p < 0,001), iar îmbunătățirea confortului termic reprezintă, alături de economiile de energie, un rezultat important al programului.
+
+    În ansamblu, ipoteza de lucru a lucrării este confirmată: reabilitarea termică produce reduceri substanțiale și economice viabile ale consumului de energie, însă economiile reale sunt sistematic inferioare celor estimate teoretic, o parte din câștigul de eficiență fiind convertit în confort termic suplimentar. Această concluzie are implicații directe pentru evaluarea programelor publice de reabilitare, care sunt dezvoltate în capitolul următor.
+
+    ---
+
+    Cam 1.500 de cuvinte. Câteva observații înainte de predare:
+
+    1. **Numerotarea**: am etichetat capitolul ca „Capitolul 4" cum ai cerut, dar în planul cu 5 capitole pe care l-ai stabilit anterior, rezultatele erau Capitolul 3 (iar Discuții/concluzii Capitolul 4). Verifică ce numerotare folosește efectiv lucrarea ta — dacă rezultatele sunt capitolul 3, doar schimbă titlul și numerele de subcapitole (3.1, 3.2...), textul rămâne valabil. De asemenea, am scris „capitolul următor" la final — ajustează dacă Discuțiile nu urmează imediat.
+    2. **Verifică p-ul Fisher pe tabelul mare**: am scris p < 0,001 pe baza valorii tale de 0,0003 — corect.
+    3. **Datele de consum ale studiului de caz** (182→96 kWh/m²an) sunt cele din calculul nostru — asigură-te că provin din documente reale (facturi, certificate energetice) pe care le poți arăta comisiei dacă cere sursele.
+    4. Am evitat intenționat să repet tabelul de contingență în text — dacă vrei, îl poți adăuga ca Tabelul 4.1 după secțiunea 4.4.1, cu o trimitere în text („(Tabelul 4.1)").
+
+    Vrei să scriu și Capitolul 5 (Discuții, propuneri și concluzii) pe baza acestor rezultate?
+- user: |
+    traduce rezumatul lucrarii in engleza:
+
+    ```
+    Lucrarea analizeaza efectele reabilitarii termice asupra consumului de energie in blocurile de locuinte din Iasi. Pe baza datelor de consum si a unui chestionar aplicat la 120 de locatari, studiul arata o reducere medie a consumului pentru incalzire de aproximativ 45% si o crestere semnificativa a confortului termic perceput. Economiile reale sunt insa mai mici decat cele estimate in auditurile energetice, in parte din cauza efectului de rebound. Lucrarea recomanda monitorizarea consumului dupa reabilitare si contorizarea individuala a caldurii.
+    ```
+  assistant: |
+    Iată traducerea:
+
+    ## Abstract
+
+    *This paper analyses the effects of thermal retrofitting on energy consumption in apartment blocks in Iași, Romania. Based on consumption data and a survey of 120 residents, the study shows an average reduction in heating consumption of approximately 45% and a significant increase in perceived thermal comfort. However, actual savings are lower than those estimated in energy audits, partly due to the rebound effect. The paper recommends post-retrofit consumption monitoring and individual heat metering.*
+
+    ## Câteva observații
+
+    1. **„Reabilitare termică"** — am tradus cu „thermal retrofitting", termenul standard în literatura internațională (alternativă: „thermal rehabilitation", dar „retrofitting" e cel folosit în studiile citate de tine, deci e mai coerent).
+
+    2. **Atenție la cifră**: rezumatul spune „aproximativ 45%", dar în Capitolul 4 ai calculat **47,3%** pentru studiul de caz. Armonizează — fie scrii 47% în ambele locuri, fie, dacă 45% e media pe mai multe blocuri, e ok, dar asigură-te că în text explici de unde vine media.
+
+    3. **Am adăugat „Romania"** după Iași — în rezumatul în engleză, cititorii internaționali nu știu unde e Iași; e o convenție standard în abstracturi academice. Dacă rezumatul apare doar în lucrarea în română cu comisie românească, poți renunța.
+
+    4. **„Efectul de rebound"** — în engleză e direct „the rebound effect"; dacă vrei să fii consistent cu literatura, poți adăuga și „(takeback)", dar nu e necesar.
+
+    5. **Titlul lucrării în engleză**, dacă ai nevoie pentru pagina de titlu bilingvă:
+
+    > *Thermal retrofitting of apartment blocks in Iași: impact on energy consumption*
+
+    Vrei și o variantă puțin extinsă a abstractului (cu mențiunea despre perioada de recuperare a investiției și testul Fisher), în cazul în care coordonatoarea cere un rezumat mai complet pentru pagina engleză?
+- user: |
+    "blocuri de locuinte" cum ai tradus? e mai ok "blocks of flats" sau "apartment buildings" in engleza academica?
+  assistant: |
+    Bună întrebare — ambele sunt corecte, dar au register diferit:
+
+    ## Comparație
+
+    | Variantă | Register | Unde e folosită |
+    |---|---|---|
+    | **apartment blocks** / **apartment buildings** | American English + internațional | Standard în literatura academică internațională (jurnale de energie, politici UE) |
+    | **blocks of flats** | British English | Corect, dar mai colocvial în Marea Britanie; în lucrări academice apare mai rar |
+    | **multi-family buildings** / **multi-apartment buildings** | Tehnic, neutru | Cel mai frecvent în literatura științifică despre eficiență energetică |
+
+    ## Recomandarea mea
+
+    Pentru disertatie, cea mai sigură alegere e **„apartment blocks"** sau **„multi-family buildings"**:
+
+    - **„Apartment blocks"** — e exact ce sunt blocurile tale comuniste (clădiri colective de 4+ etaje), e clar și natural. Am folosit-o în traducere tocmai din acest motiv.
+    - **„Multi-family buildings"** (MFH) — e termenul din studiile citate de tine (primul articol spunea „multi-family buildings in three Romanian cities"). Dacă vrei consistență maximă cu literatura pe care o citezi, folosește-l pe acesta.
+
+    **„Blocks of flats"** evită-l: e corect gramatical, dar sună britanic-colocvial, iar în contextul unei lucrări despre eficiență energetică citatele tale vor fi aproape sigur cu „multi-family buildings" — ar fi o inconsecvență vizibilă.
+
+    ## Concret pentru tine
+
+    Verifică abstractul articolului cu 214 blocuri (cel pe care îl citezi) — dacă acolo scrie „multi-family buildings", folosește același termen în tot rezumatul tău:
+
+    > *This paper analyses the effects of thermal retrofitting on energy consumption in **multi-family residential buildings** in Iași, Romania.*
+
+    Un detaliu: în interiorul textului poți alterna „apartment blocks" și „multi-family buildings" fără problemă (evitând repetiția), dar termenul din titlu și din prima frază ar trebui să fie cel din literatura citată. Și încă unul: „Iași" se scrie cu diacritice în engleză academică (nu „Iasi") — majoritatea jurnalelor cer ortografia locală corectă pentru toponime.
+- user: |
+    titlul lucrarii, da-mi 5 variante mai bune
+  assistant: |
+    Iată 5 variante, de la cea mai apropiată de original la cea mai ambițioasă, cu explicații scurte:
+
+    ## 1. Reabilitarea termică a blocurilor de locuințe din Iași: între economiile estimate și consumul real de energie
+
+    **De ce e mai bună**: păstrează tema, dar aduce în prim plan descoperirea centrală a lucrării — decalajul estimări/realitate. Comisia citește titlul ca promisiune; asta spune exact ce ai găsit.
+
+    ## 2. Impactul reabilitării termice asupra consumului de energie și confortului termic. Studiu de caz: municipiul Iași
+
+    **De ce e mai bună**: adaugă confortul (pe care l-ai măsurat în chestionar — 79,3% vs. 43,5%) și precizează metodologia („studiu de caz"), ceea ce anunță o lucrare empirică, nu doar teoretică.
+
+    ## 3. Eficiența reală a reabilitării termice a blocurilor din Iași: consum de energie, costuri și comportamentul locatarilor
+
+    **De ce e mai bună**: „eficiența reală" e mai precisă decât „impactul" (care e neutru — impact poate fi și zero), iar triada consum–costuri–comportament acoperă exact cele trei componente ale analizei tale (studiul de caz, cost–beneficiu, rebound).
+
+    ## 4. Cât economisește, de fapt, o reabilitare termică? Analiza consumului de energie în blocurile din Iași
+
+    **De ce e mai bună**: titlul-întrebare, mai puțin convențional, foarte memorabil la susținere. Risc: unele facultăți preferă titluri clasice — verifică dacă coordonatoarea acceptă acest stil.
+
+    ## 5. Reabilitarea termică a fondului rezidențial colectiv din Iași: evaluarea impactului asupra consumului de energie și a perioadei de recuperare a investiției
+
+    **De ce e mai bună**: cea mai „academică" formulare — „fond rezidențial colectiv" sună profesional, iar includerea perioadei de recuperare semnalează analiza economică. Dezavantaj: e lungă.
+
+    ## Recomandarea mea
+
+    **Varianta 1** — e echilibrată: rămâi recunoscută față de tema inițială (important dacă ai deja aprobate tema și planul), dar titlul reflectă acum concluzia ta principală, nu doar subiectul. Dacă coordonatoarea vrea ceva mai sobru, **varianta 2**.
+
+    Două observații practice:
+
+    - Dacă schimbi titlul, verifică dacă trebuie refăcută fișa de aprobare a temei la facultate — de obicei modificările minore de formulare se aprobă simplu, dar schimbări mari (ca varianta 4) pot cere procedură.
+    - Echivalentul în engleză al variantei 1, pentru pagina de titlu bilingvă: *Thermal retrofitting of apartment blocks in Iași: between estimated savings and actual energy consumption*.
+
+    Vrei să ajustez vreo variantă (mai scurtă, alt accent) sau să fac și variante în engleză pentru toate?
+- user: |
+    a treia mi-a placut, dar mai scurta
+  assistant: |
+    Iată câteva versiuni scurtate a variantei 3:
+
+    ## Opțiuni scurtate
+
+    **A. Eficiența reală a reabilitării termice a blocurilor din Iași**
+    — cea mai scurtă; renunți complet la lista de componente, titlul rămâne doar cu esența. Curat, dar pierzi indiciul despre comportamentul locatarilor.
+
+    **B. Eficiența reală a reabilitării termice: consum, costuri și comportament. Studiu de caz: Iași**
+    — păstrează triada, mută orașul în formula de studiu de caz; echilibrul bun între informație și lungime.
+
+    **C. Eficiența reală a reabilitării termice a blocurilor din Iași: consum și comportament**
+    — renunți doar la „costuri" (care oricum iese din analiza cost–beneficiu); rămân cele două dimensiuni distinctive ale lucrării: energia și rebound-ul.
+
+    ## Recomandarea mea
+
+    **Varianta B** — are tot ce trebuie: „eficiența reală" spune concluzia, triada anunță metodologia, iar „studiu de caz: Iași" delimitează aria. E cu ~30% mai scurtă decât originalul și sună bine citită cu voce tare la susținere.
+
+    Echivalentul în engleză, dacă ai nevoie:
+
+    > *The real effectiveness of thermal retrofitting: energy consumption, costs and occupant behaviour. A case study of Iași*
+
+    Un mic detaliu de ales: „eficiența reală" vs. „eficacitatea reală" — în română academică, „eficiență" implică raportul rezultat/efort (potrivit pentru tine, pentru că ai și analiza economică), deci rămân la „eficiență". Dacă coordonatoarea preferă formularea cu „impactul", varianta B devine: „Impactul real al reabilitării termice: consum, costuri și comportament. Studiu de caz: Iași".
+- user: |
+    concluziile, cam 800 de cuvinte
+  assistant: |
+    # Concluzii
+
+    Prezenta lucrare și-a propus să evalueze impactul reabilitării termice asupra consumului de energie al blocurilor de locuințe colective din municipiul Iași, pornind de la o problemă practică de mare amploare: din cele aproximativ 108.000 de locuințe situate în blocuri, doar circa 31% fuseseră reabilitate termic până în 2023, în timp ce restul parcului imobil — construit în proporție covârșitoare între 1960 și 1990 — continuă să înregistreze consumuri specifice de 160–190 kWh/m²an, net superioare standardelor europene. Într-un context în care fondurile europene disponibile prin PNRR oferă o oportunitate istorică de accelerare a reabilitării, evaluarea riguroasă a eficienței reale a intervențiilor deja realizate devine un instrument esențial de fundamentare a deciziilor viitoare.
+
+    ## Răspunsul la întrebările de cercetare
+
+    Prima întrebare de cercetare viza măsura în care reabilitarea termică reduce consumul real de energie. Studiul de caz analizat oferă un răspuns clar: intervenția completă (izolarea fațadei, înlocuirea tâmplăriei, izolarea acoperișului) a determinat reducerea consumului specific de la 182 la 96 kWh/m²an, adică o scădere de 47,3%, echivalentă cu o economie anuală de aproximativ 249.400 kWh pentru blocul analizat. Rezultatul confirmă ipoteza de lucru, situându-se în partea superioară a intervalului anticipat de 30–50%.
+
+    A doua întrebare privea decalajul dintre economiile reale și cele estimate. Aici, concluzia centrală a lucrării este că estimările din auditurile energetice (50–60%) sunt sistematic optimiste. Reducerea percepută de locatari la nivelul facturilor a fost de doar 33,3% (312 față de 468 lei lunar), iar mecanismul principal al acestui decalaj este efectul de revenire: locatarii blocurilor reabilitate declară o temperatură interioară cu 2,3°C mai ridicată (22,4 față de 20,1°C), convertind o parte din câștigul de eficiență în confort termic suplimentar, nu în economie bănească. Această constatare, coerentă cu literatura internațională și regională citată, are o implicație importantă: efectul de revenire nu trebuie tratat exclusiv ca o pierdere de eficiență, ci și ca un câștig social real — îmbunătățirea confortului și reducerea sărăciei energetice, care sunt obiective legitime ale programului.
+
+    A treia întrebare a vizat viabilitatea economică a investiției. Perioada de recuperare este de aproximativ 7 ani din perspectiva proprietarilor (contribuție de 780.000 lei din investiția totală de 1.950.000 lei) și de aproximativ 17,4 ani din perspectivă socială. Diferența subliniază rolul decisiv al finanțării nerambursabile: fără sprijinul public, proiectul ar fi la limita acceptabilității economice pentru o asociație de proprietari, ceea ce explică de ce modelul de finanțare mixtă rămâne condiția practicată a extinderii programului.
+
+    În fine, chestionarul aplicat celor 120 de locatari a confirmat că reabilitarea termică este asociată semnificativ cu satisfacția față de confortul termic (79,3% locatari mulțumiți în blocurile reabilitate, față de 43,5% în cele nereabilitate; testul exact Fisher, p < 0,001) — un rezultat care situează programul dincolo de dimensiunea sa strict energetică, în sfera calității locuirii.
+
+    ## Recomandări
+
+    Din aceste concluzii decurg mai multe recomandări. Pentru autoritățile centrale, principala este introducerea **monitorizării obligatorii a consumurilor post-reabilitare** ca condiție a finanțării — fără date reale, programele nu pot fi evaluate, iar așteptările rămân ancorate în estimări teoretice. Pentru autoritățile locale din Iași, este recomandabilă **prioritizarea intervențiilor de ansamblu** (fațadă, tâmplărie și acoperiș simultan), datele analizate confirmând că intervențiile parțiale produc economii mult sub potențial. Pentru asociațiile de proprietari, rezultatele sugerează utilitatea **repartitoarelor individuale de costuri**, pe care literatura le asociază cu economii cu până la 9 puncte procentuale mai mari, și o comunicare realistă a așteptărilor: economiile de 30–40% la facturi sunt atingibile, cele de 50–60% rareori.
+
+    ## Limitări și direcții viitoare
+
+    Cercetarea prezintă limitări asumate. Studiul de caz se referă la un singur bloc, iar generalizarea la nivelul municipiului trebuie făcută cu precauție; datele din chestionar sunt autodeclarate (facturi și temperaturi percepute, nu măsurate); eșantionul, de tip conveniență, nu este statistic reprezentativ; iar calculul economic nu include actualizarea fluxurilor financiare. Aceste limitări conturează totodată direcții viitoare: extinderea analizei la un eșantion mai amplu de blocuri, cu consumuri măsurate de la furnizori pe serii de mai mulți ani; măsurarea efectivă a temperaturilor interioare; și o analiză economică cu valoare actualizată netă, incluzând scenarii de evoluție a prețului energiei.
+
+    În încheiere, rezultatele lucrării susțin o concluzie optimistă, dar exigentă: reabilitarea termică funcționează — reduce substanțial consumul de energie, este economic viabilă cu finanțare publică și îmbunătățește semnificativ calitatea vieții — însă beneficiile sale reale, nu cele promise, trebuie să devină măsura după care se evaluează și se prioritizează investițiile publice viitoare. Pentru Iași, un oraș la care mai așteaptă reabilitarea aproape șapte din zece blocuri, această distincție între estimat și real nu este un detaliu metodologic, ci o condiție a succesului întregului program.
+
+    ---
+
+    Cam 800 de cuvinte. Trei verificări înainte de predare:
+
+    1. **Cifrele** — toate provin din calculele noastre (47,3%, 33,3%, +2,3°C, 7/17,4 ani, 79,3%/43,5%). Asigură-te că sunt identice cu cele din capitolele anterioare — comisia verifică consistența între capitole.
+    2. **Numerotarea** — dacă în structura ta finală concluziile fac parte din Capitolul 5 (Discuții, propuneri și concluzii), poți folosi textul ca subcapitol final; dacă sunt capitol separat, e gata așa.
+    3. **Recomandările** — le-am sintetizat aici compact; dacă în Capitolul 5 ai deja o secțiune extinsă de recomandări, pot scurta acest paragraf ca să nu dublezi conținutul. Spune-mi cum ai structurat capitolul 5.
+- user: |
+    coordonatoarea zice ca la concluzii lipsesc limitarile studiului. ce limitari am?
+  assistant: |
+    Din textul pe care ți l-am scris exista o secțiune „Limitări și direcții viitoare", dar e posibil să fi fost comprimată prea mult sau să fi rămas în afara fragmentului pe care l-a citit. Oricum, iată lista completă a limitărilor — le poți integra ca subsecțiune distinctă, cu formulare gata de pus:
+
+    ## Limitările studiului
+
+    **1. Limitări legate de studiul de caz**
+    - **Un singur bloc analizat în detaliu** — rezultatele de consum (182→96 kWh/m²an) provin dintr-o singură clădire; nu pot fi generalizate la întregul parc imobil din Iași fără precauție, deoarece rezultatele variază cu tipologia blocului, calitatea execuției și comportamentul locatarilor.
+    - **Fenomenul rebound măsurat indirect** — temperatura declarată de locatari este un proxy; nu s-au realizat măsurători fizice ale temperaturilor interioare, iar comportamentul de încălzire a fost surprins doar prin autodeclarare.
+
+    **2. Limitări legate de chestionar**
+    - **Date autodeclarate** — facturile și temperaturile raportate sunt percepții, nu valori măsurate; locatarii rar cunosc consumul exact, iar memoria și percepția selectivă pot distorsiona răspunsurile.
+    - **Eșantion de conveniență, nereprezentativ statistic** — cei 120 de respondeni nu permit generalizarea rezultatelor la nivelul municipiului; distribuția pe tipuri de blocuri, zone și categorii de vârstă/venit nu este controlată.
+    - **Variabile de control insuficiente** — diferențele de factură între cele două grupuri pot fi influențate și de numărul de persoane din gospodărie, etaj, sistem de încălzire sau nivelul veniturilor, variabile care nu au putut fi controlate complet în analiză.
+    - **Design transversal, nu longitudinal** — cele două grupuri (reabilitat/nereabilitat) au fost comparate la același moment, nu s-a urmărit același bloc înainte și după reabilitare la nivelul eșantionului de chestionar; diferențele pot include și efecte de selecție.
+
+    **3. Limitări legate de analiza economică**
+    - **Calcul simplificat, fără actualizare** — perioada de recuperare nu include discounting-ul fluxurilor financiare, inflația, evoluția prețului energiei sau costurile de întreținere pe durata de viață (ex. reînnoirea finisajelor fațadei).
+    - **Preț unic al energiei** — analiza folosește un singur preț (0,45 lei/kWh), subvenționat; rezultatele economice sunt sensibile la modificările tarifare.
+
+    **4. Limitări legate de date și perioadă**
+    - **Orizont temporal limitat** — datele de consum acoperă o perioadă scurtă post-reabilitare; persistența economiilor pe termen lung (5–10 ani) nu poate fi evaluată.
+    - **Context perturbat de criza energetică** — prețurile energiei și comportamentele de consum din perioada analizată au fost influențate de volatilitatea din 2021–2023, ceea ce poate afecta comparabilitatea.
+
+    ## Formulare pentru lucrare
+
+    > „Cercetarea prezintă mai multe limitări care trebuie avute în vedere la interpretarea rezultatelor. În primul rând, studiul de caz se referă la un singur bloc, iar generalizarea concluziilor la nivelul municipiului trebuie făcută cu precauție. În al doilea rând, datele din chestionar sunt autodeclarate — facturile și temperaturile raportate sunt percepții, nu măsurători —, iar eșantionul, de tip conveniență, nu este statistic reprezentativ pentru municipiul Iași. În al treilea rând, analiza economică este simplificată: nu include actualizarea fluxurilor financiare, evoluția prețului energiei sau costurile de întreținere pe durata de viață a măsurilor. În fine, designul transversal al chestionarului nu permite controlarea completă a efectelor de selecție între cele două grupuri comparate. Aceste limitări conturează direcții viitoare de cercetare: extinderea analizei la un eșantion mai amplu de blocuri, cu consumuri măsurate de la furnizori pe serii de mai mulți ani, măsurarea efectivă a temperaturilor interioare și o analiză economică cu valoare actualizată netă."
+
+    Un sfat: nu prezenta limitările ca scuze, ci ca delimitări conștiente — exact formularea de mai sus face asta („trebuie avute în vedere la interpretarea rezultatelor"). Comisia apreciază când studentul își cunoște limitele mai bine decât ar le găsi singură. Și verifică: dacă în Capitolul 5 ai deja o secțiune de limitări, pune aici doar o trimitere scurtă, ca să nu dublezi.
+- user: |
+    turnitin mi-a dat 23% similaritate, aproape toata la capitolul 2. ce fac?
+  assistant: |
+    Respiră liniștit — 23% nu e o catastrofă, iar faptul că e concentrat la Capitolul 2 (cadrul legislativ) e cea mai frecventă și mai „iertătoare" situație. Dar hai să o reducem. Iată planul:
+
+    ## Pasul 1. Deschide raportul și analizează de unde vine
+
+    Turnitin îți arată **sursele exacte** și textul evidențiat. Verifică:
+
+    - **Din ce vin potrivirile**: portaluri legislative (legislatie.just.ro, lege5), articole despre EPBD, site-uri despre PNRR, alte teze de disertatie?
+    - **Cât de lungi sunt potrivirile**: fraze de 8–10 cuvinte identice sunt o problemă; potriviri pe nume de acte normative („Legea nr. 372/2005 privind performanța energetică a clădirilor") sunt **inevitabile** — nu poți reformula numele unei legi, iar comisia știe asta.
+
+    ## Pasul 2. Ce e „vinovat" și ce nu
+
+    **Nu poți (și nu trebuie) să reduci:**
+    - denumirile complete ale legilor și directivelor — acestea se repetă în orice lucrare pe temă;
+    - termenii tehnici fixați („certificat energetic", „performanță energetică a clădirilor");
+    - citatele marcate corect ca citat (dacă le-ai pus între ghilimele cu referință, Turnitin le numără, dar comisia nu le consideră plagiat).
+
+    **Trebuie să reformulezi:**
+    - frazele descriptive despre conținutul legilor, preluate aproape identic din surse (ex. „directiva a introdus obligativitatea statelor membre de a stabili planuri naționale..." — dacă asta apare identic în 3 surse, e marcat);
+    - paragrafele despre programe (OUG 18/2009, Legea 196/2018, PNRR) — aici e probabil grosul potrivirilor, pentru că descrierile acestor programe sunt foarte asemănătoare pe toate site-urile.
+
+    ## Pasul 3. Tehnici concrete de reformulare
+
+    **a) Schimbă structura frazei, nu doar sinonimele.** Turnitin prinde sinonimele simple. Exemplu:
+
+    - ❌ „Directiva a introdus obligativitatea statelor membre de a stabili planuri naționale de renovare a clădirilor existente."
+    - ✅ „Un element nou adus de directivă a vizat fondul construit: statele membre au fost obligate să-și elaboreze propriile planuri de renovare a clădirilor existente."
+
+    **b) Adaugă interpretare proprie după fiecare preluare factuală.** Fraza factuală (care se poate suprapune cu sursele) + fraza ta de analiză (care e garantat originală). Capitolul tău are deja secțiunea 2.2.4 cu observații critice — extinde acest model: după fiecare descriere legislativă, o frază de tipul „pentru blocurile din Iași, aceasta înseamnă că...".
+
+    **c) Leagă totul de cazul tău.** Cel mai eficient antidot la similaritate e specificul: unde scrii generic „programul prevede intervenții de ansamblu", adaugă „cerință relevantă pentru Iași, unde blocurile de tipul 1340 au fost adesea reabilitate doar parțial în perioada 2010–2015". Nimeni altcineva nu are acea frază.
+
+    **d) Nu cita legi prin copy-paste de pe site-uri.** Dacă ai nevoie de conținutul unei legi, parafrazează-l cu referință la act („potrivit art. X din Legea 372/2005, ..."), nu copia expuneri de motive sau descrieri de pe portaluri.
+
+    ## Pasul 4. Obiectivul realist
+
+    - Sub **15%** e confortabil pentru majoritatea facultăților; sub 10% e impecabil.
+    - Nu viza 0% — e imposibil pe un capitol legislativ și nici nu e necesar. Comisia privește **natura** potrivirilor, nu doar procentul: 23% din nume de legi și termeni tehnici e ok; 23% din paragrafe copiate e problemă.
+
+    ## Pasul 5. Verifică regulile facultății
+
+    Unele facultăți au prag formal (de obicei 20–25% la master) — la 23% ești posibil sub sau chiar pe prag, deci e posibil să nu fie cerută nici o modificare. Întreabă coordonatoarea dacă pragul e depășit sau doar vrea reducere preventivă.
+
+    ## Dacă vrei, hai la concret
+
+    Trimite-mi 2–3 paragrafe din Capitolul 2 pe care Turnitin le-a marcat cel mai tare (copiază textul evidențiat din raport) și ți le reformulez direct, păstrând sensul și referințele. Asta e cea mai rapidă cale — de obicei, reformularea a 4–5 paragrafe cheie coboară similaritatea cu 8–10 puncte procentuale.
+- user: |
+    reformuleaza paragraful asta din cap 2, e prea aproape de textul legii:
+
+    ```
+    Programul are ca obiectiv cresterea performantei energetice a blocurilor de locuinte, respectiv reducerea consumurilor energetice pentru incalzire in conditii de confort termic interior, reducerea emisiilor poluante generate de producerea, transportul si consumul de energie, precum si imbunatatirea aspectului urbanistic al localitatilor.
+    ```
+  assistant: |
+    Iată reformularea — am păstrat toate cele patru obiective, dar am schimbat structura frazei și am adăugat o legătură cu lucrarea ta:
+
+    ## Varianta recomandată
+
+    > „Programul urmărește, în esență, patru direcții: aducerea blocurilor de locuințe la un nivel superior de performanță energetică, cu efect direct asupra consumului pentru încălzire, fără compromiterea confortului din interiorul locuințelor; diminuarea poluării asociate întregului ciclu al energiei — de la producție la consum; și, pe lângă aceste obiective energetice, unul de natură urbanistică, respectiv îmbunătățirea imaginii orașelor prin reabilitarea fațadelor."
+
+    ## Varianta alternativă (mai scurtă)
+
+    > „Obiectivele programului depășesc sfera strict energetică. Pe lângă scopul principal — reducerea consumului de energie pentru încălzire, menținând în același timp un confort termic adecvat —, programul vizează și limitarea emisiilor generate pe întregul lanț al energiei, precum și un efect de ordin urban: modernizarea vizuală a localităților prin reabilitarea blocurilor."
+
+    ## De ce funcționează reformulările
+
+    1. **Am spart enumerarea canonică** — textul legii (și toate site-urile care îl copiază) folosește structura „respectiv... precum și...". Când enumeri aceleași lucruri în altă ordine de frază, potrivirea dispare.
+    2. **Am grupat obiectivele semantic** (energetic / de mediu / urbanistic), nu în ordinea din lege — asta e o interpretare proprie, imposibil de găsit în sursă.
+    3. **Am evitat colocațiile fixe din textul oficial**: „reducerea consumurilor energetice pentru încălzire" → „reducerea consumului de energie pentru încălzire"; „imbunatatirea aspectului urbanistic al localitatilor" → „modernizarea vizuală a localităților" / „îmbunătățirea imaginii orașelor".
+
+    ## Bonus: cum să ancorezi paragraful în lucrarea ta
+
+    Adaugă după reformulare o frază proprie, care leagă obiectivele de cazul Iași — asta e garantat originală și arată interpretare, nu copiere:
+
+    > „Pentru municipiul Iași, obiectivul urbanistic are o greutate particulară: reabilitarea fațadelor blocurilor din perioada 1960–1990, multe dintre ele vizibil degradate, produce un efect vizibil asupra imaginii cartierelor, ceea ce explică și aderența locatarilor la program dincolo de motivația strict economică."
+
+    Dacă mai ai paragrafe marcate de Turnitin, trimite-le — le trecem pe toate prin același tratament.
+- user: |
+    prezentarea pt sustinere, 12 slide-uri. structura?
+  assistant: |
+    Iată structura pentru 12 slide-uri, gândită pentru o prezentare de ~10–12 minute (standard la disertatie):
+
+    ## Structura prezentării
+
+    **Slide 1. Titlu**
+    Titlul lucrării, numele tău, coordonatorul, facultatea, programul de master, anul. Fără alt conținut. (15 secunde)
+
+    **Slide 2. Motivația și contextul**
+    - 152.400 locuințe în Iași, 71% în blocuri; 78% construite 1960–1990
+    - Doar 31% reabilitate până în 2023
+    - Consum blocuri nereabilitate: 160–190 kWh/m²an
+    - Mesaj-cheie: aproape 7 din 10 blocuri așteaptă intervenția, cu fonduri PNRR disponibile
+
+    **Slide 3. Obiective și ipoteză**
+    - Obiectivul general (1 frază)
+    - Ipoteza: reducere de 30–50%, dar sub estimările din audituri, din cauza rebound-ului
+    - 2–3 întrebări de cercetare, nu toate 4 — cele esențiale
+
+    **Slide 4. Cadrul legislativ (sintetic!)**
+    O singură schemă/timeline: EPBD 2002 → 2010 → 2018 → 2024 | Legea 372/2005 → OUG 18/2009 → Legea 196/2018 → PNRR. **Nu pune text de lege** — comisia știe legislația; tu doar arăți că stăpânești evoluția.
+
+    **Slide 5. Metodologia**
+    - Două componente: studiul de caz (1 bloc, date reale de consum) + chestionar (120 locatari: 58 reabilitat / 62 nereabilitat)
+    - Testul exact Fisher pentru asocieri (o frază de ce, nu detaliile)
+    - Poate un schemă simplă: date → metode → rezultate
+
+    **Slide 6. Studiul de caz — consumul**
+    Grafic cu bare: 182 → 96 kWh/m²an (−47,3%). Economie: 249.400 kWh/an. Un grafic, trei cifre mari, nimic altceva.
+
+    **Slide 7. Analiza cost–beneficiu**
+    - Investiție: 1.950.000 lei (60% nerambursabil)
+    - Economie: 112.230 lei/an
+    - Recuperare: **7 ani** (proprietari) vs. **17,4 ani** (social)
+    - Mesaj: finanțarea publică e condiția viabilității
+
+    **Slide 8. Rezultatele chestionarului — confort și facturi**
+    - Satisfacție: 79,3% vs. 43,5% (p < 0,001, test exact Fisher)
+    - Factura de iarnă: 312 vs. 468 lei/lună (−33%)
+    - Grafic cu bare comparative, două grupuri side-by-side
+
+    **Slide 9. Efectul de rebound**
+    - Temperatură declarată: 22,4°C vs. 20,1°C (+2,3°C)
+    - Explicație în 2 fraze: economiile tehnice se convertesc parțial în confort
+    - Nuanța importantă: rebound ≠ doar pierdere, ci și reducerea sărăciei energetice
+    - Acesta e slide-ul „de valoare" — aici arăți gândire critică
+
+    **Slide 10. Verificarea ipotezei**
+    Tabel simplu: întrebare de cercetare → răspuns → confirmat/parțial. 4 rânduri. Comisia adoră sintezele de genul ăsta.
+
+    **Slide 11. Recomandări și limitări**
+    - Recomandări (3, max): monitorizare post-reabilitare ca condiție de finanțare; intervenții de ansamblu; repartitoare individuale
+    - Limitări (2–3, onest, rapid): un singur bloc în studiu de caz, date autodeclarate, calcul economic simplificat
+
+    **Slide 12. Concluzii**
+    - Mesajul final în o frază: „Reabilitarea funcționează — dar beneficiile reale, nu cele promise, trebuie să devină măsura investițiilor publice"
+    - Mulțumiri + „Vă răspund cu plăcere întrebărilor"
+
+    ## Sfaturi de susținere
+
+    1. **Regula 1 slide = 1 mesaj.** Dacă un slide are două idei, e două slide-uri sau una dispare.
+    2. **Cifre mari, text mic.** Maximum 6 rânduri pe slide; cifrele-cheie (47%, 7 ani, +2,3°C) le poți pune mari, centrate.
+    3. **Grafice > tabele.** Singurul tabel acceptabil e cel de pe slide 10.
+    4. **Cronometrează-te**: ~1 minut/slide. Dacă depășești, taie din slide 4 (legislația) — acolo comisia nu are nevoie de detalii.
+    5. **Pregătește slide-uri de rezervă** (după 12, nu se numără): tabelul de contingență complet, calculul Fisher, tabelul de sensibilitate la preț. Când vine întrebarea „cum ați calculat?", deschizi slide-ul de rezervă — efect foarte bun.
+    6. **Anticipează întrebările probabile**: de ce Fisher și nu chi-pătrat? De ce economiile reale < estimările? Cât de reprezentativ e un singur bloc? — ai deja răspunsurile din discuțiile noastre.
+
+    Vrei să-ți scriu conținutul complet al vreunui slide (de exemplu cel cu rebound sau cel de sinteză), sau textul vorbit pentru primele slide-uri?
+- user: |
+    am 15 minute. cat stau pe fiecare slide?
+  assistant: |
+    Cu 15 minute și 12 slide-uri, media e de 1:15/slide, dar nu repartiza uniform — unele slide-uri merită mai mult. Iată o repartizare realistă:
+
+    ## Repartizarea timpului
+
+    | Slide | Tema | Timp |
+    |---|---|---|
+    | 1 | Titlu | 0:15 |
+    | 2 | Motivație și context | 1:30 |
+    | 3 | Obiective și ipoteză | 1:15 |
+    | 4 | Cadrul legislativ | 0:45 |
+    | 5 | Metodologia | 1:30 |
+    | 6 | Studiul de caz — consum | 1:30 |
+    | 7 | Cost–beneficiu | 1:15 |
+    | 8 | Chestionar — confort și facturi | 1:30 |
+    | 9 | Efectul de rebound | 2:00 |
+    | 10 | Verificarea ipotezei | 1:15 |
+    | 11 | Recomandări și limitări | 1:00 |
+    | 12 | Concluzii | 0:45 |
+    | | **Total** | **~14:30** |
+
+    ## Logica repartizării
+
+    - **Slide-urile „grele" primesc timp**: rebound (2 min — e contribuția ta centrală), context, metodologie, consum, chestionar (1:30 fiecare — aici stau datele tale).
+    - **Slide-urile „ușoare" trec repede**: titlul (salută și treci mai departe), legislația (0:45 — arăți timeline-ul, o frază de comentariu, gata), concluziile (0:45 — mesajul final, nu-l repeta pe tot).
+    - **Rezerva de ~30 de secunde** e intenționată: mereu pierzi timp la tranziții, la schimbatul slide-ului, la o ezitare. Dacă termini în 14:30, e perfect.
+
+    ## Sfaturi practice
+
+    1. **Cronometrează-te de 3 ori** cu repartizarea asta, nu doar o dată. Prima rulare o să depășești — e normal; a doua-o treia o calibrezi.
+    2. **Puncte de control**: la finalul slide-ului 5 (metodologia) trebuie să fii la **6 minute**. Dacă la 7–8 minute încă ești la metodologie, taie din mers: legislația și cost–beneficiu le poți comprima la jumătate fără să pieri firul.
+    3. **Nu citi slide-urile** — timpul de mai sus presupune că vorbești despre ele, nu le citești. Cititul dublează durata.
+    4. **Dacă președintele comisiei te întrerupe cu întrebări în timpul prezentării** (unele comisii fac asta), răspunde scurt și spune „revin cu detalii dacă e nevoie" — nu lăsa o întrebare să-ți mănânce 3 minute din prezentare.
+    5. **Slide-ul 9 (rebound) e momentul tău** — acolo încetinește conștient, privește comisia, explică mecanismul. E diferența dintre o prezentare bună și una memorabilă.
+
+    Un truc de repetiție: înregistrează-te o dată cu telefonul (audio e suficient). O să descoperi imediat unde te lungi — de obicei e la metodologie sau la legislație, unde e tentant să dai detalii pe care comisia nu le cere.
+- user: |
+    ce intrebari crezi ca o sa-mi puna comisia si cum raspund?
+  assistant: |
+    Bună pregătire strategică. Pe baza lucrării tale, iată întrebările cele mai probabile, grupate pe zone, cu răspunsuri scurte pe care să le ai pregătite:
+
+    ## Întrebări statistico-metodologice (aproape sigur vin)
+
+    **1. „De ce testul exact Fisher și nu chi-pătrat?"**
+    > „Pe subgrupele analizate (pe scări de bloc) frecvențele așteptate erau sub 5, ceea ce încalcă condițiile de aplicare ale chi-pătratului. Am ales testul exact Fisher pe toate analizele, pentru consecvență, deoarece nu are cerințe privind mărimea frecvențelor."
+
+    **2. „Eșantionul de 120 de locatari e reprezentativ pentru Iași?"**
+    > „Nu statistic — e un eșantion de conveniență, și am declarat asta explicit ca limitare. Rezultatele nu se generalizează la nivelul municipiului, dar valoarea lor constă în compararea celor două grupuri între ele și în triangularea cu datele reale de consum din studiul de caz."
+
+    **3. „Datele din chestionar sunt autodeclarate. Cum știți că sunt corecte?"**
+    > „Nu pot garanta exactitatea lor individuală — e o limitare asumată. De aceea am folosit două surse independente: percepțiile din chestionar și consumurile măsurate din studiul de caz. Convergența dintre ele (reducere percepută de 33%, reală de 47%) sporește încrederea în concluzii."
+
+    ## Întrebări despre rebound (zona ta de expertiză — aici te așteaptă să strălucești)
+
+    **4. „Cum explicați că economiile reale sunt mai mici decât cele din audituri?"**
+    > „Două mecanisme principale. Primul e efectul de revenire: locatarii din blocurile reabilitate declară temperaturi cu 2,3°C mai ridicate, deci o parte din eficiența câștigată e convertită în confort, nu în economie. Al doilea, documentat de literatura citată, e calitatea execuției și intervențiile parțiale. La blocul nostru, intervenția completă a dus la 47% — aproape de estimări — ceea ce confirmă că intervenția de ansamblu contează."
+
+    **5. „Rebound-ul nu înseamnă că programul e ineficient?"** (întrebare-capcană)
+    > „Dimpotrivă — e o nuanță esențială. Pentru gospodăriile care se încălzeau insuficient, temperatura mai mare înseamnă ieșirea din sărăcia energetică, un obiectiv social legitim al programului. Rebound-ul reduce economiile financiare, dar nu anulează beneficiul social. De aceea recomand ca evaluarea programului să includă și indicatori de confort, nu doar de consum."
+
+    ## Întrebări economice
+
+    **6. „17 ani de recuperare socială — nu e prea mult?"**
+    > „Depinde de perspectiva de comparare. Durata de viață a izolației fațadei e de 30–40 de ani, deci investiția socială se recuperează în cadrul duratei de viață. În plus, calculul e conservator: nu include creșterea prețului energiei, care ar scurta recuperarea, nici beneficiile nemonetizate (emisii evitate, sănătate). Dar da, fără finanțare nerambursabilă, proiectul ar fi la limita acceptabilității — de aceea finanțarea publică e esențială."
+
+    **7. „Ați folosit un singur preț al energiei. Ce se întâmplă dacă se schimbă?"**
+    > „Am conștientizat sensibilitatea — o analiză de sensibilitate cu scenarii tarifare ar fi o îmbunătățire. La un preț mai mare, economia anuală crește proporțional, iar recuperarea se scurtează; tendința prețurilor la energie face ca rezultatul nostru să fie, dacă e ceva, subestimat."
+
+    ## Întrebări de generalizare
+
+    **8. „Un singur bloc în studiul de caz. Cum generalizați?"**
+    > „Cu precauție — și am scris asta explicit. Blocul analizat e reprezentativ pentru tipologia dominantă din Iași (construit 1960–1990, intervenție completă), dar rezultatele exacte nu se transferă automat. Lucrarea oferă un cadru de evaluare replicabil, mai degrabă decât cifre universal valabile."
+
+    **9. „De ce Iași? Ce e specific aici față de alte orașe?"**
+    > „Structura fondului locativ (71% în blocuri, 78% din 1960–1990), gradul-zile de încălzire printre cele mai ridicate din țară — deci ierni lungi care amplifică atât consumul, cât și economiile — și ritmul de reabilitare de doar 31%, care face evaluarea urgentă."
+
+    ## Întrebări de legislație (rareori detaliate, dar pregătește una-două)
+
+    **10. „Ce schimbă noul EPBD din 2024 pentru programul de reabilitare?"**
+    > „Introduce scheme naționale de renovare cu obiective minime de performanță și mută accentul de la clădiri noi la fondul existent. Pentru Iași înseamnă un cadru mai predictibil de finanțare și, important, cerințe de monitorizare — exact ce recomandă și lucrarea mea."
+
+    ## Sfaturi generale
+
+    - **Răspunsurile de mai sus sunt schelete** — reformulează-le în cuvintele tale, altfel sună recitate.
+    - **Dacă nu știi un răspuns**, formula onestă: „Aceasta depășește orizontul analizei mele, dar pe baza datelor pe care le am, aș anticipa că..." — mult mai bine decât improvizația greșită.
+    - **Nu te apăra de limitări** — numește-le tu primul, cu încredere; le-ai declarat deja în lucrare, deci comisia verifică dacă le înțelegi, nu dacă le ascunzi.
+    - Întrebările cele mai probabile din experiență sunt **1, 2, 4 și 8** — dacă le ai perfect, ai trecut proba.
+
+    Vrei să facem o simulare: îți pun eu 3–4 întrebări dificile suplimentare, tu răspunzi, și îți dau feedback?
+- user: |
+    daca ma intreaba de ce am schimbat testul statistic pe parcurs, ce zic?
+  assistant: |
+    Întrebare bună de anticipat — și răspunsul e simplu, pentru că decizia ta e metodologic solidă. Iată cum o formulezi:
+
+    ## Răspunsul recomandat
+
+    > „La începutul analizei am aplicat testul chi-pătrat pe tabelul general, unde condițiile de aplicare erau îndeplinite. Când am extins analiza pe subgrupe — pe scări de bloc —, frecvențele așteptate au scăzut sub 5 în unele celule, ceea ce încalcă condiția de validitate a chi-pătratului. Pentru a avea o abordare consecventă pe întreaga lucrare, am trecut integral pe testul exact Fisher, care nu are această restricție și este recomandat exact în astfel de situații. Practic, nu am schimbat testul din preferință, ci din rigoare: chi-pătratul ar fi fost nesigur pe subgrupele mici. Menționez că pe tabelul general ambele teste dau rezultate concordante — p < 0,001 în ambele cazuri — deci concluziile nu depind de alegerea testului."
+
+    ## De ce funcționează acest răspuns
+
+    1. **Arată că știi CE ai făcut și DE CE** — nu că ai „schimbat" ceva arbitrar, ci că ai detectat o încălcare a condițiilor de aplicare și ai corectat-o. Asta e gândire statistică, exact ce vrea comisia să vadă.
+
+    2. **Argumentul consecvenței** — un singur test pe toată lucrarea e mai curat decât două teste diferite pe tabele diferite.
+
+    3. **Punctul 3 e crucial**: rezultatul e identic cu ambele teste pe tabelul mare. Astăzi spui că decizia nu a afectat nicio concluzie — întrebarea devine automat neimportantă.
+
+    ## Un detaliu de verificat înainte de susținere
+
+    Asigură-te că în **lucrarea scrisă** apare doar Fisher (nu rămăsnite mențiuni de chi-pătrat în tabele sau în text) — dacă Turnitin-ul sau versiunea finală mai are un „χ² = ..." uitat undeva, comisia va vedea inconsecvența exact pe tema asta. Verifică mai ales:
+    - metodologia (fraza despre testul folosit),
+    - tabelul de rezultate,
+    - notele de subsol.
+
+    Dacă în lucrare apare și o mențiune despre chi-pătrat ca test inițial (de exemplu într-o notă: „inițial s-a aplicat chi-pătrat, ulterior înlocuit..."), e și mai bine — atunci răspunsul e simplu: „explicația e în lucrare, la metodologie".
+
+    ## Dacă întrebarea vine cu tentă critică („de ce nu ați știut de la început?")
+
+    Răspunsul calm:
+
+    > „Este o practică standard în analiza datelor: se alege testul inițial, se verifică condițiile de aplicare pe fiecare tabel, iar când acestea nu sunt îndeplinite — aici, la subgrupele mici — se trece la alternativa exactă. Am preferat să aplic corect testul potrivit decât să raportez chi-pătrat pe tabele unde nu era valid."
+
+    Tonul e totul aici: nu te scuzi, nu te aperi — prezinți decizia ca pe o verificare de rigoare, pentru că exact asta a fost.
+- user: |
+    mersi mult! ultima: un mail scurt de multumire catre coordonatoare
+  assistant: |
+    Cu plăcere! Iată un mail scurt și potrivit:
+
+    ---
+
+    **Subiect:** Mulțumire
+
+    Stimată doamnă profesor,
+
+    Vă mulțumesc pentru îndrumarea și răbdarea de care ați dat dovadă pe parcursul elaborării lucrării de disertație. Observațiile dumneavoastră, de la structura capitolelor până la rigoarea analizei statistice, au îmbunătățit substanțial calitatea lucrării și m-au ajutat să cresc ca cercetător.
+
+    Vă țin la curent cu privire la data susținerii și sper să vă pot mulțumi personal după prezentare.
+
+    Cu respect și recunoștință,
+    [Numele tău]
+
+    ---
+
+    Două mici ajustări opționale:
+
+    - Dacă relația cu coordonatoarea e mai apropiată/puțin formală, poți schimba deschiderea în „Doamnă profesor," și finalul în „Cu recunoștință,".
+    - Dacă vrei să fie și mai scurt, renunță la al doilea paragraf — primul + semnătura sunt suficiente.
+
+    Mult succes la susținere! Ai o lucrare solidă, cu date reale, o contribuție clară (rebound-ul documentat pe Iași) și răspunsuri pregătite la întrebările grele — vei fi bine. 🎓
+question_plan:
+- id: q1
+  type: decision
+  ask: ce test am folosit pana la urma pt confort si de ce?
+  gold_turns:
+  - 20
+  - 21
+  outdated_turns:
+  - 18
+  - 19
+- id: q2
+  type: exact
+  ask: cat economisea pe an blocul ala de 40 de apartamente?
+  gold_turns:
+  - 11
+- id: q3
+  type: ambiguous
+  ask: si in cat timp isi scoate banii?
+  gold_turns:
+  - 12
+- id: q4
+  type: semantic
+  ask: ce ziceau cele doua articole despre cat se economiseste de fapt?
+  gold_turns:
+  - 5
+  - 6
+  - 7
+- id: q5
+  type: paraphrase
+  ask: cum explicam faptul ca oamenii tin mai cald in casa dupa izolare?
+  gold_turns:
+  - 8
+  - 6
+- id: q6
+  type: paraphrase
+  ask: cum citez raportul de la autoritatea de reglementare in energie?
+  gold_turns:
+  - 9
+- id: q7
+  type: semantic
+  ask: ce limitari am pus la studiu?
+  gold_turns:
+  - 28
+- id: q8
+  type: exact
+  ask: cum am tradus blocurile in engleza pana la urma?
+  gold_turns:
+  - 24
+- id: q9
+  type: decision
+  ask: care era titlul ales?
+  gold_turns:
+  - 26
+  outdated_turns:
+  - 25
+- id: q10
+  type: multi-hop
+  ask: ce raspund daca ma intreaba de testul pe care l-am folosit initial?
+  gold_turns:
+  - 34
+  - 20
+- id: q11
+  type: decision
+  ask: cate capitole are lucrarea in final?
+  gold_turns:
+  - 2
+  outdated_turns:
+  - 1
+- id: q12
+  type: semantic
+  ask: ce fac cu similaritatea mare la capitolul cu legislatia?
+  gold_turns:
+  - 29
+  - 30
+- id: q13
+  type: exact
+  ask: ce p-value ieseau la testul final?
+  gold_turns:
+  - 21
+  outdated_turns:
+  - 19
+- id: s1
+  type: standalone
+  ask: care e capitala Australiei?
+- id: s2
+  type: standalone
+  ask: scrie o poezie scurta despre toamna
+- id: s3
+  type: standalone
+  ask: cum fac un tabel pivot in excel?
+questions:
+- id: q1
+  type: decision
+  prompt: |
+    ce test am folosit pana la urma pt confort si de ce?
+  gold:
+  - turn: 20
+    quote: e mai bine să folosești un singur test pe toată lucrarea (Fisher peste tot)
+  - turn: 21
+    quote: 'Iată paragraful rescris, cu testul exact Fisher:'
+  outdated:
+  - turn: 18
+    quote: Testul se face cu funcția **CHISQ.TEST**
+- id: q2
+  type: exact
+  prompt: |
+    cat economisea pe an blocul ala de 40 de apartamente?
+  gold:
+  - turn: 11
+    quote: 249.400 kWh/an × 0,45 lei/kWh = **112.230 lei/an**
+- id: q3
+  type: ambiguous
+  prompt: |
+    si in cat timp isi scoate banii?
+  gold:
+  - turn: 12
+    quote: 1.950.000 ÷ 112.230 ≈ **17,4 ani**
+- id: q4
+  type: semantic
+  prompt: |
+    ce ziceau cele doua articole despre cat se economiseste de fapt?
+  gold:
+  - turn: 5
+    quote: '**Reducerea medie a consumului normalizat de încălzire a fost de 38%**'
+  - turn: 6
+    quote: '**Efectul de revenire direct este estimat la 25–35% din economiile tehnic posibile**'
+  - turn: 7
+    quote: '| **Rezultat central** | Reducere medie de 38% (mediană 41%) față de 50–60% prognozate |'
+- id: q5
+  type: paraphrase
+  prompt: |
+    cum explicam faptul ca oamenii tin mai cald in casa dupa izolare?
+  gold:
+  - turn: 8
+    quote: Efectul de revenire (rebound effect) apare atunci când o parte din economiile de energie
+  - turn: 6
+    quote: '**Efectul de revenire direct este estimat la 25–35% din economiile tehnic posibile**'
+- id: q6
+  type: paraphrase
+  prompt: |
+    cum citez raportul de la autoritatea de reglementare in energie?
+  gold:
+  - turn: 9
+    quote: '> Autoritatea Națională de Reglementare în Domeniul Energiei. (2022).'
+- id: q7
+  type: semantic
+  prompt: |
+    ce limitari am pus la studiu?
+  gold:
+  - turn: 28
+    quote: '**1. Limitări legate de studiul de caz**'
+- id: q8
+  type: exact
+  prompt: |
+    cum am tradus blocurile in engleza pana la urma?
+  gold:
+  - turn: 24
+    quote: '**„Blocks of flats"** evită-l'
+- id: q9
+  type: decision
+  prompt: |
+    care era titlul ales?
+  gold:
+  - turn: 26
+    quote: '**A. Eficiența reală a reabilitării termice a blocurilor din Iași**'
+  outdated:
+  - turn: 25
+    quote: '## 3. Eficiența reală a reabilitării termice a blocurilor din Iași: consum de energie, costuri și comportamentul locatarilor'
+- id: q10
+  type: multi-hop
+  prompt: |
+    ce raspund daca ma intreaba de testul pe care l-am folosit initial?
+  gold:
+  - turn: 34
+    quote: La începutul analizei am aplicat testul chi-pătrat pe tabelul general
+- id: q11
+  type: decision
+  prompt: |
+    cate capitole are lucrarea in final?
+  gold:
+  - turn: 2
+    quote: 'Iată planul restructurat cu 5 capitole, prin comasarea capitolelor 2 și 3:'
+  outdated:
+  - turn: 1
+    quote: '** Capitolul 3. Studiu de caz: blocurile din Iași**'
+- id: q12
+  type: semantic
+  prompt: |
+    ce fac cu similaritatea mare la capitolul cu legislatia?
+  gold:
+  - turn: 29
+    quote: Respiră liniștit — 23% nu e o catastrofă
+  - turn: 30
+    quote: Programul urmărește, în esență, patru direcții
+- id: q13
+  type: exact
+  prompt: |
+    ce p-value ieseau la testul final?
+  gold:
+  - turn: 21
+    quote: '**p = 0,0003 → scrii „p < 0,001"**'
+  outdated:
+  - turn: 19
+    quote: Perfect, p = 0,0004 e un rezultat excelent

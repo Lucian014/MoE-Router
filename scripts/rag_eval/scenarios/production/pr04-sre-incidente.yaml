@@ -1,0 +1,140 @@
+id: pr04-sre-incidente
+category: coding
+lang: ro
+turns:
+  - user: |
+      avem un cluster EKS cu vreo 25 de servicii. azi checkout-service a picat de 3 ori:
+
+      ```
+      $ kubectl describe pod checkout-service-7d9f8c6b5-x2kqp -n shop
+      ...
+          Last State:     Terminated
+            Reason:       OOMKilled
+            Exit Code:    137
+            Started:      Mon, 09 Nov 2026 10:02:11 +0200
+            Finished:     Mon, 09 Nov 2026 11:47:53 +0200
+          Restart Count:  3
+          Limits:
+            cpu:     1
+            memory:  1Gi
+          Requests:
+            cpu:      500m
+            memory:   768Mi
+      Events:
+        Warning  BackOff  2m (x4 over 1h)  kubelet  Back-off restarting failed container
+      ```
+  - user: |
+      memoria creste constant pana la limita, ca un leak. e java 17 cu spring boot 3. cum investighez?
+  - user: |
+      heap dump-ul arata 1,2 milioane de obiecte CartSessionCache$Entry, aproape 600MB
+  - user: |
+      am pus pe cache-ul ala maximumSize(50_000) si expireAfterAccess de 30 de minute. e ok asa?
+  - user: |
+      scrie postmortem-ul pt incidentul asta, template standard: rezumat, impact, cronologie, cauza radacina, actiuni
+  - user: |
+      altceva: pe ingress apar 502 intermitent, cam 1% din requesturi, doar spre search:
+
+      ```
+      2026/11/10 14:21:07 [error] 31#31: *88213 upstream prematurely closed connection while reading response header from upstream, client: 10.0.3.17, server: shop.example.ro, request: "GET /api/search?q=laptop HTTP/1.1", upstream: "http://10.0.12.44:3000/api/search?q=laptop"
+      ```
+  - user: |
+      search e node.js, express, n-am setat keepAliveTimeout deloc
+  - user: |
+      HPA-ul de la search e pe CPU 70%. la varfuri latenta sare la 2 secunde pana pornesc podurile noi. il scad la 60%?
+  - user: |
+      ok, punem 60%
+  - user: |
+      fa-mi tichetele de jira pt actiunile din postmortem, intr-un tabel: titlu, descriere, acceptance criteria
+  - user: |
+      on-call: suntem 5 oameni, rotatie saptamanala. cum fac sa nu pice nimeni de craciun doi ani la rand?
+  - user: |
+      cost: avem 14 noduri m5.xlarge on-demand, 0,192 $/ora. cat economisim daca trecem 60% din ele pe spot, cu reducere medie de 65%?
+  - user: |
+      si daca pe restul de 40% luam savings plan pe 1 an la -28%?
+  - user: |
+      acum notification-service e OOMKilled:
+
+      ```
+      $ kubectl describe pod notification-service-5b7c9d4f8-mm2lt -n shop
+          Last State:     Terminated
+            Reason:       OOMKilled
+            Exit Code:    137
+          Restart Count:  6
+          Limits:
+            memory:  256Mi
+      $ kubectl top pod notification-service-5b7c9d4f8-mm2lt -n shop
+      NAME                                       CPU(cores)   MEMORY(bytes)
+      notification-service-5b7c9d4f8-mm2lt       41m          251Mi
+      ```
+  - user: |
+      e python cu celery, 8 workeri concurenti, worker_prefetch_multiplier e pe default. mesajele au atasate pdf-urile facturilor, cam 2MB fiecare
+  - user: |
+      traduce postmortem-ul de la checkout in engleza pt echipa din US
+  - user: |
+      au zis ca cronologia e prea lunga. scurteaz-o la 6 puncte
+  - user: |
+      iar 502! acum pe payments:
+
+      ```
+      2026/11/12 09:14:52 [error] 29#29: *120544 connect() failed (111: Connection refused) while connecting to upstream, client: 10.0.4.9, server: shop.example.ro, request: "POST /api/payments/authorize HTTP/1.1", upstream: "http://10.0.15.21:8080/api/payments/authorize"
+      ```
+
+      a tinut cam 40 de secunde
+  - user: |
+      readiness probe-ul de la payments e pe /health, care verifica si conexiunea la baza de date. RDS-ul a facut failover fix atunci, 40 de secunde
+  - user: |
+      deci scoatem verificarea DB din readiness? sau o lasam doar in liveness?
+  - user: |
+      HPA search: la 60% avem prea multe poduri noaptea si costa. hai sa punem 75% dar cu minReplicas 4 si scale-up mai agresiv. scrie-mi manifestul
+  - user: |
+      scrie un runbook pt "502 pe ingress" cu toate cauzele pe care le-am vazut si cum le diferentiezi din loguri
+  - user: |
+      ce SLO punem pt checkout? 99,9%?
+  - user: |
+      error budget pe 30 de zile la 99,9%, cate minute inseamna?
+  - user: |
+      scrie un mesaj pe slack pt echipa de produs despre incidentele saptamanii, non-tehnic
+  - user: |
+      mai scurt si fara emoji
+  - user: |
+      helm: acum avem values separate per environment copiate de mana. kustomize sau helmfile?
+  - user: |
+      mergem pe helmfile. structura de foldere completa pt dev, staging, prod
+  - user: |
+      ```
+      Error: UPGRADE FAILED: another operation (install/upgrade/rollback) is in progress
+      in ./helmfile.yaml: failed processing release checkout-service: command "/usr/local/bin/helm" exited with non-zero status
+      ```
+  - user: |
+      terraform: vreau un node group nou de spot pt EKS, cod complet
+  - user: |
+      ```
+      Error: creating EKS Node Group (shop-prod:spot-general): InvalidParameterException: Instance type t3.large is not supported for capacity type SPOT in this configuration. Specify at least 2 instance types with similar vCPU and memory.
+      ```
+  - user: |
+      ce tipuri de instante pun in mix ca sa nu le pierdem pe toate deodata cand AWS le ia inapoi?
+  - user: |
+      managerul vrea raport lunar de cost pe servicii si echipe. ce tool?
+  - user: |
+      kubecost. cum il instalez cu helmfile-ul nostru?
+  - user: |
+      rezuma-mi toate incidentele din luna asta intr-un tabel: serviciu, simptom, cauza, fix
+  - user: |
+      pt review-ul trimestrial: 3 lucruri care au mers bine si 3 de imbunatatit
+question_plan:
+  - {id: q1, type: exact, ask: "ce limita am pus pana la urma pe cache-ul de la checkout?", gold_turns: [4]}
+  - {id: q2, type: distractor, ask: "de ce murea notification-service?", gold_turns: [15, 14], note: "two OOM incidents: 1-4 checkout vs 14-15"}
+  - {id: q3, type: distractor, ask: "de ce dadea 502 pe search?", gold_turns: [7, 6], note: "two 502s: search 6-7 vs payments 18-20"}
+  - {id: q4, type: ambiguous, ask: "si cel cu payments?", gold_turns: [19, 20]}
+  - {id: q5, type: decision, ask: "la cat am ramas cu targetul de cpu pe hpa-ul de la search?", gold_turns: [21], outdated_turns: [8, 9]}
+  - {id: q6, type: paraphrase, ask: "cat timp avem voie sa fim cazuti pe luna la checkout?", gold_turns: [24, 23]}
+  - {id: q7, type: exact, ask: "cat economisim cu spot pe noduri?", gold_turns: [12, 13]}
+  - {id: q8, type: decision, ask: "ce am zis sa facem cu verificarea bazei de date din probe?", gold_turns: [20]}
+  - {id: q9, type: error-only, ask: "another operation (install/upgrade/rollback) is in progress - cum am deblocat?", gold_turns: [29]}
+  - {id: q10, type: exact, ask: "what instance types did we pick for the spot node group?", lang: en, gold_turns: [32, 31]}
+  - {id: q11, type: paraphrase, ask: "cum facem garzile sa fie corecte de sarbatori?", gold_turns: [11]}
+  - {id: q12, type: decision, ask: "ce tool alesesem pentru rapoartele de cost?", gold_turns: [34, 33]}
+  - {id: q13, type: semantic, ask: "ce era cu memoria de la checkout, ce obiecte umpleau heap-ul?", gold_turns: [3]}
+  - {id: s1, type: standalone, ask: "explain the CAP theorem briefly", lang: en}
+  - {id: s2, type: standalone, ask: "cum scriu un for in bash peste fisierele dintr-un folder?"}
+  - {id: s3, type: standalone, ask: "recomanda-mi o carte buna de SF"}

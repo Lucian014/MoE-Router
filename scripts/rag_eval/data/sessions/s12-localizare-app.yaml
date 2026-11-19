@@ -1,0 +1,717 @@
+id: s12-localizare-app
+category: translation
+lang: ro
+turns:
+- user: |
+    Traduc o aplicație de fitness, PulsFit, din engleză în română. Hai să stabilim întâi un glosar: workout, streak, rest day, rep, set, check-in. Cum le-ai traduce?
+  assistant: |
+    Excelentă idee să stabilim glosarul înainte — în aplicațiile de fitness, consistența termenilor e crucială. Iată propunerea mea:
+
+    | EN | RO | Observații |
+    |---|---|---|
+    | **workout** | **antrenament** | Traducere standard, naturală în română. „Workout" netradus e tot mai comun, dar „antrenament" e sigur și clar. |
+    | **streak** | **serie** sau **șir de zile** | „Serie" e scurt și funcționează în UI (ex. „Serie: 7 zile"). Alternativ, „șir" — dar „serie" sună mai bine. Evitați „streak" netradus dacă publicul e larg. |
+    | **rest day** | **zi de odihnă** | Traducere directă, consacrată în comunitatea fitness din România. |
+    | **rep** | **repetiție** (sau **rep** în contexte tehnice) | „Repetiție" e termenul consacrat. În liste compacte se poate abrevia „reps." — dar verificați spațiul din UI. |
+    | **set** | **serie** ⚠️ | Aici e o coliziune: „set" = „serie" în jargonul fitness românesc („3 serii a câte 10 repetiții"). Dacă folosiți „serie" și pentru *streak*, apare ambiguitate. Recomand: **set = serie**, iar **streak = șir de zile** sau „zile consecutive". |
+    | **check-in** | **prezență** sau **înregistrare** | Depinde de funcție: dacă e despre confirmarea zilnică a activității → „check-in" se poate păstra (e familiar), sau „înregistrare zilnică". Dacă e despre prezență la sală → „prezență". |
+
+    **Rezolvarea coliziunii serie/streak** — două variante coerente:
+
+    1. **Conservatoare:** set = serie, streak = șir de zile / zile consecutive
+    2. **Modernă:** set = set (netradus, foarte răspândit în saloanele RO), streak = serie
+
+    Personal aș alege varianta 2 dacă publicul e tânăr și obișnuit cu sala, varianta 1 dacă aplicația vizează utilizatori casual.
+
+    Cum funcționează „check-in" în PulsFit? Cu asta pot rafina recomandarea, apoi putem continua cu alți termeni (ex. warm-up, cooldown, PR, badge).
+- user: |
+    „Streak” tradus „serie” sună ciudat într-o aplicație. Ce alternative am?
+  assistant: |
+    Ai dreptate — „serie" e încărcat deja (set, serie de TV, serie de produse) și nu transmite ideea de *continuitate motivațională* pe care o are „streak". Alternative:
+
+    **1. „Șir de zile" / „șir"**
+    Cea mai corectă traducere. „Șir de 7 zile" e clar, dar „șir" singur, într-un badge mic, sună sec.
+
+    **2. „Zile consecutive"**
+    Foarte des folosit în aplicațiile românești (Duolingo RO, de exemplu, folosește construcții de genul). Funcționează excelent în contexte scurte: „5 zile consecutive 🔥". Dezavantaj: e mai lung, deci mai greu de pus într-un buton sau etichetă compactă.
+
+    **3. „Rulantă" / „serie activă"**
+    Perifraze care adaugă context, dar devin greoaie — nu le recomand.
+
+    **4. „Streak" netradus**
+    De luat în serios: în România, publicul de fitness și cel de aplicații e deja expus la termenul (Duolingo, Snapchat, GitHub). Multe produse locale îl păstrează. Dacă publicul vostru e sub 35 de ani și obișnuit cu tehnologie, „streak" e probabil mai clar decât orice traducere.
+
+    **5. Traducere adaptată, nu literală**
+    În loc de un substantiv unic, adaptați fraza în funcție de context:
+    - Badge: „🔥 7 zile la rând"
+    - Mesaj motivațional: „Nu întrerupe șirul!"
+    - Statistică: „Cea mai lungă perioadă activă: 21 de zile"
+
+    **Recomandarea mea:** combinația 4 + 5 — păstrați „streak" ca termen de brand/UI acolo unde e etichetă de sine stătătoare, iar în propoziții folosiți „zile la rând" / „zile consecutive". Astfel evitați atât ciudățenia lui „serie", cât și perifrazele lungi.
+
+    Cum arată contextele în care apare „streak" în PulsFit (badge, notificare, ecran de statistici)? Vă pot propune formulări concrete pentru fiecare.
+- user: |
+    Ok, mergem pe „serie de zile” pentru streak. Și „check-in” rămâne „check-in” sau îl traducem?
+  assistant: |
+    „Check-in" netradus e o alegere legitimă, dar depinde mult de ce face funcția în PulsFit. Să le luăm pe rând:
+
+    **Când „check-in" netradus funcționează bine:**
+    - Publicul vostru e tânăr/urban și obișnuit cu aplicații (check-in-ul de la sală, Facebook, hoteluri)
+    - Termenul apare ca buton sau etichetă scurtă („Check-in zilnic")
+    - E o funcție centrală, cu nume de brand — atunci e mai degrabă nume de feature decât cuvânt de dicționar
+
+    **Când merită tradus:**
+    - Publicul e larg, inclusiv persoane mai în vârstă sau din mediul rural
+    - Contextul e explicativ („Fă-ți check-in-ul zilnic" → „Înregistrează-ți antrenamentul zilnic")
+
+    **Alternative, în funcție de funcționalitate:**
+
+    | Ce face check-in-ul | Traducere potrivită |
+    |---|---|
+    | Confirmare zilnică „am fost activ" | „prezență zilnică" / „pontaj zilnic" (mai jucăuș) |
+    | Înregistrarea antrenamentului efectuat | „înregistrare" / „logare antrenament" |
+    | Check-in fizic la sală (geolocație) | „check-in" — aici nu prea are substitut natural |
+
+    **Recomandarea mea:** dacă check-in-ul din PulsFit înseamnă „confirm că am făcut mișcare azi", aș traduce cu **„prezență"** sau **„înregistrare zilnică"** în textul explicativ, dar aș păstra „check-in" ca etichetă de buton dacă e scurt și are iconiță. Practic: termenul englezesc ca UI compact, traducerea ca explicație.
+
+    Un detaliu de coerență: dacă îl păstrați netradus, folosiți-l consecvent la fel peste tot în aplicație („Check-in", nu amestecat cu „check-in-ul tău" / „înregistrarea ta" în ecrane diferite).
+
+    Ce face exact check-in-ul în PulsFit? Așa închidem decizia definitiv și o trecem în glosar.
+- user: |
+    Tradu aceste stringuri din aplicație:
+
+    ```json
+    {
+      "onboarding.title": "Start your fitness journey",
+      "onboarding.subtitle": "Small steps every day add up to big changes.",
+      "onboarding.cta": "Let's go",
+      "workout.start": "Start workout",
+      "workout.rest_day": "Rest day: your muscles grow when you rest",
+      "workout.finished": "Great job! You finished {exercises} exercises in {minutes} minutes.",
+      "streak.current": "{days}-day streak",
+      "streak.lost": "You lost your streak. Start again today!",
+      "checkin.prompt": "How do you feel today?",
+      "paywall.title": "Unlock your full potential",
+      "paywall.trial": "Try PulsFit Pro free for 7 days",
+      "paywall.cancel": "Cancel anytime from your account settings.",
+      "settings.units": "Units (kg / lb)",
+      "settings.reminders": "Workout reminders"
+    }
+    ```
+  assistant: |
+    Iată traducerea, respectând glosarul stabilit („serie de zile" pentru streak, „check-in" păstrat netradus):
+
+    ```json
+    {
+      "onboarding.title": "Începe-ți călătoria fitness",
+      "onboarding.subtitle": "Pași mici în fiecare zi duc la schimbări mari.",
+      "onboarding.cta": "Hai să începem",
+      "workout.start": "Începe antrenamentul",
+      "workout.rest_day": "Zi de odihnă: mușchii tăi cresc când te odihnești",
+      "workout.finished": "Bravo! Ai terminat {exercises} exerciții în {minutes} minute.",
+      "streak.current": "Serie de {days} zile",
+      "streak.lost": "Ai pierdut seria de zile. Reluăm azi!",
+      "checkin.prompt": "Cum te simți azi?",
+      "paywall.title": "Deblochează-ți întregul potențial",
+      "paywall.trial": "Încearcă PulsFit Pro gratuit 7 zile",
+      "paywall.cancel": "Poți anula oricând din setările contului.",
+      "settings.units": "Unități (kg / lb)",
+      "settings.reminders": "Memento-uri antrenament"
+    }
+    ```
+
+    Câteva decizii de traducere, ca să le validăm:
+
+    - **„Let's go" → „Hai să începem"** — mai natural decât „Hai să mergem" (care ar sugera deplasare fizică). Alternativă mai scurtă pentru buton: „Start".
+    - **„streak.current"** — am reformulat: „{days}-day streak" nu se poate traduce literal, așa că am mutat numărul în interior: „Serie de {days} zile". Verificați că layout-ul suportă ordinea diferită a placeholder-ului.
+    - **„streak.lost" → „Reluăm azi!"** — mai cald și mai motivațional decât „Începe din nou azi". Alternativă: „Începem de la zero azi!".
+    - **„Workout reminders" → „Memento-uri antrenament"** — alternativă: „Notificări antrenament", dacă în restul aplicației folosiți „notificări" pentru push-uri. Spuneți-mi ce termen folosiți pentru „notification" și aliniem.
+    - **„checkin.prompt"** — întrebarea rămâne naturală în română, fără a fi nevoie de termenul „check-in" în string.
+
+    Doriți să continuăm cu un glosar extins (notification, reminder, badge, warm-up, cooldown, PR) înainte de următorul set de stringuri?
+- user: |
+    Tutuim utilizatorul sau folosim „dumneavoastră”? Publicul e între 20 și 35 de ani.
+  assistant: |
+    Pentru publicul 20–35 de ani, clar **tutuitul**. Argumente:
+
+    - **Convenția pieței:** aproape toate aplicațiile consumer din România (Foodpanda, Bolt, eMAG, Revolut RO, aplicațiile de fitness precum Fitbit sau Strava în varianta localizată) folosesc tutuitul. „Dumneavoastră" ar suna formal, distant — ca o bancă, nu ca un antrenor.
+    - **Tonul produsului:** PulsFit e un companion motivațional. „Bravo! Ai terminat..." funcționează doar la persoana a II-a singular; „Ați terminat" ar distruge exact căldura pe care am construit-o în stringuri.
+    - **Demografic:** 20–35 e intervalul în care tutuitul e perceput ca prietenos, nu lipsit de respect.
+
+    Singurele excepții în care aș folosi „dumneavoastră":
+    - Texte legale (Termeni și condiții, Politica de confidențialitate) — acolo e standard
+    - Ecrane de plată/facturare, dacă vreți un ton mai serios — dar chiar și aici multe aplicații păstrează tutuitul
+
+    **Recomandare practică:** adăugați în glosar o regulă de stil: *„Ton: prietenos, motivațional, persoana a II-a singular (tutuit) în tot UI-ul; persoana a II-a plural (dumneavoastră) doar în documente legale."* Astfel, dacă mai traduce cineva după dvs., va fi consecvent.
+
+    Stringurile traduse deja sunt toate la tutuit, deci nu avem nimic de corectat. Continuăm cu următorul set?
+- user: |
+    Ok, tutuim peste tot. Refă traducerea stringurilor cu tutuire, păstrând cheile.
+  assistant: |
+    Stringurile erau deja traduse la tutuit, deci traducerea rămâne neschimbată — o reafirm aici ca referință finală:
+
+    ```json
+    {
+      "onboarding.title": "Începe-ți călătoria fitness",
+      "onboarding.subtitle": "Pași mici în fiecare zi duc la schimbări mari.",
+      "onboarding.cta": "Hai să începem",
+      "workout.start": "Începe antrenamentul",
+      "workout.rest_day": "Zi de odihnă: mușchii tăi cresc când te odihnești",
+      "workout.finished": "Bravo! Ai terminat {exercises} exerciții în {minutes} minute.",
+      "streak.current": "Serie de {days} zile",
+      "streak.lost": "Ai pierdut seria de zile. Reluăm azi!",
+      "checkin.prompt": "Cum te simți azi?",
+      "paywall.title": "Deblochează-ți întregul potențial",
+      "paywall.trial": "Încearcă PulsFit Pro gratuit 7 zile",
+      "paywall.cancel": "Poți anula oricând din setările contului.",
+      "settings.units": "Unități (kg / lb)",
+      "settings.reminders": "Memento-uri antrenament"
+    }
+    ```
+
+    Verificare rapidă a tutuirii: „Începe-ți", „mușchii tăi", „Ai terminat", „Ai pierdut", „te simți", „Deblochează-ți", „Poți anula" — toate la persoana a II-a singular. ✓
+
+    Trimite următorul set de stringuri când e gata.
+- user: |
+    „Let's go” tradus „Hai să mergem” e prea literal pentru un buton. Ceva mai natural?
+  assistant: |
+    Mică precizare: în traducerea mea am folosit deja „Hai să începem" tocmai pentru că „Hai să mergem" ar fi sunat literal (și ar fi sugerat deplasare). Dar discutabil — iată alternative pentru butonul de onboarding, de la cea mai energică la cea mai neutră:
+
+    | Variantă | Ton / context |
+    |---|---|
+    | **„Hai să începem"** | Prietenos, natural — alegerea mea actuală |
+    | **„Să începem!"** | Mai scurt, la fel de natural, excelent pentru butoane |
+    | **„Hai la treabă!"** | Jucăuș, energic — poate fi prea casual pentru unii |
+    | **„Începe acum"** | Direct, orientat spre acțiune |
+    | **„Start"** | Minimalist, foarte comun în UI-uri românești |
+
+    **Recomandarea mea:** pentru un buton CTA de onboarding, **„Să începem!"** e probabil cea mai bună variantă — scurt, natural, cu energie, și se potrivește perfect pe butoane înguste. „Hai să începem" rămâne bună dacă butonul are spațiu generos.
+
+    Dacă vreți, o schimb direct în JSON:
+
+    ```json
+    "onboarding.cta": "Să începem!"
+    ```
+
+    Ce preferați?
+- user: |
+    Acum notificările push. Tradu-le, maximum 40 de caractere fiecare:
+
+    1. "Your workout is waiting. Just 15 minutes today?"
+    2. "Don't break your streak! Train before midnight."
+    3. "New personal record unlocked. You're getting stronger every single week!"
+    4. "Rest day today. Stretch a little and drink water."
+    5. "Your weekly summary is ready."
+    6. "3 days without training. Come back, we miss you!"
+  assistant: |
+    Iată traducerile, cu numărul de caractere verificat (fără emoji-uri suplimentare):
+
+    ```json
+    {
+      "push.workout_waiting": "Antrenamentul te așteaptă. 15 min azi?",
+      "push.streak_risk": "Nu rupe seria! Antrenează-te azi.",
+      "push.pr_unlocked": "Record personal nou! Devii mai puternic.",
+      "push.rest_day": "Zi de odihnă. Întinde-te și bea apă.",
+      "push.weekly_summary": "Rezumatul săptămânii e gata.",
+      "push.comeback": "3 zile de pauză. Ne este dor de tine!"
+    }
+    ```
+
+    Verificare caractere:
+
+    | # | String | Caractere |
+    |---|---|---|
+    | 1 | Antrenamentul te așteaptă. 15 min azi? | 38 ✓ |
+    | 2 | Nu rupe seria! Antrenează-te azi. | 33 ✓ |
+    | 3 | Record personal nou! Devii mai puternic. | 40 ✓ (exact la limită) |
+    | 4 | Zi de odihnă. Întinde-te și bea apă. | 36 ✓ |
+    | 5 | Rezumatul săptămânii e gata. | 28 ✓ |
+    | 6 | 3 zile de pauză. Ne este dor de tine! | 37 ✓ |
+
+    Decizii de traducere de semnalat:
+
+    - **#1:** „15 minutes" → „15 min" pentru a încăpea; în push-uri abrevierea e acceptată.
+    - **#2:** am sacrificat „before midnight" — „până la miezul nopții" depășea limita. Dacă detaliul e important, alternativă: „Seria expiră la miezul nopții!" (31 caractere), dar pierde tonul de încurajare.
+    - **#3:** exact 40 de caractere. Dacă vreți marjă de siguranță: „Record personal! Devii mai puternic." (36). „Every single week" nu încăpea; am păstrat ideea de progres continuu.
+    - **#6:** „we miss you" → „Ne este dor de tine" — corect gramatical; varianta colocvială „Ne dor de tine" e mai scurtă, dar considerată greșită.
+
+    Dacă sistemul vostru de push permite emoji, „🔥" pe #2 și „💪" pe #3 ar crește rata de deschidere — dar verificăți că numărătoarea de caractere include și emoji-ul (unele platforme îl contează ca 2 caractere).
+- user: |
+    A treia e tot prea lungă. Scurteaz-o fără să pierzi ideea de record personal.
+  assistant: |
+    Iată variante mai scurte, toate sub 40 de caractere:
+
+    | Variantă | Caractere |
+    |---|---|
+    | **„Record personal! Devii mai puternic."** | 36 ✓ |
+    | „Ai bătut recordul personal!" | 27 ✓ |
+    | „Record personal nou! 💪" | 22 (+ emoji) ✓ |
+    | „Nou record personal. Continuă așa!" | 34 ✓ |
+
+    **Recomandarea mea:** prima variantă — păstrează ambele idei (record + progres) și lasă marjă de siguranță față de limită:
+
+    ```json
+    "push.pr_unlocked": "Record personal! Devii mai puternic."
+    ```
+
+    Dacă preferați ceva mai scurt și mai punchy, „Ai bătut recordul personal!" e foarte naturală în română și lasă loc pentru un emoji. Care o alegeți?
+- user: |
+    Cum traduc „PR” (personal record)? În comunitatea de sală de la noi se zice tot „PR”?
+  assistant: |
+    Da, în comunitatea de sală din România „PR" e folosit exact ca în engleză — pronunțat „pe-er" — mai ales în powerlifting, crossfit și printre cei care se antrenează serios. „A făcut un PR nou", „a bătut PR-ul" — toate sună natural în sală.
+
+    **Dar atenție la contextul aplicației:**
+
+    | Public | Recomandare |
+    |---|---|
+    | Utilizatori avansați, powerlifting/crossfit | **„PR"** netradus — e limbajul nativ al comunității |
+    | Public larg, începători, aplicație mainstream | **„record personal"** — „PR" poate fi neclar pentru cineva care abia a început să se miște |
+
+    **Pentru PulsFit**, cu public 20–35 și ton prietenos, aș face o combinație:
+
+    - **În stringuri scurte (badge, push, notificare):** „PR" — compact, familiar, și deja l-am folosit implicit în „Record personal!"... de fapt aici puteți alege: „PR nou! 💪" (13 caractere) e și mai scurt.
+    - **Prima dată când apare termenul în aplicație (onboarding, tooltip):** „record personal (PR)" — o singură dată, ca să ancoreze sensul, apoi doar „PR".
+
+    **De evitat:** „reper personal" (calchiu nenatural) sau „record nou" singur (ambiguu — record la ce?).
+
+    Decizie pentru glosar: propun **PR = „PR"** în etichete și notificări, „record personal" în texte explicative. Dacă sunteți de acord, actualizez și push-ul #3 — „PR nou! Devii mai puternic." (29 caractere) ar fi varianta aliniată la glosar.
+- user: |
+    Marketingul vrea ca „streak” să fie „șir de zile”, nu „serie de zile”. Refă toate stringurile și notificările care conțin streak.
+  assistant: |
+    Actualizat conform deciziei marketingului — iată toate stringurile afectate:
+
+    **Din setul principal:**
+
+    ```json
+    "streak.current": "Șir de {days} zile",
+    "streak.lost": "Ai pierdut șirul de zile. Reluăm azi!"
+    ```
+
+    **Din notificările push:**
+
+    ```json
+    "push.streak_risk": "Nu rupe șirul! Antrenează-te azi."
+    ```
+
+    Verificare caractere pentru push: „Nu rupe șirul! Antrenează-te azi." = 33 ✓
+
+    Restul stringurilor nu conțin „streak", deci rămân neschimbate.
+
+    **Actualizare glosar:**
+
+    | EN | RO |
+    |---|---|
+    | streak | șir de zile (etichete scurte: „șirul") |
+
+    O observație de coerență: în texte scurte și propoziții vom folosi forma scurtă „șirul" (ex. „Nu rupe șirul!"), iar „șir de zile" ca etichetă completă. Dacă apare vreodată ambiguitate cu „șir" în alt context (ex. șir de caractere, în setări tehnice), semnalați-mi și găsim o formulare alternativă — dar în UI-ul de fitness nu pre văd riscul.
+
+    Trimiteți următorul set când e gata.
+- user: |
+    Pentru App Store, tradu descrierea:
+
+    PulsFit is the workout app for people who don't have time for workouts. Every plan is built around your schedule: tell us how many minutes you have, and we'll build a session that fits, from a quick 10-minute core routine to a full one-hour strength workout.
+
+    Track every rep and every set, and watch your progress in clear weekly charts. Hit a new personal record? PulsFit celebrates it with you. Missed a day? No guilt, the plan adapts.
+
+    With PulsFit Pro you get personalized plans that change as you get stronger, video guidance for more than 400 exercises, and offline mode for the gym basement with no signal. Try Pro free for 7 days and cancel anytime.
+
+    Your data stays yours: we never sell it, and you can export or delete it at any time from the settings.
+  assistant: |
+    Iată descrierea tradusă, cu tonul de marketing păstrat și glosarul respectat (antrenament, repetiții/serii, record personal):
+
+    ---
+
+    **PulsFit e aplicația de antrenament pentru oamenii care nu au timp de antrenamente.** Fiecare plan e construit în jurul programului tău: spune-ne câte minute ai la dispoziție, iar noi creăm o sesiune pe măsură — de la o rutină rapidă de core de 10 minute până la un antrenament complet de forță de o oră.
+
+    **Urmărește fiecare repetiție și fiecare serie** și vezi-ți progresul în grafice săptămânale clare. Ai atins un record personal nou? PulsFit sărbătorește cu tine. Ai ratat o zi? Fără vină — planul se adaptează.
+
+    **Cu PulsFit Pro primești planuri personalizate** care evoluează odată cu tine, ghidare video pentru peste 400 de exerciții și mod offline pentru sala de la subsol, fără semnal. Încearcă Pro gratuit 7 zile și anulezi oricând.
+
+    **Datele tale rămân ale tale:** nu le vindem niciodată, iar le poți exporta sau șterge oricând din setări.
+
+    ---
+
+    Decizii de traducere de semnalat:
+
+    - **„core"** — l-am păstrat netradus; „core" e termenul folosit în comunitatea fitness RO, iar „tonus/trunchi" ar suna artificial. Alternativă: „exerciții pentru abdomen și spate".
+    - **„No guilt" → „Fără vină"** — am păstrat ideea, cu tonul relaxat din original.
+    - **„the gym basement with no signal"** — am tradus liber („sala de la subsol, fără semnal") ca să păstrez umorul; literal ar fi fost greoi.
+    - **„cancel anytime" → „anulezi oricând"** — tutuit, conform regulii de stil. În App Store, acest text apare de obicei și sub formă de bullet legal; dacă e cazul, acolo se folosește „dumneavoastră".
+    - **„Your data stays yours" → „Datele tale rămân ale tale"** — formulare directă, potrivită pentru publicul 20–35 atent la privacy.
+
+    Dacă App Store cere și un **subtitle (max 30 caractere)** sau **promotional text (max 170 caractere)**, le pot propune imediat. De asemenea, pot pregăti lista de cuvinte-cheie pentru căutări (keywords) în română, dacă e nevoie.
+- user: |
+    În descrierea în română au rămas prea multe anglicisme. Curăț-o, dar păstrează numele produselor.
+  assistant: |
+    Iată descrierea curățată — am păstrat doar PulsFit și PulsFit Pro ca nume de produse:
+
+    ---
+
+    **PulsFit e aplicația de antrenament pentru oamenii care nu au timp de antrenamente.** Fiecare plan e construit în jurul programului tău: spune-ne câte minute ai la dispoziție, iar noi creăm o ședință pe măsură — de la o rutină rapidă de abdomen și spate de 10 minute până la un antrenament complet de forță de o oră.
+
+    **Urmărește fiecare repetiție și fiecare serie** și vezi-ți progresul în grafice săptămânale clare. Ai atins un record personal nou? PulsFit sărbătorește cu tine. Ai ratat o zi? Fără vină — planul se adaptează.
+
+    **Cu PulsFit Pro primești planuri personalizate** care evoluează odată cu tine, ghidare video pentru peste 400 de exerciții și mod fără internet pentru sala de la subsol, fără semnal. Încearcă Pro gratuit 7 zile și anulezi oricând.
+
+    **Datele tale rămân ale tale:** nu le vindem niciodată, iar le poți exporta sau șterge oricând din setări.
+
+    ---
+
+    Modificări făcute:
+
+    - **„core" → „abdomen și spate"** — singurul anglicism cu adevărat evitabil; varianta română e clară pentru oricine.
+    - **„mod offline" → „mod fără internet"** — mai natural; „offline" e acceptat, dar aici putem fi consecvenți cu politica de curățare.
+    - **„sesiune" → „ședință"** — ambele sunt românești, dar „ședință de antrenament" e formularea consacrată; dacă în aplicație folosiți „sesiune", spuneti-mi și aliniem.
+
+    Am păstrat intenționat:
+
+    - **„PulsFit" / „Pro"** — nume de produs, conform cerinței.
+    - **„antrenament", „repetiție", „serie", „record personal"** — sunt termenii din glosarul nostru; deși „repetiție" și „serie" au echivalente perfecte, ele *sunt* traducerile, nu anglicisme.
+
+    O mențiune: dacă descrierea din App Store trebuie să fie consecventă cu UI-ul aplicației, verificați ce termen folosim acolo pentru sesiunea de antrenament („antrenament" vs. „ședință") — descrierea ar trebui să reflecte aplicația, nu invers.
+- user: |
+    Ce înseamnă exact „no pain, no gain” și cum l-aș adapta în română fără să-l traduc literal? E pentru un banner motivațional.
+  assistant: |
+    **„No pain, no gain"** înseamnă: fără efort și disconfort nu există progres. Originea e în cultura sălilor de fitness americane (popularizată în anii '80), iar ideea e că rezultatele — mușchi, forță, rezistență — vin doar dacă împingi dincolo de zona de confort. Literal ar fi „fără durere, niciun câștig", dar tradus astfel sună bizar și chiar periculos în română (pare că încurajează durerea fizică reală, ceea ce nu e mesajul).
+
+    **Important pentru un banner:** în fitness-ul modern, mesajul original e parțial depășit — comunitatea subliniază tot mai mult diferența dintre *disconfort* (normal, util) și *durere* (semnal de alarmă). Pentru o aplicație mainstream cu public 20–35, o adaptare care sugerează efort, nu suferință, e mai sigură și mai actuală.
+
+    **Adaptări în română, pe grade de fidelitate:**
+
+    | Variantă | Ton |
+    |---|---|
+    | **„Fără efort, nu există progres."** | Cea mai apropiată ca sens, naturală, sigură |
+    | **„Progresul se câștigă cu sudoare."** | Evocă efortul concret, fără „durere" |
+    | **„Zona de confort nu te face mai puternic."** | Modernă, aliniată discursului actual de fitness |
+    | **„Mușchii cresc din efort, nu din scuze."** | Jucăușă, cu un pic de provocare |
+    | **„Durează azi, strălucește mâine."** | Mai poetică — dar reintroduce „durere", de data asta figurativ |
+
+    **Recomandarea mea pentru banner:** „Fără efort, nu există progres." — e scurtă, se citește instant pe un banner, păstrează structura paralelă a originalului și nu are riscul interpretării greșite. Dacă bannerul e mai degrabă playful și aveți spațiu, „Mușchii cresc din efort, nu din scuze." are personalitate și se va reține.
+
+    Dacă e un banner recurent, merită să-l tratați ca slogan: alegeți o singură variantă și folosiți-o consecvent, nu alternați între ele. Vă pot ajuta să testați care se potrivește cu restul tonului din PulsFit dacă îmi arătați alte mesaje motivaționale din aplicație.
+- user: |
+    Vreau și o variantă în germană a titlului din App Store, doar ca să compar lungimea.
+  assistant: |
+    Mică precizare utilă: în conversația noastră nu am definit încă un titlu de App Store — am tradus doar descrierea. Așa că îți propun mai jos titluri echivalente în toate trei limbile, ca să poți compara lungimile (limita App Store: **30 de caractere**):
+
+    | Limbă | Titlu | Caractere |
+    |---|---|---|
+    | EN | PulsFit: Workouts That Fit You | 29 ✓ |
+    | RO | PulsFit: Antrenamente pe măsura ta | 33 ✗ |
+    | RO (scurtat) | PulsFit: Antrenament pe măsura ta | 32 ✗ |
+    | RO (variantă) | PulsFit – Antrenamente la tine | 29 ✓ |
+    | DE | PulsFit: Workouts für deinen Tag | 32 ✗ |
+    | DE (scurtat) | PulsFit – Training, das passt | 29 ✓ |
+    | DE (variantă) | PulsFit: Fitness in deiner Zeit | 31 ✗ |
+
+    Câteva observații:
+
+    - **Germana tinde să fie mai lungă** decât engleza — cuvinte compuse precum „Trainingsplan" sau „Zeitmanagement" consumă rapid caractere. Regula practică: dacă engleza e la 29, germana va avea nevoie aproape mereu de o reformulare, nu doar de o traducere.
+    - **Româna e și ea mai lungă** decât engleza în acest caz, din cauza lui „antrenamente" (13 caractere) și a formelor cu articol hotărât atașat („pe măsura ta").
+    - În titlurile de App Store, numele produsului (PulsFit) contează la limită, deci partea descriptivă rămâne cu ~20 de caractere în EN, dar doar ~16 în RO/DE.
+
+    Dacă îmi dai titlul englezesc real pe care îl folosiți (sau dacă vrei să-l definim acum), îl traduc exact în română și germană și verific limita pentru ambele. Vrei și un **subtitle** (30 caractere) pentru fiecare limbă?
+- user: |
+    Cum gestionez pluralele în română pentru „X zile”? Avem 1 zi, 2 zile, 20 de zile, 101 zile.
+  domain: coding
+  assistant: |
+    Româna are **trei forme de plural** pentru acest caz, iar regulile sunt următoarele:
+
+    | Formă (CLDR) | Regulă | Exemple |
+    |---|---|---|
+    | **one** | exact 1 | 1 zi |
+    | **few** | numere de la 2 la 19 (sau care se termină în 2–19, cu excepția celor care se termină în 01–019... practic: n % 100 ∈ 2–19) | 2 zile, 11 zile, 17 zile |
+    | **other** | tot restul — 0, 20, 100, 101, 120... | 20 de zile, 101 de zile |
+
+    Detaliul care încurcă pe toată lumea: **prepoziția „de"**. În română, numeralele de la 20 în sus cer „de" înaintea substantivului („20 **de** zile", „101 **de** zile"), dar 2–19 nu („2 zile", „17 zile"). Din fericire, granița „de" coincide aproape perfect cu categoria „other", deci cele trei forme acoperă tot:
+
+    - 1 → „o zi" / „1 zi"
+    - 2–19 → „{n} zile"
+    - ≥ 20 → „{n} de zile"
+
+    **Implementare în fișiere i18n** (format CLDR, compatibil cu majoritatea bibliotecilor — i18next, FormatJS, Flutter, Android res, iOS .stringsdict):
+
+    ```json
+    {
+      "streak.days_one": "Serie de {days} zi",
+      "streak.days_few": "Serie de {days} zile",
+      "streak.days_other": "Serie de {days} de zile"
+    }
+    ```
+
+    *(Actualizat cu „șir" conform deciziei marketingului: „Șir de {days} zi / zile / de zile".)*
+
+    **Capcane de evitat:**
+
+    1. **Nu hardcodați „zile"** și concatenați numărul în față — „101 zile" e greșit, trebuie „101 de zile".
+    2. **Nu folosiți doar „one" și „other"** (modelul englezesc) — pierdeți forma „few" și obțineți „2 de zile" sau „22 zile".
+    3. **Verificați și alte substantive** cu aceleași reguli: „1 exercițiu / 2 exerciții / 20 de exerciții", „1 minut / 2 minute / 20 de minute" — toate urmează același tipar one/few/other, deci o singură implementare corectă vă rezolvă tot.
+    4. **Testați cu numerele limită:** 1, 2, 11, 19, 20, 21, 101, 111, 120. De exemplu 111 → „111 de zile" (other), nu „few", deși se termină în 11.
+
+    Dacă biblioteca voastră de i18n nu suportă categoriile CLDR (unele soluții simple nu o fac), alternativa e o funcție helper în cod care alege forma — o pot scrie dacă îmi spuneți limbajul/framework-ul folosit.
+- user: |
+    Scrie-mi regula ICU MessageFormat pentru „{count} zile la rând”, cu toate formele de plural din română.
+  domain: coding
+  assistant: |
+    Iată regula completă ICU MessageFormat pentru română:
+
+    ```icu
+    {count, plural,
+      one {# zi la rând}
+      few {# zile la rând}
+      other {# de zile la rând}
+    }
+    ```
+
+    Rezultatele, pentru fiecare formă:
+
+    | count | Ieșire |
+    |---|---|
+    | 1 | 1 zi la rând |
+    | 2 | 2 zile la rând |
+    | 11 | 11 zile la rând |
+    | 19 | 19 zile la rând |
+    | 20 | 20 de zile la rând |
+    | 101 | 101 de zile la rând |
+
+    Câteva detalii de implementare:
+
+    - **`#`** este substituit automat cu valoarea lui `count`. Dacă vreți formatare a numărului (separator de mii), folosiți explicit `{count, number}` în loc de `#`:
+      ```icu
+      other {{count, number} de zile la rând}
+      ```
+    - **`offset` nu e necesar aici** — e util doar pentru construcții de tipul „tu și încă 3 prieteni", unde numărul afișat diferă de cel folosit la selectarea pluralului.
+    - **Dacă biblioteca nu suportă `#`** (rare, dar există), repetați variabila:
+      ```icu
+      {count, plural,
+        one {{count} zi la rând}
+        few {{count} zile la rând}
+        other {{count} de zile la rând}
+      }
+      ```
+
+    **Test de regresie recomandat** — rulați cu valorile: 0, 1, 2, 11, 19, 20, 21, 100, 101, 111, 120. Așteptat:
+
+    - 0 → „0 de zile la rând" (other — corect gramatical, deși poate vreți un string separat pentru 0, ex. „Încă n-ai început șirul")
+    - 21 → „21 de zile la rând" (other, nu few — capcana clasică)
+    - 111 → „111 de zile la rând" (other)
+
+    Observație: dacă în aplicație stringul e „Șir de {days} zile" (eticheta din glosar), aceeași structură de plural se aplică identic — doar înlocuiți textul din fiecare ramură.
+- user: |
+    Testerii zic că „Antrenament de recuperare” nu încape pe buton (maximum 16 caractere). Variante mai scurte?
+  assistant: |
+    „Antrenament de recuperare" are 25 de caractere, deci trebuie o reformulare serioasă. Variante, toate verificate:
+
+    | Variantă | Caractere |
+    |---|---|
+    | **„Recuperare"** | 10 ✓ |
+    | **„Zi de recuperare"** | 16 ✓ (exact la limită) |
+    | „Mobilitate" | 10 ✓ |
+    | „Stretching" | 10 ✓ |
+    | „Recuperare activă" | 17 ✗ (depășește cu 1) |
+
+    **Recomandarea mea: „Recuperare"** — e clar în context (butonul e deja într-un ecran de antrenament, deci utilizatorul înțelege că e vorba de un antrenament de recuperare), lasă marjă generoasă pentru fonturi mai mari sau alte limbi, și e termenul consacrat în română.
+
+    Observații:
+
+    - **„Zi de recuperare"** e ok dacă butonul chiar marchează o zi întreagă din plan (nu doar tipul de ședință), dar e la limită — orice schimbare de font sau padding o poate rupe. Dacă e posibil, evitați stringuri exact la 16 caractere.
+    - **„Mobilitate"** e o alternativă excelentă dacă antrenamentul conține exerciții de mobilitate/stretching — e termenul folosit în comunitatea fitness RO și e mai specific decât „recuperare".
+    - **„Stretching"** — funcțional, dar e anglicism; dacă urmăm politica de curățare de la descrierea App Store, mai bine evitat.
+
+    Dacă ecranul are loc pentru un text secundar (subtitlu pe buton sau etichetă de deasupra), puteți combina: etichetă mică „ANTRENAMENT DE RECUPERARE" + buton „Recuperare". Astfel păstrați termenul complet în UI fără să încălcați limita.
+
+    Ce reprezintă exact butonul — tipul de ședință sau o zi din plan? Așa închidem alegerea.
+- user: |
+    Tradu emailul de bun venit:
+
+    Subject: Welcome to PulsFit!
+
+    Hi {first_name},
+
+    Thanks for joining PulsFit. We're excited to help you build a habit that sticks.
+
+    Here's how to get the most out of your first week: set your available time in the plan settings, turn on workout reminders, and try at least three short sessions. Consistency beats intensity, especially at the start.
+
+    If you have any questions, just reply to this email. A real person from our team will answer, usually within one working day.
+
+    See you on the mat,
+    The PulsFit team
+  assistant: |
+    Iată traducerea, cu tutuire și glosarul respectat:
+
+    ---
+
+    **Subiect: Bine ai venit la PulsFit!**
+
+    Bună, {first_name},
+
+    Îți mulțumim că ai ales PulsFit. Suntem încântați să te ajutăm să construiești un obicei care rămâne.
+
+    Iată cum să profiți la maximum de prima săptămână: setează timpul disponibil în setările planului, activează memento-urile de antrenament și încearcă cel puțin trei ședințe scurte. Constanța bate intensitatea, mai ales la început.
+
+    Dacă ai întrebări, răspunde pur și simplu la acest email. Îți va răspunde o persoană reală din echipa noastră, de obicei în decurs de o zi lucrătoare.
+
+    Ne vedem pe saltea,
+    Echipa PulsFit
+
+    ---
+
+    Decizii de traducere de semnalat:
+
+    - **„Thanks for joining" → „Îți mulțumim că ai ales PulsFit"** — mai natural decât literalul „îți mulțumim că te-ai alăturat", care sună tradus.
+    - **„a habit that sticks" → „un obicei care rămâne"** — am păstrat ideea de persistență; literalul „care se lipește" ar fi fost ciudat.
+    - **„Consistency beats intensity" → „Constanța bate intensitatea"** — formulare paralelă, memorabilă, la fel ca originalul. Alternativă: „Constanța e mai importantă decât intensitatea" (mai lungă, mai puțin punchy).
+    - **„sessions" → „ședințe"** — consecvenți cu descrierea App Store; dacă în aplicație folosiți „sesiuni", spuneti-mi și aliniem peste tot.
+    - **„See you on the mat" → „Ne vedem pe saltea"** — traducere directă care funcționează în română; păstrează căldura și imaginea din original. Alternativă mai neutră: „Ne vedem în aplicație".
+    - **„A real person" → „o persoană reală"** — am păstrat accentuarea, e un argument de încredere valoros în email.
+
+    Un detaliu tehnic: **linia de subiect** are 26 de caractere, deci se afișează complet și pe mobil (limita practică e ~35–40). Dacă vreți o variantă cu mai mult impact: „Bine ai venit la PulsFit 👋" sau „Hai să începem, {first_name}!" — dar varianta clasică e sigură.
+
+    Doriți și versiuni pentru emailurile următoare din flow (ex. reminder la 3 zile de inactivitate, felicitare la primul PR)?
+- user: |
+    Fă-l mai cald și mai puțin corporatist, păstrând informațiile.
+  domain: text-rewrite
+  assistant: |
+    Iată versiunea mai caldă:
+
+    ---
+
+    **Subiect: Bine ai venit la PulsFit! 🎉**
+
+    Bună, {first_name}!
+
+    Ne bucurăm mult că ești aici. Îți promitem un singur lucru: te ajutăm să construiești un obicei care rămâne — fără presiune, fără vină.
+
+    Ca să pornești bine, iată trei lucruri simple pentru prima săptămână:
+
+    - **Spune-ne cât timp ai** — setezi în setările planului, iar noi adaptăm antrenamentele
+    - **Activează memento-urile** — un mic impuls face diferența
+    - **Fă cel puțin trei ședințe scurte** — constanța bate intensitatea, mai ales la început
+
+    Ai vreo întrebare? Răspunde la acest email — îți răspunde un om adevărat din echipa noastră, de obicei în aceeași zi lucrătoare.
+
+    Ne vedem pe saltea,
+    Echipa PulsFit
+
+    ---
+
+    Ce am schimbat și de ce:
+
+    - **„Îți mulțumim că ai ales" → „Ne bucurăm mult că ești aici"** — mai personal, mai puțin formal; „ai ales" suna a comunicat de presă.
+    - **„Suntem încântați să te ajutăm" → „te ajutăm... fără presiune, fără vină"** — am transformat promisiunea corporatistă într-una emoțională, aliniată cu tonul din aplicație („Fără vină — planul se adaptează").
+    - **Paragraful cu sfaturi → listă cu bullet-uri** — mai ușor de scanat, mai prietenos vizual; emailurile de bun venit cu liste au rate de acțiune mai bune.
+    - **„de obicei în decurs de o zi lucrătoare" → „de obicei în aceeași zi lucrătoare"** — mai cald și mai concret. ⚠️ Verificați cu echipa dacă promisiunea e reală — dacă răspundeți în 24 de ore dar nu neapărat în aceeași zi, revenim la formularea inițială.
+    - **Emoji în subiect** — opțional; crește deschiderea la publicul 20–35, dar dacă brandul e mai sobru, scoateți-l.
+
+    Toate informațiile din original sunt păstrate: setarea timpului, memento-urile, cele trei ședințe, principul constanță > intensitate, răspunsul uman la email. Doriți o variantă și mai scurtă, sau acest ton e cel bun?
+- user: |
+    Recapitulează glosarul final, cu toate deciziile pe care le-am luat.
+  assistant: |
+    Iată glosarul final al proiectului PulsFit (EN → RO), cu toate deciziile confirmate în conversație:
+
+    ## Termeni de bază
+
+    | EN | RO | Note |
+    |---|---|---|
+    | workout | antrenament | Consacrat, folosit consecvent |
+    | streak | **șir de zile** | Decizie marketing; formă scurtă în propoziții: „șirul" (ex. „Nu rupe șirul!") |
+    | rest day | zi de odihnă | Termen consacrat în comunitatea fitness RO |
+    | rep | repetiție | Abreviere „reps." permisă în liste compacte |
+    | set | serie | Fără coliziune acum, după ce streak = „șir de zile" |
+    | check-in | **check-in** (netradus) | Păstrat ca etichetă UI; folosit consecvent peste tot |
+    | PR (personal record) | **PR** în etichete și notificări; „record personal" în texte explicative | Ancorat o dată la prima apariție: „record personal (PR)" |
+    | session | ședință | Aliniat cu descrierea App Store; de confirmat vs. „sesiune" |
+    | core | abdomen și spate | Conform politicii de curățare a anglicismelor |
+    | offline mode | mod fără internet | Idem |
+    | notification | notificare | De confirmat vs. „memento" |
+    | reminder | memento | Folosit în „Memento-uri antrenament" |
+
+    ## Reguli de stil
+
+    1. **Tutuit** (persoana a II-a singular) în tot UI-ul și în emailuri. „Dumneavoastră" doar în documente legale (TC, privacy).
+    2. **Ton:** prietenos, motivațional, fără vină — aliniat cu mesaje precum „Fără vină — planul se adaptează".
+    3. **Anglicisme:** evitate pe cât posibil („core" → „abdomen și spate", „offline" → „fără internet"), cu excepția numelor de produse (PulsFit, PulsFit Pro) și a termenilor consacrați (check-in, PR).
+    4. **Plurale românești:** trei forme CLDR — one (1), few (2–19), other (≥20, cu „de"): „1 zi / 2 zile / 20 de zile". Atenție la capcanele 21, 101, 111 → „de".
+    5. **Limite de caractere:** butoane max 16 caractere, push-uri max 40. Evitat stringuri exact la limită.
+    6. **Adaptare, nu traducere literală** pentru sloganuri: „no pain, no gain" → „Fără efort, nu există progres" (variantă recomandată pentru banner, de confirmat).
+
+    ## Decizii în așteptare
+
+    - **„check-in"** — funcția exactă în PulsFit nu a fost clarificată; dacă e confirmare zilnică de activitate, alternativa tradusă e „prezență" / „înregistrare zilnică".
+    - **„ședință" vs. „sesiune"** — de aliniat între aplicație și materialele de marketing.
+    - **„notificare" vs. „memento"** — de definit diferența (push vs. reminder programat).
+    - **Sloganul bannerului** — de ales o singură variantă și folosită consecvent.
+    - **Promisiunea de răspuns în email** — „în aceeași zi lucrătoare" de validat cu echipa de suport.
+
+    Doriți acest glosar într-un format exportabil (JSON, tabel CSV, sau fișier de stil pentru traducători externi)?
+questions:
+- id: q1
+  type: decision
+  prompt: |
+    Cum traducem streak până la urmă?
+  gold:
+  - turn: 11
+    quote: '"streak.current": "Șir de {days} zile"'
+  outdated:
+  - turn: 6
+    quote: '"streak.current": "Serie de {days} zile"'
+  - turn: 4
+    quote: '"streak.current": "Serie de {days} zile"'
+- id: q2
+  type: exact
+  prompt: |
+    Ce text în engleză avea cheia paywall.trial?
+  gold:
+  - turn: 4
+    quote: '"paywall.trial": "Try PulsFit Pro free for 7 days"'
+- id: q3
+  type: decision
+  prompt: |
+    Ne adresăm cu tu sau cu dumneavoastră în aplicație?
+  gold:
+  - turn: 6
+    quote: Stringurile erau deja traduse la tutuit
+  - turn: 5
+    quote: '- **Convenția pieței:** aproape toate aplicațiile consumer din România (Foodpanda, Bolt, eMAG, Revolut RO, apl'
+  - turn: 21
+    quote: 3. **Anglicisme:** evitate pe cât posibil („core" → „abdomen și spate", „offline" → „fără internet"), cu excep
+- id: q4
+  type: semantic
+  prompt: |
+    Cum arăta regula ICU pentru zilele la rând?
+  gold:
+  - turn: 17
+    quote: '{count, plural,'
+- id: q5
+  type: paraphrase
+  prompt: |
+    Ce facem cu expresia aia motivațională despre durere și câștig?
+  gold:
+  - turn: 14
+    quote: 'înseamnă: fără efort și disconfort nu există progres'
+  - turn: 21
+    quote: Fără efort, nu există progres" (variantă recomandată pentru banner
+- id: q6
+  type: ambiguous
+  prompt: |
+    Și varianta nemțească cum era?
+  gold:
+  - turn: 15
+    quote: PulsFit – Training, das passt
+- id: q7
+  type: semantic
+  prompt: |
+    Cum am scurtat textul care nu încăpea pe buton?
+  gold:
+  - turn: 18
+    quote: 'Recomandarea mea: „Recuperare"'
+- id: q8
+  type: exact
+  prompt: |
+    Cum a ieșit notificarea despre record după ce ai scurtat-o?
+  gold:
+  - turn: 9
+    quote: '"push.pr_unlocked": "Record personal! Devii mai puternic."'
+  outdated:
+  - turn: 8
+    quote: '"push.pr_unlocked": "Record personal nou! Devii mai puternic."'

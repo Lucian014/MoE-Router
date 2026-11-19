@@ -1,0 +1,74 @@
+id: s14-festival-film
+category: brainstorming
+lang: ro
+turns:
+  - user: |
+      Organizez cu asociația studenților un festival de scurtmetraje, prima ediție, în Iași. Dă-mi idei de nume pentru festival.
+  - user: |
+      Ne place „Cadru 24”. Ce secțiuni de concurs am putea avea?
+  - user: |
+      Avem un buget de 15.000 de lei. Cum l-ai împărți pe categorii de cheltuieli?
+  - user: |
+      Unde l-am putea ține? Ne gândim la Casa de Cultură a Studenților sau la Cinema Victoria. Avantaje și dezavantaje?
+  - user: |
+      Am ales Cinema Victoria, trei zile, 14–16 mai. Cum ar arăta programul pe zile?
+  - user: |
+      Câte filme putem proiecta realist într-o zi, cu pauze și discuții cu regizorii?
+  - user: |
+      Cum facem apelul de înscriere? Ce le cerem regizorilor?
+  - user: |
+      Durata maximă a unui film: 15 minute sau 20? Ce recomanzi?
+  - user: |
+      Am decis 20 de minute. Și taxa de înscriere: punem sau nu?
+  - user: |
+      Fără taxă. Cum atragem sponsori locali?
+  - user: |
+      Fă-mi o listă cu tipuri de sponsori și ce le putem oferi în schimb.
+  - user: |
+      Scrie-mi un email către o cafenea din centru, „Cinci Ceșcuțe”, în care le cerem să ne sponsorizeze cafeaua pentru voluntari și invitați.
+    domain: text-rewrite
+  - user: |
+      Mai scurt și mai puțin formal, sunt oameni tineri.
+    domain: text-rewrite
+  - user: |
+      Vești proaste: am pierdut un sponsor și bugetul scade la 11.000 de lei. Ce tăiem din împărțirea de mai devreme?
+  - user: |
+      Juriul: câți membri ar trebui să aibă și ce profiluri?
+  - user: |
+      Am confirmat juriul: regizoarea Ana Ciobanu, criticul de film Radu Pop și actorul Mihai Lungu, de la Teatrul Național. Scrie-mi postarea de Facebook în care anunțăm juriul.
+  - user: |
+      Idei de premii, altele decât bani, având în vedere bugetul nou?
+  - user: |
+      Vrem un atelier de două ore în a doua zi. Ce teme ar atrage studenții?
+  - user: |
+      Mergem pe „Sunet pentru film cu buget zero”. Cine l-ar putea ține și cum îl promovăm?
+  - user: |
+      Scrie un slogan pentru festival și o mică poezie de patru versuri pentru afiș.
+    domain: creative-writing
+  - user: |
+      Încă o variantă de slogan, mai jucăușă.
+    domain: creative-writing
+  - user: |
+      Cinema Victoria ne-a anunțat că pe 16 mai sala e ocupată. Mutăm totul pe 21–23 mai. Ce trebuie refăcut sau anunțat din nou?
+  - user: |
+      Cum organizăm voluntarii? Avem 18 oameni.
+  - user: |
+      Fă-mi un checklist pentru prima zi de festival, de dimineață până seara.
+  - user: |
+      Cum măsurăm dacă festivalul a avut succes, dincolo de numărul de spectatori?
+  - user: |
+      Ce facem dacă vin mai puțin de 50 de oameni în prima seară?
+  - user: |
+      Idei pentru ediția a doua, dacă prima merge bine?
+  - user: |
+      Recapitulează toate deciziile luate până acum într-o listă.
+question_plan:
+  - {id: q1, type: decision, turn: 14, outdated: [3], ask: "Care e bugetul festivalului acum?"}
+  - {id: q2, type: decision, turn: 22, outdated: [5], ask: "În ce zile are loc festivalul?"}
+  - {id: q3, type: exact, turn: 16, ask: "Cine e criticul de film din juriu?"}
+  - {id: q4, type: decision, turn: 9, outdated: [8], ask: "Cât de lung poate fi un film înscris?", note: "outdated doar dacă 8 recomandă 15 minute"}
+  - {id: q5, type: paraphrase, turn: 19, ask: "Despre ce e sesiunea practică din a doua zi?"}
+  - {id: q6, type: ambiguous, turn: 20, ask: "Mai arată-mi o dată poezia aia."}
+  - {id: q7, type: semantic, turn: 1, ask: "Ce alte nume propuseseși pentru festival, la început?"}
+  - {id: q8, type: semantic, turn: 11, ask: "Ce le oferim sponsorilor în schimb?"}
+questions: []

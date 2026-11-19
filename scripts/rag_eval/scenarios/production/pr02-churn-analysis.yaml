@@ -1,0 +1,173 @@
+id: pr02-churn-analysis
+category: coding
+lang: en
+turns:
+  - user: |
+      hi, I'm building a churn model for our subscription app (about 60k active customers). here's what the data looks like, help me clean it:
+
+      ```
+      >>> df.head()
+         customer_id tenure_months    plan  MonthlyCharges  support_tickets_90d  last_login_days  churned
+      0      C10021            12   basic           9.99                    0                3        0
+      1      C10022        1 yr    family          17.99                    2               41        1
+      2      C10023                   premium         14.99                    1                7        0
+      3      C10024     7 months   basic          -9.99                    0                1        0
+      4      C10025            30  premium         14.99                    5               90        1
+      >>> df.info()
+      RangeIndex: 61840 entries, 0 to 61839
+      Data columns (total 7 columns):
+       #   Column               Non-Null Count  Dtype
+       0   customer_id          61840 non-null  object
+       1   tenure_months        60112 non-null  object
+       2   plan                 61840 non-null  object
+       3   MonthlyCharges       61840 non-null  float64
+       4   support_tickets_90d  61840 non-null  int64
+       5   last_login_days      61530 non-null  float64
+       6   churned              61840 non-null  int64
+      ```
+  - user: |
+      tenure_months has stuff like "12 months", "1 yr", blanks. give me the full cleaning function
+  - user: |
+      MonthlyCharges has negative values, about 40 rows. drop them?
+  - user: |
+      finance says the negative ones are refunds. keep them but flag them. update the function
+  - user: |
+      churn rate is 6.8%. what metric should I look at instead of accuracy?
+  - user: |
+      write the full training script: logistic regression baseline + XGBoost, stratified 5-fold CV, report PR-AUC
+  - user: |
+      on my work laptop:
+
+      ```
+      xgboost.core.XGBoostError: XGBoost Library (libxgboost.so) could not be loaded.
+      Likely causes:
+        * OpenMP runtime is not installed
+        - vcomp140.dll or libgomp-1.dll for Windows
+        - libomp.dylib for Mac OSX
+      ```
+
+      IT won't let me install system libraries
+  - user: |
+      fine, let's go with LightGBM instead, it installs from pip. rewrite the script
+  - user: |
+      results:
+
+      ```
+      model     PR-AUC (mean ± sd)   ROC-AUC
+      logreg    0.312 ± 0.011        0.781
+      lgbm      0.441 ± 0.014        0.842
+      ```
+
+      is 0.44 good?
+  - user: |
+      how do I pick a threshold? a retention offer costs us 15 EUR per customer, a churned customer costs about 180 EUR on average
+  - user: |
+      write me the math for that threshold step by step, I need to show it to my manager
+  - user: |
+      marketing says they can only call 500 customers a month, out of the 60k. how does that change things?
+  - user: |
+      ok so we rank by score and take the top 500 each month. write the scoring + export to csv code
+  - user: |
+      now SQL: monthly cohort retention from subscriptions(user_id, start_date, end_date, plan). start_date and end_date are text in this table unfortunately
+  - user: |
+      ```
+      ERROR:  function date_trunc(unknown, text) does not exist
+      LINE 3:   date_trunc('month', start_date) AS cohort,
+                ^
+      HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+      ```
+  - user: |
+      plot the cohort retention as a seaborn heatmap, full code
+  - user: |
+      explain SHAP values to me like I'm a product manager
+  - user: |
+      the top SHAP feature is support_tickets_90d. the product team asks if that means support is causing churn
+  - user: |
+      write a short paragraph for the report about that, correlation vs causation, no jargon
+  - user: |
+      different thing, summarize this article for me:
+
+      ```
+      Why subscribers leave: lessons from five streaming services
+      Across the five services we studied, involuntary churn - failed payments, expired cards - accounted for 20 to 40 percent of all cancellations, a share most teams underestimate because it never shows up in exit surveys. Among voluntary cancellations, the most cited reason was price increases, followed by "nothing new to watch" in the month before cancelling. Customers who contacted support twice or more within a month were 3.1 times as likely to cancel, but the effect disappeared when the issue was resolved on the first contact. Annual plans cut churn by roughly half compared with monthly plans, though part of the effect is selection: committed customers choose annual plans. Win-back campaigns recovered 8 to 12 percent of churned users within six months, with personalized content recommendations outperforming discounts. The authors recommend separating involuntary and voluntary churn in every model and dashboard, and treating first-contact resolution as a retention metric.
+      ```
+  - user: |
+      write a LinkedIn post about our churn project, 120 words, no buzzwords
+  - user: |
+      too salesy. again, more like an engineer talking
+  - user: |
+      back to the model. the March data has a bug: the plan column is empty for everyone who upgraded that month. retrain without March?
+  - user: |
+      without March PR-AUC drops from 0.44 to 0.41. weird?
+  - user: |
+      calibration check: the group the model says has 20% churn probability actually churns at 9%. how do I fix that?
+  - user: |
+      isotonic or Platt for 60k rows?
+  - user: |
+      isotonic then. update the whole pipeline file
+  - user: |
+      for monitoring in production which drift metrics should I track?
+  - user: |
+      PSI for tenure_months came out 0.31 last month. is that bad?
+  - user: |
+      this keeps showing up, should I care?
+
+      ```
+      /home/ana/churn/features.py:58: SettingWithCopyWarning:
+      A value is trying to be set on a copy of a slice from a DataFrame.
+      Try using .loc[row_indexer,col_indexer] = value instead
+        df_active["tenure_bucket"] = pd.cut(df_active["tenure_months"], bins=[0, 6, 12, 24, 120])
+      ```
+  - user: |
+      write the executive summary for the CEO, one page
+  - user: |
+      translate the exec summary into Romanian for the Bucharest office
+  - user: |
+      "churn" in Romanian sounds odd in that text, what do people actually use?
+  - user: |
+      the CEO asks how much money the model saves per month. use the numbers we had for the offer cost and the lost customer
+  - user: |
+      don't forget the 500 calls limit
+  - user: |
+      to validate it properly: holdout group with no calls. how many months until we'd see an effect?
+  - user: |
+      outline for the presentation, 8 slides
+  - user: |
+      make slide 5 about how we pick who gets called
+  - user: |
+      update: since last week the retention offer is a 25 EUR discount instead of the 15 EUR one. does the top-500 approach still make sense?
+  - user: |
+      recompute the monthly savings with that
+  - user: |
+      dockerize the scoring job: Dockerfile + requirements.txt
+  - user: |
+      ```
+      Step 6/9 : RUN python -c "import lightgbm"
+      Traceback (most recent call last):
+        File "<string>", line 1, in <module>
+        File "/usr/local/lib/python3.12/site-packages/lightgbm/__init__.py", line 8, in <module>
+          from .basic import Booster, Dataset, Sequence, register_logger
+      OSError: libgomp.so.1: cannot open shared object file: No such file or directory
+      ```
+  - user: |
+      schedule it monthly on our Airflow, DAG code please
+  - user: |
+      and a README for the repo
+question_plan:
+  - {id: q1, type: decision, ask: "which model did we end up with and why not the first one?", gold_turns: [8, 7], outdated_turns: [6]}
+  - {id: q2, type: decision, ask: "what did we do with the negative charges in the end?", gold_turns: [4], outdated_turns: [3]}
+  - {id: q3, type: error-only, ask: "date_trunc(unknown, text) does not exist - what was the fix?", gold_turns: [15]}
+  - {id: q4, type: exact, ask: "how many people can marketing call per month?", gold_turns: [12, 13]}
+  - {id: q5, type: decision, ask: "how much does the model save us a month?", gold_turns: [40], outdated_turns: [34, 35]}
+  - {id: q6, type: semantic, ask: "why did the docker image fail to build?", gold_turns: [42]}
+  - {id: q7, type: semantic, ask: "what did that article say about why people cancel?", gold_turns: [20]}
+  - {id: q8, type: paraphrase, ask: "the probabilities were off, how did we deal with it?", gold_turns: [25, 26, 27]}
+  - {id: q9, type: paraphrase, ask: "should I worry about the tenure shift we saw?", gold_turns: [29]}
+  - {id: q10, type: semantic, ask: "what did we tell product about the support tickets thing?", gold_turns: [18, 19]}
+  - {id: q11, type: ambiguous, ask: "the empty column thing - what did we decide?", gold_turns: [23, 24]}
+  - {id: q12, type: semantic, ask: "remind me how we got the cutoff from the offer cost", gold_turns: [10, 11]}
+  - {id: q13, type: exact, ask: "what word do they use for churn in Romanian?", gold_turns: [33]}
+  - {id: q14, type: distractor, ask: "the shared library error on my laptop, what was missing?", gold_turns: [7], note: "two libgomp-like errors: 7 (xgboost, laptop) vs 42 (docker)"}
+  - {id: s1, type: standalone, ask: "what's the difference between mean and median?"}
+  - {id: s2, type: standalone, ask: "regex to validate an email address?"}
+  - {id: s3, type: standalone, ask: "3-day itinerary for Lisbon"}

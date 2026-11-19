@@ -1,0 +1,774 @@
+id: s16-poveste-sulina
+category: creative-writing
+lang: ro
+turns:
+- user: |
+    Vreau să scriem împreună o povestire de vreo 3000 de cuvinte. Ideea: un paznic de far bătrân din Sulina găsește într-o dimineață, la mal, o barcă goală în care e un ceas de buzunar oprit. Propune-mi trei direcții posibile pentru poveste.
+  assistant: |
+    Ce idee frumoasă — Sulina, fluviul, ceața... are deja în ea jumătate din atmosferă. Iată trei direcții posibile, destul de diferite între ele:
+
+    **1. Povestea fantomei fluviului (mister melancolic)**
+    Paznicul, numit-l Mihai, recunoaște ceasul: e al fratelui lui, dispărut în furtună acum 40 de ani, în timp ce amândoi lucrau pe un remorcher. Ceasul e oprit exact la ora dispariției. Povestea alternează între prezent (încercarea lui Mihai de a înțelege de ce barca a apărut tocmai acum) și amintiri din tinerețe, cu vinovăția lui nespusă — poate el a fost cel care i-a dat târcoale fratelui în noaptea respectivă, sau nu l-a avertizat de furtună. Finalul nu explică nimic rațional: fluviul dă înapoi ce a luat, când vrea el. Mihai pornește ceasul și îl lasă să meargă. Ton: Marquez întâlnește un blestem dunărean.
+
+    **2. Povestea realistă a unui om singur (dramă intimă)**
+    Barca e simplu o barcă pierdută, iar ceasul — al unui tânăr care s-a sinucis sau a plecat fără să spună nimic. Paznicul, văduv, cu un fiu cu care nu mai vorbește de ani, începe să cerceteze discret cine era proprietarul. Ajunge într-un sat de pescari, la o mamă bătrână care așteaptă de luni de zile. Cei doi formează o prietenie târzie, fragilă, iar ceasul devine pretextul prin care paznicul își învață, în sfârșit, lecția: să nu aștepți ca viața să-ți aducă oamenii la mal — trebuie să te duci tu la ei. Finalul: o scrisoare trimisă fiului său. Ton: realist, cald, cu dialoguri sărace și adevărate.
+
+    **3. Povestea timpului oprit (fantezie tăcută)**
+    De când găsește ceasul, la far nu se mai schimbă nimic: aceeași ceață, aceeași zi, pescărușii înghețați în aer. Paznicul e singurul care se mișcă, prins într-o zi care nu se mai termină. Trebuie să descopere ce "datorie" are față de ceas — a cui era, ce poveste poartă — ca timpul să reia cursul. Descoperă că ceasul aparține unui paznic de dinaintea lui, care a murit singur la far și a fost uitat de toți, inclusiv de registre. Mihai îi scrie numele în cartea de gardă, îi aprinde o lumânare, și ziua se desface în noapte. Ton: fabulă adultă, cu un fir de filozofie despre memorie și despre oamenii pe care farurile îi țin, dar nu-i rețin.
+
+    Ce direcție ți se potrivește? Sau vrei să le combinăm — de exemplu 1 cu atmosfera din 3?
+- user: |
+    Îmi place a doua direcție. Cum îl numim pe paznic? Aș vrea un nume lipovenesc.
+  assistant: |
+    Excelentă alegere — direcția realistă se potrivește perfect cu Sulina. Pentru un paznic lipovenesc, iată câteva variante:
+
+    **Prenume** (tradiționale lipovenești, adesea de sorginte veche rusească sau biblică):
+    - **Onisim** — vechi și rar, are un sunet frumos, ușor arhaic, care i se potrivește unui om de altă epocă
+    - **Gavril** — comun printre lipoveni, solid, cald
+    - **Matfei** — forma rusă a lui Matei, sună autentic
+    - **Zahar** — scurt, aspru, de pescar
+
+    **Nume de familie** (nume lipovenești reale din Delta Dunării):
+    - **Kalmîk** — unul dintre cele mai răspândite nume lipovenești din zonă
+    - **Antip** — tot foarte des întâlnit în satele din Deltă
+    - **Ersog** — mai rar, are un ecou străvechi
+    - **Filipov** — cu terminație rusă, sugerează o familie cu rădăcini adânci
+
+    Propunerea mea: **Onisim Kalmîk**. Are greutate, are muzică, și "Onisim" — un nume pe care aproape nimeni nu-l mai poartă — rezonează frumos cu tema singurătății și a oamenilor uitați. În plus, un nume atât de vechi îi dă autorului (ție) ocazia să inserezi natural detalii despre originea lui: părinții veniți de peste Nistru, biserica veche lipovenească, obiceiurile păstrate.
+
+    Alternativ, dacă vrei ceva mai simplu, mai de om al muncii: **Gavril Antip**.
+
+    Pe care îl simți ca fiind al lui? Odată fixat numele, putem începe să schițăm structura — de exemplu, dacă povestea începe cu dimineața găsirii bărcii sau cu o scurtă introducere despre viața lui de zi cu zi la far.
+- user: |
+    Îl cheamă Avdei. Are o nepoată care vine în vizită de la Tulcea. Propune-mi un nume pentru ea, tot cu rădăcini lipovenești.
+  assistant: |
+    Avdei e o alegere superbă — sună a om bătrân, cu rădăcini adânci. Pentru nepoată, iată variante cu rezonanță lipovenească autentică:
+
+    **Nastasia** — diminutivul *Nastya* e foarte folosit în comunitățile lipovenești. E cald, viu, are un aer tânăr dar cu ecou vechi, și se pretează la dialoguri frumoase: bunicul o strigă "Nastya", iar ea semnează, modernă, "Nastasia" în mesaje. Un mic detaliu de generații în același nume.
+
+    **Vasilisa** — nume de basm rusesc (Vasilisa cea Frumoasă), puțin solenn, potrivit dacă vrei să-i dai fetei o aură ușor ieșită din comun, de "adusă din altă lume" pentru bătrânul singuratic.
+
+    **Malania** — vechi, rar, cu un sunet dulceag și rural. Foarte autentic pentru Deltă, dar poate prea "de bunică" pentru o fată tânără — deși tocmai asta poate fi un detaliu frumos: bunicul i-a pus numele, iar la Tulcea colegii îi fac haz de el.
+
+    **Frosa** — forma scurtă a lui Efrosinia. Scurt, pescăresc, de-al locului.
+
+    **Paraskiva** — extrem de autentic (echivalentul lipovenesc al lui Paraschiva), dar greoi pentru o protagonistă tânără.
+
+    Propunerea mea: **Nastasia**, cu diminutivul *Nastya* folosit de Avdei. Îți dă gratuit o mică tensiune generatională în poveste — fata trăiește între două lumi, orașul (Tulcea, telefonul, facultatea poate) și lumea bunicului (farul, fluviul, tăcerea). Iar numele poate deveni chiar un detaliu de complot: de exemplu, mama ei — fiica lui Avdei, cu care nu mai vorbește — a ales numele, și asta spune ceva despre ce a rămas nefiresc în familie.
+
+    Vrei să schițăm acum structura pe scene? De exemplu: deschidem cu dimineața bărcii, iar Nastasia apare în a doua sau a treia scenă, când Avdei îi telefonază — sau, mai frumos, când ea vine deja în vizită și descoperă ceasul înaintea ei de timp?
+- user: |
+    Bun, mergem cu numele propus. Scrie primul capitol, în jur de 600 de cuvinte: dimineața în care Avdei găsește barca.
+  assistant: |
+    **Capitolul I**
+
+    Avdei se trezi înainte de cocoș, cum se trezise de cincizeci de ani. Nu era ceas care să-l scoată din somn — era lumina. În Deltă, lumina de dimineață are o vârstă a ei, iar el o știa pe toate: cea de mai, verde și mlădioasă, cea de august, arsă și albă, cea de octombrie, care intra prin fereastra farului ca printr-o sită de paie. Aceea de azi era subțire, gri, de sfârșit de toamnă, și se lipea de pleoape ca o ceață.
+
+    Se ridică, își puse puloverul de lână — degetele îi tremurau puțin, dar numai dimineața, asta își spunea mereu, numai dimineața — și porni scara de piatră în jos, spre mal. Farul de la Sulina nu mai era ce fusese. De când navigația se ghida din sateliți, de când navele treceau pe lângă el ca pe lângă un bătrân surd, Avdei aprindea lumina mai degrabă din obicei decât din datorie. Dar o aprindea. Un om trebuie să-și aprindă lumina, îi spunea uneori nepoatei, Nastya, la telefon. Chiar dacă nimeni nu se mai uită la ea. Chiar dacă nimeni nu mai e pe apă noaptea.
+
+    Malul era acoperit cu o ceață joasă, care nu se ridica, ci ședea pe apă ca o pasăre cenușie adormită. Avdei porni în pasul lui de fiecare dimineață, spre stâncile de unde privea fluviul, și abia după câțiva pași observă că ceva nu se potrivea. Un sunet. Un scârțâit ușor, ritmic, de lemn care se lovește de lemn.
+
+    Opri. Ascultă.
+
+    Ceața se deschise încet, ca o cortină trăgată de o mână obosită, și din ea ieși barca.
+
+    Era o barcă mică, de pescuit, cu fundul vopsit în albastru spălăcit, legată de țărm cu o frânghie scurtă. Nu o cunoștea. În Deltă, Avdei cunoștea toate bărcile de pe opt kilometri de mal — pe ale lui Cazacu, pe ale turcilor de la pescărie, pe luntrea veche a lui Sava, care n-o mai scoate din șantier de trei ani. Aceasta nu era niciuna dintre ele. Ședea pe apă cu o răbdare străină, goală, și se legăna ușor, de parcă tocmai își luase rămas-bun de la cineva.
+
+    — Heeei! strigă Avdei, și glasul îi pără mai slab decât de obicei. Heeei, pe barcă!
+
+    Nimeni. Doar pescărușii, care se ridicară de undeva din stuf și se întoarseră imediat, ca și cum ar fi vrut să vadă și ei.
+
+    Avdei coborî pe nisipul ud, își luă pantofii în mână — nu, de ce, gândi el, la vârsta mea — și se apropie de barcă ținându-se de frânghie. Înăuntru era curat. Prea curat pentru o barcă pierdută: fără plasă, fără cârlige, fără găleată. Doar pe fundul de lemn, lângă bancă, ședea un ceas de buzunar.
+
+    Îl luă în palmă. Era greu, de alamă, cu capacul ciobit la balamauă. Îl deschise cu unghiul, cum deschideai cândva cutiile de conserve, și capacul scârțâi un sunet vechi, de altă vreme. Cadranul era alb, cu cifre negre, subțiri ca firele de păr. Limba mare și limba mică ședeau una peste alta, nemișcate, arătând ora trei și jumătate.
+
+    Avdei scutură ceasul, deși știa că nu se face așa. Îl apropie de ureche. Nimic. Un ceas mort, oprit de mult — mecanismul era plin de o liniște pe care o simțea prin palmă, ca pe o pasăre rece.
+
+    Ora trei și jumătate. Zi sau noapte? De când? De aseară, de acum o săptămână, de acum un an?
+
+    Rămase așa, în picioare în apă rece până la glezne, cu ceasul în mână deschisă, și privi barca. Ceața se închidea iar în spatele ei, peste fluviu, iar undeva, departe, se auzea un motor de barjă — un sunet pe care Avdei îl cunoștea din copilărie și care acum i se părè, pentru prima oară în viață, un sunet de lume care pleacă.
+
+    Își dădu seama că stă de mult. Că apa îi înghețase picioarele. Își puse ceasul în buzunarul de la piept, acolo unde bătrânii țin ceasurile, și se întoarse spre far, fără să mai privească înapoi.
+
+    Nu-i plăcea ce simțea. Nu frică — ceva mai vechi. Ceva ce seamăna cu datoria.
+- user: |
+    Prea multe descrieri de peisaj. Rescrie capitolul cu mai mult monolog interior al lui Avdei.
+  assistant: |
+    **Capitolul I**
+
+    Avdei se trezi înainte de cocoș, cum se trezise de cincizeci de ani. Nu era ceas care să-l scoată din somn — era lumina. *Cincizeci de ani*, gândi el, trăgând puloverul peste cap. *Cincizeci de ani și n-am dormit o noapte întreagă ca lumea. Nastya doarme până la nouă. Așa e tinerețea — crezi că ziua nu se termină niciodată.*
+
+    Degetele îi tremurau puțin când se pieptăna. *Numai dimineața*, își spuse, cum își spunea mereu. *Numai dimineața. Seara mâna e tânără iar.*
+
+    Coborî scara de piatră, numărând treptele din obicei — șaptesprezece, ca întotdeauna, ca de fiecare dată, și tocmai asta îi plăcea: că nimic nu se schimbase în șaptesprezece. *Alți oameni se tem de monotonie. Eu m-am hrănit cu ea. Monotonia e o soție bună, nu te minte, nu pleacă.* Se gândi la Nastya, care venea sâmbătă, poate. Zisese "poate" de trei ori la telefon. *Poate. La oraș, poate înseamnă ceva. Aici, poate înseamnă nimic.*
+
+    Pe mal, porni în pasul lui de fiecare dimineață, și abia după câțiva pași auzi scârțâitul — un lemn care se lovește de lemn, ritmic, blând.
+
+    *Barca lui Cazacu? Nu, Cazacu nu iese în ceața asta. A lui Sava? Sava n-o mai scoate din șantier de trei ani.* Opri. *Atunci ce?*
+
+    Ceața se deschise și din ea ieși o barcă pe care nu o cunoștea. Și aici, pentru prima oară după mulți ani, Avdei se simți străin pe malul lui. *Nu e a nimănui. O cunosc pe toate, pe toate, opt kilometri de mal, și asta nu e a nimănui. O barcă goală e ca o casă cu ușa deschisă noaptea. Nu e frumos, nu e rău. E altceva.*
+
+    — Heeei! strigă, și glasul îi pără mai slab decât de obicei. *Slab. Când m-am făcut așa de slab? Nu l-am auzit plecând.*
+
+    — Heeei, pe barcă!
+
+    Nimeni. *Bine, Avdei, liniștește-te. Bărci pierdute s-au mai găsit. Frânghia s-a dezlegat, stăpânul doarme undeva, mâine o va căuta. Așa e normal. Gândește normal.*
+
+    Dar când se apropie și văzu fundul bărcii, gândul "normal" se opri deodată. Curat. Prea curat. *Fără plasă, fără cârlige, fără găleată. Cine pleacă de pe barcă fără unelte? Nimeni. Pescarul își lasă uneltele, le lasă chiar și când se îneacă. Uneltele sunt mai aproape de om decât viața.*
+
+    Și apoi văzu ceasul.
+
+    Îl luă în palmă și pentru o clipă nu mai gândi nimic. Doar simți greutatea alamei, recea, de-a dreptul rece, de parcă ar fi stat în apă. Deschise capacul cu unghiul. Ora trei și jumătate.
+
+    *Oprit. Un ceas oprit nu înseamnă nimic, Avdei. Se strică ceasurile, ca oamenii, ca bărcile, ca farurile. Nu te apuca să-i cauți înțeles. Tu așa ai ajuns bătrân singur — că te apuci de gândit la toate.*
+
+    Dar mâna nu-l asculta. Mâna scutură ceasul, deși știa că nu se face așa, și îl apropie de ureche. Nimic. *Tăcere. O tăcere cu vârstă. Ora trei și jumătate — zi sau noapte? De aseară? De acum un an? Cine era omul care purta ceasul la piept și ce făcea la ora trei și jumătate, și de ce nu mai e?*
+
+    *Și de ce mie, dintre toți?*
+
+    Își dădu seama că stă de mult, că apa îi înghețase picioarele. *Bătrânețe, Avdei. Stai în loc și gândești. Așa încep toate — stai în loc și gândești.* Își puse ceasul în buzunarul de la piept, acolo unde bătrânii țin ceasurile, și se întoarse spre far fără să privească înapoi.
+
+    *Ce ai de făcut, ai de făcut. O aprinzi seara, lumina. Chiar dacă nimeni nu se mai uită la ea.*
+
+    Dar în scări, șaptesprezece trepte, simți în buzunar greutatea mică, rece, și își spuse că de data asta e altfel. Nu-i plăcea ce simțea. Nu frică — ceva mai vechi. Ceva ce seamăna cu datoria.
+- user: |
+    Ce ar trebui să aibă special ceasul din barcă? Dă-mi câteva idei.
+  assistant: |
+    Ceasul va fi obiectul central al poveștii, deci merită să-i dăm detalii care să lucreze pe două niveluri: ca obiect fizic (concret, palpabil) și ca semn (ce sugerează, ce declanșează). Iată câteva idei, pe categorii:
+
+    **Detalii fizice care pot conta în intrigă:**
+    - **O gravură în interiorul capacului** — o inițială, o dată, o dedicație scurtă ("Lui P., de la mama, 1968"). E cel mai natural mod de a-l trimite pe Avdei pe urmele proprietarului: caută gravura, întreabă gravorul din Tulcea, ajunge la mama băiatului.
+    - **Un ceas de familie, nu cumpărat** — model vechi, de dinainte de război, cu mecanism reparat de mai multe ori. Spune că în familia proprietarului ceasul a trecut din mână în mână — și că băiatul l-a luat cu el "ca pe o binecuvântare".
+    - **Urme de uzură mărturisitoare** — capacul frecat de o verighetă, un mic cabochon de sticlă lipit pe cadran (superstiție pescărească: sticla albastră fereste de apă), un șir rupt la lanț. Fiecare urmă e o poveste pe care Avdei o "citește".
+    - **Ceasul merge, dar greșit** — în loc să fie oprit definitiv, pornește când îl scuturi și apoi se oprește mereu la aceeași oră. Mai neliniștitor decât un ceas mort, și dă o tensiune care crește pe parcurs.
+
+    **Roluri pe care le poate juca în complot:**
+    - **Martorul tăcut** — ceasul e oprit la ora la care s-a întâmplat ceva (plecarea băiatului, accidentul). Avdei nu știe asta la început; mama băiatului o știe, și când aude ora, înțelege totul fără să spună nimic. O scenă puternică: două personaje care se înțeleg printr-un număr de pe un cadran.
+    - **Moștenirea care circulă** — la final, Avdei nu returnează ceasul mamei, ci îl lasă la ea, sau invers: ea i-l dă lui ("Tu ține-l, tu ai lumină noaptea"). Ceasul devine obiectul care leagă singurătățile.
+    - **Oglinda lui Avdei** — ceasul lui propriu s-a stricat demult și nu l-a reparat niciodată ("la ce bun, oricum aprind lumina la aceeași oră"). Ceasul găsit îl face să-și dea seama că și-a oprit el însuși timpul cândva — relația cu fiul, de pildă. Repararea ceasului găsit (sau a celui propriu) poate fi gestul final al poveștii.
+    - **Detaliu cu Nastya** — ea observă ceva ce Avdei nu vede: de exemplu recunoaște modelul, sau gravura, sau găsește pe internet o anunț de dispariție. Nepoata devine astfel puntea dintre lumea bătrânului și lumea de acum.
+
+    Propunerea mea: combină **gravura** + **ora fixă semnificativă** + **ideea oglinzii** (ceasul lui Avdei, nefolosit, într-o cutie). Astfel ai un obiect concret care poartă intriga, un mister care se dezvăluie treptat și o rezonanță personală pentru protagonist.
+
+    Vrei să stabilim acum ce scrie în gravură și a cui e inițiala?
+- user: |
+    Mergem pe ideea cu ceasul care merge înapoi, dar doar noaptea. Scrie capitolul 2: sosește nepoata și observă ceasul.
+  assistant: |
+    **Capitolul II**
+
+    În noaptea aceea, Avdei nu dormi.
+
+    Nu din cauza ceasului — își spuse el —, ci din cauza vântului, care se răsuci dinspre fluviu și bate în geamul farului cum bate un om care are treabă. Se ridică la miezul nopții să aprindă lumina, deși o aprinsese deja, și pe drum, în bucătărie, trecu pe lângă masă și se opri.
+
+    Ceasul ședea lângă sarea, unde îl lăsase. În becul mic de la plafon, capacul de alamă strălucea puțin.
+
+    *Lasă-l în pace, Avdei.*
+
+    Dar mâna îl luă. Și Avdei văzu — mai întâi nu crezu, apoi văzu limpede, cum vezi un pește sub apă limpede — limba mare a ceasului mișcându-se. Înapoi. Încet, cu răbdare, cum coboară un om treptele pe care le-a urcat toată ziua. Două și jumătate. Două și douăzeci și cinci. Două și douăzeci.
+
+    Ținu ceasul în palmă și privi, și nu-i veni să-l pună jos. *Bătrânețe, Avdei. Ochii tăi. Lumina asta proastă.* Aprinse lampa de pe masă, o apropie, privi din nou. Limba mergea înapoi, netedă, fără să se clatine, ca și cum n-ar fi făcut altceva toată viața.
+
+    Îl puse pe masă, îndepărtă mâna, șterse mâna de haine. Ședea pe scaun și privi ceasul cum privești un om care vorbește singur în camera lui. La un moment dat, limba se opri. Trei și jumătate. Și nemișcare.
+
+    *Noaptea merge înapoi. Ziua stă. Și se oprește tot la trei și jumătate.*
+
+    Nu-i spuse nimănui. Cu cine, gândi el. Cu Sava, care ar râde? Cu Cazacu, care ar veni cu băutură și ar sta până dimineața, și dimineața ceasul ar sta cuminte, și toți ar râde de bătrânul Avdei care nu mai vede drept? *Un om care vede lucruri trebuie să ștă să tacă. Altfel nu mai e om care vede, e om de care se tem.*
+
+    A doua zi, spre prânz, auzi motorul bărcii de la Tulcea și o văzu pe Nastya coborând pe mal, cu rucsacul verde și cu fularul de care nu avea nevoie, dar îl purta ca să pară că a venit departe. Era mai înaltă decât anul trecut, sau el se făcuse mai mic.
+
+    — Bunicule, spuse ea, și-l îmbrățișă, și el simți în îmbrățișare mirosul orașului — autobuz, asfalt, altă viață.
+
+    — Ai venit, spuse el. Zisesei "poate".
+
+    — Am zis "poate" ca să nu te aștepți. Așa se face.
+
+    Îi făcu mâncare, vorbiră de lucruri mici — de mama ei, despre care vorbiră puțin și repede, ca peste o punte putredă —, iar Avdei uitase de ceas. Îl uitase atât de bine, încât când Nastya spuse "Ce e ăsta?" el nu înțelese întâi la ce se referă.
+
+    Ea îl luase de pe masă. Îl ținea în palmă, cu capacul deschis, și privirea ei nu mai era a copilului care venise în fiecare vară până nu demult. Era privirea care citește.
+
+    — E oprit, spuse ea.
+
+    — E oprit, spuse Avdei.
+
+    — La trei și jumătate. Bunicule, de ce ai un ceas oprit pe masă? Tu nu ai ceas de treizeci de ani. Ai zis mereu că farul e ceasul tău.
+
+    Avdei tăcu. *Spune-i. Nu spune-i. E copilul tău, singurul care mai vine aici. Dar e copil, iar copiii spun lucruri, iar lucrurile ajung la Tulcea, la mama ei, la toți.*
+
+    — L-am găsit, spuse în cele din urmă. Într-o barcă, la mal. Goală barca.
+
+    Nastya întoarse ceasul pe toate părțile. Apoi, dintr-un gest pe care nu-l putea explica nimeni, îl scutură ușor și îl apropie de ureche, exact cum făcuse bunicul în prima dimineață.
+
+    — E ciudat, spuse ea. Pare că are ceva înăuntru. Un fel de... nu știu. Pare viu.
+
+    Avdei privi ceasul în mâinile ei. În lumina de prânz, limba ședea nemișcată, cuminte, la trei și jumătate.
+
+    *Spune-i ce vezi noaptea*, gândi el. *Nu. Întâi las-o să doarmă aici o noapte. Să vadă și ea. Să nu rămân singurul care vede.*
+- user: |
+    Schimbăm numele nepoatei în Irina, e mai ușor pentru cititori. Rescrie pasajele din capitolul 2 în care apare ea.
+  assistant: |
+    Bine, Irina e o alegere practică. Iată pasajele din capitolul 2 rescrise (de la sosirea ei):
+
+    ---
+
+    A doua zi, spre prânz, auzi motorul bărcii de la Tulcea și o văzu pe Irina coborând pe mal, cu rucsacul verde și cu fularul de care nu avea nevoie, dar îl purta ca să pară că a venit departe. Era mai înaltă decât anul trecut, sau el se făcuse mai mic.
+
+    — Bunicule, spuse ea, și-l îmbrățișă, și el simți în îmbrățișare mirosul orașului — autobuz, asfalt, altă viață.
+
+    — Ai venit, spuse el. Zisesei "poate".
+
+    — Am zis "poate" ca să nu te aștepți. Așa se face.
+
+    Îi făcu mâncare, vorbiră de lucruri mici — de mama ei, despre care vorbiră puțin și repede, ca peste o punte putredă —, iar Avdei uitase de ceas. Îl uitase atât de bine, încât când Irina spuse "Ce e ăsta?" el nu înțelese întâi la ce se referă.
+
+    Ea îl luase de pe masă. Îl ținea în palmă, cu capacul deschis, și privirea ei nu mai era a copilului care venise în fiecare vară până nu demult. Era privirea care citește.
+
+    — E oprit, spuse ea.
+
+    — E oprit, spuse Avdei.
+
+    — La trei și jumătate. Bunicule, de ce ai un ceas oprit pe masă? Tu nu ai ceas de treizeci de ani. Ai zis mereu că farul e ceasul tău.
+
+    Avdei tăcu. *Spune-i. Nu spune-i. E nepoata ta, singura care mai vine aici. Dar e tânără, iar tinerii spun lucruri, iar lucrurile ajung la Tulcea, la mama ei, la toți.*
+
+    — L-am găsit, spuse în cele din urmă. Într-o barcă, la mal. Goală barca.
+
+    Irina întoarse ceasul pe toate părțile. Apoi, dintr-un gest pe care nu-l putea explica nimeni, îl scutură ușor și îl apropie de ureche, exact cum făcuse bunicul în prima dimineață.
+
+    — E ciudat, spuse ea. Pare că are ceva înăuntru. Un fel de... nu știu. Pare viu.
+
+    Avdei privi ceasul în mâinile ei. În lumina de prânz, limba ședea nemișcată, cuminte, la trei și jumătate.
+
+    *Spune-i ce vezi noaptea*, gândi el. *Nu. Întâi las-o să doarmă aici o noapte. Să vadă și ea. Să nu rămân singurul care vede.*
+
+    ---
+
+    Notă: am adaptat și gândul lui Avdei ("copilul tău" → "nepoata ta"), ca să rămână coerent. Restul capitolului (noaptea cu ceasul care merge înapoi) nu o menționează, deci rămâne neschimbat. Dacă vrei, în capitolele următoare putem folosi detaliul că mama Irinei — fiica lui Avdei — a ales numele ei, ca fir al relației rupte.
+- user: |
+    Ce secret ar putea avea Avdei legat de barcă?
+  assistant: |
+    Bună întrebare — un secret al lui Avdei ar transforma povestea dintr-un mister "despre alții" într-unul "despre el". Iată câteva variante, de la blândă la grea:
+
+    **1. Barca e a fiului lui.**
+    Fiul cu care nu mai vorbește (tatăl Irinei, sau fratele mamei Irinei — de stabilit genealogia) a plecat de ani de zile, poate peste hotare, poate pe apă, și nu a mai dat semne. Avdei recunoaște barca — sau recunoaște ceasul, pe care el însuși i l-a dăruit la plecare. Secretul: el știe de la început a cui e barca și tace, pentru că a spune înseamnă a întreba "ce s-a întâmplat cu fiul meu?" — iar el nu îndrăznește răspunsul. Irina, care nu l-a văzut niciodată pe ceas, nu poate ști. Tensiunea: fiecare zi de tăcere îl îngreunează.
+
+    **2. Avdei a văzut barca plecând în noaptea respectivă — și nu a aprins lumina.**
+    Varianta cea mai grea: într-o noapte cu furtună, cu luni de zile în urmă, a văzut sau a auzit o barcă trecând pe lângă far, în beznă. Nu a aprins lumina — din obraz, din oboseală, dintr-o supărare de moment, sau pur și simplu pentru că "nimeni nu se mai uită la ea". A doua zi a auzit de un disparut. Nu leagă el cele două — nu îndrăznește să lege. Acum, când barca se întoarce goală, legătura îi stă în gât. Secretul lui e vinovăția, iar tema farului aprins/de stins capătă greutate morală reală.
+
+    **3. Barca i-a aparținut lui cândva.**
+    A vândut-o sau a dat-o cu împrumut cu zeci de ani în urmă unui om care a plecat cu datoriile lui, sau cu banii pe care i-a înșelat pe cineva ca să-i strângă. Barca întoarsă e ca o datorie care vine acasă. Secretul e material, concret — și poate fi urmărit: cui a vândut-o, ce s-a întâmplat cu banii.
+
+    **4. Avdei știe ce e la ora trei și jumătate.**
+    Ceasul se oprește mereu la trei și jumătate — iar Avdei știe ce s-a întâmplat la ora aceea, acum mulți ani, pe apă. Un accident, o ceartă, un om pe care nu l-a scos din apă deși putea. Ceasul nu merge înapoi noaptea la întâmplare: se întoarce la acel moment. Secretul lui Avdei nu e despre barcă, ci despre ora — iar barca e doar mesagerul.
+
+    **5. Secretul e legat de mama Irinei.**
+    Barca era a unui om de care fiica lui a fost îndrăgostită și care a plecat/disparut — motivul pentru care s-au rupt între ei: el s-a opus, sau a tăcut ceva ce ar fi trebuit să spună. Irina, venind în vizită, e și ea, fără să știe, copilul rupturii. Returnarea ceasului mamei Irinei devine atunci gestul prin care Avdei încearcă să repare două rupturi deodată.
+
+    Propunerea mea: **2 combinat cu 4**. Avdei nu a aprins lumina în noaptea în care cineva a trecut pe lângă far, iar ora acelei nopți — trei și jumătate — e ora la care se oprește ceasul. Astfel, ceasul care merge înapoi noaptea nu e doar mister, ci acuză: se întoarce mereu spre clipa în care Avdei a eșuat. Iar finalul — el aprinzând lumina în fiecare noapte, sau mergând el însuși pe apă la ora trei și jumătate — capătă forță de ispășire.
+
+    Care variantă ți se potrivește? Dacă o alegem, putem stabili apoi exact ce s-a întâmplat în noaptea aceea și cine era în barcă.
+- user: |
+    Secretul: acum 40 de ani, fratele lui mai mic, Fiodor, a ieșit pe mare cu o barcă identică și n-a mai venit. Scrie capitolul 3, în care Irina găsește în far o fotografie veche cu cei doi frați.
+  assistant: |
+    **Capitolul III**
+
+    Irina descoperi fotografia în a treia zi, când își căuta fularul.
+
+    Căuta peste tot — în dormitor, în cutia de lână, în dulapul cu miros de camfor și vechime — și în cele din urmă urcă în încăperea de sus a farului, unde bunicul ținea "tot ce nu mai trebuie, dar nu arunc". Acolo, pe un raft, între registrele vechi de navigație și o lampă cu petroli, ședea o cutie de carton umflată, legată cu sfoară.
+
+    Fularul nu era acolo. În schimb, fotografia era pe vârf cutiei, de parcă cineva o pusese acolo nu demult. De parcă cineva o luase în mână de mai multe ori.
+
+    Două băieți stăteau în fața unei bărci cu fund albastru. Cel mare era rigid, cu mâinile la şolduri, cu o față serioasă de om care știe că e fotografiat. Cel mic stătea șezând pe marginea bărcii, cu picioarele în aer, râzând cu toată gura, de parcă fotograful tocmai îi spusese o farsă. Pe spate, cu creionul albastru, o scriere veche, îngrijită: *Avdei și Fiodor, 1961*.
+
+    Irina rămase nemișcată. *Fiodor. Nu am auzit numele ăsta niciodată. Nici o dată. Și băiatul mic... băiatul mic are barca. Barca de la mal.*
+
+    Coborî încet, cu fotografia în mână, și o puse pe masă, sub lampa de la plafon, în locul unde ședea de obicei ceasul. Ceasul era acum în buzunarul bunicului, sau oriunde — Irina observase că de două zile el nu-l mai lăsa pe masă.
+
+    Avdei veni dinspre bucătărie cu ceaiul și se opri în prag, ca și cum ușa ar fi fost de sticlă.
+
+    — Bunicule, spuse Irina încet, cine e Fiodor?
+
+    Tăcere. Avdei privi fotografia cum privești un om pe care credeai că l-ai îngropat și îl vezi pe stradă.
+
+    — De unde ai... începu el, și se opri. Nu mai avea rost să întrebe.
+
+    — Era în far, sus. Pe cutia aia. Bunicule, bărcul din poză — e barca de la mal. Albastru, cu fundul ăla spălăcit. E aceeași.
+
+    — Nu e aceeași, spuse Avdei repede. Prea repede. *Patruzeci de ani, Avdei. Patruzeci de ani și lemnul nu trăiește atât. Și totuși tu ai recunoscut-o în prima dimineață, înainte să vezi ceasul. Tu ai recunoscut-o și ai tăcut.*
+
+    Își puse cana pe masă, cu grijă, de parcă mâinile i-ar fi aparținut altcuiva. Ședea pe scaun, în fața fotografiei, și Irina văzu cum bătrânul îmbătrâni încă o dată, acolo, sub ochii ei — nu din mers, nu din spate, ci din față, cum se îmbătrânește doar în fața cuiva.
+
+    — Fratele meu, spuse el în cele din urmă. Mai mic cu patru ani. Fiodor.
+
+    — Nu știam că am avut un... că tu ai avut un frate.
+
+    — Nu știai, spuse Avdei. Nu era de spus.
+
+    — Ce s-a întâmplat cu el?
+
+    Avdei luă fotografia în mână. Degetul mare i se opi, fără voia lui, peste chipul cel mic, cel care râdea.
+
+    — Ieșise pe mare. Cu o barcă ca asta. Era toamna târziu, ca acum. S-a întors vremea și el n-a mai întors. Așa se spunea atunci: n-a mai întors. Cautară opt zile. Găsiră o vâslă, la Vădan, și atât.
+
+    — Și nimeni nu știe nimic? Nici până azi?
+
+    — Până azi, spuse Avdei.
+
+    Irina privi fotografia, apoi bunicul. Era ceva în felul în care el nu privea fotografia — o ocolire a ochilor, un drum ocolit — care îi aminti de felul în care, de două zile, el ocolea ceasul.
+
+    — Bunicule, spuse ea încet. Ceasul ăla. De ce nu-l lași pe masă?
+
+    Avdei ridică privirea. Și pentru o clipă — Irina avea să-și amintească toată viața clipa aceea — părea că vrea să spună. Că cuvintele îi stăteau la grămadă în gură, vechi de patruzeci de ani, grele ca pietrișul.
+
+    Apoi se ridică, luă cana și ieși pe scări, spre mal, fără să spună nimic.
+
+    Pe masă, sub lampa de la plafon, rămase fotografia. Cei doi frați. Barca albastră. Iar Irina, șezând singură în bucătăria farului, înțelese pentru prima oară că nu venise în vizită la un bătrân singuratic, ci la un om care ține ceva închis de patruzeci de ani — și că ceasul de pe masă, oprit la trei și jumătate, are de-a face cu asta.
+- user: |
+    Ce scrie pe spatele fotografiei? Ceva scurt, misterios, de mâna lui Fiodor.
+  assistant: |
+    Frumoasă întorsătură — dacă scrierea de pe spate nu e una, ci două: descrierea de față (scrisă de cineva din familie, cu creion albastru: *Avdei și Fiodor, 1961*) și, dedesubt, o altă mână. Iată câteva variante pentru ce a adăugat Fiodor:
+
+    **1. "F. — barca mea, marea mea. Cine mă caută, să caute la trei și jumătate."**
+    Leagă direct de ora ceasului. Misterioasă, aproape o ghicitoare — și, retrospectiv, terifiantă: Fiodor "a spus" ora cu ani înainte ca ceasul să apară.
+
+    **2. "F. — când o să-mi fie dor, mă întorc."**
+    Simplă, caldă, de tânăr care nu crede în moarte. Devine sinistră doar după dispariție — și mai sinistră acum, când barca *s-a întors*. Poate cea mai puternică variantă pentru tema poveștii: fluviul dă înapoi ce a luat.
+
+    **3. "F. — Avdei nu știe să înoate. Eu înot pentru doi."**
+    Nu pare misterioasă deloc — pare o glumă de frate mai mic. Dar citește-o după ce știi finalul: e o promisiune pe care Fiodor n-a putut-o ține, sau pe care Avdei a simțit-o toată viața ca pe o datorie neplătită. Misterul e ascuns în banal.
+
+    **4. "F. — 3:30. Ține-ți minte, frate."**
+    Cea mai criptică. Doar o oră și un îndemn. Nimeni nu știe la ce se referă — nici Avdei nu a știut niciodată, și asta l-a chinuit: a trecut 40 de ani întrebându-se ce trebuia să-și amintească. Abia acum, cu ceasul pe masă, ora capătă sens.
+
+    **5. "F. — dacă vine vremea rea, lasă lumina aprinsă."**
+    Un îndemn de frate mai mic, care sună aproape copilăresc — dar care lovește exact în vinovăția lui Avdei (dacă mergem pe varianta că într-o noapte n-a aprins lumina). Fiodor i-a cerut singur lucrul pe care Avdei avea să nu-l facă.
+
+    Propunerea mea: **varianta 2**, eventual combinată cu un detaliu fizic — scrisă cu alt creion, mai apăsată, ca și cum Fiodor ar fi scris-o târziu, în ultima seară. E scurtă, sună a tânăr viu, și abia în capitolul final, când barca și ceasul își spun povestea, cititorul o recitește cu pielea de găină: *mă întorc*.
+
+    Vrei să integrez inscripția în capitolul 3 — de exemplu, Irina întoarce fotografia și o citește cu voce tare, iar Avdei, în pragul ușii, se oprește?
+- user: |
+    Îmi place prima variantă. Integreaz-o în capitolul 3, în momentul în care Irina întoarce fotografia.
+  assistant: |
+    Iată pasajul modificat — de la descoperirea fotografiei, cu inscripția integrată, plus mici ajustări mai jos în scenă ca să răspundă la ea:
+
+    ---
+
+    Două băieți stăteau în fața unei bărci cu fund albastru. Cel mare era rigid, cu mâinile la șolduri, cu o față serioasă de om care știe că e fotografiat. Cel mic stătea șezând pe marginea bărcii, cu picioarele în aer, râzând cu toată gura, de parcă fotograful tocmai îi spusese o farsă. Pe spate, cu creionul albastru, o scriere veche, îngrijită: *Avdei și Fiodor, 1961*.
+
+    Irina întoarse fotografia încă o dată, din obiceiul de a citi tot ce se poate citi. Și atunci văzu că sub scrierea îngrijită mai era o alta — altă mână, mai apăsată, cu litere înguste, înclinate, de cineva care scrie repede și sigur:
+
+    *F. — barca mea, marea mea. Cine mă caută, să caute la trei și jumătate.*
+
+    Irina rămase cu fotografia în mână. *Fiodor. Nu am auzit numele ăsta niciodată. Nici o dată. Și băiatul mic... băiatul mic are barca. Barca de la mal.* Și ora. *La trei și jumătate. Ceasul ăla oprit. La trei și jumătate.*
+
+    Coborî încet, cu fotografia în mână, și o puse pe masă, sub lampa de la plafon, în locul unde ședea de obicei ceasul. Ceasul era acum în buzunarul bunicului, sau oriunde — Irina observase că de două zile el nu-l mai lăsa pe masă.
+
+    Avdei veni dinspre bucătărie cu ceaiul și se opri în prag, ca și cum ușa ar fi fost de sticlă.
+
+    — Bunicule, spuse Irina încet, cine e Fiodor?
+
+    Tăcere. Avdei privi fotografia cum privești un om pe care credeai că l-ai îngropat și îl vezi pe stradă.
+
+    — De unde ai... începu el, și se opri. Nu mai avea rost să întrebe.
+
+    — Era în far, sus. Pe cutia aia. Bunicule, bărcul din poză — e barca de la mal. Albastru, cu fundul ăla spălăcit. E aceeași.
+
+    — Nu e aceeași, spuse Avdei repede. Prea repede. *Patruzeci de ani, Avdei. Patruzeci de ani și lemnul nu trăiește atât. Și totuși tu ai recunoscut-o în prima dimineață, înainte să vezi ceasul. Tu ai recunoscut-o și ai tăcut.*
+
+    — Și mai e ceva, spuse Irina, și întoarse fotografia cu spatele la el. Cine a scris asta?
+
+    Avdei citi. Irina văzu exact momentul în care ochii lui ajunseră la rândul de jos — nu la nume, nu la dată, ci la ora. Mâna cu care ținea cana se strânse puțin, și cana tremură, și ceaiul se înclină fără să se verse.
+
+    — Fratele meu, spuse el în cele din urmă. Mai mic cu patru ani. Fiodor.
+
+    — Cine mă caută, să caute la trei și jumătate, citi Irina încet. Bunicule... ceasul tău e oprit la trei și jumătate.
+
+    — Nu e ceasul meu, spuse Avdei.
+
+    — Știu. L-ai găsit. În barca lui.
+
+    Avdei tăcu atât de mult, încât Irina auzi vântul pe geam. Apoi el luă fotografia în mână. Degetul mare i se opri, fără voia lui, peste chipul cel mic, cel care râdea.
+
+    — Ieșise pe mare. Cu o barcă ca asta. Era toamna târziu, ca acum. S-a întors vremea și el n-a mai întors. Așa se spunea atunci: n-a mai întors. Cautară opt zile. Găsiră o vâslă, la Vădan, și atât.
+
+    — Și scrisul ăsta? spuse Irina. Cine mă caută, să caute la trei și jumătate. Ce înseamnă?
+
+    — Nu știu, spuse Avdei.
+
+    Și pentru prima dată în viața Irinei, bunicul ei spuse un lucru pe care nu-l credea.
+
+    ---
+
+    Restul capitolului (finalul, cu Avdei ieșind pe mal) poate rămâne aproape neschimbat — doar că acum tăcerea lui are o cauză mai precisă: nu doar dispariția, ci inscripția pe care a citit-o, poate, de zeci de ori fără să-i înțeleagă sensul — până acum, cu ceasul pe masă. Vrei să ajustez și finalul capitolului în consecință?
+- user: |
+    Capitolul 4: vine furtuna, iar Avdei iese noaptea pe mare cu barca găsită. Scrie-l.
+  assistant: |
+    **Capitolul IV**
+
+    Furtuna veni în a cincea seară, dinspre mare, cum vin cele adevărate.
+
+    Toată ziua apa fusese stranie — verde închis, netedă, cu un luciu de metal — iar pescărușii dispăruseră de pe mal. Avdei cunoștea semnele din copilărie, din vremea când Fiodor le învăța pe degete: *vezi, frate, când apa se face ca oglinda de la masa mamei, atunci fugi de pe apă. Când apa e frumoasă, e primejdioasă. Când e urâtă, e sinceră.*
+
+    *Frate*, gândi el, și fu prima oară în patruzeci de ani când gândul acela nu i se păru o piatră, ci un cuvânt.
+
+    Spre seară, vântul se ridică de tot. Irina îl ajută să închidă obloanele, să legăm butoiele, să strângă de pe mal tot ce putea lua apa. Apoi, în bucătărie, cu lumina stingându-se din când în când, ea spuse:
+
+    — Bunicule, diseară nu aprinde lumina, da? Stai înăuntru. O noapte n-o aprinde nimeni, nu se întâmplă nimic.
+
+    Și acolo, în propoziția aceea de copil, Avdei auzi toată greutatea celor patruzeci de ani. *O noapte n-o aprinde nimeni.* O noapte n-o aprinsese el. O noapte ca asta, cu vânt dinspre mare, cu apa frumoasă și primejdioasă, cu o barcă mică ieșind pe beznă — și el în far, cu degetul pe întrerupător, și nu-l apăsase. De ce nu-l apăsase? Nici el nu mai știa. Oboseală. Supărare — se certaseră în ziua aceea, el și Fiodor, de o nimicătoare, de o plasă ruptă. *Mă duc singur, dacă tu ești așa*, spusese Fiodor. Și Avdei rămăsese în far, cu mândria lui de om mare, și nu aprinse lumina. Nu de răutate. Dintr-o lene a sufletului, care e mai rău decât răutatea, pentru că nu se iartă niciodată de tot.
+
+    Iar dimineața, marea dădu înapoi o vâslă. La Vădan.
+
+    — Bunicule? Irina îl privea. M-ai auzit? Nu aprinde.
+
+    — Aprind, spuse Avdei. Aprind mereu.
+
+    — Bunicule...
+
+    — Mergi la culcare, Irina. Mâine îți duc la Tulcea, vrei? Mâine vorbim tot ce n-am vorbit.
+
+    Ea se duse, dar nu la culcare — el auzi, prin perete subțire, cum șade deșteaptă pe pat. Avdei ședea la masă, cu ceasul în față, și aștepta.
+
+    La miezul nopții, limba ceasului porni înapoi. Două și jumătate. Două și un sfert. Avdei privi cum timpul se scurge înapoi, spre trei și jumătate, cum se scurge un râu spre o gură pe care o cunoaște. *Cine mă caută, să caute la trei și jumătate.* Patruzeci de ani citise el inscripția, și în toate nopțile acelea nu înțelesese că nu e o ghicitoare. E o invitație.
+
+    Când limba mare ajunse la trei și jumătate și se opri, Avdei se ridică.
+
+    Își luă haina de ploaie, lanterna, și coborî cele șaptesprezece trepte. Furtuna îl întâmpină ca pe un cunoscut — îl împinse, îl strigă, îi luă pălăria. Barca albastră ședea legată la mal, legănându-se cu o răbdare care nu-i era frică.
+
+    *Ești nebun, Avdei. La vârsta ta, pe vremea asta. Irina are dreptate, toți ar avea dreptate.* Dar el știa ceva ce nimeni nu știa: că un om poate trăi patruzeci de ani fără să trăiască, și că mai bine o noapte pe apă decât încă una în far, cu degetul pe întrerupător.
+
+    Aprinse lumina farului. Întâi lumina — asta mai întâi, înainte de toate. Apoi dezlegă frânghia și împinse barca în apă.
+
+    Marea era cum spunea Fiodor când erau copii: sinceră. Îl lua, îl ridica, îl lăsa jos. Avdei vâslea fără rost anume, spre larg, cu apa în față și lumina farului în spate — și pentru prima dată după patruzeci de ani, lumina aceea era aprinsă *pentru cineva*. Pentru oricine era pe apă. Pentru un băiat cu picioarele în aer, care râdea de pe marginea unei bărci.
+
+    La un moment dat — nu știa cât — ceasul începu să sune în buzunarul de la piept.
+
+    Un sunet mic, de alamă, sub vânt. Avdei scosi ceasul și îl privi: limba mare se învârtea înainte. Înainte, pentru prima oară. Trei și jumătate. Trei și treizeci și una.
+
+    Și undeva, înainte, în beznă dintre valuri, ceva se mișcă. Nu o pasăre. Nu o bucată de lemn.
+
+    O lumină mică, care răspundea.
+- user: |
+    E prea grăbit. Încetinește momentul în care pornește motorul și iese din port.
+  assistant: |
+    Ai dreptate — și acolo e un detaliu de corectat: eu scrisem că vâslea, dar tu îl vezi cu motor. Iată pasajul rescris, cu motorul și cu momentul plecării întins, aproape în ritm de respiratie:
+
+    ---
+
+    Aprinse lumina farului. Întâi lumina — asta mai întâi, înainte de toate.
+
+    Apoi se aplecă asupra bărcii și pentru prima dată o privi ca pe a lui. Motorul era mic, un afișor vechi, cu volantă de mână — îl găsise în barcă în prima dimineață, acoperit cu o prelată, uscat, uns, de parcă cineva îl pregătise de plecare. Acum îl atinse cu palma. Metalul rece. *Cum se pornește? De patruzeci de ani nu am atins un motor, Avdei. Mâinile ți le amintește ele, nu tu.*
+
+    Trase volanta o dată, de două ori. Nimic — doar vântul, care îi smulse capota de pe cap și o aruncă în apă, și el nu se uită după ea. *Încet. Cum te învățase tatăl. Nu trage ca la război. Vorbește-i.* Își aminti vocea tatălui, moartă de mai bine de jumătate de veac: *motorul e ca un cal, frate, simte când te temi.* Și Avdei se opri, și ședea un moment nemișcat în barca legănată, cu mâna pe volantă, și își lăsă frica să fie acolo, în el, fără să o alunge. Apoi trase.
+
+    Motorul tuși. Un tușit umed, greoi, ca al unui om scos din somn. Avdei rămase ațent, cu mâna pe mâner, fără să tragă din nou. *Încă una. Una singură.* Trase — și motorul porni, cu un mârâit mic, stăpânit, care i se părè mai degrabă o respirație decât un zgomot.
+
+    Ședea așa. Doar așa, cu motorul pornit, cu barca legată, și asculta. Mârâitul mic, valurile în fundul bărcii, frânghia care scârțâia de stâlp. În spate, sus, lumina farului se rotea peste el, iar el o simțea pe ceafă, caldă, ca o mână. *Încă o clipă. Mai stai o clipă, că poate te răzgândești. Poate e mai bine să te răzgândești.*
+
+    Nu se răzgândi. Dar nu se și grăbi. Dezlegă frânghia nod cu nod — trei noduri, cum lega Fiodor mereu, din zgârcenie sau din grijă, nimeni nu a știut niciodată — și fiecare nod i se păru un cuvânt pe care îl rostește înainte de o vorbire grea. Primul nod: *iertă-mă*. Al doilea: *am venit*. Al treilea nu-l putu numi.
+
+    Împinse barca de mal cu piciorul, ușor, cum împingi un leagăn. Apa o luă. Pentru o clipă barca nu era nici la mal, nici pe apă — era între, în apa mică de lângă țărm, unde valurile nu se hotărăsc — și Avdei simți, în acea clipă, tot ce lăsa în urmă: cele șaptesprezece trepte, cana cu ceai nespălată, Irina deșteaptă în întuneric, ascultând prin perete.
+
+    *Lasă-le. Nu sunt pierdute. Sunt lăsate, și asta e altceva.*
+
+    Împinse mânerul motorului înainte, încet, și barca se întoarse cu prova spre larg. Lumina farului o luă în spate și o ținu acolo — și pentru prima dată după patruzeci de ani, lumina aceea era aprinsă *pentru cineva*. Pentru oricine era pe apă. Pentru un băiat cu picioarele în aer, care râdea de pe marginea unei bărci.
+
+    ---
+
+    Am păstrat finalul capitolului (ceasul care începe să meargă înainte, lumina în beznă) neschimbat — se leagă direct de aici. Vrei să ajustez ceva la ritm, sau mergem mai departe la capitolul 5, cu ce se întâmplă pe apă?
+- user: |
+    Vreau un cântec scurt pe care Fiodor obișnuia să-l cânte, în stilul cântecelor pescărești, de două strofe. Îl va fredona Avdei pe mare.
+  assistant: |
+    Iată cântecul — simplu, cu rimă de cântec de pescar, din acelea care se fredonează mai degrabă decât se recită. Am țesut în el motivul întoarcerii, ca să răsune când îl fredonează Avdei pe mare:
+
+    ---
+
+    **Cântecul lui Fiodor**
+
+    *Apă, apă, apă neagră,*
+    *Nu mă lua, că nu te-ajung,*
+    *Am barca mică și-o vâslă lungă*
+    *Și-un ceas în piept ce nu-i de-al tău.*
+
+    *Apă, apă, apă adâncă,*
+    *Frați-am avut și frați-am pierdut,*
+    *Cine-i pierdut și-aprinde-o luntre*
+    *Se-ntoarce-acasă la trei și jumătate.*
+
+    ---
+
+    Câteva observații, ca să-l folosești bine:
+
+    - **Prima strofă** e de tânăr — trufașă, plină de viață, cu "ceasul în piept" care nu e al apei. Sună a Fiodor cel din fotografie, cel care râdea cu toată gura.
+    - **A doua strofă** e mai grea — și e ciudat de matură pentru Fiodor. Poți folosi asta în poveste: Avdei își amintește că fratele lui mai mic o cânta *așa*, cu versul acela despre frați, și n-a întrebat niciodată de ce. Poate Fiodor simțea ceva. Poate cântecul era o rugăciune de-a lui.
+    - Versul final, **"la trei și jumătate"**, nu rimează perfect cu "luntre" — și e bine așa: în cântecele populare versul-cheie se rostește adesea în afara ritmului, ca o piatră aruncată în apă. Când Avdei îl fredonează pe mare, în capitolul 5, acest vers poate fi cel care îi cade pe gură greu, deodată, și îl face să tacă.
+
+    Dacă vrei o variantă mai ritmată, cu rimă plină pe tot parcursul (mai cântabilă, mai puțin aspră), o pot rescrie — dar pentru fredonat în furtună, varianta cu mici neregularități mi se pare mai adevărată.
+
+    Vrei să-l integrez acum într-un pasaj din capitolul 5 — Avdei pe apă, cu lumina în spate, fredonând din reflex, și oprindu-se la ultimul vers?
+- user: |
+    Finalul: îl găsește pe Fiodor sau nu? Dă-mi trei variante de final.
+  assistant: |
+    Frumoasă întrebare — și aici se decide tonul întregii povești. Iată trei variante, de la cea mai plină la cea mai deschisă:
+
+    **1. Îl găsește — dar nu cum se așteaptă nimeni.**
+    Lumina din beznă e barca lui Fiodor, neatinsă de patruzeci de ani, cu prelată uscată, plutind în ochiul furtunii. În ea, scheletul unui om tânăr, cu haina veche, cu ceasul de buzunar oprit la trei și jumătate — *același* ceas, sau perechea lui. Fiodor nu s-a îndepărtat niciodată: marea l-a ținut aproape, cum ține un secret. Avdei îl aduce acasă, îl îngroapă lângă părinți, iar ceasul îl pune în mormânt. Finalul: lumina farului, aprinsă în fiecare noapte, acum cu un sens împlinit. *Puternic, închis, cu lacrimă. Risc: poate fi prea "găsit" — misterul se rezolvă de tot.*
+
+    **2. Îl găsește doar pe jumătate — semnul, nu omul.**
+    Lumina duce Avdei până la o insulă de nisip unde nu fusese niciodată nimic: pe țărm, barca lui Fiodor, veche, plină de nisip — și în ea, așezate cu grijă, lucrurile care fuseseră ale lui Fiodor în ziua dispariției: vâsla, cutia cu unelte, haina. Dar nici urmă de om. E ca și cum marea i-ar spune: *ce ai pierdut ți-l dau înapoi, dar ce a luat el, al lui rămâne.* Avdei înțelege că nu i s-a dat să-l găsească — i s-a dat să-l *ducă acasă*, pe el, pe bătrânul care nu se mai întorsese niciodată de la acea noapte, deși trăise patruzeci de ani. Se întoarce în zori, cu barca în remorcă. Irina îl așteaptă pe mal. Finalul: îi spune tot, pentru prima dată, și plânge ca un frate mai mic. *Echilibrul meu preferat: misterul rămâne, dar vinovăția se eliberează.*
+
+    **3. Nu-l găsește — dar e găsit el.**
+    Lumina din beznă se apropie, se apropie — și dispare. Avdei o urmărește până când barca lui nu mai are benzină, până când furtuna îl întoarce, până când, în zori, e el cel găsit: de o barcă de salvare, de Irina, de pescarii ieșiți să caute un bătrân nebun care a ieșit pe furtună. Pe mal, Irina îl îmbrățișează plângând, și Avdei înțelege, cu rușine și cu ușurare, că în noaptea aceea *el* a fost cel pierdut pe apă — și că cineva i-a aprins lumina. Poate farul lui. Poate altceva. Ceasul, în buzunar, merge acum înainte, cuminte, și nu se mai oprește la trei și jumătate. Finalul: primăvara, Avdei și Irina vopsesc barca în albastru și o dau în folosința unui tânăr pescar. *Cel mai deschis, cel mai blând — tema se mută de pe moarte pe reîntoarcere și pe legătura dintre generații.*
+
+    **Propunerea mea:** varianta 2, eventual cu o picătură din 3 — semnul de pe insulă, dar și scena în care Avdei, întorcându-se, realizează că lumina farului l-a adus acasă *pe el*. Astfel cititorul primește o răspuns parțial (barca, lucrurile — destul ca să nu se simtă înșelat), dar păstrează misterul care dă poveștii adevărata ei greutate: nu tot ce ia marea ni-l dă înapoi, și tocmai de-asta trebuie aprinsă lumina.
+
+    Care variantă ți se potrivește? Odată alesă, putem scrie capitolul 5 — și apoi o scurtă încheiere, cu Irina și ceasul care merge înainte.
+- user: |
+    Vreau un final ambiguu: Avdei se întoarce în zori, barca e goală, iar ceasul merge din nou normal. Scrie capitolul 5.
+  assistant: |
+    **Capitolul V**
+
+    Lumina din beznă nu se apropia și nu se depărta. Mergea cu el, cum merge un câine prin apă în fața bărcii, și Avdei o urmă, pentru că nu mai era nimic altceva de urmat în lume.
+
+    Vâslea — sau motorul mârâia, nu mai știa care dintre ele era adevăratul; mâinile îi făceau un lucru, iar el privea înainte. Furtuna ședea în jurul lui ca o cameră închisă. Și în el, în buzunarul de la piept, ceasul suna — nu sune de ceasornic, ci un sunet mai adânc, de alamă bătută de undeva dinăuntru, cum bate inima într-o cutie.
+
+    *Frate*, gândi el, și de data asta cuvântul nu era o piatră, era o ușă.
+
+    Fredonă, fără voia lui, cântecul. *Apă, apă, apă neagră...* Vocea i se rupea de vânt, dar versurile erau întregi, păstrate patruzeci de ani ca o plasă împăturită. *Cine-i pierdut și-aprinde-o luntre...* Și acolo, la ultimul vers, la *la trei și jumătate*, gura i se opri deodată, pentru că lumina dinainte lui se opri și ea.
+
+    Ședea pe apă. Nemișcată. Mică, galbenă, caldă — o lumină de felinar, de bucătărie, de casă — în mijlocul mării care nu are case.
+
+    Avdei nu-și amintește ce a făcut apoi. Își amintește bucăți, cum îți amintești un vis în zori: că striga un nume, și că numele i se părea străin în gura lui, de nefolosit atâția ani. Că apa se făcu netedă deodată, ca o oglindă de la masa mamei, și asta era cel mai groaznic lucru din toată noaptea, pentru că apa frumoasă e primejdioasă. Că întinse mâna. Că mâna lui atinse ceva — nu apă, nu lemn, nu om. Ceva cald. Doar cald, atât i s-a dat să țină.
+
+    Și apoi lumina se stinse. Nu plecă — se stinse, cum se stinge o lumânare când cineva suflă în ea ca să meargă la culcare.
+
+    După aceea, Avdei șade în barca lui și așteaptă zori. Nu-i frig. Nu-i frică. Are un fel de liniște pe care n-o mai cunoscut de când era mic și dormea în aceeași cameră cu fratele lui, și se trezea noaptea, și auzea respirația celuilalt, și iar adormea. *Asta era*, gândi el. *Asta era liniștea aia. Nu eram singur în cameră.*
+
+    ---
+
+    Zorii veni cenușii și fără vânt. Marea se retrăsese cuminte, lăsând pe nisip gunoaiele nopții: stuf, crengi, o sanda. Avdei intră cu barca la mal, cu mâinile care nu-l mai ascultau de mult, și abia când sări pe țărm văzu că barca albastră nu mai era legată la locul ei.
+
+    Căută cu ochii. Nimic. Malul, stâncile, farul deasupra, cu lumina stinsă cuminte, cum o stinsese el, cândva, în prima lui viață.
+
+    Apoi văzu, în nisipul ud, aproape de apă, urme de pași. Un singur rând, ducând dinspre apă spre uscat. Pași mici, ușori, de om care merge desculț și nu se grăbiește, pentru că acasă nu se grăbește nimeni. Urmele se duceau spre stufăriș și se pierdeau acolo, unde nisipul se termină.
+
+    Avdei nu le urmări. Ședea pe stâncă și le privi atât cât trebuie privite urmele care nu-ți aparțin — cu respect, cu recunoștință, fără să le calce.
+
+    Apoi scoase ceasul din buzunar.
+
+    Mergea. Înainte, cuminte, cu un ticăit mic și uscat, de ceas adevărat. Șapte și douăzeci. Șapte și douăzeci și una. Nicio oră veche, nicio oră întoarsă. Ora care era.
+
+    *Patruzeci de ani m-ai întrebat ce înseamnă trei și jumătate*, gândi Avdei spre ceas, sau spre frate, sau spre apa care le ține pe amândouă. *Și acum, când ai încetat să mai întrebi tu, am înțeles. Nu era o oră, Fiodor. Era o ușă. Și ușile nu se deschid din afară.*
+
+    Se ridică, își trase haina pe umeri și urcă cele șaptesprezece trepte. În bucătărie, Irina dormea șezând la masă, cu capul pe brațe, cu fularul verde pe scaunul de lângă ea — venise, se trezise, venise din nou, o noapte întreagă. Pe masă, în locul unde ședea de obicei ceasul, era fotografia. Cei doi frați. Barca albastră.
+
+    Avdei puse ceasul lângă fotografie. Ticăitul lui mic, viu, umplu bucătăria ca o respirație în cameră cu doi oameni.
+
+    Irina se trezi, văzu bunicul ud, sărat, întreg, și se ridică în picioare fără să spună nimic. El ședea jos, lângă ea, și pentru o vreme nimeni nu zise nimic, pentru că erau lucruri care se spun și lucruri care se șed.
+
+    — Bunicule, spuse în cele din urmă Irina. Barca... barca albastră nu mai e la mal.
+
+    — Nu, spuse Avdei. A plecat.
+
+    — Cine...?
+
+    — Unul care s-a întors, spuse el. Așa promisese.
+
+    Irina privi ceasul, care mergea. Privi fotografia, pe care băiatul cel mic râdea cu toată gura. Și întoarse fotografia cu spatele, și citi din nou, și de data asta versul nu i se părè o ghicitoare, ci un răspuns pe care îl primise cineva, undeva, în noaptea care tocmai se terminase.
+
+    *Cine mă caută, să caute la trei și jumătate.*
+
+    — Bunicule, spuse Irina încet. Diseară, la trei și jumătate... unde ai fost?
+
+    Avdei luă ceasul din masă și îl puse în buzunarul de la piept, acolo unde bătrânii țin ceasurile.
+
+    — Acasă, spuse el. Am fost acasă.
+
+    Și afară, peste fluviul liniștit, se ridica o dimineață ca toate dimineațele, și niciuna ca ea.
+- user: |
+    Ce titlu ar putea avea povestirea? Propune cinci.
+  assistant: |
+    Iată cinci propuneri, fiecare cu alt accent al poveștii:
+
+    **1. "La trei și jumătate"**
+    Cel mai direct — ora care structurază totul: ceasul oprit, inscripția lui Fiodor, noaptea pe apă. Scurt, enigmatic înainte de lectură, inevitabil după. Titlul meu preferat: e o oră care devine personaj.
+
+    **2. "Cine mă caută, să caute"**
+    Luat din inscripție, dar trunchiat — păstrează doar chemarea, fără răspuns. Are un sunet de cântec popular și de poruncă de peste mormânt în același timp. Bun dacă vrei ca titlul să fie o voce, nu un obiect.
+
+    **3. "Barca albastră"**
+    Cel mai clasic, mai liniștit. Pune accentul pe obiectul-material al misterului și pe legătura dintre cei doi frați. Merge bine dacă vrei un titlu discret, care nu dezvăluie nimic din tonul fantastic al poveștii.
+
+    **4. "Ceasul care merge înapoi"**
+    Titlul care anunță genul — cititorul știe din start că intră într-o poveste cu un pic de necunoscut. Riscă să spună prea mult, dar are un farmec de basm adult, de titlu de antologie.
+
+    **5. "Lumina pentru cineva"**
+    Din fraza-cheie a capitolului 4 — lumina aprinsă, în sfârșit, pentru cineva. Titlul care pune tema în centru: vinovăția, datoria, ispășirea. Cel mai "moral" dintre cele cinci, și poate cel mai emoționant după lectură — dar cel mai slab înainte de ea, pentru că nu atrage.
+
+    **Propunerea mea:** "La trei și jumătate" — e specific, memorabil, și face exact ce trebuie un titlu la o povestire cu mister: promite o oră și ascunde o ușă. Ca variantă de rezervă, cu aceeași logică, ai putea folosi "Trei și jumătate" — și mai auster, și mai frumos pe copertă.
+
+    Care ți se potrivește?
+- user: |
+    Alegem „Ceasul de la Sulina”. Scrie un rezumat de trei fraze pentru înscrierea la un concurs literar.
+  domain: summarization
+  assistant: |
+    **Ceasul de la Sulina** — rezumat:
+
+    Avdei, un paznic de far bătrân din Sulina, găsește la mal o barcă goală în care șade un ceas de buzunar oprit la trei și jumătate — și descoperă că noaptea, când nimeni nu privește, ceasul merge înapoi. Pe măsură ce nepoata lui, Irina, dezgroapă trecutul tăcut al bătrânului, povestea dezvăluie o vinovăție veche de patruzeci de ani: fratele mai mic al lui Avdei, Fiodor, ieșit pe mare într-o barcă identică, n-a mai întors niciodată. În noaptea furtunii, Avdei iese pe apă să răspundă în sfârșit chemării din inscripția fratelui său — și se întoarce în zori cu un ceas care merge din nou înainte și cu tăcerea, în sfârșit, dezlegată.
+
+    Dacă vrei, pot face și o variantă mai scurtă (o singură frază, pentru formularele de înscriere cu limită de caractere) sau una care accentuează altceva — de exemplu relația dintre Avdei și Irina, dacă juriul apreciază temele intergeneraționale.
+- user: |
+    Tradu rezumatul în engleză, pentru secțiunea internațională a concursului.
+  domain: translation
+  assistant: |
+    **The Clock of Sulina** — summary:
+
+    Avdei, an old lighthouse keeper in Sulina, finds an empty boat washed ashore, with a pocket watch inside, stopped at half past three — and discovers that at night, when no one is watching, the clock runs backwards. As his granddaughter Irina gradually uncovers the old man's long silence, the story reveals a guilt forty years deep: Avdei's younger brother, Fiodor, who went out to sea in an identical boat, never came back. On the night of the storm, Avdei sets out on the water to finally answer the call in his brother's inscription — and returns at dawn with a clock that runs forward again, and with a silence, at last, resolved.
+
+    Câteva note de traducere, dacă le găsești utile:
+
+    - Am ales **"The Clock of Sulina"** pentru titlu — "of" sună mai literar decât "from". Alternativă: *"The Sulina Clock"*.
+    - **"runs backwards"** e expresia standard pentru ceas care merge înapoi; am evitat "goes back", care poate sugera altceva.
+    - **"a guilt forty years deep"** — am păstrat metafora adâncimii, care rezonează frumos cu marea.
+    - **"a silence, at last, resolved"** — construcția cu virgule păstrează ritmul meditat al frazei românești; o variantă mai directă ar fi *"and with his long silence finally broken"*.
+
+    Dacă juriul cere și o notă despre autor sau o scurtă descriere a contextului (Delta Dunării, comunitatea lipovenească), o pot adăuga.
+- user: |
+    Recitește capitolul 1 în raport cu restul: e vreo contradicție de timp, de loc sau de nume?
+  assistant: |
+    Am recitit capitolul 1 alături de restul — iată ce am găsit:
+
+    **Contradicție reală (de corectat):**
+
+    1. **Numele nepoatei.** În capitolul 1 (varianta rescrisă cu monolog interior) apare încă numele vechi: *"Nastya doarme până la nouă"* și *"îi spunea uneori nepoatei, Nastya, la telefon"*. Când am schimbat numele în Irina, am rescris doar capitolul 2 — capitolul 1 a rămas cu Nastya. E singura contradicție clară. Propun înlocuirea ambelor apariții cu Irina; fraza *"Irina doarme până la nouă"* funcționează la fel de bine.
+
+    **Puncte soft (nu contradicții, dar merită o decizie conștientă):**
+
+    2. **Matematica cronologiei.** Fotografia e din 1961, iar dispariția a fost "acum patruzeci de ani". Dacă cei doi frați au în fotografie vârste de copii (10–14 ani), Acțiunea se plasează implicit în anii '90–2000 — ceea ce se potrivește cu "navigația se ghida din sateliți" din capitolul 1, dar doar la limită: GPS-ul s-a generalizat în navigația civilă abia spre 2000. Dacă vrei povestea plasată clar în prezent, fie mutăm dispariția la "peste patruzeci de ani" cu fotografia din 1961 făcută când Fiodor era bebeluș (mai puțin credibil cu barca), fie lăsăm acțiunea în jurul anului 2000 — ceea ce, sincer, se potrivește chiar bine cu un far deja "depășit" de tehnologie.
+
+    3. **Frânghia cu care e legată barca.** În capitolul 1 barca e "legată de țărm cu o frânghie scurtă" — dar e o barcă venită goală, fără stăpân. Cine a legat-o? Cititorul atent se poate întreba. Poți fie să o lași ca mister deliberat (într-o poveste cu ceas care merge înapoi, o barcă care se leagă singură e un semn discret), fie să schimbi în "aproape de țărm, legănându-se" — nerevendicată, dar neexplicată.
+
+    4. **Detaliu care, dimpotrivă, se leagă frumos:** în capitolul 1 Avdei se trezește "înainte de cocoș" și "nu era ceas care să-l scoată din somn" — iar în capitolul 2 Irina îi spune "tu nu ai ceas de treizeci de ani". Coerent și, în plus, "nu era ceas" capătă retrospectiv o ironie frumoasă.
+
+    Vrei să fac acum corectura numelui în capitolul 1 (și, opțional, ajustarea frânghiei)?
+- user: |
+    Dacă un profesor ar întreba ce simbolizează ceasul, ce aș putea răspunde?
+  domain: open-qa
+  assistant: |
+    Întrebare excelentă — și ceasul tău e construit chiar ca să susțină mai multe lecturi deodată. Iată ce ai putea răspunde, pe niveluri:
+
+    **1. Ceasul = vinovăția care nu înaintează.**
+    Un ceas oprit la trei și jumătate e timpul blocat în momentul traumei: pentru Avdei, viața s-a oprit în noaptea dispariției lui Fiodor, chiar dacă el a trăit "patruzeci de ani". Faptul că noaptea ceasul *merge înapoi* arată că bătrânul retrăiește obsesiv acel moment — memoria care nu avansează, ci se întoarce mereu spre rană. Iar când, la final, ceasul merge înainte, e semnul iertării: timpul (și omul) poate continua.
+
+    **2. Ceasul = legătura dintre frați, datoria neplătită.**
+    Ceasul e purtat "la piept, acolo unde bătrânii țin ceasurile" — adică la inimă. E un inlocuitor al fratelui pierdut, un mesager care vine exact când Avdei e gata (sau forțat) să asculte. Inscripția *"cine mă caută, să caute la trei și jumătate"* transformă obiectul într-o chemare: ceasul nu măsoară timpul, ci *dă întâlnire*.
+
+    **3. Ceasul = timpul omului vs. timpul naturii.**
+    La Sulina, timpul nu-l dă ceasul, ci fluviul, lumina, farul — Avdei spune că "farul e ceasul meu". Ceasul de buzunar, obiect urban, mecanic, personal, intră într-o lume guvernată de ritmuri mari și impersonale. Contrastul sugerează că destinul omului (ora fixă, clipa pierdută) se măsoară altfel decât cursul lumii — și că marea nu ține cont de ceasurile noastre, dar uneori, exceptional, le respectă.
+
+    **4. Ceasul = moștenirea și memoria care circulă.**
+    Obiectul trece din mână în mână: de la Fiodor (implicit) la barcă, la Avdei, la Irina care îl ia și îl ascultă "viu". Devine astfel un simbol al memoriei de familie — ceva ce se transmite chiar și acolo unde vorbele au tăcut patruzeci de ani. Irina, generația tânără, e cea care poate în sfârșit "citi" obiectul.
+
+    **Cum să formulezi la examen:** alege un simbol principal (eu aș merge pe 1 — timpul blocat de vinovăție, cu finalul ca eliberare) și menționează restul ca nuanțe. Apoi susține cu *două-trei citate*: "oprit la trei și jumătate", "noaptea merge înapoi", "acolo unde bătrânii țin ceasurile". Profesorii apreciază când simbolul e legat de text, nu doar declarat.
+
+    Și un detaliu fin, dacă vrei să strălucești: ceasul e *găsit, nu cumpărat* — simbolul nu e ales de personaj, ci îi vine la mal. Vinovăția, spune povestea, nu se alege; se primește. Iar ispășirea, la fel.
+- user: |
+    Fă-mi o listă cu toate personajele și ce știm despre fiecare.
+  assistant: |
+    Iată lista completă a personajelor, cu tot ce s-a stabilit despre ele în text:
+
+    **Personaje principale**
+
+    **Avdei** — paznicul farului de la Sulina, bătrân, de origine lipovenească. Se trezește de cincizeci de ani "înainte de cocoș"; mâinile îi tremură doar dimineața. Nu are ceas de treizeci de ani — "farul e ceasul meu". Aprinde lumina din obicei, deși navele se ghidează din sateliți. Fratele lui mai mic, Fiodor, a dispărut pe mare acum patruzeci de ani, într-o noapte în care Avdei, certat cu el pentru o plasă ruptă, nu a aprins lumina farului — vinovăția centrală a poveștii. A tăcut toată viața despre Fiodor; nici Irina nu știa că a existat. Are o relație fragilă cu fiica lui (mama Irinei). În noaptea furtunii iese pe mare cu barca găsită, urmărește lumina, atinge "ceva cald" și se întoarce în zori — eliberat, cu ceasul care merge înainte.
+
+    **Irina** — nepoata lui Avdei, din Tulcea, tânără (a crescut, "e mai înaltă decât anul trecut"). Vine în vizită cu rucsac verde și fular purtat "ca să pară că a venit departe". Zice "poate" când vine. Are o privire "care citește" — ea descoperă fotografia și inscripția lui Fiodor și leagă ceasul de ora trei și jumătate. E puntea dintre generații și singura căreia Avdei i se deschide parțial. Dormea șezând la masă în noaptea furtunii, așteptându-l. Mama ei (fiica lui Avdei) e menționată doar tangențial — "vorbiră puțin și repede, ca peste o punte putredă".
+
+    **Fiodor** — fratele mai mic al lui Avdei (cu patru ani), dispărut pe mare acum patruzeci de ani, toamna târziu. În fotografia din 1961 e cel care râdea cu toată gura, cu picioarele în aer pe marginea bărcii. A scris pe spatele fotografiei: *"F. — barca mea, marea mea. Cine mă caută, să caute la trei și jumătate."* Căutarea după dispariție durase opt zile; s-a găsit doar o vâslă "la Vădan". În final, prezența lui rămâne ambiguă: lumina pe apă, urmele desculț în nisip, barca plecată. Nu apare direct — e totuși motorul întregii povești.
+
+    **Personaje secundare / menționate**
+
+    **Cazacu** — pescar local; "nu iese în ceața asta". Menționat de Avdei când inventariază bărcile cunoscute.
+
+    **Sava** — alt pescar local; luntrea lui "n-o mai scoate din șantier de trei ani".
+
+    **Turcii de la pescărie** — menționați o singură dată, tot în inventarul bărcilor; dau culoare comunității din Sulina.
+
+    **Tatăl lui Avdei și Fiodor** — mort "de mai bine de jumătate de veac"; apare doar ca voce în amintire: *"motorul e ca un cal, frate, simte când te temi."* Sursa învățăturilor practice ale fraților.
+
+    **Mama fraților** — apare indirect prin două obiecte: "oglinda de la masa mamei" (semnul apei primejdioase) și, implicit, în fraza despre frații îngropați lângă părinți (varianta de final discutată, neintrată încă în text).
+
+    **Mama Irinei (fiica lui Avdei)** — nenumită; relația cu tatăl ei e ruptă sau răcită. E terenul nespus al poveștii — un fir deschis, dacă vrei să-l dezvolți într-o eventuală revizuire.
+
+    **Observație:** povestea e construită economic — doar trei personaje pe pagină, restul sunt contururi. Dacă pentru concurs ți se cere o listă mai bogată, putem fie să dezvoltăm mama Irinei într-o scenă (o telefonare?), fie să lăsăm așa — economia de personaje e o calitate, nu un defect, la o povestire de 3000 de cuvinte.
+questions:
+- id: q1
+  type: decision
+  prompt: |
+    Cum o cheamă pe nepoata lui Avdei?
+  gold:
+  - turn: 8
+    quote: o văzu pe Irina coborând pe mal
+  - turn: 23
+    quote: '**Irina** — nepoata lui Avdei, din Tulcea, tânără (a crescut, "e mai înaltă decât anul trecut"). Vine în vizit'
+  - turn: 13
+    quote: Și acolo, în propoziția aceea de copil, Avdei auzi toată greutatea celor patruzeci de ani. *O noapte n-o aprin
+  outdated:
+  - turn: 7
+    quote: o văzu pe Nastya coborând pe mal
+  - turn: 4
+    quote: îi spunea uneori nepoatei, Nastya, la telefon
+- id: q2
+  type: exact
+  prompt: |
+    Ce scria pe spatele fotografiei?
+  gold:
+  - turn: 12
+    quote: F. — barca mea, marea mea. Cine mă caută, să caute la trei și jumătate.
+  - turn: 17
+    quote: Irina privi ceasul, care mergea. Privi fotografia, pe care băiatul cel mic râdea cu toată gura. Și întoarse fo
+- id: q3
+  type: semantic
+  prompt: |
+    Ce avea special ceasul din barcă?
+  gold:
+  - turn: 7
+    quote: limba mare a ceasului mișcându-se. Înapoi.
+  - turn: 9
+    quote: Barca era a unui om de care fiica lui a fost îndrăgostită și care a plecat/disparut — motivul pentru care s-au
+- id: q4
+  type: exact
+  prompt: |
+    Cum îl chema pe fratele care a dispărut?
+  gold:
+  - turn: 10
+    quote: Avdei și Fiodor, 1961
+  - turn: 23
+    quote: '**Fiodor** — fratele mai mic al lui Avdei (cu patru ani), dispărut pe mare acum patruzeci de ani, toamna târzi'
+  - turn: 12
+    quote: Coborî încet, cu fotografia în mână, și o puse pe masă, sub lampa de la plafon, în locul unde ședea de obicei
+  - turn: 21
+    quote: 2. **Matematica cronologiei.** Fotografia e din 1961, iar dispariția a fost "acum patruzeci de ani". Dacă cei
+  - turn: 16
+    quote: 'Lumina duce Avdei până la o insulă de nisip unde nu fusese niciodată nimic: pe țărm, barca lui Fiodor, veche,'
+- id: q5
+  type: paraphrase
+  prompt: |
+    Mai arată-mi versurile pe care le fredona bătrânul pe apă.
+  gold:
+  - turn: 15
+    quote: Apă, apă, apă neagră,
+- id: q6
+  type: ambiguous
+  prompt: |
+    Și varianta în engleză pentru concurs?
+  gold:
+  - turn: 20
+    quote: Avdei, an old lighthouse keeper in Sulina, finds an empty boat washed ashore
+- id: q7
+  type: multi-hop
+  prompt: |
+    Ce s-a întâmplat cu ceasul la finalul poveștii?
+  gold:
+  - turn: 17
+    quote: Mergea. Înainte, cuminte, cu un ticăit mic și uscat, de ceas adevărat.
+  - turn: 20
+    quote: Avdei, an old lighthouse keeper in Sulina, finds an empty boat washed ashore, with a pocket watch inside, stop

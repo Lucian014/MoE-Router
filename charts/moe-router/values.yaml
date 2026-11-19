@@ -109,7 +109,11 @@ router:
   rag:
     variant: V2
     # fragments at most per request (fewer when they don't fit a small model)
-    topK: 8
+    topK: 10
+    # each of the first neighborFromTop fragments brings the start of the next turn's answer
+    # (multi-hop: "why did X fail?" answered in the turn after the one that names X); 0 = off
+    neighborTurns: 1
+    neighborFromTop: 3
     # true: a request's `variant` field picks the preset (evaluation environments only)
     allowVariantOverride: false
   # read access to the classifier repos on Hugging Face: either put the token here

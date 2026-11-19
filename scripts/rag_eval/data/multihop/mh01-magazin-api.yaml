@@ -1,0 +1,1571 @@
+id: mh01-magazin-api
+category: coding
+lang: ro
+turns:
+- user: |
+    Am un API în Express pentru un magazin online (Node 20, PostgreSQL 16, Prisma 5). Îți descriu câteva probleme pe rând. Prima: căutarea de produse merge greu, cam 3 secunde la 50.000 de produse. Uite codul:
+
+    ```js
+    const results = await prisma.product.findMany({
+      where: {
+        OR: [
+          { name: { contains: q, mode: 'insensitive' } },
+          { description: { contains: q, mode: 'insensitive' } },
+        ],
+      },
+      take: 20,
+    });
+    ```
+  assistant: |
+    Problema e clasică: `contains` cu `mode: 'insensitive'` se traduce în SQL ca `ILIKE '%q%'`, iar un pattern cu `%` la început **nu poate folosi un index B-tree normal**. PostgreSQL face sequential scan pe toate cele 50.000 de rânduri, de aici cele ~3 secunde.
+
+    Ai câteva soluții, în ordinea efortului:
+
+    ## 1. Index trigram (pg_trgm) — cea mai simplă schimbare reală
+
+    Extensia `pg_trgm` permite indexare GIN pe căutări de tip substring:
+
+    ```sql
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+    CREATE INDEX products_name_trgm ON products USING GIN (name gin_trgm_ops);
+    CREATE INDEX products_description_trgm ON products USING GIN (description gin_trgm_ops);
+    ```
+
+    Problema: Prisma nu știe să folosească `ILIKE ... gin_trgm_ops` prin `findMany` în mod fiabil, deci scrii query-ul raw:
+
+    ```js
+    const results = await prisma.$queryRaw`
+      SELECT id, name, description, price
+      FROM products
+      WHERE name ILIKE ${'%' + q + '%'}
+         OR description ILIKE ${'%' + q + '%'}
+      LIMIT 20
+    `;
+    ```
+
+    Cu indexul GIN, asta coboară de la secunde la zeci de milisecunde. Atenție: cuvinte foarte scurte (< 3 caractere) nu beneficiază de trigram — pentru ele fallback-ul e scan normal, dar pe 50k rânduri e tolerabil.
+
+    ## 2. Full-text search nativ PostgreSQL — mai potrivit pentru descrieri
+
+    Dacă utilizatorii caută cuvinte întregi (nu substring-uri), FTS e mai corect semantic și mai rapid:
+
+    ```sql
+    ALTER TABLE products ADD COLUMN search_vector tsvector
+      GENERATED ALWAYS AS (
+        setweight(to_tsvector('simple', coalesce(name, '')), 'A') ||
+        setweight(to_tsvector('simple', coalesce(description, '')), 'B')
+      ) STORED;
+
+    CREATE INDEX products_fts ON products USING GIN (search_vector);
+    ```
+
+    ```js
+    const results = await prisma.$queryRaw`
+      SELECT id, name, description, price,
+             ts_rank(search_vector, websearch_to_tsquery('simple', ${q})) AS rank
+      FROM products
+      WHERE search_vector @@ websearch_to_tsquery('simple', ${q})
+      ORDER BY rank DESC
+      LIMIT 20
+    `;
+    ```
+
+    Bonus: ai și ranking (relevanță), ceea ce `ILIKE` nu îți dă. Folosește `simple` sau configurare pentru română (`romanian`) dacă vrei stemming diacritice.
+
+    ## 3. Motor de căutare dedicat (Meilisearch / Typesense)
+
+    Dacă vrei typo-tolerance, fuzzy matching și facete (filtre pe categorie, preț), mută indexarea într-un motor dedicat și sincronizezi din Prisma la create/update. E mai multă infrastructură, dar e standardul pentru e-commerce serios.
+
+    **Recomandarea mea:** începe cu varianta 1 (rezolvă imediat problema de performanță), iar dacă utilizatorii se plâng că nu găsesc produse din cauza greșelilor de tastare, treci la 2 sau 3.
+
+    Spune-mi și ce alte probleme ai pe listă.
+- user: |
+    Am pus un index B-tree pe name, cum mi-ai zis, dar timpul e același. Uite planul:
+
+    ```
+    Limit  (cost=0.00..4127.31 rows=20 width=412) (actual time=2894.113..2894.120 rows=20 loops=1)
+      ->  Seq Scan on "Product"  (cost=0.00..10318.27 rows=50 width=412) (actual time=2894.110..2894.115 rows=20 loops=1)
+            Filter: ((name ~~* '%bormasina%'::text) OR (description ~~* '%bormasina%'::text))
+            Rows Removed by Filter: 49877
+    Planning Time: 0.211 ms
+    Execution Time: 2894.160 ms
+    ```
+  assistant: |
+    Planul confirmă exact ce spuneam: **Seq Scan** — indexul B-tree nu e folosit deloc. Și e important de clarificat: nu ți-am recomandat B-tree, tocmai pentru că **un index B-tree nu poate servi un pattern `%bormasina%`**. B-tree funcționează doar pentru prefixe de tip `bormasina%` (operator `~~` cu wildcard doar la final). Cu `%` la început, PostgreSQL nu are cum să navigheze arborele, deci face scan complet — indiferent dacă ai sau nu index B-tree pe `name`.
+
+    Indexul de care ai nevoie e **GIN cu trigram**, pe tabela corectă (Prisma o numește `"Product"`, cu majusculă, conform planului tău):
+
+    ```sql
+    -- 1. Extensia (o dată pe bază de date)
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+    -- 2. Indexurile GIN, pe tabela "Product", nu "products"
+    CREATE INDEX "Product_name_trgm_idx"
+      ON "Product" USING GIN (name gin_trgm_ops);
+
+    CREATE INDEX "Product_description_trgm_idx"
+      ON "Product" USING GIN (description gin_trgm_ops);
+    ```
+
+    Verifică apoi că e folosit:
+
+    ```sql
+    EXPLAIN ANALYZE
+    SELECT id FROM "Product"
+    WHERE name ILIKE '%bormasina%'
+       OR description ILIKE '%bormasina%'
+    LIMIT 20;
+    ```
+
+    Ar trebui să vezi `Bitmap Index Scan` pe `Product_name_trgm_idx` în loc de `Seq Scan`, cu execution time de ordinul milisecundelor.
+
+    Două capcane de verificat dacă tot face Seq Scan după ce ai creat indexurile:
+
+    1. **Extensia nu e creată** — `gin_trgm_ops` dă eroare la `CREATE INDEX` dacă lipsește `pg_trgm`, deci dacă indexul s-a creat, extensia există. Verifică totuși cu `\dx` sau `SELECT * FROM pg_extension WHERE extname = 'pg_trgm';`
+    2. **Indexul e pe tabela greșită** — dacă ai rulat scriptul meu inițial cu `products` (numele pe care l-am presupus eu), dar tabela reală e `"Product"`, ai creat index pe o tabelă inexistentă sau, mai rău, Prisma a creat ambele și query-ul lovește pe cea fără index. Verifică cu:
+
+    ```sql
+    SELECT indexname, indexdef FROM pg_indexes
+    WHERE tablename = 'Product' AND indexdef LIKE '%gin%';
+    ```
+
+    De asemenea, ține cont că Prisma `findMany` cu `mode: 'insensitive'` va continua să facă Seq Scan chiar și cu indexul prezent în unele versiuni — dacă după crearea indexurilor query-ul Prisma tot e lent, treci pe varianta `$queryRaw` pe care ți-am dat-o, care e garantat compatibilă cu planul de execuție bazat pe index.
+- user: |
+    Cum îmi organizez folderele proiectului? Acum am totul în routes/.
+  assistant: |
+    Pentru un API Express de dimensiunea unui magazin online, o structură pe straturi (layered) e alegerea cea mai practică. Iată ce aș recomanda:
+
+    ```
+    src/
+    ├── routes/            # definiția rutelor, subțiri — doar wiring
+    │   ├── products.routes.js
+    │   └── orders.routes.js
+    ├── controllers/       # primesc request-ul, validează, apelează serviciul, răspund
+    │   ├── products.controller.js
+    │   └── orders.controller.js
+    ├── services/          # logica de business
+    │   ├── products.service.js
+    │   └── orders.service.js
+    ├── repositories/      # acces la date (Prisma) — singurul loc unde e prisma
+    │   ├── products.repository.js
+    │   └── orders.repository.js
+    ├── validators/        # scheme de validare (zod / express-validator)
+    │   └── products.schema.js
+    ├── middlewares/
+    │   ├── auth.js
+    │   ├── errorHandler.js
+    │   └── validate.js
+    ├── config/
+    │   ├── env.js         # parsarea variabilelor de mediu, o singură dată
+    │   └── prisma.js      # instanța PrismaClient, exportată o singură dată
+    ├── utils/
+    └── app.js             # construiește app-ul Express, montează rutele
+    server.js               # punct de intrare: ascultă pe port
+    prisma/
+    ├── schema.prisma
+    └── migrations/
+    ```
+
+    Câteva principii care contează mai mult decât structura în sine:
+
+    **1. Direcția dependențelor:** `routes → controllers → services → repositories → Prisma`. Controllerul nu trebuie să importe `prisma` direct, iar serviciul nu trebuie să știe de Express (`req`/`res`). Asta face logica testabilă fără HTTP.
+
+    **2. Un singur `PrismaClient`:** instanțiază-l în `config/prisma.js` și importă-l de acolo peste tot. Instanțe multiple duc la warning-uri de connection pool.
+
+    **3. Rutele subțiri:** dacă acum ai logica direct în `routes/`, mut-o treptat. Un route ar trebui să arate așa:
+
+    ```js
+    // routes/products.routes.js
+    const router = require('express').Router();
+    const ctrl = require('../controllers/products.controller');
+    const { searchSchema } = require('../validators/products.schema');
+    const validate = require('../middlewares/validate');
+
+    router.get('/search', validate(searchSchema), ctrl.searchProducts);
+
+    module.exports = router;
+    ```
+
+    **4. Nu exagera:** dacă ai doar 3-4 resurse, poți sări peste `repositories/` și să apelezi Prisma direct din `services/`. Adaugă stratul când simți duplicare. Structura trebuie să crească odată cu proiectul, nu în avans.
+
+    **5. Teste lângă cod sau în `tests/`** — ambele variante sunt ok, dar fii consecvent. Pentru început: `tests/` cu aceeași ierarhie (`tests/services/products.service.test.js`).
+
+    Dacă vrei, dă-mi un exemplu dintr-un fișier actual din `routes/` și îți arăt concret cum îl împarți în controller + service.
+- user: |
+    Altă treabă: cel mai mare client B2B al nostru, firma Tehnoplast din Cluj, se plânge că nu primește emailurile cu facturile. Le trimitem dintr-un cron care pornește la 2 noaptea și trimite toate facturile din ziua precedentă, vreo 900.
+  assistant: |
+    Problema asta e aproape sigur de deliverability, nu de cod — 900 de emailuri trimise în rafală de la un cron la 2 noaptea e un pattern clasic care declanșează filtrele antispam. Iată de unde să cauți, în ordinea probabilității:
+
+    **1. Cum trimiteți efectiv emailurile?** Dacă e prin SMTP direct de pe serverul aplicației (sendmail / nodemailer cu SMTP propriu), asta e cauza principală. IP-urile de server fără reputație de trimitere ajung în spam sau sunt blocate direct. Soluția pe termen lung: un provider tranzacțional (Amazon SES, Postmark, SendGrid, Mailgun). Postmark e deosebit de bun pentru facturi/documente, SES e cel mai ieftin la ~900 emailuri/zi.
+
+    **2. Autentificare DNS.** Verifică pentru domeniul din care trimiteți:
+    - **SPF** — include providerul de email
+    - **DKIM** — semnare cryptographică, obligatorie practic din 2024 (Google și Yahoo cer DKIM + SPF + DMARC pentru expeditori de volum)
+    - **DMARC** — policy minim `p:none` de start
+
+    Poți testa rapid cu [mail-tester.com](https://www.mail-tester.com) — trimite un email de test la adresa generată și îți dă scor cu explicații.
+
+    **3. Atașamentele.** Dacă factura e un PDF atașat, filtrele sunt mai suspicioase, iar PDF-urile mari (>2-3 MB) agravează. Alternativa mai robustă: trimite link securizat către factura din platformă, nu atașament.
+
+    **4. Rafala.** Chiar și cu provider, nu trimite 900 deodată. Adaugă throttling — de exemplu 50-100 pe minut, cu `p-limit` sau un simplu interval:
+
+    ```js
+    const pLimit = require('p-limit');
+    const limit = pLimit(5); // max 5 concurente
+
+    const results = await Promise.allSettled(
+      invoices.map(inv => limit(() => sendInvoiceEmail(inv)))
+    );
+    ```
+
+    **5. Logare și bounce handling.** Momentan probabil nu știi *ce* se întâmplă cu emailurile — nu ai cum să distingi „trimis" de „livrat" sau „rejectat". Providerii tranzacționali dau webhook-uri pentru `delivered`, `bounced`, `spam_complaint`. Asta e esențial: dacă un email la Tehnoplast a dat bounce, trebuie să știți.
+
+    **Pas imediat, practic:** sună la Tehnoplast și întreabă-i să verifice folderul Spam și, dacă e acolo, să marcheze emailurile ca „Not spam" și să vă adauge la whitelist. Apoi verifică bounce-urile și treci pe provider tranzacțional cu DKIM/DMARC configurate.
+
+    Ce folosiți acum pentru trimitere — SMTP propriu sau vreun serviciu? Și emailurile ajung în spam sau nu ajung deloc?
+- user: |
+    Am scos logurile de la ora aia:
+
+    ```
+    02:00:03 [invoices] batch started, 912 invoices
+    02:00:04 [mailer] sent INV-2026-18211 ok
+    02:00:04 [mailer] sent INV-2026-18212 ok
+    02:00:05 [mailer] ERROR 421 4.7.0 Too many concurrent SMTP connections from this IP
+    02:00:05 [mailer] ERROR 421 4.7.0 Too many concurrent SMTP connections from this IP
+    02:00:06 [mailer] ERROR Greeting never received
+    02:01:40 [invoices] batch finished: 287 sent, 625 failed
+    ```
+
+    Codul de trimitere e un Promise.all peste toate facturile, fiecare cu nodemailer.createTransport(...).sendMail(...).
+  assistant: |
+    Logurile confirmă diagnosticul: **912 conexiuni SMTP simultane**. Serverul de mail (al vostru sau al providerului) respinge conexiunile peste limită cu `421 4.7.0`, iar celelalte erori (`Greeting never received`) sunt consecința acelorași conexiuni care se blochează la handshake. De aici 287 trimise / 625 eșuate.
+
+    Sunt două probleme în cod:
+
+    **1. `Promise.all` fără limită** — pornește toate cele 912 trimiteri deodată.
+
+    **2. `createTransport` per email** — creezi un pool nou de conexiuni pentru fiecare factură. Transporterul trebuie creat **o singură dată** și refolosit; nodemailer îl folosește intern pentru toată aplicatia.
+
+    Iată varianta corectată:
+
+    ```js
+    const nodemailer = require('nodemailer');
+    const pLimit = require('p-limit');
+
+    // O SINGURĂ instanță, la nivel de modul
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: 587,
+      secure: false,
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      pool: true,          // refolosește conexiunile în loc să deschidă altele noi
+      maxConnections: 3,   // max 3 conexiuni simultane către server
+      maxMessages: 100,    // max 100 emailuri pe conexiune înainte de reconnect
+    });
+
+    // Retry cu backoff pentru erori temporare (4xx)
+    async function sendWithRetry(mailOptions, maxRetries = 3) {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          return await transporter.sendMail(mailOptions);
+        } catch (err) {
+          const isTemporary = err.responseCode && err.responseCode >= 400 && err.responseCode < 500;
+          if (!isTemporary || attempt === maxRetries) throw err;
+          await new Promise(r => setTimeout(r, attempt * 5000)); // 5s, 10s, 15s
+        }
+      }
+    }
+
+    async function sendInvoices(invoices) {
+      const limit = pLimit(10); // max 10 trimiteri "în zbor" simultan
+
+      const results = await Promise.allSettled(
+        invoices.map(inv => limit(() =>
+          sendWithRetry({
+            from: 'facturi@domeniul-vostru.ro',
+            to: inv.clientEmail,
+            subject: `Factura ${inv.number}`,
+            html: renderInvoiceHtml(inv),
+            attachments: inv.pdfPath ? [{ path: inv.pdfPath }] : [],
+          })
+        ))
+      );
+
+      const sent = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected');
+
+      // Loghează eșuatele cu motivul, ca să le poți retrimite
+      failed.forEach((r, i) =>
+        console.error(`[mailer] FAILED ${invoices[i].number}:`, r.reason?.response || r.reason?.message)
+      );
+
+      return { sent, failed: failed.length };
+    }
+    ```
+
+    Ce se schimbă, pe scurt:
+
+    - **`pool: true` + `maxConnections: 3`** — nodemailer deschide maximum 3 conexiuni și trimite pe ele în serie. Serverul nu mai vede 912 conexiuni.
+    - **`pLimit(10)`** — chiar și cu pool, nu construi 912 promise-uri active deodată; limita controlează backpressure-ul.
+    - **Retry pe 4xx** — `421` e o eroare temporară ("try again later"), nu definitivă. Acum eșuează definitiv la prima încercare.
+    - **`Promise.allSettled`** — un eșec nu aruncă tot batch-ul; păstrezi lista celor eșuate ca să le retrimi într-un al doilea pass.
+
+    Un detaliu important: **cele 625 eșuate de aseară nu s-au trimis deloc** — verifică dacă aveți un mecanism de retrimitere, altfel clienții (inclusiv Tehnoplast) au pierdut facturi. Cel mai simplu: marchezi în DB statusul emailului per factură (`pending/sent/failed`) și cron-ul reîncearcă automat ce e `failed` sau `pending` la fiecare rulare, nu doar facturile din ziua precedentă.
+
+    Dacă după fix conexiunile merg dar emailurile tot ajung în spam la Tehnoplast, atunci revenim la subiectul deliverability de dinainte (DKIM/DMARC/provider tranzacțional) — dar rezolvă întâi asta, pentru că acum nici măcar ajung la filtre.
+- user: |
+    Cum adaug rate limiting pe endpointul de login?
+  assistant: |
+    Pentru Express, standardul e pachetul `express-rate-limit`. Pentru login vrei o limită **mai strictă decât restul API-ului**, pentru că e ținta principală a atacurilor brute-force.
+
+    ```bash
+    npm install express-rate-limit
+    ```
+
+    ```js
+    // middlewares/rateLimit.js
+    const rateLimit = require('express-rate-limit');
+
+    // Limiter strict pentru login
+    const loginLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // fereastră de 15 minute
+      limit: 5,                 // max 5 încercări per IP per fereastră
+      standardHeaders: 'draft-7', // header-e RateLimit-* standard
+      legacyHeaders: false,
+      message: { error: 'Prea multe încercări de autentificare. Reîncearcă în 15 minute.' },
+      // contează și emailul, nu doar IP-ul — altfel un atacator
+      // blochează loginul întregii firme prin IP-ul de birou (NAT)
+      keyGenerator: (req) => {
+        const email = (req.body?.email || '').toLowerCase().trim();
+        return `${req.ip}:${email}`;
+      },
+    });
+
+    module.exports = { loginLimiter };
+    ```
+
+    ```js
+    // routes/auth.routes.js
+    const router = require('express').Router();
+    const { loginLimiter } = require('../middlewares/rateLimit');
+    const ctrl = require('../controllers/auth.controller');
+
+    router.post('/login', loginLimiter, ctrl.login);
+
+    module.exports = router;
+    ```
+
+    Câteva detalii importante:
+
+    **1. `trust proxy`** — dacă API-ul e în spatele unui reverse proxy (nginx, load balancer, Heroku, Vercel), `req.ip` va fi IP-ul proxy-ului și toți clienții vor părea unul singur. Setează în `app.js`, înainte de rute:
+
+    ```js
+    app.set('trust proxy', 1); // 1 hop până la clientul real
+    ```
+
+    **2. Nu bloca doar pe IP** — de asta e `keyGenerator`-ul cu email. Un atacator distribuit (botnet) rotește IP-urile, iar un birou întreg iese printr-un singur IP NAT. Combinatul `IP + email` e echilibrul potrivit: cineva poate încerca 5 parole pentru un cont, dar nu poate bloca loginul colegilor.
+
+    **3. Răspunsul la login eșuat trebuie să fie identic** pentru „utilizator inexistent" și „parolă greșită" (`401 Invalid credentials`), altfel rate limiting-ul nu ajută la mare lucru — atacatorul enumeratează conturi valide.
+
+    **4. Opțional: delay progresiv sau CAPTCHA** după N eșecuri. O variantă simplă fără dependențe suplimentare: la fiecare eșec, adaugă o întârziere crescătoare per cont în service-ul de login. Pentru CAPTCHA, `express-rate-limit` se combină bine cu un middleware care cere token reCAPTCHA/Turnstile după 3 eșecuri.
+
+    **5. Store în producție** — implicit contorul ține minte în memorie, ceea ce nu merge dacă ai mai multe instanțe Node (fiecare are contorul ei). Pentru deploy multi-instanță, folosește store Redis:
+
+    ```js
+    const RedisStore = require('rate-limit-redis');
+    const { Redis } = require('ioredis');
+
+    const loginLimiter = rateLimit({
+      // ...restul opțiunilor
+      store: new RedisStore({
+        sendCommand: (...args) => new Redis(process.env.REDIS_URL).call(...args),
+      }),
+    });
+    ```
+
+    Dacă ai o singură instanță, varianta cu memorie e suficientă deocamdată. Vrei să-ți arăt și cum să loghezi încercările eșuate ca să vezi dacă ești deja țintă de atacuri?
+- user: |
+    Pentru teste, Jest sau Vitest în 2026?
+  assistant: |
+    Răspuns scurt: **Vitest**, cu o excepție.
+
+    **De ce Vitest în 2026:**
+    - Viteză superioară — transpile prin esbuild/Vite, watch mode aproape instant, iar pe suite mari diferența e vizibilă
+    - API compatibil Jest (`describe`, `it`, `expect`, `vi.mock` în loc de `jest.mock`) — migrarea e de obicei mecanică
+    - ESM-first, fără lupta cu `transformIgnorePatterns` și babel-jest când aduci un pachet ESM-only
+    - Configurație în `vite.config.ts`/`vitest.config.ts`, TypeScript fără setup suplimentar
+    - Ecosistemul a migrat masiv: proiecte noi din 2024+ aleg implicit Vitest, deci tutoriale, integrări și răspunsuri StackOverflow sunt actuale
+
+    **Excepția:** dacă codebase-ul existent e CommonJS (iar după fragmentele pe care le-ai arătat, pare că da — `require`), Jest rămâne alegerea pragmatică pe termen scurt. Vitest funcționează și cu CJS, dar e clar optimizat pentru ESM, iar dacă nu ai planul de migrare la ESM, nu merită fricțiunea.
+
+    Pentru proiectul tău concret, aș decide așa:
+
+    - **Proiect nou sau refactor mare în curs** → Vitest din start
+    - **API existent în CJS, teste puține sau inexistente** → tot Vitest, pentru că poți porni direct cu ESM (`"type": "module"`) — la un API Express de dimensiunea ta, migrarea e o după-amiază, nu un proiect
+    - **Codebase CJS mare, teste multe care merg deja pe Jest** → nu migra doar de dragul migrării; costul nu se justifică
+
+    Un detaliu relevant pentru stack-ul tău: indiferent de runner, pentru teste cu Prisma folosește o bază de date dedicată de test (sau Testcontainers cu PostgreSQL real) și `prisma migrate reset` între suite — mock-uirea Prisma (`vi.mock` pe client) te ajută la teste de unit pe services, dar pentru repositories și rute, testele pe DB real sunt singurele care prind probleme reale de SQL, exact genul cu care te-ai lovit la căutare.
+
+    Configurație minimă Vitest pentru proiectul tău:
+
+    ```js
+    // vitest.config.js
+    import { defineConfig } from 'vitest/config';
+
+    export default defineConfig({
+      test: {
+        environment: 'node',
+        include: ['tests/**/*.test.js'],
+        setupFiles: ['tests/setup.js'],
+        testTimeout: 15000, // pentru teste care ating DB
+      },
+    });
+    ```
+
+    Vrei să-ți arăt structura de teste pentru un service + un route, cu DB de test?
+- user: |
+    Colegul meu Radu a făcut un PR care adaugă cupoane de reducere. Mie mi se pare greu de citit, cum l-aș putea face mai lizibil?
+
+    ```js
+    function applyCoupons(order, coupons) {
+      let total = order.items.reduce((s, i) => s + i.price * i.qty, 0);
+      for (const c of coupons) {
+        if (c.type === 'percent') total = total - total * c.value / 100;
+        if (c.type === 'fixed') total = total - c.value;
+        if (c.stackable === false) break;
+      }
+      return Math.round(total * 100) / 100;
+    }
+    ```
+  assistant: |
+    Codul e scurt, dar ascunde câteva capcane de lizibilitate și posibil două bug-uri de business. Iată ce aș îmbunătăți:
+
+    **Problemele:**
+
+    1. **`if (c.stackable === false) break;`** — break-ul vine *după* aplicarea cuponului. E intenționat (cuponul non-stackable se aplică, apoi se oprește) sau ar trebui să se oprească *înainte* să-l aplice? Nu se poate spune din cod — exact genul de decizie care merită un comentariu sau o clarificare de la Radu.
+    2. **Ordinea cupoanelor contează** — `percent` după `fixed` dă alt rezultat decât invers, dar nimic în cod nu spune asta.
+    3. **Lanțul de `if` pe `c.type`** — la fiecare cupon nou (ex: `free_shipping`), trebuie modificată funcția.
+    4. **Bani în float** — `total * 100 / 100` cu `Math.round` mască problemele, dar nu le rezolvă. La un e-commerce, ideal lucrezi în cenți întregi sau `Decimal` (Prisma îl suportă nativ).
+    5. **Total negativ posibil** — un cupon `fixed` de 500 RON pe o comandă de 200 RON dă total negativ.
+
+    **Variantă refactorizată:**
+
+    ```js
+    const DISCOUNT_STRATEGIES = {
+      percent: (total, value) => total * (1 - value / 100),
+      fixed: (total, value) => total - value,
+    };
+
+    const roundToCents = (amount) => Math.round(amount * 100) / 100;
+
+    function applyCoupon(total, coupon) {
+      const strategy = DISCOUNT_STRATEGIES[coupon.type];
+      if (!strategy) {
+        throw new Error(`Tip de cupon necunoscut: ${coupon.type}`);
+      }
+      return strategy(total, coupon.value);
+    }
+
+    function applyCoupons(order, coupons) {
+      let total = order.items.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+      for (const coupon of coupons) {
+        total = applyCoupon(total, coupon);
+        // Un cupon non-stackable se aplică, apoi blochează restul din listă
+        if (!coupon.stackable) break;
+      }
+
+      return roundToCents(Math.max(total, 0));
+    }
+    ```
+
+    Ce s-a câștigat:
+
+    - **Strategiile sunt o mapă** — adăugarea unui tip nou de cupon e o intrare nouă, fără să atingi logica de iterare
+    - **Comentariul** documentează regula non-stackable, care era partea cea mai ambiguă
+    - **`Math.max(total, 0)`** — apără de total negativ (confirmă cu Radu dacă asta e regula dorită!)
+    - **Nume explicite** — `roundToCents`, `applyCoupon` spun ce fac fără să citești implementarea
+
+    Dacă logica de cupoane va crește (valabilitate, minim de comandă, excluderi pe categorii), nu mai forța totul într-o funcție — trece la un `CouponService` cu strategii ca clase/module separate, în `services/` din structura pe care o construiești.
+
+    Dar cel mai important pas nu e codul: **pune-i lui Radu întrebările de business** (ordinea contează? non-stackable se aplică sau nu? poate rezultatul fi negativ?). Dacă răspunsurile diferă de ce face codul, ai găsit bug-uri, nu doar probleme de stil. Și ar merita 2-3 teste unitare pe `applyCoupons` exact pentru aceste cazuri-limită — Vitest e deja pe listă.
+- user: |
+    Azi am primit o comandă de 340 de lei plătită cu 0 lei. Din baza de date:
+
+    ```
+    order_id: 55120
+    items_total: 340.00
+    coupons_applied: ["BLACK50", "BLACK50", "LIVRARE20"]
+    paid_total: 0.00
+    ```
+
+    Cum s-a putut?
+  assistant: |
+    Anomalia vizibilă imediat: **`BLACK50` apare de două ori** în `coupons_applied`. Un cupon aplicat de două ori înseamnă că validarea de unicitate lipsește — și, în funcție de tipul cuponului, reducerea se compunde exponențial, nu aditiv.
+
+    **Cum s-a putut ajunge la 0:**
+
+    Mai multe mecanisme posibile, de verificat în ordinea asta:
+
+    1. **Aplicare dublă prin race condition sau retry.** Dacă clientul a trimis request-ul de creare comandă de două ori (double-click, retry de rețea, două tab-uri), iar verificarea „are deja cuponul?" e de tip check-then-act în Node, ambele request-uri trec de verificare înainte ca oricare să scrie în DB. Rezultat: cuponul de două ori pe aceeași comandă.
+
+    2. **Serverul are încredere în lista primită din client.** Dacă `coupons_applied` vine din payload-ul request-ului și doar se recalculează totalul, oricine poate POST-ui `["BLACK50", "BLACK50", "BLACK50", ...]`. Asta ar fi o gaură de securitate serioasă, nu doar un bug.
+
+    3. **Compoziția procentelor duce la prăbușirea totalului.** Dacă `BLACK50` e 50% și se aplică de două ori pe totalul rulant: 340 → 170 → 85. Nu e 0, deci **probabil mai e ceva** — verifică în DB ce valori reale au `BLACK50` și `LIVRARE20` (procent sau sumă fixă?) și dacă există vreo logică de tip „reducerea nu poate depăși X". Dacă undeva totalul a ajuns negativ și a fost **clamp-uit la 0**, asta explică plata de 0 lei — și înseamnă că `Math.max(total, 0)` din codul de la cupoane (sau echivalentul) maschează bug-ul în loc să-l semnaleze.
+
+    4. **Totalul plății calculat în alt loc.** Verifică dacă `paid_total` vine din aceeași funcție `applyCoupons` sau dintr-o recalculare separată (webhook de plată, job) care ar putea avea altă logică.
+
+    **Ce să faci concret:**
+
+    **Audit imediat** — află dacă mai sunt comenzi afectate:
+
+    ```sql
+    SELECT order_id, items_total, paid_total, coupons_applied
+    FROM "Order"
+    WHERE jsonb_array_length(coupons_applied) !=
+          (SELECT COUNT(DISTINCT c) FROM jsonb_array_elements_text(coupons_applied) AS c)
+      AND created_at > now() - interval '30 days';
+    ```
+
+    **Fix la nivel de DB**, nu doar de cod — constrângerea unică e singura care rezistă la race conditions:
+
+    ```sql
+    CREATE UNIQUE INDEX order_coupon_unique
+      ON "OrderCoupon" ("orderId", "couponId");
+    ```
+
+    (dacă ai tabelă de legătură; dacă cupoanele stau ca JSON pe comandă, normalizarea lor în tabelă proprie e fixul pe termen lung)
+
+    **Validare server-side:** la aplicarea cuponului, încarcă-l din DB după cod, verifică apartenența la comandă o singură dată, și **recalculează totalul din itemi la momentul plății**, nu ai folosi un total trimis de client.
+
+    **Alertă în loc de clamp silențios:** dacă reducerea totală depășește `items_total`, nu tăia la 0 — aruncă eroare și loghează. O comandă de 340 lei plătită cu 0 lei ar fi trebuit să sune un alarmă, nu să treacă neobservată până v-a dat seama.
+
+    Și un test în Vitest pe cazul ăsta exact: `applyCoupons(order, [BLACK50, BLACK50, LIVRARE20])` trebuie să eșueze sau să ignore duplicatul.
+
+    Verifică întâi punctele 1 și 2 — dacă lista de cupoane vine necontrolată din client, nu e doar comanda 55120 problema, e expunere la abuz pe tot magazinul. Ce găsești când rulezi query-ul de audit?
+- user: |
+    Cum fac deploy cu Docker Compose pe un VPS, cu Postgres în același compose?
+  assistant: |
+    Iată un setup complet și practic pentru stack-ul tău (Node 20 + Prisma + PostgreSQL 16):
+
+    **1. Dockerfile pentru API:**
+
+    ```dockerfile
+    # Dockerfile
+    FROM node:20-alpine AS base
+
+    WORKDIR /app
+
+    # Dependințe — strat separat pentru cache
+    COPY package*.json ./
+    COPY prisma ./prisma
+    RUN npm ci
+
+    # Cod
+    COPY src ./src
+    RUN npx prisma generate
+
+    ENV NODE_ENV=production
+    EXPOSE 3000
+
+    CMD ["node", "server.js"]
+    ```
+
+    **2. `docker-compose.yml`:**
+
+    ```yaml
+    services:
+      db:
+        image: postgres:16-alpine
+        restart: unless-stopped
+        environment:
+          POSTGRES_USER: ${POSTGRES_USER}
+          POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+          POSTGRES_DB: ${POSTGRES_DB}
+        volumes:
+          - pgdata:/var/lib/postgresql/data
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+          interval: 5s
+          timeout: 5s
+          retries: 10
+        # NU expune portul 5432 public — doar rețeaua internă compose
+
+      api:
+        build: .
+        restart: unless-stopped
+        depends_on:
+          db:
+            condition: service_healthy   # așteaptă Postgres gata, nu doar pornit
+        environment:
+          DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+          NODE_ENV: production
+        ports:
+          - "127.0.0.1:3000:3000"   # doar pe localhost — nginx face proxy public
+        healthcheck:
+          test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+          interval: 30s
+          timeout: 5s
+          retries: 3
+
+    volumes:
+      pgdata:
+    ```
+
+    **3. `.env` pe server** (nu în git):
+
+    ```
+    POSTGRES_USER=shop
+    POSTGRES_PASSWORD=parola-forte-generata
+    POSTGRES_DB=shop
+    ```
+
+    **4. Migrările Prisma.** Cea mai curată abordare: rulezi migrările ca pas separat la deploy, nu la pornirea containerului:
+
+    ```bash
+    docker compose up -d --build
+    docker compose exec api npx prisma migrate deploy
+    ```
+
+    Sau automatizezi cu un serviciu dedicat:
+
+    ```yaml
+      migrate:
+        build: .
+        depends_on:
+          db:
+            condition: service_healthy
+        command: npx prisma migrate deploy
+        environment:
+          DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    ```
+
+    și `api` depinde de `migrate` cu `condition: service_completed_successfully`.
+
+    **5. Deploy pe VPS:**
+
+    ```bash
+    # pe server, după git pull
+    docker compose up -d --build
+    docker compose exec api npx prisma migrate deploy
+    ```
+
+    **Puncte importante:**
+
+    - **`restart: unless-stopped`** — la reboot VPS, serviciile pornesc singure
+    - **Postgres fără port public** — lipsa `ports:` la `db` îl lasă accesibil doar în rețeaua internă compose. Dacă vrei acces pentru debugging, tunel SSH, nu port deschis
+    - **Backup-uri** — volumul `pgdata` nu e backup. Adaugă un cron pe VPS:
+      ```bash
+      0 3 * * * docker compose -f /app/docker-compose.yml exec -T db pg_dump -U shop shop | gzip > /backups/shop_$(date +\%F).sql.gz
+      ```
+    - **Reverse proxy + HTTPS** — Compose nu face TLS. Pune nginx sau Caddy în față. Caddy e cel mai simplu (HTTPS automat cu Let's Encrypt):
+      ```
+      api.domeniul-vostru.ro {
+          reverse_proxy localhost:3000
+      }
+      ```
+      Poți adăuga Caddy direct în același `docker-compose.yml`.
+    - **`trust proxy`** — am discutat la rate limiting: cu proxy în față, setează `app.set('trust proxy', 1)` și transmite `X-Forwarded-For` (Caddy/nginx o fac implicit).
+    - **Loguri** — `docker compose logs -f api` pentru debugging; pe termen lung, logurile lui Radu (cron facturi, erori mailer) merită trimise undeva persistent, pentru că logurile de container se rotesc.
+
+    Vrei să-ți arăt și varianta cu Caddy în compose, sau un script de deploy complet (git pull + build + migrări + rollback simplu)?
+- user: |
+    După deployul pe staging, pozele produselor nu se mai încarcă deloc, deși local merg.
+  assistant: |
+    Cel mai probabil e o diferență între cum sunt stocate/servite pozele local versus în container. Iată cauzele posibile, în ordinea probabilității:
+
+    **1. Pozele se scriu în filesystem-ul containerului, care e efemer.** Dacă la upload salvezi fișierele local (ex: `./uploads/`), în container ele ajung în layer-ul containerului — iar la `docker compose up --build` (rebuild) containerul e recreat și **toate pozele dispar**. Local merge pentru că folderul persistă pe diskul tău.
+
+    Verifică: intră pe staging și uită-te dacă folderul de upload există și are conținut:
+
+    ```bash
+    docker compose exec api ls -la /app/uploads
+    ```
+
+    Fix rapid — volum pentru uploads:
+
+    ```yaml
+      api:
+        build: .
+        volumes:
+          - uploads:/app/uploads
+
+    volumes:
+      pgdata:
+      uploads:
+    ```
+
+    Atenție: asta oprește pierderea la restart, dar pozele deja pierdute nu se recuperează — trebuie re-uploadate.
+
+    **2. Căile absolute din DB nu se potrivesc.** Dacă în DB salvezi calea completă (ex: `/Users/tu/proiect/uploads/img.jpg` sau `C:\...`), în container calea e alta și fișierul nu se găsește. Verifică în DB:
+
+    ```sql
+    SELECT image_url FROM "Product" LIMIT 5;
+    ```
+
+    Fix: salvează în DB doar calea relativă (`products/img123.jpg`) și construiește URL-ul la servire, sau servește direct un URL public.
+
+    **3. URL-uri cu `localhost` în DB.** Dacă pozele au fost uploadate local și URL-ul salvat e `http://localhost:3000/uploads/...`, pe staging browserul încearcă localhost-ul vizitatorului — de acolo „nu se încarcă". Verifică sursa paginii: ce URL primesc imaginile?
+
+    **4. Folderul de upload nu există în container.** `Dockerfile`-ul tău copiază doar `src/` — dacă codul face `fs.writeFile('uploads/...')` fără ca directorul să existe, uploadul eșuează (și probabil ai erori în `docker compose logs api`). Fix în cod:
+
+    ```js
+    const fs = require('fs');
+    const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads';
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    ```
+
+    **5. Static files nu sunt servite.** Dacă local nginx sau altceva servea pozele și pe staging lipsesc — verifică dacă ai montat `app.use('/uploads', express.static(...))` și că calea e corectă în container.
+
+    **Diagnostic rapid, 2 minute:**
+
+    ```bash
+    # 1. Ce erori dă API-ul?
+    docker compose logs api --tail 50
+
+    # 2. Ce URL-uri sunt în DB?
+    docker compose exec db psql -U shop shop -c 'SELECT image_url FROM "Product" LIMIT 5;'
+
+    # 3. Încearcă direct un URL de imagine de pe server:
+    curl -I http://localhost:3000/uploads/produse/test.jpg
+    ```
+
+    Rezultatul îți spune imediat care din cauze e: 404 → fișierele nu există (cauza 1 sau 4), URL-uri cu localhost → cauza 3, cale greșită → cauza 2.
+
+    **Recomandarea pe termen lung:** pentru un magazin online, renunță la filesystem local pentru poze și treci pe storage de obiecte — **S3 / Cloudflare R2 / Backblaze B2**. Avantaje concrete pentru cazul tău:
+
+    - pozele supraviețuiesc oricărui rebuild/redeploy
+    - poți servi direct prin CDN, fără să încarci Node cu servit fișiere statice
+    - backup-ul e rezolvat implicit
+    - cu R2 nu plătești trafic de ieșire (relevant la volume de e-commerce)
+
+    Pentru upload din Node, `@aws-sdk/client-s3` merge cu oricare din cele trei (S3-compatible API). Dacă vrei, îți arăt implementarea — dar întâi spune-mi ce găsești la diagnosticul de mai sus, ca să închidem și cauza imediată.
+- user: |
+    În consola browserului apare asta:
+
+    ```
+    Mixed Content: The page at 'https://staging.magazin.ro/produs/bormasina-bosch' was loaded over HTTPS, but requested an insecure image 'http://staging.magazin.ro/uploads/p/8812.webp'. This request has been blocked; the content must be served over HTTPS.
+    ```
+
+    URL-urile le construim în backend cu `${req.protocol}://${req.get('host')}/uploads/...`. În față avem nginx cu certificat.
+  assistant: |
+    Găsit — e exact capcana de proxy pe care am atins-o la rate limiting, dar în altă formă.
+
+    **Ce se întâmplă:** nginx termină TLS-ul și face proxy către Node pe HTTP (portul 3000). Express, fără să fie configurat, vede cererea ca HTTP și `req.protocol` returnează `http://` — deși clientul a venit pe HTTPS. Astfel URL-urile generate sunt `http://staging.magazin.ro/...`, browserul le blochează ca mixed content.
+
+    **Fixul corect, în doi pași:**
+
+    **1. Spune-i Express că e în spatele unui proxy** (`app.js`, înainte de rute):
+
+    ```js
+    app.set('trust proxy', 1);
+    ```
+
+    **2. Asigură-te că nginx transmite header-ele de proxy** (blocul `location` către API):
+
+    ```nginx
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;   # <- esențial
+        proxy_set_header X-Forwarded-Host $host;
+    }
+    ```
+
+    Cu `trust proxy` activ, Express citește `X-Forwarded-Proto` și `req.protocol` va returna corect `https`. Aceeași setare repară și `req.ip` pentru rate limiting, și cookie-urile `secure`.
+
+    **Dar recomandarea mea e să elimini complet problema**, nu doar să o corectezi: **nu construi URL-uri absolute în backend**. Problema de fond e că URL-ul salvat/servit depinde de mediu (http/https, localhost, staging, producție) — și orice dependență de mediu în date e o bombă cu ceas.
+
+    Varianta robustă: salvează și returnează doar **calea relativă**:
+
+    ```js
+    // la upload — salvezi în DB
+    product.imageUrl = `/uploads/p/${filename}.webp`;
+
+    // la servire — frontend-ul o folosește direct
+    <img src={product.imageUrl} />
+    ```
+
+    Calea relativă merge identic pe localhost, staging și producție, pe HTTP sau HTTPS, fără nicio configurare. Dacă totuși vrei URL-uri absolute în răspunsul API (unii le preferă pentru integrări externe), construiește-le dintr-o variabilă de mediu, nu din request:
+
+    ```js
+    // config/env.js
+    module.exports = {
+      BASE_URL: process.env.PUBLIC_BASE_URL || '', // ex: https://staging.magazin.ro
+    };
+
+    // la servare
+    const url = product.imageUrl.startsWith('http')
+      ? product.imageUrl
+      : `${config.BASE_URL}${product.imageUrl}`;
+    ```
+
+    **Pas de curățenie:** verifică ce e deja în DB — dacă ai rânduri cu URL-uri absolute `http://...`, trebuie corectate o dată:
+
+    ```sql
+    -- vezi amploarea
+    SELECT COUNT(*) FROM "Product" WHERE image_url LIKE 'http%';
+
+    -- dacă toate au același prefix, tai la cale relativă
+    UPDATE "Product"
+    SET image_url = regexp_replace(image_url, '^https?://[^/]+', '')
+    WHERE image_url LIKE 'http%';
+    ```
+
+    Pe termen scurt, aplică fixul cu `trust proxy` + header-e nginx (repară imediat), iar pe termen lung treci pe căi relative în DB — altfel următorul mediu nou (un alt domeniu, un CDN) va reface aceeași problemă.
+- user: |
+    Cum fac paginare cu cursor în loc de offset?
+  assistant: |
+    Offset-ul (`skip` în Prisma) are două probleme la un magazin: devine lent la pagini mari (DB trebuie să sara peste 10.000 de rânduri ca să dea pagina 501) și, dacă între două pagini se adaugă un produs, utilizatorul vede același produs de două ori. Cursorul rezolvă ambele.
+
+    **Varianta 1: cursor nativ Prisma** — cea mai simplă, merge când sortezi după un câmp unic:
+
+    ```js
+    // GET /api/products?limit=20&cursor=123
+    async function listProducts(cursor, limit = 20) {
+      const products = await prisma.product.findMany({
+        take: limit + 1,               // +1 ca să știi dacă mai există pagină următoare
+        orderBy: { id: 'desc' },
+        ...(cursor && { cursor: { id: cursor }, skip: 1 }), // skip=1 sare peste cursorul însuși
+      });
+
+      const hasMore = products.length > limit;
+      const items = hasMore ? products.slice(0, limit) : products;
+
+      return {
+        items,
+        nextCursor: hasMore ? items[items.length - 1].id : null,
+      };
+    }
+    ```
+
+    Răspunsul API:
+
+    ```json
+    {
+      "items": [...],
+      "nextCursor": 123
+    }
+    ```
+
+    Clientul trimite înapoi `nextCursor` ca `cursor` pentru pagina următoare. Când e `null`, nu mai există pagini.
+
+    **Limitare:** sortarea trebuie să fie pe câmpul unic folosit ca cursor. Dacă vrei sortare pe `price` sau `createdAt`, două produse pot avea aceeași valoare și paginația sare sau duplică rânduri.
+
+    **Varianta 2: keyset cu sortare pe câmp non-unic** — soluția robustă: sortezi după câmpul dorit + `id` ca tiebreaker, iar cursorul e o pereche:
+
+    ```js
+    // GET /api/products?limit=20&sort=price&cursor=eyJwcmljZSI6MTI5LjksImlkIjo0NTZ9
+    // cursorul e base64 din {"price":129.9,"id":456}
+
+    async function listProducts({ cursor, limit = 20, sort = 'price' }) {
+      let where = {};
+      if (cursor) {
+        const { price, id } = JSON.parse(Buffer.from(cursor, 'base64').toString());
+        // rândurile STRICT după poziția cursorului în ordonarea (price, id)
+        where = {
+          OR: [
+            { price: { gt: price } },
+            { price: price, id: { gt: id } },
+          ],
+        };
+      }
+
+      const products = await prisma.product.findMany({
+        where,
+        orderBy: [{ price: 'asc' }, { id: 'asc' }],
+        take: limit + 1,
+      });
+
+      const hasMore = products.length > limit;
+      const items = hasMore ? products.slice(0, limit) : products;
+
+      const nextCursor = hasMore
+        ? Buffer.from(JSON.stringify({
+            price: items[items.length - 1].price,
+            id: items[items.length - 1].id,
+          })).toString('base64')
+        : null;
+
+      return { items, nextCursor };
+    }
+    ```
+
+    Pentru asta ai nevoie de index compus, altfel sortarea face scan:
+
+    ```sql
+    CREATE INDEX "Product_price_id_idx" ON "Product" (price, id);
+    ```
+
+    **Ce pierzi cu cursorul și merită să știi:**
+
+    - **Nu poți sări la pagina N** — doar next/prev. Pentru listarea de produse cu infinite scroll sau buton „următoarea", e perfect; pentru pagini numerotate în admin, offset-ul rămâne ok (acolo volumele sunt mici).
+    - **Sortare descrescătoare** — condiția `OR` se inversează (`lt` în loc de `gt`). Parametrizează direcția în cod.
+    - **Cursorul nu e secret** — e base64, nu criptare. Oricine îl poate decoda; nu pune acolo date sensibile.
+
+    **Recomandare pentru cazul tău:** catalogul public (unde ai și căutarea de la începutul conversației) → varianta 2 cu sortare pe relevanță/preț + index compus. Admin-ul și listele interne → offset-ul e suficient și mai comod.
+
+    Un detaliu care se leagă de căutarea cu trigram: dacă combini căutare + paginare cu cursor, condiția `WHERE name ILIKE ...` se pune în `where` alături de condiția de cursor — indexul GIN se folosește pentru filtru, iar `ORDER BY` pe câmpul sortat are nevoie de indexul lui. La 50k produse, ambele merg rapid dacă indexurile sunt la locul lor.
+
+    Vrei și varianta cu `prevCursor` (paginare bidirecțională), sau exemplu de integrare cu endpoint-ul de căutare?
+- user: |
+    Vreau să trimit SMS la confirmarea comenzii. Ce aș avea de luat în calcul?
+  assistant: |
+    SMS-ul la confirmare e util, dar are mai multe capcane decât emailul. Iată ce contează:
+
+    **1. Providerul.** Ai nevoie de un gateway SMS, nu poți trimite direct. Opțiuni pentru România:
+    - **Locali: SMSLink, Infora, SMSAdvert** — prețuri bune pe piața RO (~0,03-0,05 €/SMS), suport în română, sender ID local ușor de obținut
+    - **Globali: Twilio, Vonage, MessageBird** — API-uri excelente, dar mai scumpe și sender ID-urile pe rețelele din RO se comportă variabil
+    - **Amazon SNS** — ieftin, dar fără suport sender ID pe toate rețelele
+
+    Pentru clienți doar din România, un provider local e de obicei alegerea practică.
+
+    **2. Sender ID.** Poți trimite de la un nume (ex: `MagazinulTau`) sau un număr de telefon. Sender ID alfanumeric trebuie înregistrat la provider și aprobat pe rețele — durează zile, fă cererea din timp. Avantajul numelui: clientul recunoaște expeditorul.
+
+    **3. Costul și abuzul.** Spre deosebire de email, SMS-ul costă bani reali per mesaj. Deci:
+    - **Trimite doar la comenzi confirmate/plătite**, nu la coșuri abandonate sau comenzi în lucru
+    - **Validează numărul de telefon** la checkout — un număr greșit scris costă bani și creează confuzie. Normalizare la format E.164 (`+40722123456`) cu o librărie gen `libphonenumber-js`
+    - **Nu trimite de mai multe ori** pentru aceeași comandă — salvează statusul SMS-ului pe comandă (`sms_sent_at`), altfel un retry de cron dublează costul
+
+    **4. Conținutul.** SMS-ul are 160 de caractere (peste asta, se împarte și plătești dublu/triplu). Ține mesajul minimal:
+
+    ```
+    MagazinulTau: Comanda #55120 confirmata. Total: 340 lei. Detalii: https://magazin.ro/c/55120
+    ```
+
+    Fără diacritice — unele rețele le transformă prost sau le plătesc ca Unicode (70 caractere/mesaj).
+
+    **5. GDPR și consimțământ.** SMS-ul de confirmare a comenzii e comunicare tranzacțională, nu marketing — e ok să-l trimiți fără opt-in separat, fiindcă e necesar executării contractului. Dar **nu adăuga mesaje promoționale** în el, altfel devine marketing și ai nevoie de consimțământ explicit. Numărul de telefon nu trebuie folosit apoi pentru campanii fără acord separat.
+
+    **6. Livrarea e fire-and-forget, cu status.** Nu bloca răspunsul checkout-ului pe trimiterea SMS-ului:
+
+    ```js
+    // după confirmarea comenzii — async, nu așteaptă
+    order.$queue?.add('send-sms', { orderId }) // dacă ai queue
+    // sau, simplu:
+    sendOrderSms(order).catch(err =>
+      console.error(`[sms] FAILED order ${order.id}:`, err.message)
+    );
+    ```
+
+    Dacă SMS-ul eșuează, comanda nu trebuie afectată — emailul rămâne canalul principal, SMS-ul e complementar. Loghează statusul de livrare (providerii dau callback-uri de delivery report) ca să vezi rata reală.
+
+    **7. Teste.** Toți providerii au sandbox sau numere de test. Verifică în staging că mesajul ajunge formatat corect pe mai multe rețele (Orange, Digi, Vodafone) — tăierea URL-urilor sau a textului diferă.
+
+    **Ordinea practică de implementare:** cont la provider → sender ID înregistrat → integrare API (același pattern ca la mailer: un singur client configurat, retry pe erori temporare, status salvat în DB) → validare E.164 la checkout → monitorizare costuri.
+
+    Vrei să-ți scriu modulul de trimitere (client + retry + status în DB), în același stil cu cel de la facturi?
+- user: |
+    Scrie-mi un middleware de logging care pune un request id pe fiecare cerere.
+  assistant: |
+    Iată un middleware complet, în stilul proiectului tău (CommonJS), care generează un request id, îl propagă în răspuns și în loguri:
+
+    ```js
+    // middlewares/requestId.js
+    const crypto = require('crypto');
+
+    function requestId(req, res, next) {
+      // Acceptă un id venit de la proxy/load balancer (ex: nginx $request_id),
+      // altfel generează unul
+      const incoming = req.get('X-Request-Id');
+      const id = incoming || crypto.randomUUID();
+
+      req.id = id;
+      res.set('X-Request-Id', id); // clientul îl vede în răspuns, util pentru suport
+
+      next();
+    }
+
+    module.exports = { requestId };
+    ```
+
+    ```js
+    // middlewares/logger.js
+    function logger(req, res, next) {
+      const start = process.hrtime.bigint();
+
+      res.on('finish', () => {
+        const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
+        const log = {
+          requestId: req.id,
+          method: req.method,
+          path: req.originalUrl,
+          status: res.statusCode,
+          durationMs: Math.round(durationMs),
+          ip: req.ip,
+          userId: req.user?.id ?? null, // dacă ai auth înainte de logger
+        };
+
+        // Erorile 5xx mai vizibile decât restul
+        if (res.statusCode >= 500) {
+          console.error(JSON.stringify(log));
+        } else {
+          console.log(JSON.stringify(log));
+        }
+      });
+
+      next();
+    }
+
+    module.exports = { logger };
+    ```
+
+    Montare în `app.js` — **ordinea contează**, requestId înainte de toate:
+
+    ```js
+    const { requestId } = require('./middlewares/requestId');
+    const { logger } = require('./middlewares/logger');
+
+    app.set('trust proxy', 1);
+    app.use(requestId);   // primul — toate celelalte văd req.id
+    app.use(logger);
+    app.use(routes);
+    ```
+
+    **Propagarea în logurile de eroare.** Ca să aibă sens, request id-ul trebuie să apară și în mesajele de eroare. În error handler:
+
+    ```js
+    // middlewares/errorHandler.js
+    function errorHandler(err, req, res, next) {
+      console.error(JSON.stringify({
+        requestId: req.id,
+        err: err.message,
+        stack: err.stack,
+      }));
+
+      res.status(err.status || 500).json({
+        error: 'Eroare internă',
+        requestId: req.id, // clientul îl poate trimite în tichet de suport
+      });
+    }
+    ```
+
+    **Propagarea în servicii.** Dacă vrei ca logurile din servicii (ex: mailer, cupoane) să poarte același id fără să cari `req` prin toată aplicația, folosește `AsyncLocalStorage` — e soluția nativă Node pentru context per request:
+
+    ```js
+    // utils/requestContext.js
+    const { AsyncLocalStorage } = require('async_hooks');
+    const als = new AsyncLocalStorage();
+
+    const runWithRequestContext = als.run.bind(als);
+    const getRequestId = () => als.getStore()?.requestId;
+
+    module.exports = { runWithRequestContext, getRequestId };
+    ```
+
+    Middleware-ul devine:
+
+    ```js
+    function requestId(req, res, next) {
+      const incoming = req.get('X-Request-Id');
+      const id = incoming || crypto.randomUUID();
+      req.id = id;
+      res.set('X-Request-Id', id);
+      next();
+    }
+
+    // în app.js, combini:
+    app.use((req, res, next) => {
+      runWithRequestContext({ requestId: req.id }, next);
+    });
+    ```
+
+    Și oriunde în cod, fără să primești `req`:
+
+    ```js
+    const { getRequestId } = require('../utils/requestContext');
+    console.log(JSON.stringify({ requestId: getRequestId(), msg: 'SMS trimis', orderId }));
+    ```
+
+    **Câteva observații:**
+
+    - **`crypto.randomUUID()`** e built-in în Node 20, nu ai nevoie de `uuid`
+    - **Acceptarea `X-Request-Id` de la proxy** e utilă: nginx poate genera `$request_id` și îl poți trimite mai departe, astfel ai același id și în access logurile nginx, și în logurile Node
+    - **Loguri JSON pe un singur rând** — sunt parsabile de `docker logs` / Loki / CloudWatch. Când volumul crește, treci pe `pino` (mult mai rapid decât `console`) — structura rămâne identică, deci migrarea e doar de transport
+    - **Header-ul în răspuns** e mai util decât pare: când Tehnoplast (sau orice client) raportează o problemă, ceri request id-ul din răspuns și găsești instant tot lanțul de loguri
+
+    Vrei și varianta cu `pino` + `pino-http`, care face același lucru dar cu performanță mult mai bună la volum mare de request-uri?
+- user: |
+    Mai e ceva ciudat: de vreo săptămână, coșul unor utilizatori se golește singur după ce se loghează.
+  assistant: |
+    Simptomul clasic: **coșul e legat de sesiune, iar la login sesiunea se schimbă** — și codul de login nu transferă coșul vechi pe utilizator, ci începe cu unul gol. Sau mai rău: îl suprascrie.
+
+    Iată mecanismele posibile, în ordinea probabilității:
+
+    **1. Coșul e pe `sessionId`, iar la login se face `session.regenerate()`.** Dacă folosești `express-session`, e practică de securitate să regenerezi sesiunea la login (anti session fixation). Dar dacă coșul e stocat în sesiune (`req.session.cart`), regenerarea îl pierde. Verifică în controllerul de login:
+
+    ```js
+    // dacă ai ceva de genul ăsta, coșul din sesiune moare aici
+    req.session.regenerate(err => { ... });
+    // sau passport care face regenerate intern
+    ```
+
+    **2. Coșul e în DB pe `userId`, iar guest-ul are coș pe `sessionId`.** La login, utilizatorul primește coșul lui (gol sau vechi), iar coșul de guest se pierde. Asta e de fapt comportamentul „corect" incomplet — lipsește **merge-ul**.
+
+    **3. Un cod recent a introus regresia.** Ai zis „de vreo săptămână" — ce s-a deployat acum o săptămână? PR-ul lui Radu cu cupoane? Schimbări la auth? `git log --since="2 weeks ago" --oneline` și caută atingiri la cart/session/login. Dacă înainte mergea, e regresie, nu bug vechi.
+
+    **Diagnostic rapid:**
+
+    ```sql
+    -- coșurile sunt în DB sau în sesiune?
+    -- dacă în DB, uită-te la structura:
+    SELECT * FROM "Cart" ORDER BY "updatedAt" DESC LIMIT 10;
+    ```
+
+    și în cod, caută unde se scrie/șterge coșul la login:
+
+    ```bash
+    grep -rn "cart" src/controllers/auth* src/services/auth*
+    grep -rn "session.regenerate\|session.destroy" src/
+    ```
+
+    **Fixul corect: merge la login.** Indiferent de arhitectură, la login trebuie să combini coșul de guest cu coșul de utilizator:
+
+    ```js
+    // services/cart.service.js
+    async function mergeGuestCartIntoUser(guestCartId, userId) {
+      if (!guestCartId) return;
+
+      const guestCart = await prisma.cart.findUnique({
+        where: { id: guestCartId },
+        include: { items: true },
+      });
+      if (!guestCart || guestCart.items.length === 0) return;
+
+      const userCart = await prisma.cart.upsert({
+        where: { userId },
+        create: { userId },
+        update: {},
+      });
+
+      for (const item of guestCart.items) {
+        await prisma.cartItem.upsert({
+          where: {
+            cartId_productId: { cartId: userCart.id, productId: item.productId },
+          },
+          create: {
+            cartId: userCart.id,
+            productId: item.productId,
+            qty: item.qty,
+          },
+          update: {
+            // produsul există în ambele coșuri -> adună cantitățile
+            qty: { increment: item.qty },
+          },
+        });
+      }
+
+      await prisma.cart.delete({ where: { id: guestCartId } });
+    }
+    ```
+
+    Și în controllerul de login, cu atenție la ordine — **merge-ul înainte de regenerarea sesiunii**:
+
+    ```js
+    async function login(req, res, next) {
+      // ...validare credențiale...
+
+      // 1. Salvează id-ul coșului de guest din sesiunea veche
+      const guestCartId = req.session.cartId;
+
+      // 2. Regenerează sesiunea (securitate)
+      req.session.regenerate(err => {
+        if (err) return next(err);
+
+        // 3. Reconstruiește sesiunea autentificată
+        req.session.userId = user.id;
+        req.session.cartId = null;
+
+        // 4. Mută coșul de guest pe utilizator
+        mergeGuestCartIntoUser(guestCartId, user.id)
+          .then(() => res.json({ user: { id: user.id, name: user.name } }))
+          .catch(next);
+      });
+    }
+    ```
+
+    **Detalii de luat în calcul la merge:**
+
+    - **Stocul** — dacă produsul din coșul de guest nu mai e pe stoc sau prețul s-a schimbat, validează la merge, nu copia orbește
+    - **Cupoanele** — dacă guest-ul aplicase un cupon, nu-l transfera automat; recalculează pe coșul final (mai ales după incidentul cu BLACK50 dublat)
+    - **Idempotență** — dacă request-ul de login se retry-uiește, merge-ul nu trebuie să dubleze cantitățile; de asta șterg coșul de guest la final
+    - **Coșul vechi al utilizatorului** — decizie de business: aduni cantitățile (varianta de mai sus) sau păstrezi cantitatea mai mare? Adunarea e standardul.
+
+    Dacă coșul e ținut integral în sesiune (fără DB), fixul e să copiezi `req.session.cart` în variabilă **înainte** de `regenerate()` și să-l pui înapoi după — dar recomandarea mea pe termen lung e coș în DB legat de user, cu sesiunea doar ca pointer, pentru că supraviețuiește logout/login și poți face remarketing pe coșuri abandonate.
+
+    Începe cu `git log` — dacă găsești commit-ul care a stricat, înțelegi mecanismul exact în cinci minute. Ce găsești?
+- user: |
+    Am găsit în cod că la login facem asta:
+
+    ```js
+    req.session.regenerate(err => {
+      if (err) return next(err);
+      req.session.userId = user.id;
+      res.json({ ok: true });
+    });
+    ```
+
+    Coșul anonim era ținut în req.session.cart.
+  assistant: |
+    Confirmat — asta e cauza. `req.session.regenerate()` **distruge complet datele sesiunii vechi** (inclusiv `req.session.cart`) și creează una nouă, goală, cu id nou. Apoi setează doar `userId` — coșul s-a pierdut deja. De aici și „de vreo săptămână": probabil atunci a intrat `regenerate()` în cod (poate ca fix de securitate, ceea ce era corect ca intenție).
+
+    **Fixul minim** — salvezi coșul înainte de regenerare și îl pui înapoi după:
+
+    ```js
+    async function login(req, res, next) {
+      // ...validare credențiale...
+
+      const guestCart = req.session.cart; // salvezi ÎNAINTE de regenerate
+
+      req.session.regenerate(err => {
+        if (err) return next(err);
+
+        req.session.userId = user.id;
+        req.session.cart = guestCart; // restabilești coșul în sesiunea nouă
+
+        res.json({ ok: true });
+      });
+    }
+    ```
+
+    Atenție la un detaliu: `regenerate` primește callback, dar și `req.session.cart = guestCart` trebuie să fie **în interiorul callback-ului** — orice scris înainte se pierde odată cu sesiunea veche.
+
+    **Limitarea acestei variante:** coșul trăiește doar în sesiune, deci:
+
+    - la logout + login de pe alt dispozitiv, coșul nu te urmărește
+    - sesiunile lungi cu coșuri mari îngreunează store-ul de sesiuni (mai ales dacă e Redis cu TTL scurt)
+    - nu poți face remarketing pe coșuri abandonate
+
+    **Varianta pe care o recomand pe termen lung** — coș în DB, sesiunea doar ca pointer. Astfel rezolvi și merge-ul guest→user de care vor utilizatorii care se loghează după ce au umplut coșul:
+
+    ```js
+    async function login(req, res, next) {
+      // ...validare credențiale...
+
+      const guestCartId = req.session.cartId; // pointer, nu conținut
+
+      req.session.regenerate(err => {
+        if (err) return next(err);
+        req.session.userId = user.id;
+        req.session.cartId = null;
+        res.json({ ok: true });
+      });
+
+      // merge-ul în DB, după răspuns — nu blochează loginul
+      mergeGuestCartIntoUser(guestCartId, user.id)
+        .catch(err => console.error(`[cart] merge failed:`, err));
+    }
+    ```
+
+    Cu schema Prisma de genul:
+
+    ```prisma
+    model Cart {
+      id        String     @id @default(cuid())
+      userId    String?    @unique
+      user      User?      @relation(fields: [userId], references: [id])
+      items     CartItem[]
+      updatedAt DateTime   @updatedAt
+    }
+    ```
+
+    Coșul de guest e un `Cart` fără `userId`, legat de sesiune doar prin `req.session.cartId`. La login, merge-ul îl mută pe utilizator (codul complet de merge ți l-am dat în mesajul anterior).
+
+    **Pentru fixul de azi:** varianta minimă cu `guestCart` salvat/restaurat e suficientă și o poți deploya imediat — oprește sângerarea. Merge-ul pe DB îl poți face în sprintul următor.
+
+    Un test în Vitest pe cazul ăsta ar fi valoros, ca să nu se repete:
+
+    ```js
+    it('păstrează coșul anonim la login', async () => {
+      const agent = request.agent(app);
+      await agent.post('/api/cart').send({ productId: 'p1', qty: 2 });
+      await agent.post('/api/auth/login').send({ email: 'x@y.ro', password: 'ok' });
+      const res = await agent.get('/api/cart');
+      expect(res.body.items).toHaveLength(1);
+    });
+    ```
+
+    `request.agent` (supertest) păstrează cookie-urile de sesiune între request-uri, exact scenariul real.
+- user: |
+    Ce verificări de securitate să fac înainte de lansare?
+  assistant: |
+    Iată o listă practică, adaptată la ce știu despre proiectul tău (Express + Prisma + Postgres, sesiuni, plăți, upload-uri, nginx + Docker pe VPS):
+
+    ## Autentificare și sesiuni
+
+    - **Parole hash-uite cu bcrypt/argon2** — nu SHA256 simplu, nu plaintext. Verifică și conturile vechi migrate
+    - **Regenerarea sesiunii la login** — o aveți deja (fixul recent), bine
+    - **Cookie-uri de sesiune:** `httpOnly: true`, `secure: true`, `sameSite: 'lax'`
+    - **Expirarea sesiunilor** — TTL rezonabil (ex: 24h), nu sesiuni veșnice
+    - **Rate limiting pe login** — l-ai pus, verifică și că e activ pe `/forgot-password` și `/register`
+    - **Blocare după N eșecuri per cont**, nu doar per IP
+
+    ## Autorizare (unde se găsesc cele mai grave găuri)
+
+    - **IDOR pe fiecare endpoint cu id:** `/api/orders/55120` — un utilizator autentificat poate vedea comanda altcuiva? Testează manual cu două conturi. La e-commerce, istoricul comenzilor, adresele și facturile sunt ținte
+    - **Verificare de rol pe endpoint-urile admin** — nu doar ascunse din frontend; un request direct cu curl trebuie respins
+    - **Cupoanele validate server-side** — după incidentul BLACK50, verifică explicit: clientul nu poate trimite listă de cupoane, doar coduri care se validează din DB
+
+    ## Plăți
+
+    - **Totalul se recalculează pe server** la creare comandă și la plată — niciodată preț trimis de client
+    - **Webhook-urile de la procesatorul de plăți verifică semnătura** (ex: signature header de la Stripe/Euplatesc) și sunt idempotente
+    - **Comanda nu se marchează plătită decât pe baza confirmării de la procesator**, nu a unui redirect al clientului
+
+    ## Input și injecții
+
+    - **Validare pe toate endpoint-urile** cu zod/express-validator — body, query, params
+    - **Prisma te protejează la SQL injection**, dar oriunde ai `$queryRaw` (căutarea cu trigram!), parametrii trebuie să fie template literals cu `${}`, nu concatenare — verifică fiecare apel
+    - **Upload-uri:** validare de tip real (magic bytes, nu doar extensia), limită de mărime, nume de fișier generate de voi (nu de client), servite din altă origine sau cel puțin fără execuție. Un `.webp` care e de fapt HTML poate face XSS dacă e servit inline
+
+    ## Headers și transport
+
+    - **helmet** în Express: `app.use(helmet())` — CSP, HSTS, X-Content-Type-Options etc.
+    - **HTTPS forțat** în nginx (redirect 301 de pe 80) + HSTS
+    - **CORS** restrictat la domeniile reale, nu `*`, mai ales dacă ai cookie-based auth
+
+    ## Infrastructură
+
+    - **Secreturile nu în git** — verifică istoricul: `git log -p | grep -i "password\|secret\|key"`. Dacă au fost comise vreodată, rotește-le
+    - **Postgres fără port public** (l-am pus deja în compose) + parolă forte
+    - **SSH pe VPS doar cu chei**, parola dezactivată; fail2ban
+    - **Backup-uri testate** — un backup nerestaurat niciodată nu e backup. Fă o restaurare de probă pe un container de test
+    - **`npm audit`** și actualizarea dependințelor cu vulnerabilități high/critical
+
+    ## Observabilitate pentru incidente
+
+    - **Loguri fără date sensibile** — nu loga parole, tokenuri, numere complete de card (nu ar trebui să le ai deloc — plățile prin procesator, niciodată pe serverul tău)
+    - **Error handler care nu expune stack trace-uri** către client în producție
+    - **Alerte pe anomalii** — gen comenzi cu total 0, pe care le-ai descoperit manual; ar fi trebuit să vină ca alertă
+
+    ## Teste rapide, înainte de lansare
+
+    1. Două conturi, încearcă să accesezi datele unuia cu celălalt (IDOR)
+    2. Trimite un preț modificat la creare comandă — trebuie ignorat
+    3. Trimite același cupon de două ori — trebuie respins
+    4. Un request admin fără sesiune admin — trebuie 403
+    5. Upload un fișier `.html` redenumit `.webp` — vezi cum e servit
+
+    Dacă vrei o verificare externă, un scan cu [OWASP ZAP](https://www.zaproxy.org) pe staging prinde o parte din astea automat, iar pentru lansarea propriu-zisă merită măcar o zi de bug bounty informal cu colegi care nu au scris codul.
+
+    Prioritatea mea pentru proiectul tău, dacă timpul e limitat: **IDOR pe comenzi, validarea totalurilor de plată, și secreturile din git** — astea trei sunt cele cu impact financiar direct. Vrei să detaliez testarea IDOR cu exemple concrete pe rutele voastre?
+- user: |
+    Ultima: vreau un endpoint de export CSV cu toate comenzile dintr-o lună, poate fi și 200.000 de rânduri.
+  assistant: |
+    La 200.000 de rânduri, problema principală nu e CSV-ul, ci **memoria**: dacă faci `findMany` cu totul și concatenezi string-uri, Node va consuma sute de MB sau va cădea. Soluția e **streaming**: scrii în răspuns pe măsură ce citești din DB, cu loturi mici.
+
+    **Varianta 1: Prisma cu loturi (simplă, suficientă)**
+
+    ```js
+    // controllers/orders.controller.js
+    const { stringify } = require('csv-stringify');
+    const { Readable } = require('stream');
+
+    async function exportOrdersCsv(req, res, next) {
+      try {
+        const { month } = req.query; // ex: "2026-01"
+        const start = new Date(`${month}-01T00:00:00Z`);
+        const end = new Date(start);
+        end.setUTCMonth(end.getUTCMonth() + 1);
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="comenzi-${month}.csv"`
+        );
+
+        // BOM ca Excel să recunoască UTF-8 (diacriticele românești)
+        res.write('\uFEFF');
+
+        const csvStream = stringify({
+          header: true,
+          columns: {
+            id: 'order_id',
+            createdAt: 'created_at',
+            customerEmail: 'email',
+            itemsTotal: 'items_total',
+            paidTotal: 'paid_total',
+            status: 'status',
+          },
+        });
+        csvStream.pipe(res);
+
+        // keyset pagination pe id — fără skip, rapid la orice volum
+        const BATCH = 5000;
+        let lastId = 0;
+        let batch;
+
+        do {
+          batch = await prisma.order.findMany({
+            where: { createdAt: { gte: start, lt: end }, id: { gt: lastId } },
+            orderBy: { id: 'asc' },
+            take: BATCH,
+            select: {
+              id: true,
+              createdAt: true,
+              customerEmail: true,
+              itemsTotal: true,
+              paidTotal: true,
+              status: true,
+            },
+          });
+
+          for (const order of batch) {
+            csvStream.write(order);
+          }
+          if (batch.length > 0) lastId = batch[batch.length - 1].id;
+        } while (batch.length === BATCH);
+
+        csvStream.end();
+      } catch (err) {
+        next(err);
+      }
+    }
+    ```
+
+    ```bash
+    npm install csv-stringify
+    ```
+
+    De ce keyset pe `id` și nu `skip`: `skip: 150000, take: 5000` forțează Postgres să numere 150.000 de rânduri la fiecare lot — total O(n²). Cu `id > lastId`, fiecare lot e instant, indiferent de poziție.
+
+    **Varianta 2: cursor la nivel de Postgres (pg-cursor)** — mai eficientă, o singură interogare pe server:
+
+    ```js
+    const { Cursor } = require('pg-cursor');
+    const { Pool } = require('pg');
+
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+    async function exportOrdersCsv(req, res, next) {
+      const { month } = req.query;
+      const start = `${month}-01`;
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="comenzi-${month}.csv"`);
+      res.write('\uFEFF');
+
+      const client = await pool.connect();
+      try {
+        const cursor = client.query(new Cursor(
+          `SELECT id, created_at, customer_email, items_total, paid_total, status
+           FROM "Order"
+           WHERE created_at >= $1 AND created_at < $1::date + interval '1 month'`,
+          [start]
+        ));
+
+        const BATCH = 5000;
+        let rows;
+        do {
+          rows = await promisifyCursorRead(cursor, BATCH);
+          for (const row of rows) res.write(toCsvLine(row));
+        } while (rows.length === BATCH);
+
+        cursor.close(() => client.release());
+        res.end();
+      } catch (err) {
+        client.release();
+        next(err);
+      }
+    }
+    ```
+
+    **Aspecte importante indiferent de variantă:**
+
+    **1. Autentificare și autorizare** — exportul de comenzi (cu emailuri de clienți!) e date cu caracter personal. Doar admin, cu logare a accesului:
+
+    ```js
+    router.get('/admin/orders/export', requireAdmin, auditLog('orders.export'), ctrl.exportOrdersCsv);
+    ```
+
+    **2. Timeout-uri.** Un export de 200k rânduri poate dura minute. Verifică că:
+    - nginx nu are `proxy_read_timeout` prea scurt (implicit 60s — crește-l pentru ruta asta sau lasă-l, vezi mai jos)
+    - nu e în spatele unui CDN cu timeout de 30s (Cloudflare are 100s pe planul gratuit)
+
+    **3. Ruta de export nu trebuie să blocheze API-ul.** Streaming-ul Node e pe event loop, iar loturile DB sunt async, deci nu blochează — dar un export masiv consumă conexiuni din pool-ul Prisma. Dacă exporturile sunt rare și admin-only, e ok; dacă devin frecvente, mută-le pe o replică de citire sau pe un job asincron care generează fișierul și dă un link de download.
+
+    **4. Compresie.** CSV-ul de 200k rânduri comprimă foarte bine (10-20x). Fie lasă nginx să facă gzip, fie scrii direct `.csv.gz`:
+
+    ```js
+    const zlib = require('zlib');
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader('Content-Disposition', `attachment; filename="comenzi-${month}.csv.gz"`);
+    const gzip = zlib.createGzip();
+    // pipe spre gzip, gzip spre res
+    ```
+
+    **5. Escaparea CSV** — `csv-stringify` o face automat (virgule, ghilimele, newline-uri în câmpuri). Dacă scrii manual, un email cu virgulă sau un nume cu `"` corupe fișierul. Și atenție la **CSV injection**: valori care încep cu `=`, `+`, `-` pot executa formule în Excel — prefixează-le cu `'` dacă datele pot veni de la utilizatori (nume, adrese).
+
+    **6. Validarea lunii** — validează formatul cu zod (`/^\d{4}-\d{2}$/`) și limitează la ultimele N luni, ca nimeni să nu declanșeze exporturi arbitrare.
+
+    **Recomandare:** începe cu varianta 1 (Prisma + keyset) — e mai puțin cod, folosește infrastructura existentă, iar la 200k rânduri cu loturi de 5000 va dura vreo 10-30 de secunde, acceptabil pentru un export admin. Dacă ajungi la milioane sau la exporturi frecvente, treci pe job asincron + fișier în S3 (care se leagă frumos cu discuția de la poze).
+question_plan:
+- type: multi-hop
+  ask: Până la urmă de ce nu ajuta indexul la căutarea de produse după nume?
+  gold_turn: 2
+  note: problem named in 1; turn 2 only shows the plan
+- type: multi-hop
+  ask: De ce nu primea Tehnoplast facturile?
+  gold_turn: 5
+  note: client named in 4, logs in 5
+- type: multi-hop
+  ask: Ce am făcut ca să ajungă facturile la clientul din Cluj?
+  gold_turn: 5
+  note: attribute of the client in 4
+- type: multi-hop
+  ask: Ce bug avea PR-ul lui Radu?
+  gold_turn: 9
+  note: Radu named in 8, the bug found in 9
+- type: multi-hop
+  ask: De ce nu apăreau pozele produselor pe staging?
+  gold_turn: 12
+  note: symptom in 11, cause in 12
+- type: multi-hop
+  ask: De ce se golea coșul după login și cum l-am păstrat?
+  gold_turn: 17
+  note: symptom in 16, code + fix in 17
+questions:
+- id: q1
+  type: multi-hop
+  prompt: |
+    Până la urmă de ce nu ajuta indexul la căutarea de produse după nume?
+  gold:
+  - turn: 2
+    quote: '**un index B-tree nu poate servi un pattern `%bormasina%`**'
+- id: q2
+  type: multi-hop
+  prompt: |
+    De ce nu primea Tehnoplast facturile?
+  gold:
+  - turn: 5
+    quote: 'Logurile confirmă diagnosticul: **912 conexiuni SMTP simultane**.'
+- id: q3
+  type: multi-hop
+  prompt: |
+    Ce am schimbat în cod ca să ajungă facturile la clientul din Cluj?
+  gold:
+  - turn: 5
+    quote: Transporterul trebuie creat **o singură dată** și refolosit
+- id: q4
+  type: multi-hop
+  prompt: |
+    Ce bug avea PR-ul lui Radu?
+  gold:
+  - turn: 9
+    quote: 'Anomalia vizibilă imediat: **`BLACK50` apare de două ori** în `coupons_applied`.'
+- id: q5
+  type: multi-hop
+  prompt: |
+    De ce nu apăreau pozele produselor pe staging?
+  gold:
+  - turn: 12
+    quote: Express, fără să fie configurat, vede cererea ca HTTP și `req.protocol` returnează `http://`
+- id: q6
+  type: multi-hop
+  prompt: |
+    De ce se golea coșul după login și cum l-am păstrat?
+  gold:
+  - turn: 17
+    quote: '`req.session.regenerate()` **distruge complet datele sesiunii vechi** (inclusiv `req.session.cart`)'

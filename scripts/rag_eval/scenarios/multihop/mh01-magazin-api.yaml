@@ -1,0 +1,119 @@
+id: mh01-magazin-api
+category: coding
+lang: ro
+turns:
+  - user: |
+      Am un API în Express pentru un magazin online (Node 20, PostgreSQL 16, Prisma 5). Îți descriu câteva probleme pe rând. Prima: căutarea de produse merge greu, cam 3 secunde la 50.000 de produse. Uite codul:
+
+      ```js
+      const results = await prisma.product.findMany({
+        where: {
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+        take: 20,
+      });
+      ```
+  - user: |
+      Am pus un index B-tree pe name, cum mi-ai zis, dar timpul e același. Uite planul:
+
+      ```
+      Limit  (cost=0.00..4127.31 rows=20 width=412) (actual time=2894.113..2894.120 rows=20 loops=1)
+        ->  Seq Scan on "Product"  (cost=0.00..10318.27 rows=50 width=412) (actual time=2894.110..2894.115 rows=20 loops=1)
+              Filter: ((name ~~* '%bormasina%'::text) OR (description ~~* '%bormasina%'::text))
+              Rows Removed by Filter: 49877
+      Planning Time: 0.211 ms
+      Execution Time: 2894.160 ms
+      ```
+  - user: |
+      Cum îmi organizez folderele proiectului? Acum am totul în routes/.
+  - user: |
+      Altă treabă: cel mai mare client B2B al nostru, firma Tehnoplast din Cluj, se plânge că nu primește emailurile cu facturile. Le trimitem dintr-un cron care pornește la 2 noaptea și trimite toate facturile din ziua precedentă, vreo 900.
+  - user: |
+      Am scos logurile de la ora aia:
+
+      ```
+      02:00:03 [invoices] batch started, 912 invoices
+      02:00:04 [mailer] sent INV-2026-18211 ok
+      02:00:04 [mailer] sent INV-2026-18212 ok
+      02:00:05 [mailer] ERROR 421 4.7.0 Too many concurrent SMTP connections from this IP
+      02:00:05 [mailer] ERROR 421 4.7.0 Too many concurrent SMTP connections from this IP
+      02:00:06 [mailer] ERROR Greeting never received
+      02:01:40 [invoices] batch finished: 287 sent, 625 failed
+      ```
+
+      Codul de trimitere e un Promise.all peste toate facturile, fiecare cu nodemailer.createTransport(...).sendMail(...).
+  - user: |
+      Cum adaug rate limiting pe endpointul de login?
+  - user: |
+      Pentru teste, Jest sau Vitest în 2026?
+  - user: |
+      Colegul meu Radu a făcut un PR care adaugă cupoane de reducere. Mie mi se pare greu de citit, cum l-aș putea face mai lizibil?
+
+      ```js
+      function applyCoupons(order, coupons) {
+        let total = order.items.reduce((s, i) => s + i.price * i.qty, 0);
+        for (const c of coupons) {
+          if (c.type === 'percent') total = total - total * c.value / 100;
+          if (c.type === 'fixed') total = total - c.value;
+          if (c.stackable === false) break;
+        }
+        return Math.round(total * 100) / 100;
+      }
+      ```
+  - user: |
+      Azi am primit o comandă de 340 de lei plătită cu 0 lei. Din baza de date:
+
+      ```
+      order_id: 55120
+      items_total: 340.00
+      coupons_applied: ["BLACK50", "BLACK50", "LIVRARE20"]
+      paid_total: 0.00
+      ```
+
+      Cum s-a putut?
+  - user: |
+      Cum fac deploy cu Docker Compose pe un VPS, cu Postgres în același compose?
+  - user: |
+      După deployul pe staging, pozele produselor nu se mai încarcă deloc, deși local merg.
+  - user: |
+      În consola browserului apare asta:
+
+      ```
+      Mixed Content: The page at 'https://staging.magazin.ro/produs/bormasina-bosch' was loaded over HTTPS, but requested an insecure image 'http://staging.magazin.ro/uploads/p/8812.webp'. This request has been blocked; the content must be served over HTTPS.
+      ```
+
+      URL-urile le construim în backend cu `${req.protocol}://${req.get('host')}/uploads/...`. În față avem nginx cu certificat.
+  - user: |
+      Cum fac paginare cu cursor în loc de offset?
+  - user: |
+      Vreau să trimit SMS la confirmarea comenzii. Ce aș avea de luat în calcul?
+  - user: |
+      Scrie-mi un middleware de logging care pune un request id pe fiecare cerere.
+  - user: |
+      Mai e ceva ciudat: de vreo săptămână, coșul unor utilizatori se golește singur după ce se loghează.
+  - user: |
+      Am găsit în cod că la login facem asta:
+
+      ```js
+      req.session.regenerate(err => {
+        if (err) return next(err);
+        req.session.userId = user.id;
+        res.json({ ok: true });
+      });
+      ```
+
+      Coșul anonim era ținut în req.session.cart.
+  - user: |
+      Ce verificări de securitate să fac înainte de lansare?
+  - user: |
+      Ultima: vreau un endpoint de export CSV cu toate comenzile dintr-o lună, poate fi și 200.000 de rânduri.
+question_plan:
+  - {type: multi-hop, ask: "Până la urmă de ce nu ajuta indexul la căutarea de produse după nume?", gold_turn: 2, note: "problem named in 1; turn 2 only shows the plan"}
+  - {type: multi-hop, ask: "De ce nu primea Tehnoplast facturile?", gold_turn: 5, note: "client named in 4, logs in 5"}
+  - {type: multi-hop, ask: "Ce am făcut ca să ajungă facturile la clientul din Cluj?", gold_turn: 5, note: "attribute of the client in 4"}
+  - {type: multi-hop, ask: "Ce bug avea PR-ul lui Radu?", gold_turn: 9, note: "Radu named in 8, the bug found in 9"}
+  - {type: multi-hop, ask: "De ce nu apăreau pozele produselor pe staging?", gold_turn: 12, note: "symptom in 11, cause in 12"}
+  - {type: multi-hop, ask: "De ce se golea coșul după login și cum l-am păstrat?", gold_turn: 17, note: "symptom in 16, code + fix in 17"}

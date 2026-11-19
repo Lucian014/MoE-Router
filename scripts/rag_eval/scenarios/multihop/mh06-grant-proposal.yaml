@@ -1,0 +1,69 @@
+id: mh06-grant-proposal
+category: text-rewrite
+lang: en
+turns:
+  - user: |
+      I'm writing a grant proposal for a small NGO that teaches coding to teenagers in rural Romania. Can you make this summary more compelling? Keep it under 150 words.
+
+      ```
+      Our organization, CodeSat, has been running coding clubs in villages in Vaslui county since 2021. We have 14 clubs and about 230 students. We want to expand to Iasi and Neamt counties. We need money for laptops, internet and trainers. The project lasts 24 months.
+      ```
+  - user: |
+      The funder, the Northbridge Foundation, has a rule that the summary must mention measurable outcomes. Rewrite it with that in mind.
+  - user: |
+      What's the difference between outputs and outcomes in a grant proposal?
+  - user: |
+      Our board member Elena read the draft and said the tone is "too sad", like we're asking for charity. Here's the paragraph she flagged:
+
+      ```
+      Children in these villages have no future. Their parents are poor, the schools are falling apart, and nobody cares about them. Without our help they will never leave the village.
+      ```
+  - user: |
+      Rewrite that paragraph.
+  - user: |
+      Make this sentence shorter: "In the context of the ongoing digital transformation that is affecting all sectors of the economy, it is becoming increasingly important for young people to acquire skills that will allow them to participate in the labour market of the future."
+  - user: |
+      Now the budget justification. The reviewer from the first round, Mr. Hartley, wrote this comment on our previous application:
+
+      ```
+      Reviewer 2: The budget lists 'equipment – 61,000 EUR' without explanation. It is unclear why laptops are needed if schools already have computer labs. The cost per beneficiary appears high.
+      ```
+  - user: |
+      Here is our current budget text, please rewrite it so it answers those concerns:
+
+      ```
+      Equipment: 61,000 EUR. Trainers: 84,000 EUR. Internet: 9,600 EUR. Travel: 12,400 EUR. Total: 167,000 EUR.
+      ```
+
+      Facts you can use: the school labs have 2010-era desktops that can't run modern IDEs, 9 of 14 schools have no lab at all, laptops stay with the clubs after the project, and we expect 520 students over 24 months.
+  - user: |
+      Give me three possible titles for the project.
+  - user: |
+      I want a short quote from a student for the proposal. Here's what one girl, Bianca from Codăești, wrote to us in Romanian, can you translate and polish it into English without changing the meaning?
+
+      ```
+      Înainte credeam că programarea e doar pentru băieții de la oraș. Acum am făcut un joc cu care se joacă tot satul și vreau să mă fac inginer.
+      ```
+  - user: |
+      The sustainability section is too vague. Here's what we have:
+
+      ```
+      After the project ends, we will continue the activity with other funding.
+      ```
+
+      Make it concrete. We have an agreement with two local IT companies, Endava Iasi and a smaller one called Softbinator, to provide volunteer mentors, and the Vaslui county council has promised to cover internet costs from 2028.
+  - user: |
+      Does the proposal need a risk section? What would go in it?
+  - user: |
+      Write the risks section with three risks and mitigations.
+  - user: |
+      The executive director wants the whole proposal to sound less academic. Give me general tips.
+  - user: |
+      Last thing: write a two-sentence cover note to send with the proposal.
+question_plan:
+  - {type: multi-hop, ask: "How did we change the paragraph Elena complained about?", gold_turn: 5, note: "Elena in 4, rewrite in 5"}
+  - {type: multi-hop, ask: "How did we answer Mr. Hartley's objection about the laptops?", gold_turn: 8, note: "Hartley in 7, new budget text in 8"}
+  - {type: multi-hop, ask: "What cost per student did the new budget text end up with?", gold_turn: 8, note: "cost per beneficiary concern in 7"}
+  - {type: multi-hop, ask: "What does the rewritten summary promise, so that it fits Northbridge's rules?", gold_turn: 2, note: "rule in 2; ok as 1-hop? keep if gold chunk doesn't name Northbridge"}
+  - {type: multi-hop, ask: "How did the girl from Codăești's quote read in English?", gold_turn: 10, note: "name and village only in the prompt"}
+  - {type: multi-hop, ask: "Who will cover the internet after the grant ends, according to the sustainability section?", gold_turn: 11, note: "county council in 11"}

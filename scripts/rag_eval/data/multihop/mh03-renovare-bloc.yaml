@@ -1,0 +1,547 @@
+id: mh03-renovare-bloc
+category: summarization
+lang: ro
+turns:
+- user: |
+    Sunt administratorul unei asociații de proprietari (bloc P+10, 44 de apartamente) și ne apucăm de reabilitarea termică. Te rog să-mi rezumi procesul-verbal de la ultima ședință:
+
+    ```
+    PROCES-VERBAL – Adunarea generală, 12 martie
+    Prezenți: 31 de proprietari din 44.
+    1. Ing. Dorin Vlase (firma ProTerm Construct) a prezentat oferta pentru reabilitare: 1.480.000 lei cu TVA, termen 7 luni, termoizolație 10 cm vată bazaltică pe fațade, 20 cm pe terasă.
+    2. Dl. Costache (ap. 38, etaj 10) a semnalat infiltrații pe terasă de doi ani. S-a propus refacerea hidroizolației odată cu termoizolația.
+    3. Finanțare: 60% prin programul județean, 40% de la proprietari. Cota medie estimată: 13.450 lei/apartament.
+    4. Dna. Marinescu (ap. 7) a cerut o eșalonare pentru pensionari. Se va discuta cu banca.
+    5. Vot: 27 pentru, 3 împotrivă, 1 abținere – oferta ProTerm se aprobă cu condiția unei a doua oferte comparative.
+    ```
+  assistant: |
+    Iată rezumatul procesului-verbal:
+
+    **Ședința Adunării Generale – 12 martie**
+    - **Prezență:** 31 din 44 de proprietari (cvorum asigurat).
+
+    **Subiecte discutate:**
+    1. **Oferta de reabilitare** (ProTerm Construct, ing. Dorin Vlase): 1.480.000 lei cu TVA, durată 7 luni; izolație de 10 cm vată bazaltică pe fațade și 20 cm pe terasă.
+    2. **Problema infiltrațiilor** de pe terasă (semnalate de dl. Costache, ap. 38) – se va reface hidroizolația odată cu termoizolația.
+    3. **Finanțare:** 60% din programul județean, 40% de la proprietari – cotă medie estimată de **13.450 lei/apartament**.
+    4. **Eșalonare pentru pensionari** (cerere dna. Marinescu, ap. 7) – în discuție cu banca.
+
+    **Decizia:** Oferta ProTerm a fost aprobată cu **27 voturi pentru, 3 împotrivă, 1 abținere**, cu condiția obținerii unei **a doua oferte comparative**.
+
+    **De reținut pentru următorii pași:**
+    - Solicitarea unei oferte de la o a doua firmă (condiție obligatorie pentru validare);
+    - Consultarea băncii privind eșalonarea pentru pensionari;
+    - Confirmarea accesului la programul județean (60%).
+- user: |
+    Rezumă-mi și asta, e un email primit de la a doua firmă:
+
+    ```
+    Bună ziua,
+    Vă transmitem oferta Izomax Grup pentru reabilitarea blocului: 1.390.000 lei cu TVA, termen 9 luni. Folosim polistiren grafitat EPS 80 de 12 cm pe fațade și 20 cm XPS pe terasă. Hidroizolația terasei NU este inclusă; o putem oferta separat, estimativ 96.000 lei. Garanție 5 ani la lucrări.
+    Cu stimă, Andrei Pop
+    ```
+  assistant: |
+    Iată rezumatul emailului:
+
+    **Oferta Izomax Grup (Andrei Pop)**
+    - **Preț:** 1.390.000 lei cu TVA, termen **9 luni**
+    - **Materiale:** polistiren grafitat EPS 80 de 12 cm pe fațade; 20 cm XPS pe terasă
+    - **Hidroizolația terasei:** **NU este inclusă** – se poate oferi separat, estimativ 96.000 lei
+    - **Garanție:** 5 ani la lucrări
+
+    **Comparație rapidă cu ProTerm Construct:**
+
+    | | ProTerm | Izomax |
+    |---|---|---|
+    | Preț total | 1.480.000 lei | 1.390.000 + 96.000 = **1.486.000 lei** |
+    | Termen | 7 luni | 9 luni |
+    | Izolație fațade | 10 cm vată bazaltică | 12 cm polistiren grafitat |
+    | Hidroizolație terasă | Inclusă | Extra (+96.000 lei) |
+    | Garanție | Nespecificată | 5 ani |
+
+    **Observații:**
+    - La preț total, cele două oferte sunt aproape identice (~6.000 lei diferență în favoarea ProTerm).
+    - ProTerm e cu 2 luni mai rapid și include hidroizolația din start.
+    - Izomax oferă izolație mai groasă pe fațade (12 vs. 10 cm) și garanție explicită de 5 ani – merită întrebat ProTerm ce garanție oferă.
+    - Vata bazaltică e considerată superioară polistirenului la rezistență la foc – un argument de discutat cu ambele firme.
+
+    Practic, condiția din procesul-verbal (a doua ofertă comparativă) este acum îndeplinită – puteți convoca o nouă adunare pentru decizia finală.
+- user: |
+    Ce diferență e între vată bazaltică și polistiren grafitat, pe scurt?
+  assistant: |
+    Pe scurt:
+
+    **Vată bazaltică (lână minerală bazaltică)**
+    - **Rezistență la foc:** incombustibilă (clasa A1) – mare avantaj la blocuri înalte
+    - **Permeabilă la vapori** – peretele „respiră", risc mai mic de condens și mucegai
+    - **Dezavantaje:** mai scumpă, se poate umezi dacă e expusă la apă fără hidroizolație corectă
+
+    **Polistiren grafitat (EPS)**
+    - **Conductivitate termică mai bună** – izolează cu câțiva cm mai puțini (de aici 12 cm EPS ≈ eficiența a ~10 cm vată)
+    - **Mai ieftin** și mai ușor de montat
+    - **Dezavantaje:** combustibil (clasa E, cu întârziatori de flacără), nu e permeabil la vapori – necesită atenție la ventilația peretelui
+
+    **Pe scurt:** vata e superioară la siguranță la incendiu și „respirația" clădirii; polistirenul grafitat e mai ieftin și izolează puțin mai eficient pe cm. Pentru un bloc P+10, mulți aleg vata bazaltică tocmai din motive de securitate la foc, deși costă mai mult.
+- user: |
+    Fă-mi un tabel comparativ cu cele două oferte, ca să-l pun la avizier.
+  assistant: |
+    **COMPARAȚIE OFERTE – REABILITARE TERMICĂ BLOC P+10 (44 APARTAMENTE)**
+
+    | Criteriu | ProTerm Construct | Izomax Grup |
+    |---|---|---|
+    | **Preț total (cu TVA)** | 1.480.000 lei | 1.486.000 lei* |
+    | **Termen de execuție** | 7 luni | 9 luni |
+    | **Izolație fațade** | Vată bazaltică 10 cm | Polistiren grafitat EPS 80, 12 cm |
+    | **Izolație terasă** | Vată bazaltică 20 cm | XPS 20 cm |
+    | **Hidroizolație terasă** | Inclusă în ofertă | NU inclusă – extra 96.000 lei |
+    | **Rezistență la foc (fațade)** | Incombustibilă (clasa A1) | Combustibil (clasa E) |
+    | **Garanție lucrări** | Nespecificată | 5 ani |
+    | **Persoană de contact** | Ing. Dorin Vlase | Andrei Pop |
+
+    *\*1.390.000 lei + 96.000 lei hidroizolație terasă*
+
+    ---
+
+    **Observații:**
+    - Prețurile totale sunt aproape identice (diferență ~6.000 lei în favoarea ProTerm).
+    - ProTerm execută cu 2 luni mai repede și include hidroizolația terasei.
+    - Izomax oferă garanție explicită de 5 ani.
+    - Vata bazaltică este incombustibilă – avantaj important la siguranța la incendiu.
+
+    **Decizia finală se va lua în Adunarea Generală, după consultarea tuturor proprietarilor.**
+
+    *Administratie – pentru informații suplimentare, contactați administratorul.*
+- user: |
+    Dl. Costache insistă că problema lui e urgentă și nu poate aștepta lucrarea mare.
+  assistant: |
+    Situația dl. Costache e de înțeles – infiltrațiile de 2 ani pot agrava structura plăcii de la etajul 10. Iată opțiunile practice:
+
+    **1. Reparație locală de urgență (recomandat)**
+    - Se poate face o **hidroizolație provizorie/localizată** pe zona afectată (chituri, membrane aplicate local), cost redus (câteva mii de lei)
+    - Nu înlocuiește hidroizolația completă, dar oprește agravarea până la începerea lucrării mari
+    - Atenție: dacă firma care va face reabilitarea e deja aprobată (ProTerm), se poate negocia ca **avans de lucrări** – suma se scade apoi din contract
+
+    **2. Consultați firma selectată**
+    - Întrebați ProTerm dacă pot executa **hidroizolația terasei ca etapă separată, anticipat** – tehnic e posibil, mai ales că oricum face 20 cm de termoizolație pe terasă
+    - Dacă acceptă, problema dl. Costache se rezolvă în câteva săptămâni, nu în 7-9 luni
+
+    **3. Ce NU se recomandă**
+    - Reparații făcute de o terță firmă fără coordonare – pot fi tăiate/refăcute la lucrarea mare = bani aruncați
+    - Amânarea totală – infiltrațiile active iarna (îngheț-dezgheț) pot produce degradări structurale scumpe
+
+    **Pași concreți:**
+    1. Documentați starea actuală (poze, eventual un raport scurt) – util și pentru eventuale despăgubiri/asigurare
+    2. Contactați ProTerm cu întrebarea despre execuție anticipată a hidroizolației
+    3. Dacă răspunsul e negativ, convocați rapid o adunare (sau adunați semnături) pentru o mică alocare de urgență din fondul de reparații
+
+    Vreți să vă redactez o adresă către ProTerm cu această solicitare?
+- user: |
+    Am primit raportul expertului care a fost pe terasă, rezumă-mi-l:
+
+    ```
+    RAPORT CONSTATARE – terasa bloc, scara A
+    Membrana bituminoasă existentă (din 1998) prezintă fisuri și desprinderi pe aprox. 35% din suprafață, concentrate deasupra apartamentelor 37–40. Sifonul de terasă de pe latura est este colmatat; apa stagnează în zonă pe aprox. 12 mp. Se recomandă intervenție provizorie imediată: desfundarea sifonului și petic de membrană pe zona afectată (cost estimat 6.800 lei), urmată de refacerea completă a hidroizolației la reabilitare.
+    ```
+  assistant: |
+    Iată rezumatul raportului expertului:
+
+    **Raport constatare – terasa, scara A**
+
+    **Stadiul actual:**
+    - Membrana bituminoasă (din 1998) este **degradată pe ~35% din suprafață** – fisuri și desprinderi
+    - Degradările sunt **concentrate deasupra ap. 37–40** (zona dl. Costache, ap. 38 – se confirmă!)
+    - **Sifonul de pe latura est e colmatat** → apă stagnează pe ~12 mp
+
+    **Recomandări:**
+    1. **Intervenție provizorie imediată:** desfundarea sifonului + petic de membrană pe zona afectată – **cost estimat: 6.800 lei**
+    2. **Refacerea completă a hidroizolației** la lucrarea de reabilitare (ca deja e prevăzut în oferta ProTerm)
+
+    **Concluzie practică:** exact varianta de reparație de urgență discutată anterior, acum confirmată de expert și cu cost cunoscut – 6.800 lei, sumă mică față de riscul degradărilor structurale. Raportul vă dă și **documentația necesară** pentru a justifica cheltuiala din fondul de reparații în fața proprietarilor.
+
+    Vă pot ajuta cu un anunț scurt pentru avizier sau cu convocarea pentru aprobarea sumei de 6.800 lei.
+- user: |
+    Cum se calculează cota fiecărui apartament, după suprafață sau egal?
+  assistant: |
+    Conform legislației românești în vigoare (Legea 196/2018 privind reabilitarea energetică a clădirilor de locuit), cheltuielile pentru lucrări de reabilitare termică se repartizează **proporțional cu suprafața utilă a fiecărui apartament**, nu egal.
+
+    **Cum se calculează:**
+
+    1. Se însumează suprafețele utile ale tuturor apartamentelor (ex. total 3.200 mp)
+    2. Se calculează cota-parte a fiecărui apartament: suprafața apartamentului ÷ suprafața totală
+    3. Cota-parte × suma de plată (40% din 1.480.000 = 592.000 lei)
+
+    **Exemplu:**
+    - Apartament de 60 mp: 60 ÷ 3.200 = 1,875% → 1,875% × 592.000 = **11.100 lei**
+    - Apartament de 85 mp: 85 ÷ 3.200 = 2,656% → **15.723 lei**
+
+    **De reținut:**
+    - Se folosește **suprafața utilă** (din cartea funciară / actul de proprietate), nu cea construită
+    - Spațiile comerciale sau alte unități ne locuibile (dacă există) intră în calcul cu suprafața lor
+    - Estimarea de 13.450 lei/apartament din procesul-verbal era o **medie** (592.000 ÷ 44) – sumele reale vor fi mai mici la apartamentele mici și mai mari la cele mari
+    - Repartizarea trebuie **aprobată în Adunarea Generală** și trecută în procesul-verbal, cu lista cotelor
+
+    Vă pot pregăti un model de tabel cu coloane pentru suprafață, cotă-parte și sumă de plată, completabil cu datele din cartea funciară.
+- user: |
+    Scrie-mi un anunț scurt pentru avizier despre ședința următoare, pe 9 aprilie la ora 19.
+  assistant: |
+    **ANUNȚ – ADUNAREA GENERALĂ A PROPRIETARILOR**
+
+    Vă invităm miercuri, **9 aprilie, ora 19:00**, la ședința Adunării Generale.
+
+    **Ordinea de zi:**
+    1. Prezentarea și compararea celor două oferte de reabilitare termică (ProTerm Construct și Izomax Grup)
+    2. Alegerea firmei executante
+    3. Stabilirea modului de repartizare a cheltuielilor pe apartamente (proporțional cu suprafața utilă)
+    4. Aprobarea intervenției de urgență pe terasă (reparație provizorie – 6.800 lei), conform raportului expertului
+    5. Diverse
+
+    **Prezența dumneavoastră este importantă!** Deciziile se iau cu votul majorității proprietarilor – fără cvorum nu putem valida alegerile care ne privesc pe toți.
+
+    Cu stimă,
+    Administratorul asociației
+
+    ---
+
+    Dacă doriți, pot adăuga locul ședinței (hol/scara bloc, sala de ședințe etc.) sau un rând despre eșalonarea pentru pensionari, dacă subiectul va fi discutat.
+- user: |
+    Dna. Marinescu a revenit, zice că sunt 9 apartamente cu pensionari care nu pot plăti cota deodată.
+  assistant: |
+    Situația celor 9 apartamente (≈20% din bloc) e relevantă și merită tratată înainte de ședința de pe 9 aprilie. Iată opțiunile concrete:
+
+    **1. Eșalonare internă (cea mai simplă)**
+    - Asociația acceptă plata în **rate lunare** direct la administrator (ex. 13.450 lei ÷ 12 luni ≈ 1.120 lei/lună, sau pe suprafață)
+    - Nu implică bănci, fără dobânzi; necesită doar aprobarea în AGA și contracte/addendumuri scrise cu fiecare proprietar
+    - Risc: dacă cineva nu plătește, asociația rămâne cu datoria – de aceea e bine să existe **angajament scris + termen limită**
+
+    **2. Credit de consum / linie de credit prin bancă**
+    - Se discută cu banca (cum s-a notat deja în procesul-verbal) – unele bănci oferă **credite de reabilitare energetică** cu dobânzi mici, inclusiv pentru pensionari, garantate cu fondul de reparații sau cu încasările programului
+    - Dezavantaj: dobândă + comisioane, demers mai lent
+
+    **3. Verificați facilitățile programului județean**
+    - Multe programe permit **plata cotei proprietarilor în tranșe**, sincronizată cu avansurile lucrării – nu toți banii de la început
+    - Merită un telefon la primărie/consiliu județean înainte de ședință
+
+    **4. Soluție combinată (practică)**
+    - Cota se plătește în **3 tranșe**: la semnarea contractului, la jumătatea lucrării, la recepție
+    - Pensionarii cu venituri mici pot cere eșalonare suplimentară individuală
+
+    **Recomandarea mea:** introduceți în ordinea de zi a ședinței de pe 9 aprilie un punct dedicat: *„Stabilirea modalității de plată a cotelor – eșalonare pentru pensionari"*, cu propunerea concretă de eșalonare internă în rate. Așa subiectul se decide cu vot, nu rămâne suspendat.
+
+    Vă pot pregăti textul punctului pentru ordinea de zi sau un model de angajament de plată în rate pentru cei 9 apartamente.
+- user: |
+    Banca ne-a trimis condițiile, rezumă-le:
+
+    ```
+    Credit pentru asociații de proprietari – condiții orientative
+    Valoare: până la 600.000 lei. Dobândă: IRCC + 2,9%. Perioadă: maximum 10 ani. Garanție: cesiunea veniturilor din cotele de întreținere. Rambursare lunară, inclusă în lista de plată.
+    Pentru 9 apartamente × 13.450 lei, rata estimată pe 10 ani: aprox. 145 lei/lună/apartament.
+    ```
+  assistant: |
+    Iată rezumatul condițiilor băncii:
+
+    **Credit pentru asociația de proprietari – condiții orientative**
+
+    | Element | Condiție |
+    |---|---|
+    | **Valoare maximă** | 600.000 lei |
+    | **Dobândă** | IRCC + 2,9% (variabilă) |
+    | **Perioadă** | max. 10 ani |
+    | **Garanție** | Cesiunea veniturilor din cotele de întreținere |
+    | **Rambursare** | Lunară, inclusă în lista de plată |
+
+    **Estimarea băncii pentru cei 9 apartamente:**
+    - Suma necesară: 9 × 13.450 = **121.050 lei** (mult sub plafonul de 600.000)
+    - Rata estimată: **~145 lei/lună/apartament**, pe 10 ani
+
+    **Observații importante:**
+    1. **Dobânda e variabilă** (IRCC + marjă) – rata poate crește dacă IRCC urcă. Merită întrebată banca dacă există variantă cu dobândă fixă.
+    2. **Garanția prin cesiunea cotelor de întreținere** înseamnă că banca se plătește prioritar din încasările asociației – dacă proprietarii întârzie la întreținere, banca tot încasează. E un risc administrativ pentru asociație, dar și o siguranță pentru bancă (de aici condiții mai blânde).
+    3. **Rata de 145 lei/lună e orientativă** – cereți o **simulare oficială scrisă** cu dobânda actuală, comisioane (analiză, administrare, rambursare anticipată) și DAE, nu doar dobânda nominală.
+    4. **Comparație cu eșalonarea internă:** 13.450 ÷ 120 luni ≈ 112 lei/lună fără dobândă. Creditul adaugă ~30 lei/lună cost de dobândă – diferența nu e uriașă, dar eșalonarea internă rămâne mai ieftină dacă proprietarii sunt de încredere.
+    5. **Avantajul creditului:** banca îi avansează pe toți, asociația plătește firma la timp, iar cei 9 proprietari rambursează treptat – elimină riscul ca asociația să rămână cu datoria dacă cineva nu plătește.
+
+    **Recomandare:** cereți băncii oferta oficială completă (cu DAE și comisioane) înainte de ședința de pe 9 aprilie, ca să o puteți compara corect cu eșalonarea internă și să supuneți ambele variante la vot.
+- user: |
+    Ce documente ne trebuie pentru dosarul de finanțare județeană?
+  assistant: |
+    Documentele cerute variază ușor de la un județ la altul, dar un dosar standard de finanțare pentru reabilitare termică prin programe județene conține de regulă următoarele:
+
+    **1. Documente ale asociației**
+    - Certificat de înregistrare al asociației (CUI, de la Registrul Asociațiilor de Proprietari)
+    - Actul de identitate al administratorului + desemnarea lui (hotărâre AGA)
+    - Statutul asociației
+    - Procesele-verbale ale Adunărilor Generale relevante: **aprobarea lucrării, a finanțării, a cotelor de participare** (cu cvorum și voturi – de aceea ședința de pe 9 aprilie e importantă)
+
+    **2. Documente ale clădirii**
+    - Cartea funciară a clădirii (extras)
+    - Certificat de atestare a dreptului de proprietate / HCL de predare a blocului către asociație
+    - Certificat de urbanism (se solicită de la primărie)
+    - Autorizație de construire (se obține după aprobarea finanțării, dar unele programe cer documentația depusă)
+
+    **3. Documente tehnice**
+    - **Audit energetic** – realizat de auditor energetic autorizat (obligatoriu, e baza programului)
+    - Expertiză tehnică a clădirii (starea construcției – raportul expertului pe terasă e un plus aici)
+    - **Documentația de autorizare a executării lucrărilor** (D.A.E.) – proiect tehnic + caiet de sarcini, întocmit de un proiectant autorizat
+    - Ofertele comparative ale firmelor (aveți deja ProTerm și Izomax – păstrați-le ambele, dovedesc concurență)
+
+    **4. Documente financiare**
+    - Deviz general estimativ
+    - Planul de finanțare: 60% județ / 40% proprietari, cu dovada sursei pentru cota proprie (decizia AGA privind eșalonarea/creditul)
+    - Dovada existenței fondului de reparații / contului asociației (extras de cont)
+
+    **5. Declarații**
+    - Declarație pe proprie răspundere a administratorului
+    - Eventual declarații ale proprietarilor privind acordul de participare cu cota proprie
+
+    **Recomandări practice:**
+    1. **Solicitați imediat metodologia oficială a programului județean** (consiliul județean sau primărie) – lista exactă și formularele diferă, iar unele programe au termene limită stricte și ordine de depunere
+    2. **Auditul energetic și D.A.E. sunt cele mai lungi de obținut** (câteva săptămâni până la 1-2 luni) – demarați-le cât mai devreme, chiar dacă costă înainte de aprobarea finanțării
+    3. Verificați dacă programul cere ca lucrarea să fie **la licitație publică** (Legea 98/2016) sau acceptă alegerea directă de către AGA – asta poate schimba modul în care ați selectat firma
+
+    Vă pot pregăti o listă de verificare (checklist) cu coloană „obținut / în lucru / de obținut" pentru avizier sau pentru urmărirea dosarului.
+- user: |
+    Procesul-verbal de azi, rezumă-l te rog:
+
+    ```
+    PROCES-VERBAL – Adunarea generală, 9 aprilie
+    Prezenți: 36 de proprietari din 44.
+    1. S-au comparat ofertele. Oferta Izomax + hidroizolație separată ar fi 1.486.000 lei, practic egală cu ProTerm, dar cu termen mai lung și garanție mai scurtă.
+    2. Vot: 33 pentru ProTerm Construct, 2 pentru Izomax, 1 abținere.
+    3. Intervenția provizorie pe terasă se face imediat din fondul de reparații, nu se așteaptă reabilitarea.
+    4. Pentru cele 9 apartamente se aprobă creditul bancar; restul plătesc în 3 tranșe.
+    ```
+  assistant: |
+    Iată rezumatul procesului-verbal:
+
+    **Ședința Adunării Generale – 9 aprilie**
+    - **Prezență:** 36 din 44 proprietari (cvorum asigurat).
+
+    **Deciziile luate:**
+
+    1. **Firma executantă aleasă: ProTerm Construct** – după compararea ofertelor (Izomax cu hidroizolație separată ajungea la 1.486.000 lei, practic egal cu ProTerm, dar cu termen mai lung). Vot: **33 pentru ProTerm, 2 pentru Izomax, 1 abținere**.
+
+    2. **Intervenția de urgență pe terasă** se execută **imediat**, din fondul de reparații (6.800 lei conform raportului expertului) – fără a aștepta reabilitarea. Problema dl. Costache și a ap. 37–40 se rezolvă în curând.
+
+    3. **Finanțarea cotei proprietarilor:**
+       - **9 apartamente cu pensionari:** credit bancar (rata estimată ~145 lei/lună, inclusă în lista de plată)
+       - **Restul proprietarilor:** plată în **3 tranșe**
+
+    **De reținut / pași următori:**
+    - Contactarea ProTerm pentru semnarea contractului și demararea intervenției provizorii pe terasă
+    - Demararea dosarului de credit cu banca (pentru cei 9 apartamente)
+    - Continuarea dosarului de finanțare județeană (audit energetic, D.A.E.)
+    - Comunicarea deciziei tuturor proprietarilor, inclusiv celor absenți
+
+    **O mică observație:** la punctul 1, procesul-verbal menționează că Izomax are „garanție mai scurtă" – conform ofertei primite, Izomax oferea 5 ani garanție, iar ProTerm nu specificase nicio garanție. Aș recomanda corectarea acestui detaliu în PV (sau clarificarea sursei informației), pentru consistența documentului – mai ales dacă va fi folosit în dosarul de finanțare. Merită oricum cerut în scris ProTerm care garanție oferă, înainte de semnarea contractului.
+- user: |
+    Fă-mi o listă de pași pentru următoarele 3 luni.
+  assistant: |
+    **PLAN DE ACȚIUNE – URMĂTOARELE 3 LUNI (aprox. aprilie–iulie)**
+
+    **LUNA 1 (aprilie) – Contracte și demarare**
+
+    1. **Corectați/consolidați procesul-verbal** de pe 9 aprilie (observația despre garanții) și trimiteți copie tuturor proprietarilor
+    2. **Solicitați în scris ProTerm:** garanția lucrărilor, programul de execuție, demararea intervenției provizorii pe terasă (6.800 lei)
+    3. **Semnați contractul** cu ProTerm (verificați: preț, termen, garanție, penalizări pentru întârziere, etape de plată)
+    4. **Executați intervenția de urgență pe terasă** – desfundare sifon + petic, recepție scurtă cu expertul
+    5. **Cereți băncii oferta oficială de credit** (DAE, comisioane, simulare scrisă)
+    6. **Solicitați metodologia programului județean** și lista exactă de documente
+    7. **Comandați auditul energetic** (auditor autorizat) – e cel mai lung document de obținut
+
+    **LUNA 2 (mai) – Finanțare și colectare**
+
+    8. **Demarați dosarul de credit** cu banca: documente asociație, cesiunea cotelor, semnare
+    9. **Comunicați proprietarilor calendarul tranșelor** (cele 3 tranșe) și emiteți primele dispoziții de plată / angajamente scrise
+    10. **Comandați D.A.E.** (proiect tehnic + caiet de sarcini) de la un proiectant autorizat – pe baza auditului energetic
+    11. **Obțineți certificatul de urbanism** de la primărie
+    12. **Verificați cu primăria/CJ** dacă e necesară licitație publică pentru alegerea firmei sau dacă alegerea prin AGA e acceptată
+    13. **Încasați tranșa 1** de la proprietari (sau activați creditul pentru cei 9 apartamente)
+
+    **LUNA 3 (iunie–iulie) – Depunere și pregătire șantier**
+
+    14. **Depuneți dosarul de finanțare județean** (sau pregătiți-l pentru termenul de depunere)
+    15. **Obțineți autorizația de construire** (după aprobarea finanțării / cu D.A.E. complet)
+    16. **Stabiliți cu ProTerm calendarul de șantier:** data începerii, organizarea (schele, acces, mutarea utilităților de pe fațade)
+    17. **Informați proprietarii:** anunț pe avizier cu calendarul lucrărilor, reguli în timpul șantierului (demontare aer condiționat/antene de pe fațade, acoperirea mobilierului la găuriri etc.)
+    18. **Pregătiți evidența plăților:** tabel cu cote pe apartament, tranșe încasate, situația celor 9 apartamente cu credit
+
+    **Recomandări transversale:**
+    - Țineți un **dosar unic** (fizic + digital) cu toate PV-urile, ofertele, raportul expertului, corespondența – vă va lipsi la finanțare și la eventuale controale
+    - Convocați o **AGA scurtă la finalul celor 3 luni** pentru raportarea stadiului: contract, plăți, dosar finanțare, dată de începere a șantierului
+    - Urmăriți **termenele programului județean** – dacă sesiunea de depunere e mai devreme, inversați pașii 10–14 (dosarul de finanțare are prioritate)
+
+    Vă pot pregăti acest plan ca tabel de urmărire (cu coloane „responsabil / termen / stadiu") pentru avizier sau pentru uzul dumneavoastră.
+- user: |
+    Un proprietar de la etajul 4 întreabă dacă poate să-și schimbe singur geamurile acum sau să aștepte.
+  assistant: |
+    Răspunsul scurt: **poate schimba geamurile acum, chiar e de preferat înainte de lucrare** – dar cu câteva condiții de coordonare. Iată detaliile:
+
+    **De ce e avantajos să schimbe acum:**
+    - Tamplaria nouă se montează înainte de izolarea fațadei → lucrătorii pot **integra corect ferestrele în noul strat de izolație** (profile de racordare, etanșări, finisaje de glafuri), fără tăieri și refaceri ulterioare
+    - Dacă ar schimba după reabilitare, ar trebui **decupate și refăcute finisajele din zona glafelor** – cost suplimentar și risc de punți termice prost executate
+    - Ferestrele vechi, cu pierderi de căldură, ar anula parțial beneficiul izolației
+
+    **Condiții de respectat:**
+
+    1. **Culoarea și tipul tâmplăriei** – proiectul de reabilitare (D.A.E.) poate impune o culoare uniformă a ramelor pe fațadă. Trebuie **verificat cu proiectantul/administratorul înainte de comandă**, altfel riscă să fie obligat să le schimbe din nou
+    2. **Dimensiunile și forma** – să păstreze aceleași dimensiuni și sens de deschidere, fără modificarea aspectului fațadei (nu e nevoie de autorizație de construire pentru înlocuire „pe loc", dar orice modificare de fațadă da)
+    3. **Programul de execuție** – ideal ca montajul ferestrelor să fie **gata înainte de începerea lucrărilor la fațadă** pe scara respectivă; să comunice cu firma ca să sincronizeze
+
+    **Ce costă pe cine:** înlocuirea tâmplăriei este **cheltuială exclusivă a proprietarului**, nu intră în contractul de reabilitare și nu se împarte pe asociație – e bine să i se spună clar asta.
+
+    **Sfat practic pentru dumneavoastră:** dacă mai sunt și alți proprietari care se gândesc la schimbarea tâmplăriei, merită un **anunț pe avizier** cu regula de aur: *„Doriți să schimbați ferestrele? Faceți-o ÎNAINTE de începerea izolării fațadei și cereți întâi culoarea aprobată de proiectant."* Așa evitați 20 de discuții separate și situații inegale pe fațadă.
+- user: |
+    Scrie-mi un email către toți proprietarii cu deciziile luate.
+  assistant: |
+    **Subiect: Deciziile Adunării Generale din 9 aprilie – Reabilitarea termică a blocului**
+
+    Stimați proprietari,
+
+    Vă mulțumim celor 36 de proprietari care au participat la Adunarea Generală din 9 aprilie. Vă transmitem, pe scurt, deciziile luate:
+
+    **1. Firma executantă: ProTerm Construct**
+    După compararea celor două oferte (ProTerm Construct și Izomax Grup), Adunarea a votat cu majoritate clară (33 pentru, 2 împotrivă, 1 abținere) oferta ProTerm Construct:
+    - Valoare: 1.480.000 lei cu TVA
+    - Termen de execuție: 7 luni
+    - Izolație cu vată bazaltică (10 cm fațade, 20 cm terasă)
+    - Hidroizolația terasei inclusă în preț
+
+    **2. Reparația de urgență pe terasă**
+    Conform raportului expertului, intervenția provizorie (desfundarea sifonului și peticele pe membrană, 6.800 lei) se execută **imediat**, din fondul de reparații, fără a aștepta lucrarea mare. Astfel, problemele de infiltrații ale apartamentelor 37–40 vor fi rezolvate în curând.
+
+    **3. Plata cotei proprietarilor (40% din valoare)**
+    - **Pentru cele 9 apartamente cu pensionari:** s-a aprobat contractarea creditului bancar (rata estimată ~145 lei/lună, pe 10 ani, inclusă în lista de plată)
+    - **Pentru restul apartamentelor:** plata în **3 tranșe** – la semnarea contractului, la jumătatea lucrării și la recepție
+    - Repartizarea cotelor se face **proporțional cu suprafața utilă** a fiecărui apartament; tabelul complet va fi afișat pe avizier
+
+    **4. Următorii pași**
+    - Semnarea contractului cu ProTerm Construct
+    - Demararea dosarului de credit cu banca
+    - Continuarea dosarului de finanțare județeană (audit energetic, documentație tehnică)
+    - Comunicarea calendarului de șantier imediat ce va fi stabilit
+
+    **Important pentru cei care doresc să schimbe ferestrele:** înlocuirea tâmplăriei se recomandă **înainte** de începerea izolării fațadei, doar cu culoarea aprobată de proiectant. Costul este suportat integral de proprietar. Pentru detalii, contactați administratorul.
+
+    Copie a procesului-verbal este afișată pe avizier. Pentru întrebări, mă puteți contacta la [telefon/email].
+
+    Cu stimă,
+    [Numele dumneavoastră]
+    Administratorul Asociației de Proprietari
+
+    ---
+
+    Completați datele de contact și, dacă doriți, pot adăuga data limită pentru prima tranșă sau detaliile despre sediul băncii unde cei 9 proprietari trebuie să se prezinte.
+- user: |
+    Ce greșeli fac de obicei asociațiile la reabilitări?
+  assistant: |
+    Iată greșelile cele mai frecvente – cu câteva observații aplicate exact pe situația blocului dumneavoastră:
+
+    **1. Contracte incomplete cu firma executantă**
+    - Lipsesc penalizările pentru întârziere, garanția scrisă, lista exactă de lucrări și materiale (mărci, grosimi)
+    - *La voi:* ProTerm nu a specificat garanția – obțineți-o în scris înainte de semnare, plus penalizări de întârziere (uzual 0,1–0,5%/zi)
+
+    **2. Plata în avans prea mult**
+    - Avansuri mari (30–50%) fără garanții reale → firma întârzie sau dispară
+    - *Recomandare:* avans maxim 15–20%, restul pe etape, cu retenție de 5–10% eliberată la recepția finală
+
+    **3. Recepție superficială**
+    - Se primește lucrarea „cu ochii", fără verificări: punți termice la glafe și soclu, aderența tencuielii, finisajele, funcționarea sifoanelor
+    - *Sfat:* cereți o **recepție cu auditorul energetic** care a făcut auditul inițial – el poate verifica dacă s-a atins performanța din proiect; ideal și o termografie a fațadei
+
+    **4. Neglijarea detaliilor care produc defecte**
+    - Glafuri, bandouri, soclu, racorduri la ferestre, învelitoarea/terasa – aici apar 90% din problemele ulterioare, nu pe câmpul liber al fațadei
+    - *La voi:* hidroizolația terasei e inclusă, dar cereți în contract **detaliile tehnice de racord** între hidroizolație și termoizolație
+
+    **5. Documentația de finanțare făcută în grabă**
+    - PV-uri fără cvorum corect, oferte fără comparație scrisă, devize neconcordante cu proiectul → dosar respins sau finanțare suspendată
+    - *La voi:* sunteți bine poziționați – aveți PV-uri, două oferte comparate, raport de expert. Păstrați totul într-un dosar unic
+
+    **6. Neimplicarea proprietarilor până la șantier**
+    - Anunțuri prea târziu despre demontarea aerelor condiționate, obloanelor, antenelor; accesul în apartamente pentru lucrări interioare minore → întârzieri și conflicte
+    - *Sfat:* anunț cu 3–4 săptămâni înainte, cu lista exactă ce trebuie demontat de pe fațadă și cine plătește
+
+    **7. Lipsa fondului pentru neprevăzute**
+    - La demontarea placajului vechi apar adesea surprize (fisuri structurale, tencuială prăbușită) – 5–10% din valoare ca rezervă
+    - *La voi:* verificați dacă devizul ProTerm are poziții pentru reparații locale ale suportului; dacă nu, negociați-le acum, nu la fața locului
+
+    **8. Alegerea doar după preț**
+    - Cea mai ieftină ofertă cu materiale subdimensionate costă mai mult pe termen lung
+    - *La voi:* ați comparat corect (preț total, termen, materiale) – doar garanția a rămas neclară
+
+    **9. Nu se păstrează actele de garanție și fișele materiale**
+    - La primul defect după 2–3 ani, nimeni nu mai găsește ce s-a montat și cine răspunde
+    - *Sfat:* cereți ProTerm **fișele tehnice ale materialelor** livrate + certificatele de conformitate, la recepție
+
+    **10. Eșalonarea/plățile proprietarilor fără angajamente scrise**
+    - Promisiuni verbale → datorii la asociație exact când trebuie plătită o etapă
+    - *La voi:* ați decis corect tranșele și creditul – formalizați totul în scris, cu termene
+
+    **Pe scurt:** cele mai scumpe greșeli se fac la **contract** (înainte de șantier) și la **recepție** (după). Investiți timp în aceste două momente. Vă pot pregăti o listă de verificare pentru recepția finală sau un set de clauze de negociat în contractul cu ProTerm.
+question_plan:
+- type: multi-hop
+  ask: Ce s-a recomandat pentru problema domnului Costache?
+  gold_turn: 6
+  note: Costache in 1/5, report in 6 doesn't name him
+- type: multi-hop
+  ask: Cât costa intervenția urgentă pentru apartamentul de la etajul 10?
+  gold_turn: 6
+  note: ap. 38 etaj 10 in 1
+- type: multi-hop
+  ask: Ce soluție am găsit pentru cererea doamnei Marinescu?
+  gold_turn: 10
+  note: Marinescu in 1/9, bank terms in 10
+- type: multi-hop
+  ask: Ce lipsea din oferta lui Andrei Pop față de cealaltă?
+  gold_turn: 2
+  note: Andrei Pop only signs the email; also the comparison in 4
+- type: multi-hop
+  ask: Cu ce firmă a lucrat ing. Vlase și a câștigat-o până la urmă?
+  gold_turn: 12
+  note: Vlase -> ProTerm in 1, vote in 12
+- type: multi-hop
+  ask: Cât ar plăti lunar pensionarii care nu pot achita cota deodată?
+  gold_turn: 10
+  note: pensioners in 1/9, rate in 10
+questions:
+- id: q1
+  type: multi-hop
+  prompt: |
+    Ce s-a recomandat pentru problema domnului Costache?
+  gold:
+  - turn: 6
+    quote: '**Intervenție provizorie imediată:** desfundarea sifonului + petic de membrană pe zona afectată'
+- id: q2
+  type: multi-hop
+  prompt: |
+    Cât costa intervenția urgentă pentru apartamentul de la etajul 10?
+  gold:
+  - turn: 6
+    quote: 'desfundarea sifonului + petic de membrană pe zona afectată – **cost estimat: 6.800 lei**'
+- id: q3
+  type: multi-hop
+  prompt: |
+    Ce soluție s-a aprobat până la urmă pentru cererea doamnei Marinescu?
+  gold:
+  - turn: 12
+    quote: '**9 apartamente cu pensionari:** credit bancar'
+- id: q4
+  type: multi-hop
+  prompt: |
+    Ce lipsea din oferta lui Andrei Pop față de cealaltă?
+  gold:
+  - turn: 2
+    quote: '**Hidroizolația terasei:** **NU este inclusă**'
+- id: q5
+  type: multi-hop
+  prompt: |
+    A câștigat până la urmă firma ing. Vlase?
+  gold:
+  - turn: 12
+    quote: '**Firma executantă aleasă: ProTerm Construct**'
+- id: q6
+  type: multi-hop
+  prompt: |
+    Cât ar plăti lunar pensionarii care nu pot achita cota deodată?
+  gold:
+  - turn: 10
+    quote: 'Rata estimată: **~145 lei/lună/apartament**, pe 10 ani'

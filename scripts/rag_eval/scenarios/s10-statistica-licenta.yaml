@@ -1,0 +1,78 @@
+id: s10-statistica-licenta
+category: math
+lang: ro
+turns:
+  - user: |
+      Fac lucrarea de licență: am două grupe de studenți, una folosește o aplicație de organizare a timpului, cealaltă nu. Am măsurat orele de studiu pe săptămână. Ce test statistic folosesc ca să compar grupele?
+  - user: |
+      Grupul de control: n = 32, media 11.4 ore, abaterea standard 3.1. Grupul cu aplicația: n = 35, media 13.2 ore, abaterea standard 3.6. Calculează-mi testul t pas cu pas.
+  - user: |
+      Ce înseamnă p-ul ăsta în cuvinte, pentru concluzie?
+  - user: |
+      Coordonatorul zice să folosesc testul Welch, nu testul t clasic. De ce? Refă calculul cu Welch.
+  - user: |
+      Cum calculez intervalul de încredere de 95% pentru diferența mediilor?
+  - user: |
+      Și mărimea efectului? Calculează Cohen's d.
+  - user: |
+      Cum interpretez un d de mărimea asta? E mult sau puțin?
+  - user: |
+      Vreau să verific și normalitatea datelor. Ce test folosesc?
+  - user: |
+      Pentru grupul de control, Shapiro-Wilk dă W = 0.91, p = 0.011. Pentru grupul cu aplicația, W = 0.97, p = 0.43. Ce fac acum?
+  - user: |
+      Ok, fac și Mann-Whitney ca test robust. Mi-a ieșit U = 381. Cum îl raportez și ce concluzie trag?
+  - user: |
+      Scrie-mi paragraful de rezultate în stil APA, cu toate valorile de până acum.
+  - user: |
+      Coordonatorul vrea pragul de semnificație 0.01, nu 0.05, pentru toată lucrarea. Se schimbă vreo concluzie?
+  - user: |
+      Am și date înainte/după pentru grupul cu aplicația: aceiași 35 de studenți, media înainte 10.9 ore, după 13.2 ore, abaterea standard a diferențelor 2.8. Ce test folosesc și cât iese?
+  - user: |
+      Care e diferența dintre testul de la început și ăsta? Explică-mi simplu, ca să pot răspunde la susținere.
+  - user: |
+      Pentru metodologie: câți participanți mi-ar fi trebuit pe grupă ca să detectez un efect d = 0.5 cu putere 0.8?
+  - user: |
+      Și dacă vreau putere 0.9?
+  - user: |
+      Am și nota la examen. Vreau să văd dacă orele de studiu corelează cu nota: r = 0.42, n = 67. E semnificativ?
+  - user: |
+      Cum testez dacă corelația e diferită între cele două grupe? La control r = 0.31 (n = 32), la grupul cu aplicația r = 0.55 (n = 35).
+  - user: |
+      Explică-mi transformarea Fisher pas cu pas, cu formulele.
+  - user: |
+      Am rulat și o regresie, nota în funcție de ore și de grup. Rezultatul:
+
+      ```
+                  coef    std err      t     P>|t|
+      Intercept   4.12      0.61    6.75    0.000
+      ore         0.19      0.04    4.75    0.000
+      grup_app    0.48      0.22    2.18    0.033
+      R-squared: 0.31    Adj. R-squared: 0.29    N = 67
+      ```
+
+      Cum interpretez coeficienții?
+  - user: |
+      Ce înseamnă concret R² = 0.31 aici? E mic?
+  - user: |
+      Comisia o să mă întrebe de ce n-am randomizat studenții în grupe. Ce argumente am și ce limite recunosc?
+    domain: brainstorming
+  - user: |
+      Fă-mi un tabel cu toate testele făcute și rezultatele lor, pentru anexă.
+  - user: |
+      Ultima: cum scriu în LaTeX formula statisticii t și a gradelor de libertate pentru testul Welch?
+question_plan:
+  - {id: q1, type: decision, turn: 4, outdated: [2], ask: "Ce variantă de test t am folosit până la urmă pentru cele două grupe?"}
+  - {id: q2, type: exact, turn: 6, ask: "Cât ieșise Cohen's d?"}
+  - {id: q3, type: decision, turn: 12, ask: "Ce prag de semnificație folosim în lucrare?"}
+  - {id: q4, type: paraphrase, turn: 15, ask: "Câți studenți ar fi trebuit să am în fiecare grupă ca să prind un efect mediu?"}
+  - {id: q5, type: multi-hop, turn: 10, ask: "Ce am făcut după ce testul de normalitate a ieșit prost la una din grupe?", note: "problema e în 9, ce s-a făcut în 10"}
+  - {id: q6, type: semantic, turn: 18, ask: "Cum compar corelațiile dintre cele două grupe?"}
+  - {id: q7, type: ambiguous, turn: 16, ask: "Și pentru puterea mai mare câți ieșeau?"}
+questions:
+  - id: q8
+    type: exact
+    prompt: |
+      Ce coeficient avea variabila de grup în regresie și era semnificativă?
+    gold:
+      - {turn: 20, quote: "grup_app    0.48      0.22    2.18    0.033"}

@@ -1,0 +1,127 @@
+id: pr03-disertatie
+category: text-rewrite
+lang: ro
+turns:
+  - user: |
+      salut, lucrez la disertatie: "Reabilitarea termica a blocurilor din Iasi: impactul asupra consumului de energie". ma ajuti cu un plan pe capitole?
+  - user: |
+      profesorul vrea 5 capitole nu 6. comaseaza 2 cu 3
+  - user: |
+      scrie-mi introducerea, cam 1200 de cuvinte
+  - user: |
+      e prea generala. baga si datele astea despre Iasi:
+
+      ```
+      Fond locativ Iasi (2021): 152.400 locuinte, din care 71% in blocuri
+      Blocuri construite 1960-1990: 78% din blocuri
+      Blocuri reabilitate termic pana in 2023: aprox. 31%
+      Consum mediu bloc nereabilitat: 160-190 kWh/m2/an (incalzire)
+      Consum mediu dupa reabilitare: 85-105 kWh/m2/an
+      ```
+  - user: |
+      rezuma-mi articolul asta, il citez in capitolul 1:
+
+      ```
+      Abstract. We analyse metered heating consumption in 214 multi-family buildings in three Romanian cities before and after thermal retrofitting under the national programme (2009-2019). Retrofitting reduced normalised heating demand by 38% on average (median 41%), with the largest reductions in buildings with the highest pre-retrofit consumption. Savings were lower than the 50-60% predicted by the energy audits; the gap was largest where only facades were insulated and windows were left unchanged. Buildings with individual heat cost allocators showed 9 percentage points higher savings than those billed per square metre. We conclude that audit-based predictions overestimate savings and recommend post-retrofit monitoring as a condition for funding.
+      ```
+  - user: |
+      inca unul:
+
+      ```
+      Abstract. The rebound effect describes the part of expected energy savings that is taken back by changes in occupant behaviour. Using household survey data from 1,150 apartments in Central and Eastern Europe, we find that after thermal retrofit occupants raise indoor temperatures by 1.2-1.8 degrees C on average and heat previously unheated rooms. The resulting direct rebound effect is estimated at 25-35% of the technically possible savings, higher in low-income households that under-heated before the retrofit. We argue that this "rebound" partly reflects improved thermal comfort and reduced energy poverty, and should not be treated purely as a loss.
+      ```
+  - user: |
+      care e diferenta intre cele doua ca rezultate? le pun fata in fata in lucrare
+  - user: |
+      cum explic efectul de rebound in 2 paragrafe pe intelesul comisiei?
+  - user: |
+      citari: facultatea cere APA 7. cum citez un raport ANRE din 2022 de pe site-ul lor?
+  - user: |
+      si un articol de revista cu 6 autori?
+  - user: |
+      un calcul pt studiul de caz: bloc cu 40 de apartamente, suprafata utila incalzita 2.900 m2, consum inainte 182 kWh/m2/an, dupa 96 kWh/m2/an. pretul energiei termice la populatie e cam 0,45 lei/kWh. cat se economiseste pe an?
+  - user: |
+      si in cati ani se recupera investitia daca reabilitarea a costat 1.950.000 lei si 60% a fost finantare nerambursabila?
+  - user: |
+      scrie capitolul 2, cadrul legislativ, cam 1500 de cuvinte
+  - user: |
+      Legea 372/2005 a fost modificata intre timp? mai e in vigoare in forma aia?
+  - user: |
+      metodologia: fac un chestionar la 120 de locatari din blocuri reabilitate si nereabilitate. fa-mi chestionarul, 15 intrebari
+  - user: |
+      intrebarea 7 e sugestiva, o reformulezi neutru?
+  - user: |
+      am rezultatele:
+
+      ```
+                          multumit de confort   nemultumit   total
+      bloc reabilitat              46                 12         58
+      bloc nereabilitat            27                 35         62
+      total                        73                 47        120
+
+      factura iarna (lei/luna, medie):  reabilitat 312, nereabilitat 468
+      temperatura declarata in casa (C): reabilitat 22.4, nereabilitat 20.1
+      ```
+
+      fa-mi interpretarea
+  - user: |
+      vreau sa testez legatura intre bloc reabilitat si multumit de confort cu chi-patrat. cum il fac in excel?
+  - user: |
+      mi-a iesit p = 0.0004. ce scriu in lucrare?
+  - user: |
+      coordonatoarea zice sa nu folosesc chi-patrat pe subgrupele pe scari de bloc, ca am celule cu frecvente sub 5, si sa trec pe testul exact Fisher peste tot ca sa fie consecvent. ok?
+  - user: |
+      Fisher pe tabelul mare mi-a dat p = 0.0003. rescrie paragraful de rezultate
+  - user: |
+      scrie capitolul 4, rezultatele, cam 1500 de cuvinte, folosind tot ce am discutat
+  - user: |
+      traduce rezumatul lucrarii in engleza:
+
+      ```
+      Lucrarea analizeaza efectele reabilitarii termice asupra consumului de energie in blocurile de locuinte din Iasi. Pe baza datelor de consum si a unui chestionar aplicat la 120 de locatari, studiul arata o reducere medie a consumului pentru incalzire de aproximativ 45% si o crestere semnificativa a confortului termic perceput. Economiile reale sunt insa mai mici decat cele estimate in auditurile energetice, in parte din cauza efectului de rebound. Lucrarea recomanda monitorizarea consumului dupa reabilitare si contorizarea individuala a caldurii.
+      ```
+  - user: |
+      "blocuri de locuinte" cum ai tradus? e mai ok "blocks of flats" sau "apartment buildings" in engleza academica?
+  - user: |
+      titlul lucrarii, da-mi 5 variante mai bune
+  - user: |
+      a treia mi-a placut, dar mai scurta
+  - user: |
+      concluziile, cam 800 de cuvinte
+  - user: |
+      coordonatoarea zice ca la concluzii lipsesc limitarile studiului. ce limitari am?
+  - user: |
+      turnitin mi-a dat 23% similaritate, aproape toata la capitolul 2. ce fac?
+  - user: |
+      reformuleaza paragraful asta din cap 2, e prea aproape de textul legii:
+
+      ```
+      Programul are ca obiectiv cresterea performantei energetice a blocurilor de locuinte, respectiv reducerea consumurilor energetice pentru incalzire in conditii de confort termic interior, reducerea emisiilor poluante generate de producerea, transportul si consumul de energie, precum si imbunatatirea aspectului urbanistic al localitatilor.
+      ```
+  - user: |
+      prezentarea pt sustinere, 12 slide-uri. structura?
+  - user: |
+      am 15 minute. cat stau pe fiecare slide?
+  - user: |
+      ce intrebari crezi ca o sa-mi puna comisia si cum raspund?
+  - user: |
+      daca ma intreaba de ce am schimbat testul statistic pe parcurs, ce zic?
+  - user: |
+      mersi mult! ultima: un mail scurt de multumire catre coordonatoare
+question_plan:
+  - {id: q1, type: decision, ask: "ce test am folosit pana la urma pt confort si de ce?", gold_turns: [20, 21], outdated_turns: [18, 19]}
+  - {id: q2, type: exact, ask: "cat economisea pe an blocul ala de 40 de apartamente?", gold_turns: [11]}
+  - {id: q3, type: ambiguous, ask: "si in cat timp isi scoate banii?", gold_turns: [12]}
+  - {id: q4, type: semantic, ask: "ce ziceau cele doua articole despre cat se economiseste de fapt?", gold_turns: [5, 6, 7]}
+  - {id: q5, type: paraphrase, ask: "cum explicam faptul ca oamenii tin mai cald in casa dupa izolare?", gold_turns: [8, 6]}
+  - {id: q6, type: paraphrase, ask: "cum citez raportul de la autoritatea de reglementare in energie?", gold_turns: [9]}
+  - {id: q7, type: semantic, ask: "ce limitari am pus la studiu?", gold_turns: [28]}
+  - {id: q8, type: exact, ask: "cum am tradus blocurile in engleza pana la urma?", gold_turns: [24]}
+  - {id: q9, type: decision, ask: "care era titlul ales?", gold_turns: [26], outdated_turns: [25]}
+  - {id: q10, type: multi-hop, ask: "ce raspund daca ma intreaba de testul pe care l-am folosit initial?", gold_turns: [34, 20]}
+  - {id: q11, type: decision, ask: "cate capitole are lucrarea in final?", gold_turns: [2], outdated_turns: [1]}
+  - {id: q12, type: semantic, ask: "ce fac cu similaritatea mare la capitolul cu legislatia?", gold_turns: [29, 30]}
+  - {id: q13, type: exact, ask: "ce p-value ieseau la testul final?", gold_turns: [21], outdated_turns: [19]}
+  - {id: s1, type: standalone, ask: "care e capitala Australiei?"}
+  - {id: s2, type: standalone, ask: "scrie o poezie scurta despre toamna"}
+  - {id: s3, type: standalone, ask: "cum fac un tabel pivot in excel?"}

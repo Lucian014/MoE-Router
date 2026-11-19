@@ -1,0 +1,2960 @@
+id: s09-bot-rezervari
+category: coding
+lang: ro
+turns:
+- user: |
+    Vreau să fac un bot de Telegram pentru rezervări la frizeria unui prieten, „Frizeria Bărbosu”. În Python. Ce bibliotecă folosesc și cum structurez proiectul?
+  assistant: |
+    Recomand **python-telegram-bot** (v21+, async) — e cea mai populară, bine documentată și are ConversationHandler, perfect pentru fluxuri de rezervare. Alternativa e **aiogram**, dacă preferi un stil mai decorator-based.
+
+    ## Structura proiectului
+
+    ```
+    barbosu_bot/
+    ├── bot.py              # punctul de intrare
+    ├── config.py           # token, ore de lucru (din .env)
+    ├── requirements.txt
+    ├── .env
+    ├── handlers/
+    │   ├── __init__.py
+    │   ├── booking.py      # fluxul de rezervare
+    │   └── admin.py        # comenzi pentru frizer (listă rezervări)
+    ├── services/
+    │   ├── __init__.py
+    │   └── scheduler.py    # generare sloturi libere, verificări
+    ├── db/
+    │   ├── __init__.py
+    │   └── database.py     # SQLite via SQLAlchemy sau sqlite3
+    └── keyboards.py        # butoane inline (calendar, ore)
+    ```
+
+    ## Exemplu minim de start
+
+    ```python
+    # bot.py
+    import asyncio
+    from telegram.ext import Application, CommandHandler
+
+    from config import BOT_TOKEN
+    from handlers import booking, admin
+
+    async def main():
+        app = Application.builder().token(BOT_TOKEN).build()
+
+        app.add_handler(CommandHandler("start", booking.start))
+        app.add_handler(booking.conversation_handler)
+        app.add_handler(CommandHandler("rezervari", admin.list_bookings))
+
+        await app.initialize()
+        await app.start_polling()
+        await app.updater.stop()
+        await app.stop()
+
+    if __name__ == "__main__":
+        asyncio.run(main())
+    ```
+
+    ## Fluxul de rezervare (ConversationHandler)
+
+    1. `/start` → buton „Programează-te”
+    2. Alegere **serviciu** (tăiere, barbă, combo) — ReplyKeyboard
+    3. Alegere **zi** — butoane cu următoarele 7 zile
+    4. Alegere **oră** — afișezi doar sloturile libere (verifici în DB)
+    5. Confirmare nume/telefon → salvezi rezervarea
+
+    ## Sfaturi practice
+
+    - **SQLite** e suficient la început; treci pe PostgreSQL dacă crește.
+    - Stochează rezervările cu `user_id`, `datetime`, `service`, `status`.
+    - Adaugă un job care **amintește** clientul cu 2 ore înainte (`JobQueue` din python-telegram-bot, se instalează cu `pip install "python-telegram-bot[job-queue]"`).
+    - Pune tokenul în `.env`, nu în cod, și adaugă `.env` în `.gitignore`.
+    - Pentru admin, filtrează pe `chat_id`-ul frizerului ca doar el să vadă comenzile de administrare.
+
+    Vrei să-ți scriu și handler-ul complet de rezervare cu butoanele pentru zile/ore?
+- user: |
+    Ok, mergem pe python-telegram-bot v21. Scrie-mi un /start care salută clientul pe nume și îi arată trei butoane: Rezervă, Rezervările mele, Contact.
+  assistant: |
+    Iată un `/start` complet, cu butoane inline:
+
+    ```python
+    # handlers/booking.py
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+    from telegram.ext import ContextTypes
+
+
+    async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        user = update.effective_user
+        nume = user.first_name or "acolo"
+
+        text = (
+            f"Salut, {nume}! 👋\n\n"
+            "Bine ai venit la *Frizeria Bărbosu*!\n"
+            "Ce dorești să faci?"
+        )
+
+        keyboard = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("✂️ Rezervă", callback_data="book")],
+                [InlineKeyboardButton("📅 Rezervările mele", callback_data="my_bookings")],
+                [InlineKeyboardButton("📞 Contact", callback_data="contact")],
+            ]
+        )
+
+        await update.message.reply_text(text, reply_markup=keyboard, parse_mode="Markdown")
+    ```
+
+    Și handler-ele pentru cele trei butoane, ca să nu rămână moarte:
+
+    ```python
+    # handlers/booking.py (continuare)
+    from telegram import CallbackQuery
+
+
+    async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        query: CallbackQuery = update.callback_query
+        await query.answer()
+
+        if query.data == "book":
+            await query.edit_message_text("Să începem rezervarea! Alege serviciul:")  # aici intră ConversationHandler-ul
+        elif query.data == "my_bookings":
+            # TODO: interogare DB cu rezervările user_id
+            await query.edit_message_text("Nu ai rezervări active. ✂️")
+        elif query.data == "contact":
+            await query.edit_message_text(
+                "📍 Str. Exemplu nr. 10\n"
+                "📞 07XX XXX XXX\n"
+                "🕐 L–S: 09:00–19:00"
+            )
+    ```
+
+    Înregistrare în `bot.py`:
+
+    ```python
+    from handlers import booking
+
+    app.add_handler(CommandHandler("start", booking.start))
+    app.add_handler(CallbackQueryHandler(booking.button_handler, pattern="^(book|my_bookings|contact)$"))
+    ```
+
+    Câteva observații:
+
+    - `user.first_name` e numele din profilul Telegram — e cel mai sigur „pe nume” pe care îl ai fără să întrebi. Dacă vrei numele real pentru rezervare, îl ceri în fluxul de booking.
+    - `query.answer()` e obligatoriu, altfel Telegram afișează „se încarcă...” pe buton.
+    - Am folosit `edit_message_text` ca să nu aglumezi mesaje; dacă preferi mesaje noi, folosește `query.message.reply_text`.
+
+    Pasul următor logic e fluxul „Rezervă” — vrei să scriem ConversationHandler-ul cu alegerea serviciului?
+- user: |
+    Programul frizeriei e luni–vineri 10:00–19:00, sâmbătă 10:00–14:00, duminică închis. O programare durează 30 de minute. Cum generez sloturile libere pentru o zi?
+  assistant: |
+    Iată un mod curat de a le genera, în `services/scheduler.py`:
+
+    ```python
+    # services/scheduler.py
+    from datetime import datetime, time, timedelta
+
+    SLOT_DURATION = timedelta(minutes=30)
+
+    # Programul: {ziua săptămânii (0=luni): (ora_deschidere, ora_închidere)}
+    WORKING_HOURS = {
+        0: (time(10, 0), time(19, 0)),   # luni
+        1: (time(10, 0), time(19, 0)),   # marți
+        2: (time(10, 0), time(19, 0)),   # miercuri
+        3: (time(10, 0), time(19, 0)),   # joi
+        4: (time(10, 0), time(19, 0)),   # vineri
+        5: (time(10, 0), time(14, 0)),   # sâmbătă
+        # 6 (duminică) lipsește => închis
+    }
+
+
+    def get_all_slots(day: datetime) -> list[datetime]:
+        """Toate sloturile posibile pentru o zi (indiferent de rezervări)."""
+        hours = WORKING_HOURS.get(day.weekday())
+        if hours is None:
+            return []  # duminică / închis
+
+        open_time, close_time = hours
+        slot = datetime.combine(day.date(), open_time)
+        closing = datetime.combine(day.date(), close_time)
+
+        slots = []
+        while slot + SLOT_DURATION <= closing:  # ultimul slot trebuie să încapă complet
+            slots.append(slot)
+            slot += SLOT_DURATION
+        return slots
+
+
+    def get_free_slots(day: datetime, booked: list[datetime]) -> list[datetime]:
+        """Sloturile libere: toate sloturile posibile minus cele rezervate."""
+        booked_set = set(booked)
+        free = [s for s in get_all_slots(day) if s not in booked_set]
+
+        # dacă e azi, eliminăm sloturile care au trecut deja
+        now = datetime.now()
+        if day.date() == now.date():
+            free = [s for s in free if s > now]
+
+        return free
+    ```
+
+    Exemplu de folosire:
+
+    ```python
+    from datetime import datetime
+
+    azi = datetime.now()
+    rezervari = [datetime(2025, 1, 15, 11, 0), datetime(2025, 1, 15, 11, 30)]
+
+    libere = get_free_slots(azi, rezervari)
+    # => 10:00, 10:30, 12:00, 12:30, ... (fără 11:00 și 11:30)
+    ```
+
+    Detalii importante de observat:
+
+    - **`day.weekday()`** returnează 0=luni ... 6=duminică, deci programul se mapează direct. Duminica nu e în dicționar → lista goală.
+    - **Condiția `slot + SLOT_DURATION <= closing`** asigură că ultimul slot de luni–vineri e **18:30** (se termină la 19:00), nu 19:00.
+    - **Sloturile de 30 min** înseamnă că o rezervare la 11:00 blochează doar 11:00–11:30; următorul client poate veni la 11:30. Dacă vrei pauză de curățenie între clienți, adaugă un buffer la `SLOT_DURATION` sau filtrează și sloturile adiacente.
+    - **Compararea prin `set`** funcționează doar dacă în DB stochezi datetime-ul exact la fix (fără secunde/offset-uri diferite). Cel mai simplu: salvează totul ca `DATETIME` în format `YYYY-MM-DD HH:MM` și normalizează la citire.
+
+    Când afișezi sloturile în bot, le formatezi ca butoane:
+
+    ```python
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+    def slots_keyboard(free_slots: list[datetime]) -> InlineKeyboardMarkup:
+        rows = [
+            [InlineKeyboardButton(s.strftime("%H:%M"), callback_data=f"slot:{s.isoformat()}")]
+            for s in free_slots
+        ]
+        # câte 4 butoane pe rând, mai compact
+        return InlineKeyboardMarkup([rows[i:i+4] for i in range(0, len(rows), 4)])
+    ```
+
+    Vrei să legăm asta de DB (salvarea și verificarea rezervărilor) sau să continuăm cu ConversationHandler-ul?
+- user: |
+    Unde țin rezervările? Ceva simplu, e un singur VPS mic și deocamdată un singur frizer.
+  assistant: |
+    Pentru cazul tău — un VPS mic, un singur frizer — **SQLite** e alegerea perfectă: un singur fișier, zero configurare, zero server de DB de întreținut. Backup = copiezi fișierul.
+
+    ## Schema
+
+    ```sql
+    CREATE TABLE IF NOT EXISTS bookings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,          -- ID-ul Telegram al clientului
+        user_name TEXT NOT NULL,           -- numele afișat
+        slot TEXT NOT NULL,                -- 'YYYY-MM-DD HH:MM'
+        service TEXT NOT NULL,             -- 'tăiere', 'barbă', 'combo'
+        status TEXT NOT NULL DEFAULT 'active',  -- active / cancelled
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    ```
+
+    ## Implementare simplă cu sqlite3
+
+    ```python
+    # db/database.py
+    import sqlite3
+    from contextlib import contextmanager
+    from datetime import datetime
+
+    DB_PATH = "barbosu.db"
+
+    SCHEMA = """
+    CREATE TABLE IF NOT EXISTS bookings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        user_name TEXT NOT NULL,
+        slot TEXT NOT NULL,
+        service TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    """
+
+
+    @contextmanager
+    def get_conn():
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        try:
+            yield conn
+            conn.commit()
+        finally:
+            conn.close()
+
+
+    def init_db():
+        with get_conn() as conn:
+            conn.execute(SCHEMA)
+
+
+    def add_booking(user_id: int, user_name: str, slot: datetime, service: str) -> int:
+        with get_conn() as conn:
+            cur = conn.execute(
+                "INSERT INTO bookings (user_id, user_name, slot, service) VALUES (?, ?, ?, ?)",
+                (user_id, user_name, slot.strftime("%Y-%m-%d %H:%M"), service),
+            )
+            return cur.lastrowid
+
+
+    def get_booked_slots(day: datetime) -> list[datetime]:
+        """Sloturile active pentru o zi — le dai direct în get_free_slots()."""
+        with get_conn() as conn:
+            rows = conn.execute(
+                "SELECT slot FROM bookings WHERE slot LIKE ? AND status = 'active'",
+                (day.strftime("%Y-%m-%d") + "%",),
+            ).fetchall()
+        return [datetime.strptime(r["slot"], "%Y-%m-%d %H:%M") for r in rows]
+
+
+    def get_user_bookings(user_id: int) -> list[sqlite3.Row]:
+        with get_conn() as conn:
+            return conn.execute(
+                "SELECT * FROM bookings WHERE user_id = ? AND status = 'active' "
+                "ORDER BY slot",
+                (user_id,),
+            ).fetchall()
+
+
+    def cancel_booking(booking_id: int, user_id: int) -> bool:
+        """Anulare doar dacă rezervarea aparține userului respectiv."""
+        with get_conn() as conn:
+            cur = conn.execute(
+                "UPDATE bookings SET status = 'cancelled' WHERE id = ? AND user_id = ?",
+                (booking_id, user_id),
+            )
+            return cur.rowcount > 0
+    ```
+
+    Apel la pornire, în `bot.py`:
+
+    ```python
+    from db.database import init_db
+    init_db()
+    ```
+
+    ## De ce e suficient și la ce să fii atent
+
+    - **Concurență**: python-telegram-bot e async, dar sqlite3 rulează sincron. La volumul unei frizerii (câteva zeci de rezervări/zi) nu e nicio problemă. Dacă vrei să fii riguros, rulezi query-urile cu `asyncio.to_thread(...)`.
+    - **Slotul ca text normalizat** (`YYYY-MM-DD HH:MM`) — exact ce discutam anterior: compararea din `get_free_slots` merge garantat, fără secunde sau timezone-uri care să strice potrivirea.
+    - **`status` în loc de DELETE** — păstrezi istoricul, util dacă frizerul vrea să vadă câți clienți a avut.
+    - **Backup**: un simplu cron pe VPS care copiază `barbosu.db` zilnic e suficient:
+      ```bash
+      0 3 * * * cp /cale/catre/barbosu.db /cale/backup/barbosu-$(date +\%F).db
+      ```
+    - **Când să treci pe altceva**: doar dacă apar mai mulți frizeri, notificări masive sau raportare complexă. Atunci PostgreSQL + SQLAlchemy. Până atunci, SQLite e mai puțin cod și zero mentenanță.
+
+    Vrei să legăm acum butoanele de sloturi de `add_booking`, cu verificare că slotul e încă liber în momentul confirmării (să nu rezerve doi clienți aceeași oră)?
+- user: |
+    Bine, SQLite. Scrie-mi schema și funcțiile de salvare și citire a rezervărilor.
+  assistant: |
+    Bună veste: exact asta ți-am scris în răspunsul anterior — schema e în `db/database.py`, cu `add_booking` pentru salvare și `get_booked_slots` / `get_user_bookings` pentru citire. Ți le regrupesc aici într-o formă finală, cu două mici îmbunătățiri: verificare de slot dublu la salvare și citirea unei rezervări individuale (utilă la confirmare/anulare).
+
+    ```python
+    # db/database.py
+    import sqlite3
+    from contextlib import contextmanager
+    from datetime import datetime
+
+    DB_PATH = "barbosu.db"
+
+    SCHEMA = """
+    CREATE TABLE IF NOT EXISTS bookings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        user_name TEXT NOT NULL,
+        slot TEXT NOT NULL,                     -- 'YYYY-MM-DD HH:MM'
+        service TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active',  -- active / cancelled
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_slot_active
+        ON bookings (slot) WHERE status = 'active';
+    """
+
+
+    @contextmanager
+    def get_conn():
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        try:
+            yield conn
+            conn.commit()
+        finally:
+            conn.close()
+
+
+    def init_db():
+        with get_conn() as conn:
+            conn.executescript(SCHEMA)
+
+
+    # ---------- Salvare ----------
+
+    def add_booking(user_id: int, user_name: str, slot: datetime, service: str) -> int | None:
+        """Creează rezervarea. Returnează id-ul sau None dacă slotul e deja luat."""
+        with get_conn() as conn:
+            try:
+                cur = conn.execute(
+                    "INSERT INTO bookings (user_id, user_name, slot, service) VALUES (?, ?, ?, ?)",
+                    (user_id, user_name, slot.strftime("%Y-%m-%d %H:%M"), service),
+                )
+                return cur.lastrowid
+            except sqlite3.IntegrityError:
+                return None  # indexul unic a prins o rezervare dublă
+
+
+    # ---------- Citire ----------
+
+    def get_booked_slots(day: datetime) -> list[datetime]:
+        """Sloturile active dintr-o zi — intră direct în get_free_slots()."""
+        with get_conn() as conn:
+            rows = conn.execute(
+                "SELECT slot FROM bookings WHERE slot LIKE ? AND status = 'active'",
+                (day.strftime("%Y-%m-%d") + "%",),
+            ).fetchall()
+        return [datetime.strptime(r["slot"], "%Y-%m-%d %H:%M") for r in rows]
+
+
+    def get_user_bookings(user_id: int) -> list[sqlite3.Row]:
+        """Rezervările active ale unui client, în ordine cronologică."""
+        with get_conn() as conn:
+            return conn.execute(
+                "SELECT id, slot, service FROM bookings "
+                "WHERE user_id = ? AND status = 'active' AND slot >= datetime('now', 'localtime') "
+                "ORDER BY slot",
+                (user_id,),
+            ).fetchall()
+
+
+    def get_booking(booking_id: int) -> sqlite3.Row | None:
+        with get_conn() as conn:
+            return conn.execute(
+                "SELECT * FROM bookings WHERE id = ?", (booking_id,)
+            ).fetchone()
+
+
+    # ---------- Anulare ----------
+
+    def cancel_booking(booking_id: int, user_id: int) -> bool:
+        """Anulare doar dacă rezervarea aparține userului respectiv."""
+        with get_conn() as conn:
+            cur = conn.execute(
+                "UPDATE bookings SET status = 'cancelled' WHERE id = ? AND user_id = ?",
+                (booking_id, user_id),
+            )
+            return cur.rowcount > 0
+    ```
+
+    Ce am adăugat față de varianta anterioară:
+
+    - **Index parțial unic** (`idx_slot_active`) — baza de date respinge singură două rezervări active pe același slot. E plasă de siguranță la nivel de DB, indiferent de ce face codul (de exemplu, dacă doi clienți apasă „confirmă” aproape simultan). `add_booking` prinde `IntegrityError` și returnează `None`, deci în handler verifici:
+
+      ```python
+      booking_id = add_booking(user_id, nume, slot, serviciu)
+      if booking_id is None:
+          await update.message.reply_text("Ups, cineva a fost mai rapid! Alege altă oră.")
+      ```
+
+    - **`get_user_bookings` filtrează și trecutul** (`slot >= now`) — clientul vede doar rezervările viitoare.
+    - **`get_booking`** — ca să poți afișa detaliile rezervării la confirmare sau înainte de anulare.
+
+    Inițializare o dată la pornirea botului:
+
+    ```python
+    # bot.py
+    from db.database import init_db
+    init_db()
+    ```
+
+    Cu asta ai stratul de date complet. Următorul pas firesc e ConversationHandler-ul care leagă totul: serviciu → zi → oră → confirmare, cu `add_booking` la final. Îl scriem?
+- user: |
+    ```
+    Traceback (most recent call last):
+      File "/opt/barbosu/bot/handlers.py", line 88, in confirma_rezervare
+        await salveaza_rezervare(user_id, zi, ora)
+      File "/opt/barbosu/bot/db.py", line 41, in salveaza_rezervare
+        conn.execute("INSERT INTO rezervari (user_id, zi, ora) VALUES (?, ?, ?)", (user_id, zi, ora))
+    sqlite3.OperationalError: database is locked
+    ```
+  assistant: |
+    `database is locked` înseamnă că un alt proces (sau altă conexiune din același proces) ține baza blocată în momentul INSERT-ului. La SQLite e cea mai comună problemă și are câteva cauze tipice:
+
+    ## Cauze probabile
+
+    1. **O conexiune ținută deschisă prea mult timp** — de exemplu, dacă undeva deschizi conexiunea la pornirea botului și o refolosești, orice citire lungă blochează scrierile.
+    2. **Alt proces atinge fișierul** — cronul de backup, un `sqlite3 barbosu.db` deschis într-un terminal, un al doilea bot pornit accidental (verifică cu `ps aux | grep python`).
+    3. **Lipsă de `commit()`/`close()`** — o tranzacție rămasă deschisă blochează totul până la restart.
+    4. **Acces concurent din handler-e async** — două rezervări care se salvează în același timp.
+
+    ## Soluția: WAL mode + busy_timeout
+
+    Adaugă asta la deschiderea conexiunii, în `db.py`:
+
+    ```python
+    def get_conn():
+        conn = sqlite3.connect(DB_PATH, timeout=10)  # așteaptă până la 10s în loc de 5s default
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")      # citirile nu mai blochează scrierile
+        conn.execute("PRAGMA busy_timeout=10000")
+        return conn
+    ```
+
+    **WAL (Write-Ahead Logging)** e fixul principal: permite citiri simultane cu o scriere, deci handler-ele de citire (sloturi libere, rezervările mele) nu mai blochează INSERT-ul. E o setare persistentă — se aplică o dată pe fișierul DB, dar e sigur să o execuți la fiecare conexiune.
+
+    ## Verifică și procesele externe
+
+    ```bash
+    # cine mai atinge fișierul?
+    lsof /opt/barbosu/bot/barbosu.db
+
+    # există conexiuni blocate de mult?
+    sqlite3 /opt/barbosu/bot/barbosu.db "PRAGMA wal_checkpoint;"
+    ```
+
+    Dacă ai cronul de backup din recomandarea mea anterioară, asigură-te că folosește `sqlite3 barbosu.db ".backup ..."` în loc de `cp` — copierea brută a fișierului în timp ce botul scrie poate cauza exact această eroare (și, mai rău, backup-uri corupte):
+
+    ```bash
+    # în cron, în loc de cp:
+    0 3 * * * sqlite3 /opt/barbosu/bot/barbosu.db ".backup /cale/backup/barbosu-$(date +\%F).db"
+    ```
+
+    ## Bonus: dacă ești paranoic cu concurența
+
+    Deoarece python-telegram-bot e async, poți muta operațiile DB pe un thread ca să nu blocheze event loop-ul și să le serializzi natural:
+
+    ```python
+    import asyncio
+    from db import database
+
+    booking_id = await asyncio.to_thread(
+        database.add_booking, user_id, nume, slot, serviciu
+    )
+    ```
+
+    La volumul unei frizerii asta e opțional, dar nu strică.
+
+    Pe scurt: pune **WAL + timeout**, verifică că nu ai un `sqlite3` deschis sau backup cu `cp`, și asigură-te că fiecare conexiune se închide prompt (context manager, cum aveam în `database.py`). Dacă eroarea persistă după WAL, dă-mi un `lsof` pe fișierul DB și structura din `db.py` — probabil e o conexiune rămasă deschisă undeva.
+- user: |
+    Dacă trec pe Postgres scap de problema asta definitiv? Merită pentru un proiect atât de mic?
+  assistant: |
+    Răspuns scurt: **da, scapi de problema asta, dar nu merită** — pentru că problema ta nu e SQLite, ci aproape sigur codul sau un proces extern.
+
+    ## De ce nu e vina SQLite
+
+    `database is locked` apare când două conexiuni se bat pe fișier. Cauzele tipice sunt:
+
+    - o conexiune ținută deschisă cu o tranzacție necomitată,
+    - backup cu `cp` în timp ce botul scrie,
+    - un `sqlite3` deschis manual în terminal,
+    - două instanțe de bot pornite simultan.
+
+    Postgres **nu te-ar salva** de ultimele două (procese externe rămân procese externe), iar pentru primele, fixul corect e în codul tău: context manager + WAL + timeout, cum ți-am arătat. Dacă migrezi pe Postgres cu același cod problematic, vei avea aceleași conexiuni rătăcite — doar că acum cu un server în plus de administrat.
+
+    ## Ce ți-ar da Postgres oricum
+
+    - Concurență reală: scrieri multiple simultane, fără locking la nivel de fișier.
+    - Acces din mai multe procese fără grijă (bot + script de rapoarte + panel web, eventual).
+    - Tipuri de date mai bune (`TIMESTAMP` nativ, `UNIQUE` fără trucuri cu index parțial... de fapt și acolo ai nevoie de index parțial, dar cu sintaxă mai curată).
+
+    ## Costul
+
+    - Un server Postgres instalat și rulat pe VPS-ul mic (RAM, mentenanță, update-uri).
+    - Backup nu mai e „copiezi un fișier” — e `pg_dump` + restore.
+    - Configurație de conexiune, credențiale, pool de conexiuni.
+    - Migrarea codului existent.
+
+    ## Recomandarea mea
+
+    Pentru o frizerie cu un singur frizer și câteva zeci de rezervări pe zi, SQLite cu WAL e **mai mult decât suficient** — vorbim de scrieri de câteva ori pe oră, nu de mii pe secundă. Migrează pe Postgres doar când apare unul din these declanșatoare:
+
+    1. mai mulți frizeri / mai multe locații,
+    2. un panel web sau alt serviciu care accesează aceeași bază simultan cu botul,
+    3. raportări/analytics serioase.
+
+    Până atunci, fă astea în ordine:
+
+    1. Verifică `ps aux | grep python` — nu ai două instanțe de bot pornite (se întâmplă des după un deploy ratat, mai ales dacă rulezi cu systemd și ai repornit manual și serviciul).
+    2. Adaugă WAL + `busy_timeout` la conexiune.
+    3. Asigură-te că **toate** conexiunile trec prin context managerul cu `commit()`/`close()`.
+    4. Schimbă backup-ul pe `sqlite3 .backup`.
+
+    Dacă după asta mai vezi eroarea, vino cu `db.py`-ul tău complet și cu `lsof` pe fișier — găsim vinovatul. Postgres rămâne în buzunar pentru ziua în care proiectul crește.
+- user: |
+    Am decis: trecem pe Postgres, că oricum prietenul meu o să vrea și o pagină web de programări mai târziu. Rescrie funcțiile de salvare și citire cu asyncpg.
+  assistant: |
+    Bună decizie dacă plănuiești și un panel web — Postgres se împarte frumos între bot și web. Cu **asyncpg** totul devine nativ async, deci nu mai ai nevoie de `asyncio.to_thread`.
+
+    ## Schema
+
+    ```sql
+    CREATE TABLE IF NOT EXISTS bookings (
+        id BIGSERIAL PRIMARY KEY,
+        user_id BIGINT NOT NULL,
+        user_name TEXT NOT NULL,
+        slot TIMESTAMPTZ NOT NULL,
+        service TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_slot_active
+        ON bookings (slot) WHERE status = 'active';
+    ```
+
+    ## Codul
+
+    ```python
+    # db/database.py
+    import asyncpg
+    from datetime import datetime
+
+    DB_DSN = "postgresql://barbosu:parola@localhost:5432/barbosu"
+
+    _pool: asyncpg.Pool | None = None
+
+
+    async def init_db():
+        """Creează pool-ul și schema. Apelat o dată la pornirea botului."""
+        global _pool
+        _pool = await asyncpg.create_pool(DB_DSN, min_size=1, max_size=5)
+        async with _pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS bookings (
+                    id BIGSERIAL PRIMARY KEY,
+                    user_id BIGINT NOT NULL,
+                    user_name TEXT NOT NULL,
+                    slot TIMESTAMPTZ NOT NULL,
+                    service TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_slot_active
+                    ON bookings (slot) WHERE status = 'active';
+            """)
+
+
+    # ---------- Salvare ----------
+
+    async def add_booking(user_id: int, user_name: str, slot: datetime, service: str) -> int | None:
+        """Creează rezervarea. Returnează id-ul sau None dacă slotul e deja luat."""
+        async with _pool.acquire() as conn:
+            try:
+                return await conn.fetchval(
+                    "INSERT INTO bookings (user_id, user_name, slot, service) "
+                    "VALUES ($1, $2, $3, $4) RETURNING id",
+                    user_id, user_name, slot, service,
+                )
+            except asyncpg.UniqueViolationError:
+                return None
+
+
+    # ---------- Citire ----------
+
+    async def get_booked_slots(day: datetime) -> list[datetime]:
+        """Sloturile active dintr-o zi — intră direct în get_free_slots()."""
+        async with _pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT slot FROM bookings "
+                "WHERE slot >= $1 AND slot < $1 + interval '1 day' AND status = 'active'",
+                day.replace(hour=0, minute=0, second=0, microsecond=0),
+            )
+        return [r["slot"] for r in rows]
+
+
+    async def get_user_bookings(user_id: int) -> list[asyncpg.Record]:
+        """Rezervările active și viitoare ale unui client."""
+        async with _pool.acquire() as conn:
+            return await conn.fetch(
+                "SELECT id, slot, service FROM bookings "
+                "WHERE user_id = $1 AND status = 'active' AND slot > now() "
+                "ORDER BY slot",
+                user_id,
+            )
+
+
+    async def get_booking(booking_id: int) -> asyncpg.Record | None:
+        async with _pool.acquire() as conn:
+            return await conn.fetchrow(
+                "SELECT * FROM bookings WHERE id = $1", booking_id
+            )
+
+
+    # ---------- Anulare ----------
+
+    async def cancel_booking(booking_id: int, user_id: int) -> bool:
+        async with _pool.acquire() as conn:
+            status = await conn.execute(
+                "UPDATE bookings SET status = 'cancelled' WHERE id = $1 AND user_id = $2",
+                booking_id, user_id,
+            )
+        return status == "UPDATE 1"
+    ```
+
+    În `bot.py`:
+
+    ```python
+    from db.database import init_db
+
+    async def main():
+        await init_db()
+        # ... restul ca înainte
+    ```
+
+    ## Diferențe importante față de sqlite3
+
+    - **Pool, nu conexiuni per apel** — `create_pool` deschide conexiunile o dată; `pool.acquire()` le împrumută. Nu mai există risc de conexiuni uitate deschise (cauza principală a `database is locked`-ului de ieri).
+    - **`$1, $2` în loc de `?`** — placeholder-ele Postgres sunt poziționale, nu cu semn de întrebare.
+    - **`TIMESTAMPTZ`** — asyncpg primește și returnează obiecte `datetime` direct, fără conversii manuale. Atenție: `TIMESTAMPTZ` stochează tot în UTC; dacă frizerul e în România, fie salvezi datetime-uri naive și folosești `TIMESTAMP` (fără TZ — mai simplu pentru un singur fus orar), fie lucrezi conștient cu timezone-uri. Pentru simplitate, recomand `TIMESTAMP` naive + `datetime.now()` peste tot, ca până acum.
+    - **`cancel_booking` verifică `UPDATE 1`** — asyncpg returnează statusul ca string, nu `rowcount`.
+    - **`get_booked_slots`** — am înlocuit `LIKE`-ul cu o comparație pe interval, care folosește indexul și e mai corectă.
+
+    Instalare: `pip install asyncpg`, și nu uita să creezi userul și baza:
+
+    ```sql
+    CREATE USER barbosu WITH PASSWORD 'parola';
+    CREATE DATABASE barbosu OWNER barbosu;
+    ```
+
+    Când faci pagina web mai târziu, refolosești același pool sau creezi unul separat în aplicația web — ambele se vor înțelege perfect, fără locking. Vrei să continuăm cu ConversationHandler-ul de rezervare, acum pe funcțiile async?
+- user: |
+    Cum împiedic două rezervări pe același slot direct la nivel de bază de date, nu doar în cod?
+  assistant: |
+    Binevestea: **deja ai mecanismul în schemă** — l-am inclus în codul de la migrarea pe Postgres. Îți explic cum funcționează și de ce e construit exact așa.
+
+    ## Indexul parțial unic
+
+    ```sql
+    CREATE UNIQUE INDEX idx_slot_active
+        ON bookings (slot) WHERE status = 'active';
+    ```
+
+    Ce face:
+
+    - **Unic**: nu pot exista două rânduri cu același `slot` care satisfac condiția.
+    - **Parțial** (`WHERE status = 'active'`): restricția se aplică doar rezervărilor active. Cele anulate (`status = 'cancelled'`) nu contează — altfel, o dată ce cineva anulează, slotul ar fi blocat pentru totdeauna.
+
+    Adică: clientul A rezervă 11:00, apoi anulează, clientul B poate lua 11:00 — dar dacă A și B încearcă simultan, doar unul reușește.
+
+    ## Ce se întâmplă la încălcare
+
+    Postgres respinge INSERT-ul cu eroare, indiferent de cod, proces sau aplicație — chiar și din psql sau din viitoarea pagină web. În asyncpg o prinzi ca excepție:
+
+    ```python
+    async def add_booking(user_id: int, user_name: str, slot: datetime, service: str) -> int | None:
+        async with _pool.acquire() as conn:
+            try:
+                return await conn.fetchval(
+                    "INSERT INTO bookings (user_id, user_name, slot, service) "
+                    "VALUES ($1, $2, $3, $4) RETURNING id",
+                    user_id, user_name, slot, service,
+                )
+            except asyncpg.UniqueViolationError:
+                return None  # slotul a fost luat între timp
+    ```
+
+    Asta rezolvă și **race condition-ul clasic**: doi clienți văd simultan slotul ca liber (ambele citiri trec), ambele apasă „confirmă”. Fără index, ambele INSERT-uri ar reuși. Cu index, al doilea primește `UniqueViolationError` — baza de date e arbitru final, nu codul tău.
+
+    Poți verifica manual comportamentul:
+
+    ```sql
+    INSERT INTO bookings (user_id, user_name, slot, service)
+    VALUES (1, 'Test A', '2025-06-10 11:00', 'tăiere');  -- OK
+
+    INSERT INTO bookings (user_id, user_name, slot, service)
+    VALUES (2, 'Test B', '2025-06-10 11:00', 'tăiere');  -- ERROR: duplicate key value
+                                                          -- violates unique constraint
+    ```
+
+    ## De ce nu un simplu `UNIQUE(slot)` pe coloană
+
+    ```sql
+    slot TIMESTAMPTZ NOT NULL UNIQUE   -- ❌ NU face asta
+    ```
+
+    Ar bloca re-rezervarea unui slot anulat: rândul anulat rămâne în tabel (istoric), iar `UNIQUE` pe toată coloana ar respinge orice nouă rezervare la acea oră. Condiția `WHERE status = 'active'` e esențială pentru designul cu soft-delete.
+
+    ## Alternativă: constraint de excludere (dacă duratele devin variabile)
+
+    Indexul parțial funcționează perfect pentru sloturi fixe de 30 min. Dacă într-o zi frizerul vrea servicii de 30, 45 și 60 de minute, sloturile nu mai sunt discrete și ai nevoie de **exclusion constraint** cu intervale:
+
+    ```sql
+    CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+    ALTER TABLE bookings ADD CONSTRAINT no_overlap
+        EXCLUDE USING gist (
+            tstzrange(slot, slot + interval '30 minutes') WITH &&,
+            status WITH =
+        ) WHERE (status = 'active');
+    ```
+
+    `&&` înseamnă „fără suprapuneri de intervale între rezervările active”. Astfel, o rezervare la 11:00–11:30 blochează și un start la 11:15. Pentru modelul actual cu sloturi fixe, indexul parțial e suficient și mai simplu — ține constraintul de excludere în minte pentru viitor.
+
+    ## Un detaliu de care să ții cont
+
+    `UniqueViolationError` nu-ți spune *ce* index a sărit. Dacă adaugi mai târziu alte constrângeri unice (de exemplu, un user să nu poată avea două rezervări active), verifică și numele constraintului:
+
+    ```python
+    except asyncpg.UniqueViolationError as e:
+        if "idx_slot_active" in str(e):
+            return None  # slot luat
+        raise  # altă încălcare — nu o înghiți
+    ```
+
+    Pe scurt: ai deja garanția la nivel de DB prin `idx_slot_active`. Codul tău doar interpretează frumos eroarea — chiar dacă mâine scrii pagina web sau un script de import, baza de date nu lasă niciodată două rezervări active pe același slot.
+- user: |
+    Vreau și anulare: clientul poate anula până cu 2 ore înainte de programare. Rescrie handler-ul pentru „Rezervările mele” cu un buton de anulare la fiecare rezervare.
+  assistant: |
+    Iată handler-ul complet, cu regula celor 2 ore verificată **atât la afișare, cât și la momentul apăsării butonului** (clientul poate sta pe listă și apăsa prea târziu).
+
+    ```python
+    # handlers/booking.py (continuare)
+    from datetime import datetime, timedelta
+
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+    from telegram.ext import ContextTypes
+
+    CANCEL_WINDOW = timedelta(hours=2)
+
+
+    def _format_slot(slot: datetime) -> str:
+        # zilele în română, fără să tragi dependențe de locale
+        zile = ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"]
+        return f"{zile[slot.weekday()]} {slot.strftime('%d.%m.%Y, %H:%M')}"
+
+
+    async def my_bookings(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        query = update.callback_query
+        await query.answer()
+
+        bookings = await get_user_bookings(update.effective_user.id)
+
+        if not bookings:
+            await query.edit_message_text("Nu ai rezervări active. ✂️")
+            return
+
+        now = datetime.now()
+        lines = ["📅 Rezervările tale:\n"]
+        keyboard = []
+
+        for b in bookings:
+            slot = b["slot"]
+            lines.append(f"• {_format_slot(slot)} — {b['service']}")
+
+            if now <= slot - CANCEL_WINDOW:
+                keyboard.append([
+                    InlineKeyboardButton(
+                        f"❌ Anulează {_format_slot(slot).split(' ')[-1]}",
+                        callback_data=f"cancel:{b['id']}",
+                    )
+                ])
+            else:
+                lines.append("  (mai puțin de 2 ore — nu mai poate fi anulată aici)")
+
+        await query.edit_message_text(
+            "\n".join(lines),
+            reply_markup=InlineKeyboardMarkup(keyboard) if keyboard else None,
+        )
+
+
+    async def cancel_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        query = update.callback_query
+        await query.answer()
+
+        booking_id = int(query.data.split(":")[1])
+        user_id = update.effective_user.id
+
+        booking = await get_booking(booking_id)
+
+        # validări în ordinea importanței
+        if booking is None or booking["user_id"] != user_id:
+            await query.edit_message_text("Rezervarea nu a fost găsită.")
+            return
+        if booking["status"] != "active":
+            await query.edit_message_text("Această rezervare a fost deja anulată.")
+            return
+        if datetime.now() > booking["slot"] - CANCEL_WINDOW:
+            await query.edit_message_text(
+                "⏰ Mai puțin de 2 ore până la programare — "
+                "nu o mai poți anula din bot. Sună la frizerie dacă e ceva urgent!"
+            )
+            return
+
+        ok = await cancel_booking(booking_id, user_id)
+        if ok:
+            await query.edit_message_text(
+                f"✅ Rezervarea de {_format_slot(booking['slot'])} a fost anulată.\n"
+                "Te așteptăm altădată!"
+            )
+        else:
+            await query.edit_message_text("Ceva n-a mers la anulare. Încearcă din nou.")
+    ```
+
+    Înregistrare în `bot.py`:
+
+    ```python
+    app.add_handler(CallbackQueryHandler(booking.my_bookings, pattern="^my_bookings$"))
+    app.add_handler(CallbackQueryHandler(booking.cancel_handler, pattern="^cancel:\d+$"))
+    ```
+
+    ## Detalii de design de care să ții cont
+
+    - **Verificare dublă a ferestrei de 2 ore** — o dată la afișarea listei (ca să nu arăt butoane inutile), o dată în `cancel_handler` (ca să nu anuleze ceva care a scăzut sub prag între timp). Verificarea din handler e cea care contează; cea din listă e doar UX.
+    - **Verificarea `user_id` în handler** — oricine poate trimite un `callback_data` falsificat, deci nu te baza doar pe faptul că butonul i-a fost arătat. `cancel_booking` verifică din nou în query-ul `UPDATE ... WHERE id = ? AND user_id = ?`, deci ai apărare pe două niveluri.
+    - **Verificarea `status`** — previne dubla anulare dacă clientul apasă butonul de două ori repede.
+    - **`cancel_booking` returnează `False`** dacă rezervarea fusese deja anulată între verificare și UPDATE — cursa e acoperită și acolo.
+    - **Butonul afișează doar ora** (`Anulează 11:00`) ca să nu devină uriaș; dacă ai mai multe rezervări în aceeași zi la ore diferite, e suficient de clar. Dacă vrei mai explicit, pune ziua și ora scurt: `slot.strftime('%d.%m %H:%M')`.
+
+    ## O idee pentru mai târziu
+
+    Când clientul anulează, ar fi util să notifici frizerul:
+
+    ```python
+    await context.bot.send_message(
+        chat_id=ADMIN_CHAT_ID,
+        text=f"❌ {booking['user_name']} a anulat pentru {_format_slot(booking['slot'])}",
+    )
+    ```
+
+    La fel și la rezervări noi. Cu `ADMIN_CHAT_ID` în `.env`. Vrei să adăugăm și notificarea la confirmarea rezervării, sau trecem la ConversationHandler-ul complet?
+- user: |
+    Vreau ca mesajele botului să fie și în engleză, pentru turiști. Tradu-mi textele astea:
+    - „Bună, {nume}! Cu ce te putem ajuta azi?”
+    - „Alege ziua în care vrei să vii.”
+    - „Rezervarea ta a fost confirmată: {zi}, ora {ora}. Te așteptăm!”
+    - „Nu mai sunt locuri libere în ziua aleasă. Încearcă altă zi.”
+    - „Rezervarea a fost anulată. Sperăm să te vedem curând.”
+  domain: translation
+  assistant: |
+    Iată traducerile:
+
+    - **„Bună, {nume}! Cu ce te putem ajuta azi?”**
+      → „Hi, {name}! How can we help you today?”
+
+    - **„Alege ziua în care vrei să vii.”**
+      → „Pick the day you'd like to come.”
+
+    - **„Rezervarea ta a fost confirmată: {zi}, ora {ora}. Te așteptăm!”**
+      → „Your booking is confirmed: {day} at {time}. See you soon!”
+
+    - **„Nu mai sunt locuri libere în ziua aleasă. Încearcă altă zi.”**
+      → „No free slots left on the selected day. Please try another day.”
+
+    - **„Rezervarea a fost anulată. Sperăm să te vedem curând.”**
+      → „Your booking has been cancelled. We hope to see you soon!”
+
+    Câteva observații de traducere:
+
+    - La confirmare am folosit „at {time}” — în engleză ora se exprimă natural cu „at”, nu cu „ora” ca în română. Dacă vrei mai explicit: „Your booking is confirmed for {day} at {time}.”
+    - „See you soon!” e mai natural decât un traducere literală a lui „Te așteptăm!” (care ar fi „We're waiting for you!” — sună ciudat în engleză).
+    - Am evitat „bookings” vs „appointment”: pentru frizerie, „booking” e perfect natural.
+
+    ## Sugestie: structură pentru ambele limbi
+
+    Ca să nu ai stringuri împrăștiate prin cod, pune-le într-un modul:
+
+    ```python
+    # texts.py
+    TEXTS = {
+        "ro": {
+            "welcome": "Bună, {nume}! Cu ce te putem ajuta azi?",
+            "pick_day": "Alege ziua în care vrei să vii.",
+            "confirmed": "Rezervarea ta a fost confirmată: {zi}, ora {ora}. Te așteptăm!",
+            "no_slots": "Nu mai sunt locuri libere în ziua aleasă. Încearcă altă zi.",
+            "cancelled": "Rezervarea a fost anulată. Sperăm să te vedem curând.",
+        },
+        "en": {
+            "welcome": "Hi, {name}! How can we help you today?",
+            "pick_day": "Pick the day you'd like to come.",
+            "confirmed": "Your booking is confirmed: {day} at {time}. See you soon!",
+            "no_slots": "No free slots left on the selected day. Please try another day.",
+            "cancelled": "Your booking has been cancelled. We hope to see you soon!",
+        },
+    }
+
+    def t(key: str, lang: str = "ro", **kwargs) -> str:
+        return TEXTS.get(lang, TEXTS["ro"])[key].format(**kwargs)
+    ```
+
+    Folosire:
+
+    ```python
+    await update.message.reply_text(t("welcome", lang, nume=user.first_name))
+    ```
+
+    Pentru alegerea limbii ai două variante simple: un buton 🇬🇧/🇷🇴 în `/start` care salvează `lang` în `context.user_data`, sau detectare automată din `update.effective_user.language_code` (dacă începe cu `en`, folosești engleza). A doua e zero efort din partea clientului — recomand asta ca punct de plecare, cu buton de schimbare manuală ca fallback.
+
+    Vrei să integrăm selecția de limbă în `/start`?
+- user: |
+    Cum aleg limba în care răspunde botul? După language_code-ul din Telegram?
+  assistant: |
+    Da, `language_code` e punctul de plecare corect — dar cu câteva nuanțe. Îți arăt abordarea completă: detectare automată + posibilitate de schimbare manuală.
+
+    ## 1. Detectarea din `language_code`
+
+    ```python
+    def detect_lang(user) -> str:
+        code = user.language_code or ""   # poate fi None!
+        return "en" if code.startswith("en") else "ro"
+    ```
+
+    Capcane de care să ții cont:
+
+    - **Poate fi `None`** — unii utilizatori au privacy settings stricte sau profiluri fără limbă setată. De asta fallback-ul la română e obligatoriu.
+    - **E cod compus** — `en_GB`, `en_US`, `pt_BR`. De asta `startswith("en")`, nu `== "en"`.
+    - **E limba interfeței Telegram, nu naționalitatea** — un turist german va avea `de`, deci nu primește engleză automat. Pentru frizeria ta, engleza e limba-pont pentru oricine nu e român, deci o variantă pragmatică: română pentru `ro`, engleză pentru **tot restul**:
+
+      ```python
+      def detect_lang(user) -> str:
+          return "ro" if (user.language_code or "").startswith("ro") else "en"
+      ```
+
+      Asta acoperă turiștii de orice naționalitate. E o decizie de produs, nu tehnică — discută cu prietenul tău ce preferă.
+
+    ## 2. Stocarea alegerii: `user_data` vs DB
+
+    **`context.user_data`** — simplu, dar se pierde la restartarea botului și e per-proces (pagina web viitoare nu-l vede):
+
+    ```python
+    async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if "lang" not in context.user_data:
+            context.user_data["lang"] = detect_lang(update.effective_user)
+        lang = context.user_data["lang"]
+        await update.message.reply_text(t("welcome", lang, nume=update.effective_user.first_name))
+    ```
+
+    **În DB** — persistent, partajat cu viitoarea pagină web. Având deja Postgres, recomand un mic tabel:
+
+    ```sql
+    CREATE TABLE IF NOT EXISTS users (
+        user_id BIGINT PRIMARY KEY,
+        lang TEXT NOT NULL DEFAULT 'ro'
+    );
+    ```
+
+    ```python
+    async def get_lang(user_id: int) -> str:
+        async with _pool.acquire() as conn:
+            return await conn.fetchval("SELECT lang FROM users WHERE user_id = $1", user_id) or "ro"
+
+    async def set_lang(user_id: int, lang: str):
+        async with _pool.acquire() as conn:
+            await conn.execute(
+                "INSERT INTO users (user_id, lang) VALUES ($1, $2) "
+                "ON CONFLICT (user_id) DO UPDATE SET lang = $2",
+                user_id, lang,
+            )
+    ```
+
+    ## 3. Buton de schimbare manuală
+
+    Detectarea automată nu e suficientă — un român care folosește Telegram în engleză va primi engleza greșit. Adaugă o comandă sau un buton:
+
+    ```python
+    async def toggle_lang(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_id = update.effective_user.id
+        current = await get_lang(user_id)
+        new_lang = "en" if current == "ro" else "ro"
+        await set_lang(user_id, new_lang)
+        await update.message.reply_text(t("lang_changed", new_lang))
+    ```
+
+    Sau, mai elegant, buton în `/start`:
+
+    ```python
+    keyboard = [
+        [InlineKeyboardButton("✂️ Rezervă / Book", callback_data="book")],
+        [InlineKeyboardButton("📅 Rezervările mele / My bookings", callback_data="my_bookings")],
+        [InlineKeyboardButton("🇷🇴 / 🇬🇧", callback_data="toggle_lang")],
+    ]
+    ```
+
+    ## 4. Fluxul recomandat, pe scurt
+
+    1. La prima interacțiune: detectezi din `language_code`, salvezi în DB.
+    2. Buton 🇷🇴/🇬🇧 în `/start` (și eventual comanda `/lang`) pentru schimbare manuală — suprascrie detecția.
+    3. În fiecare handler: citești limba din DB (sau o ții cache-uită în `user_data` după prima citire, ca să nu dai query la fiecare mesaj).
+    4. Toate textele trec prin `t(key, lang, **kwargs)` din `texts.py` — zero stringuri hardcodate în handler-e.
+
+    Un detaliu: la butoanele de zi/oră nu trebuie tradus nimic (datele și orele sunt universale), dar **numele zilelor** din `_format_slot` da — mută lista `zile = ["Luni", "Marți", ...]` în `texts.py` cu varianta engleză `["Monday", "Tuesday", ...]`, altfel turistul primește „Miercuri 15.01, 11:00” în mijlocul unui mesaj în engleză.
+
+    Vrei să-ți scriu `texts.py`-ul complet cu toate stringurile pe care le-am folosit până acum în bot, în ambele limbi?
+- user: |
+    Rescrie /start să folosească textele în funcție de limbă. Dă-mi doar ce se schimbă, nu tot fișierul.
+  assistant: |
+    Iată doar ce se schimbă în `handlers/booking.py`:
+
+    ```python
+    # imports noi, sus în fișier
+    from texts import t
+    from db.database import get_lang, set_lang
+
+
+    async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        user = update.effective_user
+        user_id = user.id
+
+        # limba: din DB dacă există, altfel detectată din Telegram și salvată
+        lang = await get_lang(user_id)
+        if lang is None:
+            lang = "ro" if (user.language_code or "").startswith("ro") else "en"
+            await set_lang(user_id, lang)
+
+        text = t("welcome", lang, nume=user.first_name or "acolo")
+
+        keyboard = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("✂️ Rezervă / Book", callback_data="book")],
+                [InlineKeyboardButton("📅 Rezervările mele / My bookings", callback_data="my_bookings")],
+                [InlineKeyboardButton("📞 Contact", callback_data="contact")],
+                [InlineKeyboardButton("🇷🇴 / 🇬🇧", callback_data="toggle_lang")],
+            ]
+        )
+
+        await update.message.reply_text(text, reply_markup=keyboard)
+    ```
+
+    Și handler-ul pentru butonul de schimbare a limbii (funcție nouă, tot în `booking.py`):
+
+    ```python
+    async def toggle_lang(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        query = update.callback_query
+        await query.answer()
+
+        user_id = update.effective_user.id
+        current = await get_lang(user_id) or "ro"
+        new_lang = "en" if current == "ro" else "ro"
+        await set_lang(user_id, new_lang)
+
+        await query.edit_message_text(t("lang_changed", new_lang))
+    ```
+
+    În `bot.py`, adaugi înregistrarea:
+
+    ```python
+    app.add_handler(CallbackQueryHandler(booking.toggle_lang, pattern="^toggle_lang$"))
+    ```
+
+    Și în `texts.py`, cele două chei noi folosite aici:
+
+    ```python
+    "lang_changed": "Limbă schimbată în română. 🇷🇴",   # ro
+    "lang_changed": "Language switched to English. 🇬🇧",  # en
+    ```
+
+    Observații:
+
+    - Am scos `parse_mode="Markdown"` — `t("welcome", ...)` nu mai are nevoie, iar textul din DB nu ar trebui interpretat ca Markdown.
+    - Butoanele principale le-am lăsat bilingve („Rezervă / Book”) — la un meniu de 2 opțiuni e mai clar decât să forțezi userul să schimbe limba ca să înțeleagă meniul. Dacă preferi butoane traduse complet, spune și le fac prin `t()`.
+    - `get_lang` returnează `None` când userul nu e în tabel — de asta verificarea `if lang is None` merge direct pe rezultatul funcției, fără query separat de existență.
+- user: |
+    Am pus botul pe VPS cu webhook prin nginx. Telegram zice: „Wrong response from the webhook: 502 Bad Gateway”. De unde încep?
+  assistant: |
+    502 înseamnă că nginx a primit cererea de la Telegram, dar **nu a reușit să o dea mai departe** aplicației tale — fie nu rulează, fie nu ascultă pe portul pe care nginx crede că e, fie a crăpat între timp. Verifici în ordinea asta:
+
+    ## 1. Aplicația rulează?
+
+    ```bash
+    ps aux | grep bot.py
+    systemctl status barbosu-bot    # dacă ai serviciu systemd
+    ```
+
+    Cel mai frecvent caz: botul a pornit manual în SSH, sesiunea s-a închis, procesul a murit. Dacă nu ai serviciu systemd, fă unul — e esențial pe VPS:
+
+    ```ini
+    # /etc/systemd/system/barbosu-bot.service
+    [Unit]
+    Description=Bot Frizeria Barbosu
+    After=network.target postgresql.service
+
+    [Service]
+    User=barbosu
+    WorkingDirectory=/opt/barbosu/bot
+    ExecStart=/opt/barbosu/venv/bin/python bot.py
+    Restart=always
+    RestartSec=5
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+
+    ```bash
+    systemctl enable --now barbosu-bot
+    journalctl -u barbosu-bot -f    # loguri live — aici vei vedea eroarea reală, dacă există
+    ```
+
+    ## 2. Aplicația ascultă pe portul corect?
+
+    ```bash
+    ss -tlnp | grep <port>
+    ```
+
+    Dacă nimic nu ascultă pe portul din config-ul nginx, ai găsit problema. Testează direct, ocolind nginx:
+
+    ```bash
+    curl -X POST http://127.0.0.1:8080/webhook \
+      -H "Content-Type: application/json" \
+      -d '{"update_id": 1, "message": {"message_id": 1, "date": 0, "chat": {"id": 1, "type": "private"}, "from": {"id": 1, "is_bot": false, "first_name": "Test"}, "text": "/start"}}'
+    ```
+
+    Dacă primești răspuns (chiar și eroare de la bot), aplicația e OK — problema e în nginx. Dacă `Connection refused`, aplicația nu ascultă.
+
+    ## 3. Configul nginx
+
+    Configurația corectă pentru python-telegram-bot:
+
+    ```nginx
+    location /webhook {
+        proxy_pass http://127.0.0.1:8080/webhook;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    ```
+
+    Capcane frecvente:
+
+    - **Portul din `proxy_pass` nu coincide** cu cel din `run_webhook` al botului.
+    - **Calea diferă** — dacă nginx trimite pe `/` dar botul așteaptă `/webhook`, primești 404, nu 502, dar merită verificat.
+    - După modificare: `nginx -t && systemctl reload nginx`.
+
+    ## 4. Partea botului
+
+    ```python
+    await app.run_webhook(
+        listen="127.0.0.1",     # NU "0.0.0.0" — nginx e în față
+        port=8080,
+        url_path="webhook",
+        webhook_url="https://domeniul-tau.ro/webhook",
+        secret_token="un-token-random-lung",   # opțional, dar recomandat
+    )
+    ```
+
+    Dacă folosești `secret_token`, adaugă în nginx: `proxy_set_header X-Telegram-Bot-Api-Secret-Token $http_x_telegram_bot_api_secret_token;`
+
+    ## 5. Verifică logurile nginx
+
+    ```bash
+    tail -f /var/log/nginx/error.log
+    ```
+
+    Aici 502-ul are de obicei un mesaj explicit: `connect() failed (111: Connection refused)` → aplicația nu rulează/nu ascultă; `upstream timed out` → aplicația e blocată (de exemplu, un handler care face apel DB sincron și blochează event loop-ul).
+
+    ## 6. Ultimul pas: reînregistrează webhook-ul
+
+    După ce totul merge:
+
+    ```bash
+    curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://domeniul-tau.ro/webhook"
+    curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
+    ```
+
+    În `getWebhookInfo` vezi `last_error_message` — confirmă dacă Telegram mai vede 502 sau e rezolvat.
+
+    **Ordinea mea de pariu**: 90% din cazuri e punctul 1 (procesul mort, fără systemd) sau punctul 2 (port nepotrivit). Începe cu `journalctl -u barbosu-bot -n 50` și `ss -tlnp` — în două minute știi care e. Dacă nu iese, dă-mi output-ul de la `getWebhookInfo`, config-ul nginx din blocul `location` și ce vezi în `journalctl` — le despachetăm împreună.
+- user: |
+    Asta e configul nginx și cum pornesc aplicația:
+
+    ```nginx
+    server {
+        listen 443 ssl;
+        server_name barbosu.ro;
+
+        location /tg/ {
+            proxy_pass http://127.0.0.1:8443/;
+            proxy_set_header Host $host;
+        }
+    }
+    ```
+
+    ```ini
+    [Service]
+    WorkingDirectory=/opt/barbosu
+    ExecStart=/opt/barbosu/.venv/bin/uvicorn app:api --host 127.0.0.1
+    Restart=always
+    ```
+  assistant: |
+    Gata, văd problema: **porturile nu se potrivesc**. Nginx trimite spre `127.0.0.1:8443`, dar uvicornul tău pornește fără `--port`, deci ascultă pe **8000** (default). Nginx lovește în 8443, nu găsește nimic → 502.
+
+    ## Fix 1: portul
+
+    Fie în systemd:
+
+    ```ini
+    ExecStart=/opt/barbosu/.venv/bin/uvicorn app:api --host 127.0.0.1 --port 8443
+    ```
+
+    fie schimbi nginx-ul spre 8000. Unul din două, nu ambele. Apoi:
+
+    ```bash
+    systemctl daemon-reload
+    systemctl restart barbosu-bot
+    ss -tlnp | grep 8443    # acum trebuie să vezi uvicornul
+    ```
+
+    ## Fix 2: calea webhook-ului (verifică și asta)
+
+    Configul tău face **strip la prefix**: `location /tg/` + `proxy_pass ...:8443/` (cu slash la final) înseamnă că o cerere către `https://barbosu.ro/tg/webhook` ajunge la aplicație ca `/webhook`. Deci în bot trebuie:
+
+    ```python
+    await app.run_webhook(
+        listen="127.0.0.1",
+        port=8443,
+        url_path="webhook",
+        webhook_url="https://barbosu.ro/tg/webhook",   # cu /tg/ în față!
+    )
+    ```
+
+    Dacă ai setat `webhook_url` fără `/tg/`, Telegram va lovi `https://barbosu.ro/webhook`, care nu e prins de `location /tg/` → tot erori. Verifică cu:
+
+    ```bash
+    curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
+    ```
+
+    `url` trebuie să fie exact `https://barbosu.ro/tg/webhook`.
+
+    Test direct, ocolind Telegram:
+
+    ```bash
+    curl -X POST http://127.0.0.1:8443/webhook \
+      -H "Content-Type: application/json" \
+      -d '{"update_id": 1, "message": {"message_id": 1, "date": 0, "chat": {"id": 1, "type": "private"}, "from": {"id": 1, "is_bot": false, "first_name": "Test"}, "text": "/start"}}'
+    ```
+
+    Dacă primești 200, lanțul aplicație e OK; apoi testează prin nginx: `curl -X POST https://barbosu.ro/tg/webhook -H "Content-Type: application/json" -d '...'`.
+
+    ## Două observații la config
+
+    1. **`listen 443 ssl` fără certificate** — în snippet nu văd `ssl_certificate` / `ssl_certificate_key`. Dacă lipsesc și în fișierul real, nginx nici nu ar porni, deci probabil ai doar omis liniile la copiat. Dacă nu, adaugă-le (Let's Encrypt cu certbot le generează automat).
+
+    2. **`uvicorn app:api`** — asta sugerează că ai integrat python-telegram-bot într-o app FastAPI/ASGI custom, nu folosești `run_webhook` direct. Dacă da, structura corectă e:
+
+       ```python
+       # app.py
+       from telegram import Update
+       from telegram.ext import Application
+
+       app_tg = Application.builder().token(TOKEN).updater(None).build()
+       # ... add_handler-e ...
+
+       async def api(request):  # ruta FastAPI pe /webhook
+           data = await request.json()
+           update = Update.de_json(data, app_tg.bot)
+           await app_tg.process_update(update)
+           return Response(status=200)
+       ```
+
+       și la pornire `await app_tg.initialize()` + `await app_tg.start()`. Dacă în schimb folosești `run_webhook`, **nu ai nevoie de uvicorn deloc** — PTB își rulează propriul server pe portul dat, iar unit-ul systemd devine `ExecStart=/opt/barbosu/.venv/bin/python bot.py`. Spune-mi care e situația, că diferența contează pentru cum se leagă portul.
+
+    Pe scurt: adaugă `--port 8443` (sau schimbă nginx pe 8000), asigură-te că `webhook_url` include `/tg/`, restart, și verifică `getWebhookInfo` — 502-ul ar trebui să dispară la primul pas.
+- user: |
+    În logul nginx apare asta de fiecare dată când Telegram trimite un update:
+
+    ```
+    2026/10/02 18:14:09 [error] 1182#1182: *57 connect() failed (111: Connection refused) while connecting to upstream, client: 91.108.6.84, server: barbosu.ro, request: "POST /tg/webhook HTTP/1.1", upstream: "http://127.0.0.1:8443/webhook"
+    ```
+  assistant: |
+    `connect() failed (111: Connection refused)` confirmă diagnosticul de dinainte: **nginx face ce trebuie, dar pe 127.0.0.1:8443 nu ascultă nimic**. Cererea ajunge corect de la Telegram (`POST /tg/webhook`), doar că aplicația nu e acolo.
+
+    Verifici în ordinea asta:
+
+    ## 1. Cine ascultă pe 8443?
+
+    ```bash
+    ss -tlnp | grep 8443
+    ```
+
+    Dacă nu returnează nimic → aplicația nu rulează sau rulează pe alt port. Dacă returnează ceva pe **8000** → uvicornul rulează, dar fără `--port 8443` (fix fixul din mesajul anterior).
+
+    ## 2. Starea serviciului
+
+    ```bash
+    systemctl status barbosu-bot
+    journalctl -u barbosu-bot -n 50 --no-pager
+    ```
+
+    Aici apar două scenarii frecvente:
+
+    - **Serviciul e `failed` / `inactive`** — aplicația a crăpat la pornire (eroare de import, DB la care nu se poate conecta, token lipsă). `journalctl` îți arată traceback-ul exact.
+    - **Serviciul e `active (running)`** — dar ascultă pe 8000, pentru că `ExecStart`-ul nu are `--port 8443`. Verifică:
+
+    ```bash
+    systemctl cat barbosu-bot | grep ExecStart
+    ```
+
+    Dacă vezi `uvicorn app:api --host 127.0.0.1` fără port, asta e tot. Corectezi:
+
+    ```ini
+    ExecStart=/opt/barbosu/.venv/bin/uvicorn app:api --host 127.0.0.1 --port 8443
+    ```
+
+    apoi:
+
+    ```bash
+    systemctl daemon-reload
+    systemctl restart barbosu-bot
+    ss -tlnp | grep 8443   # acum trebuie să apară uvicorn
+    ```
+
+    ## 3. Test final
+
+    ```bash
+    # aplicația răspunde direct?
+    curl -i -X POST http://127.0.0.1:8443/webhook -H "Content-Type: application/json" -d '{}'
+
+    # lanțul complet prin nginx?
+    curl -i -X POST https://barbosu.ro/tg/webhook -H "Content-Type: application/json" -d '{}'
+    ```
+
+    Un răspuns 200 (sau chiar 400/422 de la validare — important e **nu** connection refused) înseamnă că totul e legat. Apoi Telegram va livra automat update-urile blocate — nu trebuie să faci nimic, reîncearcă singur.
+
+    Dacă după restart serviciul tot moare, dă-mi ultimele 30 de linii din `journalctl -u barbosu-bot` — aproape sigur e o eroare la pornire (de exemplu `init_db()` care nu găsește Postgres, sau `app_tg.initialize()` care nu e apelat înainte de a procesa update-uri).
+- user: |
+    Am verificat cu ss -ltnp: uvicorn ascultă pe 8000. Deci în unit-ul systemd lipsește --port, nu?
+  assistant: |
+    Exact — diagnostic confirmat. Uvicornul rulează, dar pe portul default **8000**, iar nginx lovește în **8443**. Adaugă portul în unit:
+
+    ```ini
+    ExecStart=/opt/barbosu/.venv/bin/uvicorn app:api --host 127.0.0.1 --port 8443
+    ```
+
+    Apoi:
+
+    ```bash
+    systemctl daemon-reload
+    systemctl restart barbosu-bot
+    ss -tlnp | grep 8443    # acum trebuie să vadă uvicorn pe 8443
+    ```
+
+    Și testul final:
+
+    ```bash
+    curl -i -X POST https://barbosu.ro/tg/webhook -H "Content-Type: application/json" -d '{}'
+    ```
+
+    Dacă primești 200 (sau orice răspuns de la aplicație, nu connection refused), Telegram va livra automat update-urile care s-au acumulat — în câteva secunde ar trebui să vezi botul viu.
+
+    Două mici observații ca să nu mai pierzi timp cu asta pe viitor:
+
+    - **De ce s-a întâmplat**: uvicornul ascultă pe 8000 fără să te avertizeze, iar nginx-ul tău spunea 8443 — două surse de adevăr care nu se verificau între ele. De acum, când schimbi un port, schimbă-l în **ambele** locuri în același commit.
+    - **Alternativa curată**: dacă vrei să nu mai depinzi de flag-uri în unit, poți pune portul direct în aplicație (`uvicorn.run(app, port=8443)` sau `--port` într-un script de start). Dar flag-ul în `ExecStart` e perfect ok și mai vizibil — chiar avantajos, cum ai văzut acum.
+
+    Dacă după restart mai apar erori în `journalctl -u barbosu-bot` (de exemplu la conectarea la Postgres), vino cu ele — dar banuiesc că de data asta e doar 200 OK.
+- user: |
+    Merge acum. Vreau un reminder automat trimis clientului cu 2 ore înainte de programare.
+  assistant: |
+    Reminder-ul se face cu **JobQueue** din python-telegram-bot: un job care rulează la fiecare câteva minute, caută rezervările care încep în mai puțin de ~2 ore și nu au fost deja notificate, trimite mesajul și le marchează. Ai nevoie de o coloană `reminded` ca să nu trimiți de două ori.
+
+    ## 1. Instalare
+
+    ```bash
+    pip install "python-telegram-bot[job-queue]"
+    ```
+
+    (JobQueue are nevoie de `APScheduler`, care vine ca extra.)
+
+    ## 2. Migrarea în DB
+
+    ```sql
+    ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminded BOOLEAN NOT NULL DEFAULT FALSE;
+    ```
+
+    ## 3. Funcțiile DB
+
+    ```python
+    # db/database.py (adaugă)
+
+    async def get_bookings_needing_reminder() -> list[asyncpg.Record]:
+        """Rezervări active care încep în următoarele ~2 ore și nu au primit reminder."""
+        async with _pool.acquire() as conn:
+            return await conn.fetch(
+                "SELECT id, user_id, user_name, slot, service FROM bookings "
+                "WHERE status = 'active' AND reminded = FALSE "
+                "AND slot > now() AND slot <= now() + interval '2 hours 10 minutes'"
+            )
+
+
+    async def mark_reminded(booking_id: int):
+        async with _pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE bookings SET reminded = TRUE WHERE id = $1", booking_id
+            )
+    ```
+
+    ## 4. Job-ul
+
+    ```python
+    # jobs/reminders.py
+    from datetime import datetime
+
+    from telegram.ext import ContextTypes
+
+    from db.database import get_bookings_needing_reminder, mark_reminded
+    from texts import t
+
+
+    async def send_reminders(context: ContextTypes.DEFAULT_TYPE) -> None:
+        for b in await get_bookings_needing_reminder():
+            slot: datetime = b["slot"]
+            minutes = int((slot - datetime.now()).total_seconds() // 60)
+
+            lang = await get_lang(b["user_id"])
+            await context.bot.send_message(
+                chat_id=b["user_id"],
+                text=t("reminder", lang, ora=slot.strftime("%H:%M"), minute=minutes),
+            )
+            await mark_reminded(b["id"])
+    ```
+
+    Și textele noi în `texts.py`:
+
+    ```python
+    # ro
+    "reminder": "⏰ Îți amintim că ai programare la Frizeria Bărbosu în mai puțin de {minute} de minute, la ora {ora}. Ne vedem curând!",
+    # en
+    "reminder": "⏰ Reminder: you have an appointment at Frizeria Bărbosu in less than {minute} minutes, at {ora}. See you soon!",
+    ```
+
+    ## 5. Înregistrarea
+
+    Job-ul se adaugă la pornirea aplicației. Cum folosești PTB integrat în uvicorn (`app:api`), pune-l acolo unde apeși `app_tg.start()` — job queue-ul pornește odată cu aplicația:
+
+    ```python
+    # app.py, după app_tg.start()
+    from jobs.reminders import send_reminders
+
+    app_tg.job_queue.run_repeating(
+        send_reminders,
+        interval=300,       # la fiecare 5 minute
+        first=10,           # primul run la 10 secunde după start
+    )
+    ```
+
+    ## Cum funcționează fereastra
+
+    - Job-ul rulează la 5 minute; interogarea prinde rezervările cu `slot <= now + 2h10m`. Marja de 10 minute acoperă intervalul dintre două rulări — nicio rezervare nu sare peste reminder.
+    - `reminded = FALSE` garantează o singură trimitere, chiar dacă job-ul rulează de mai multe ori în fereastra de 2 ore.
+    - Mesajul spune „în mai puțin de X minute” — la prima rulare din fereastră va fi ~120, la următoarea ~115 etc. Dacă preferi un mesaj fix („astăzi la ora 11:00”), scoate `{minute}` și lasă doar ora.
+
+    ## Două observații
+
+    - **Fusul orar**: totul se bazează pe `now()` din Postgres vs. datetime-urile naive pe care le salvezi. Dacă ai salvat orele ca `TIMESTAMP` naive cu ora locală românească, dar serverul e pe UTC, `now()` va fi cu 3 ore defazat — reminder-urile vor pleca greșit. Verifică rapid: `SELECT now();` în psql vs. ora din România. Dacă nu se potrivesc, fie setezi timezone-ul serverului pe `Europe/Bucharest`, fie salvezi datetime-uri aware. E cea mai frecventă capcană la reminder-e.
+    - **Restart-uri**: dacă botul e oprit 20 de minute, job-ul recuperează automat la prima rulare (prinde tot ce e în fereastră, nemarcate). Nu pierzi reminder-e la deploy.
+
+    Test rapid fără să aștepți 2 ore: inserează manual o rezervare cu slot la 5 minute în viitor, repornește aplicația și vezi dacă mesajul sosește la prima rulare a job-ului.
+- user: |
+    Frizerul vrea să primească el pe Telegram, în fiecare dimineață la 9, lista programărilor din ziua respectivă. Cum fac?
+  assistant: |
+    Un job zilnic cu `run_daily`, trimis la `ADMIN_CHAT_ID`. Ai nevoie de o funcție DB pentru rezervările zilei și de job-ul propriu-zis.
+
+    ## 1. Funcția DB
+
+    ```python
+    # db/database.py (adaugă)
+
+    async def get_bookings_for_day(day: datetime) -> list[asyncpg.Record]:
+        """Rezervările active din ziua dată, ordonate cronologic."""
+        async with _pool.acquire() as conn:
+            return await conn.fetch(
+                "SELECT slot, user_name, service FROM bookings "
+                "WHERE slot >= $1 AND slot < $1 + interval '1 day' "
+                "AND status = 'active' ORDER BY slot",
+                day.replace(hour=0, minute=0, second=0, microsecond=0),
+            )
+    ```
+
+    ## 2. Job-ul
+
+    ```python
+    # jobs/digest.py
+    from datetime import datetime
+
+    from telegram.ext import ContextTypes
+
+    from config import ADMIN_CHAT_ID
+    from db.database import get_bookings_for_day
+
+
+    async def morning_digest(context: ContextTypes.DEFAULT_TYPE) -> None:
+        bookings = await get_bookings_for_day(datetime.now())
+
+        if not bookings:
+            text = "📭 Nu ai programări azi. Zi liniștită!"
+        else:
+            lines = ["📋 Programările de azi:\n"]
+            for b in bookings:
+                lines.append(f"• {b['slot'].strftime('%H:%M')} — {b['user_name']} ({b['service']})")
+            text = "\n".join(lines)
+
+        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=text)
+    ```
+
+    ## 3. Înregistrarea
+
+    ```python
+    # app.py, lângă reminder job-ul
+    from datetime import time
+    from zoneinfo import ZoneInfo
+
+    from jobs.digest import morning_digest
+
+    app_tg.job_queue.run_daily(
+        morning_digest,
+        time=time(9, 0, tzinfo=ZoneInfo("Europe/Bucharest")),
+        days=(0, 1, 2, 3, 4, 5, 6),   # zilnic; poți pune (0,1,2,3,4,5) ca să sari duminica
+    )
+    ```
+
+    ## Detalii importante
+
+    - **Timezone-ul e obligatoriu** — `time(9, 0)` fără `tzinfo` ar fi interpretat în fusul serverului, care e probabil UTC → mesajul ar pleca la 11:00 ora României (sau 12:00 vara). Cu `ZoneInfo("Europe/Bucharest")` merge corect și la schimbarea orei legale, fără să atingi codul. Necesită `pip install tzdata` dacă nu e deja.
+    - **`ADMIN_CHAT_ID`** — ID-ul Telegram al frizerului, în `.env`. Dacă nu-l știi, frizerul dă un mesaj botului și îl vezi în loguri, sau adaugi temporar un handler `/id` care răspunde cu `update.effective_user.id`.
+    - **Duminica**: frizeria e închisă, deci interogarea va returna oricum zero rezervări — dar poate preferi să nu primească deloc mesajul. Alege `days` în consecință (0=luni ... 6=duminică).
+    - **Ce se întâmplă la restart**: `run_daily` se reînregistrează la fiecare pornire a aplicației, deci nu pierzi digestul dacă botul e repornit peste noapte. Dacă botul e oprit la ora 9 și pornit la 10, mesajul **nu** se trimite retroactiv — dacă vrei recuperare, spune și adăugăm o verificare la pornire („a trecut ora 9 azi și nu s-a trimis?”), dar pentru un digest de dimineață de obicei nu merită complexitatea.
+
+    Test fără să aștep până mâine dimineață: înregistrează temporar și cu `run_once` sau schimbă ora la `time(15, 30, ...)` pentru un run de verificare, apoi pune-o înapoi la 9.
+- user: |
+    Unde țin tokenul botului? Acum e scris direct în bot.py și vreau să pun proiectul pe GitHub.
+  assistant: |
+    Îl scoți în fișierul `.env`, încărcat cu **python-dotenv**. Apropo, ai făcut bine că întrebi **înainte** să urci pe GitHub — tokenul expus e cel mai comun mod prin care boții sunt furați.
+
+    ## 1. Fișierul `.env` (în rădăcina proiectului)
+
+    ```env
+    BOT_TOKEN=1234567890:AAExempluDeTokenDeLaBotFather
+    DB_DSN=postgresql://barbosu:parola@localhost:5432/barbosu
+    ADMIN_CHAT_ID=123456789
+    ```
+
+    ## 2. `.gitignore` (obligatoriu înainte de primul push)
+
+    ```gitignore
+    .env
+    *.db
+    __pycache__/
+    .venv/
+    ```
+
+    ## 3. `config.py` — singurul loc care citește `.env`
+
+    ```python
+    # config.py
+    import os
+    from dotenv import load_dotenv
+
+    load_dotenv()  # citește .env din directorul curent
+
+    BOT_TOKEN = os.environ["BOT_TOKEN"]          # KeyError clar dacă lipsește
+    DB_DSN = os.environ["DB_DSN"]
+    ADMIN_CHAT_ID = int(os.environ["ADMIN_CHAT_ID"])
+    ```
+
+    Folosește `os.environ[...]` (fără default) — mai bine crapă la pornire cu mesaj clar decât să descoperi la runtime că tokenul e gol. Instalezi dependența: `pip install python-dotenv`.
+
+    ## 4. În cod, înlocuiește valoarea hardcodată
+
+    ```python
+    # înainte
+    app_tg = Application.builder().token("1234:ABC...").build()
+
+    # după
+    from config import BOT_TOKEN
+    app_tg = Application.builder().token(BOT_TOKEN).build()
+    ```
+
+    La fel pentru DSN-ul de la asyncpg și `ADMIN_CHAT_ID` — toate trec prin `config.py`.
+
+    ## 5. Un exemplu pentru ceilalți (inclusiv tine, pe VPS)
+
+    Adaugă `.env.example` în repo — aceeași structură, fără valori reale:
+
+    ```env
+    BOT_TOKEN=
+    DB_DSN=postgresql://user:pass@localhost:5432/barbosu
+    ADMIN_CHAT_ID=
+    ```
+
+    Așa, când clonezi proiectul pe VPS, știi exact ce variabile trebuie completate: `cp .env.example .env` și editezi.
+
+    ## Două observații
+
+    - **Dacă tokenul a ajuns vreodată într-un commit** (chiar și local, chiar dacă nu ai făcut push), consideră-l compromis și **revocă-l** via @BotFather → `/revoke` — primești unul nou, îl pui în `.env`. Git păstrează istoricul, iar boții scanați automat pe GitHub sunt vânați în câteva minute.
+    - **Pe VPS**, systemd poate încărca variabilele direct, fără `.env`: adaugă în unit `EnvironmentFile=/opt/barbosu/.env` — funcționează cu același format de fișier. `load_dotenv()` nu strică nimic dacă variabilele există deja în mediu, deci același cod merge în ambele locuri.
+
+    Pe scurt: tokenul doar în `.env`, `.env` în `.gitignore` **înainte** de primul commit, `config.py` ca singur punct de citire, `.env.example` în repo ca documentare.
+- user: |
+    Schimbare de regulă: anularea se poate face cu cel puțin 3 ore înainte, nu 2. Și când cineva anulează, frizerul trebuie să primească o notificare. Rescrie handler-ul de anulare.
+  assistant: |
+    Iată ce se schimbă în `handlers/booking.py`:
+
+    ```python
+    # fereastra se schimbă din 2 în 3 ore
+    CANCEL_WINDOW = timedelta(hours=3)
+    ```
+
+    ```python
+    # imports noi
+    from config import ADMIN_CHAT_ID
+
+
+    async def cancel_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        query = update.callback_query
+        await query.answer()
+
+        booking_id = int(query.data.split(":")[1])
+        user_id = update.effective_user.id
+
+        booking = await get_booking(booking_id)
+
+        if booking is None or booking["user_id"] != user_id:
+            await query.edit_message_text("Rezervarea nu a fost găsită.")
+            return
+        if booking["status"] != "active":
+            await query.edit_message_text("Această rezervare a fost deja anulată.")
+            return
+        if datetime.now() > booking["slot"] - CANCEL_WINDOW:
+            await query.edit_message_text(
+                "⏰ Mai puțin de 3 ore până la programare — "
+                "nu o mai poți anula din bot. Sună la frizerie dacă e ceva urgent!"
+            )
+            return
+
+        ok = await cancel_booking(booking_id, user_id)
+        if ok:
+            # notificare către frizer
+            await context.bot.send_message(
+                chat_id=ADMIN_CHAT_ID,
+                text=(
+                    f"❌ {booking['user_name']} a anulat programarea de "
+                    f"{_format_slot(booking['slot'])} ({booking['service']})."
+                ),
+            )
+            await query.edit_message_text(
+                f"✅ Rezervarea de {_format_slot(booking['slot'])} a fost anulată.\n"
+                "Te așteptăm altădată!"
+            )
+        else:
+            await query.edit_message_text("Ceva n-a mers la anulare. Încearcă din nou.")
+    ```
+
+    Observații:
+
+    - **Textele din mesajele către client** — dacă le-ai mutat deja în `texts.py` (de la partea cu bilingvismul), înlocuiește stringurile hardcodate cu `t("cancel_too_late", lang)` etc., și actualizează-le în ambele limbi: „mai puțin de 2 ore" → „mai puțin de 3 ore" / „less than 2 hours" → „less than 3 hours". Nu uita și mesajul din `my_bookings`, care menționa fereastra: „(mai puțin de 2 ore — nu mai poate fi anulată aici)".
+    - **Notificarea se trimite doar după `cancel_booking` reușit** — dacă cursa cu dubla apăsare pierde UPDATE-ul, frizerul nu primește o anulare fantomă.
+    - **Notificarea e în română** — frizerul e un singur destinatar fix, nu are sens să-i localizezi mesajul pe limba clientului. Dacă totuși vrei, poți folosi limba clientului pentru context, dar recomand simplu.
+    - **Notificarea poate eșua** (frizerul a blocat botul, ID greșit) — dacă vrei robustețe, învelește `send_message`-ul în `try/except TelegramError` ca anularea clientului să nu crape din cauza notificării. La volumul actual, opțional.
+    - **`ADMIN_CHAT_ID`** — îl ai deja în `config.py` de la partea cu `.env`; dacă nu, adaugă-l acolo și în `.env`/`.env.example`.
+
+    Bonus: același `CANCEL_WINDOW` e folosit și în `my_bookings` la afișarea butoanelor, deci schimbarea de la 2 la 3 ore se propagă automat acolo — nu ai nimic de modificat în plus.
+- user: |
+    ```
+    Traceback (most recent call last):
+      File "/opt/barbosu/.venv/lib/python3.12/site-packages/telegram/ext/_application.py", line 1325, in process_update
+        await coroutine
+      File "/opt/barbosu/bot/handlers.py", line 142, in anuleaza_rezervare
+        frizer_id = context.bot_data["frizer"].id
+    AttributeError: 'NoneType' object has no attribute 'id'
+    ```
+  assistant: |
+    Eroarea spune clar: `context.bot_data["frizer"]` există, dar e `None` — deci undeva la pornire (sau într-un handler) se face ceva de genul `context.bot_data["frizer"] = ...` și rezultatul acelui ceva e `None`. Cauzele tipice:
+
+    1. **Se populează într-un handler care nu a rulat niciodată** — de exemplu, te bazezi ca frizerul să fi dat un `/start` sau o comandă de „înregistrare” ca să-și salvezi obiectul user în `bot_data`, iar tu ai testat cu alt cont.
+    2. **Se populează la startup cu un apel care a eșuat silențios** — de exemplu `bot_data["frizer"] = await app.bot.get_me()` ar returna botul, nu frizerul, sau un `get_chat(ADMIN_CHAT_ID)` care a picat și ai prins excepția lăsând valoarea `None`.
+    3. **`bot_data` nu persistă între restarturi** — dacă frizerul s-a „înregistrat” acum o săptămână și botul a fost repornit de atunci (de câteva ori, cu deploy-urile de la webhook), datele s-au pierdut.
+
+    ## Fixul recomandat: nu ține frizerul în `bot_data` deloc
+
+    Ai deja `ADMIN_CHAT_ID` în `config.py` (de la notificarea de anulare și digestul de dimineață). ID-ul e tot ce îți trebuie ca să trimiți un mesaj — nu ai nevoie de obiectul user:
+
+    ```python
+    # handlers.py, în anuleaza_rezervare
+    from config import ADMIN_CHAT_ID
+
+    # în loc de:
+    # frizer_id = context.bot_data["frizer"].id
+
+    await context.bot.send_message(
+        chat_id=ADMIN_CHAT_ID,
+        text=f"❌ {booking['user_name']} a anulat programarea de {_format_slot(booking['slot'])}.",
+    )
+    ```
+
+    Avantaje:
+
+    - **Supraviețuiește restarturilor** — vine din `.env`, nu din memoria procesului.
+    - **Nu depinde de o „înregistrare”** — frizerul nu trebuie să fi interacționat recent cu botul.
+    - **O singură sursă de adevăr** — digestul de dimineață și notificările folosesc deja `ADMIN_CHAT_ID`; acum se aliniază și asta.
+
+    ## Dacă totuși vrei obiectul frizer în `bot_data`
+
+    Populează-l la startup, înainte de `app_tg.start()`, cu verificare de eroare:
+
+    ```python
+    try:
+        chat = await app_tg.bot.get_chat(ADMIN_CHAT_ID)
+        app_tg.bot_data["frizer"] = chat
+    except TelegramError as e:
+        logger.warning(f"Nu pot încărca frizerul: {e}")  # handler-ul trebuie să trateze None
+    ```
+
+    ...și în handler tratează cazul `None`:
+
+    ```python
+    frizer = context.bot_data.get("frizer")
+    if frizer is None:
+        await query.edit_message_text("Rezervarea a fost anulată, dar frizerul nu a putut fi notificat.")
+        return
+    ```
+
+    Dar sincer: pentru cazul tău, `ADMIN_CHAT_ID` direct din config e varianta mai simplă și mai robustă. `bot_data` are sens pentru date care se schimbă la runtime (stări de conversație, cache-uri), nu pentru un destinatar fix care e cunoscut din configurare.
+
+    Verifică și dacă mai există alte locuri care citesc `bot_data["frizer"]` (grep rapid: `grep -rn 'bot_data\["frizer"\]' .`) — înlocuiește-le pe toate, ca să nu mai explodeze alt handler la primul apel.
+- user: |
+    Prietenul meu vrea să adauge un al doilea frizer, Sorin. Fiecare frizer cu programul lui. Cum schimb schema bazei de date?
+  assistant: |
+    Trecerea de la un frizer la mai mulți atinge trei lucruri: un tabel de frizeri, legarea rezervărilor de frizer și mutarea programului de lucru per frizer. Iată schema:
+
+    ## 1. Tabelul de frizeri
+
+    ```sql
+    CREATE TABLE IF NOT EXISTS barbers (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,                    -- 'Bărbosu', 'Sorin'
+        telegram_id BIGINT UNIQUE,             -- pentru notificări/digest (NULL dacă nu are Telegram)
+        is_active BOOLEAN NOT NULL DEFAULT TRUE
+    );
+    ```
+
+    ## 2. Programul de lucru per frizer
+
+    Programul iese din cod și intră în DB — altfel, la fiecare frizer nou, modifici `WORKING_HOURS` în cod:
+
+    ```sql
+    CREATE TABLE IF NOT EXISTS working_hours (
+        barber_id INTEGER NOT NULL REFERENCES barbers(id),
+        weekday SMALLINT NOT NULL CHECK (weekday BETWEEN 0 AND 6),  -- 0=luni ... 6=duminică
+        open_time TIME NOT NULL,
+        close_time TIME NOT NULL,
+        PRIMARY KEY (barber_id, weekday)
+    );
+    ```
+
+    Ziua lipsă = frizer închis (de exemplu, nicio linie cu `weekday = 6` pentru Sorin dacă nu lucrează duminica). Dacă vreodată un frizer are pauză de masă sau program diferit pe sezoane, extinzi ulterior cu `valid_from`/`valid_to` — acum nu merită.
+
+    ## 3. Rezervările se leagă de frizer
+
+    ```sql
+    ALTER TABLE bookings ADD COLUMN barber_id INTEGER NOT NULL REFERENCES barbers(id);
+    ```
+
+    ## 4. Indexul unic — schimbarea critică
+
+    Indexul actual blochează slotul la nivel de **frizerie**; acum trebuie blocat la nivel de **frizer** (doi frizeri pot lucra simultan la ora 11:00):
+
+    ```sql
+    DROP INDEX IF EXISTS idx_slot_active;
+    CREATE UNIQUE INDEX idx_barber_slot_active
+        ON bookings (barber_id, slot) WHERE status = 'active';
+    ```
+
+    Fără asta, Sorin nu ar putea primi niciun client într-un slot ocupat de colegul lui — bug subtil pe care l-ai descoperi abia în producție.
+
+    ## 5. Migrarea datelor existente
+
+    ```sql
+    INSERT INTO barbers (name, telegram_id) VALUES ('Bărbosu', 123456789);
+    INSERT INTO barbers (id, name, telegram_id) VALUES (2, 'Sorin', NULL);
+
+    -- programul lui Bărbosu, cum era în cod
+    INSERT INTO working_hours VALUES
+        (1, 0, '10:00', '19:00'), (1, 1, '10:00', '19:00'), (1, 2, '10:00', '19:00'),
+        (1, 3, '10:00', '19:00'), (1, 4, '10:00', '19:00'), (1, 5, '10:00', '14:00');
+
+    -- programul lui Sorin (exemplu: liber luni, altfel la fel)
+    INSERT INTO working_hours VALUES
+        (2, 1, '10:00', '19:00'), (2, 2, '10:00', '19:00'), (2, 3, '10:00', '19:00'),
+        (2, 4, '10:00', '19:00'), (2, 5, '10:00', '14:00');
+
+    -- rezervările vechi aparțin lui Bărbosu
+    UPDATE bookings SET barber_id = 1 WHERE barber_id IS NULL;
+    ```
+
+    (Ordinea: adaugă coloana întâi ca `NULL`, fă UPDATE, apoi `ALTER COLUMN SET NOT NULL` — sau, dacă ai puține date, poți recrea tabelul curat.)
+
+    ## 6. Efectele în cod — pe scurt
+
+    - **`get_free_slots`** primește acum `barber_id`: citește `working_hours` pentru frizerul respectiv și scade doar rezervările lui (`WHERE barber_id = $1`).
+    - **`add_booking`** primește `barber_id` — indexul unic de la punctul 4 rămâne plasă de siguranță, per frizer.
+    - **Fluxul de rezervare** capătă un pas nou: după serviciu, clientul alege frizerul (butoane „Bărbosu” / „Sorin” / „Oricare”). Dacă alege „Oricare”, afișezi sloturile care sunt libere la **cel puțin un** frizer, iar la confirmare aloci primul frizer liber — aici indexul unic te protejează de cursă.
+    - **`get_user_bookings`** — join cu `barbers` ca să afișezi cu cine e programat.
+    - **Digestul de dimineață** — fie un mesaj per frizer la `telegram_id`-ul fiecăruia, fie unul combinat la admin. Cu `telegram_id` în tabel, fiecare frizer primește doar programările lui.
+    - **Reminder-ele** nu se schimbă — merg la client, indiferent de frizer.
+
+    ## O decizie de luat înainte de implementare
+
+    **Sloturile sunt per frizer sau per frizerie?** Adică: la 11:00, Bărbosu și Sorin pot primi doi clienți diferiți (modelul de mai sus), sau clientul programat la 11:00 ocupă „frizeria” indiferent cine taie? Dacă e a doua variantă (un singur scaun), nu ai nevoie de nimic din asta — doar redenumirea. Dar din modul în care pui întrebarea („fiecare cu programul lui”), banuiesc că e primul model, cu scaune separate.
+
+    Vrei să scriem pasul nou din ConversationHandler (selectarea frizerului + generarea sloturilor per frizer)?
+- user: |
+    Sorin lucrează doar marți–sâmbătă, între 12:00 și 20:00. Rescrie generarea sloturilor ca să țină cont de frizer și de programul fiecăruia.
+  assistant: |
+    Programul iese din cod și intră în DB (tabelul `working_hours` din schema de ieri), iar funcțiile din `services/scheduler.py` devin per frizer:
+
+    ## 1. Datele pentru Sorin
+
+    ```sql
+    INSERT INTO working_hours VALUES
+        (2, 1, '12:00', '20:00'),  -- marți
+        (2, 2, '12:00', '20:00'),  -- miercuri
+        (2, 3, '12:00', '20:00'),  -- joi
+        (2, 4, '12:00', '20:00'),  -- vineri
+        (2, 5, '12:00', '20:00');  -- sâmbătă
+    -- luni (0) și duminică (6) lipsesc => închis
+    ```
+
+    ## 2. Scheduler-ul rescris
+
+    ```python
+    # services/scheduler.py
+    from datetime import datetime, time, timedelta
+
+    from db.database import _pool
+
+    SLOT_DURATION = timedelta(minutes=30)
+
+
+    async def get_working_hours(barber_id: int, day: datetime) -> tuple[time, time] | None:
+        """Programul frizerului pentru ziua dată, sau None dacă e închis."""
+        async with _pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT open_time, close_time FROM working_hours "
+                "WHERE barber_id = $1 AND weekday = $2",
+                barber_id, day.weekday(),
+            )
+        if row is None:
+            return None
+        return row["open_time"], row["close_time"]
+
+
+    async def get_all_slots(barber_id: int, day: datetime) -> list[datetime]:
+        """Toate sloturile posibile ale frizerului într-o zi, indiferent de rezervări."""
+        hours = await get_working_hours(barber_id, day)
+        if hours is None:
+            return []  # frizerul nu lucrează în ziua asta
+
+        open_time, close_time = hours
+        slot = datetime.combine(day.date(), open_time)
+        closing = datetime.combine(day.date(), close_time)
+
+        slots = []
+        while slot + SLOT_DURATION <= closing:
+            slots.append(slot)
+            slot += SLOT_DURATION
+        return slots
+
+
+    async def get_free_slots(barber_id: int, day: datetime,
+                             booked: list[datetime]) -> list[datetime]:
+        """Sloturile libere: toate posibilele, minus cele rezervate la frizerul respectiv."""
+        booked_set = set(booked)
+        free = [s for s in await get_all_slots(barber_id, day) if s not in booked_set]
+
+        now = datetime.now()
+        if day.date() == now.date():
+            free = [s for s in free if s > now]
+
+        return free
+    ```
+
+    Și funcția DB care îți dă rezervările **per frizer** (înlocuiește apelul vechi):
+
+    ```python
+    # db/database.py
+    async def get_booked_slots(barber_id: int, day: datetime) -> list[datetime]:
+        async with _pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT slot FROM bookings "
+                "WHERE barber_id = $1 AND slot >= $2 AND slot < $2 + interval '1 day' "
+                "AND status = 'active'",
+                barber_id, day.replace(hour=0, minute=0, second=0, microsecond=0),
+            )
+        return [r["slot"] for r in rows]
+    ```
+
+    ## 3. Folosirea în handler
+
+    ```python
+    booked = await get_booked_slots(barber_id, day)
+    free = await get_free_slots(barber_id, day, booked)
+
+    if not free:
+        await query.edit_message_text(t("no_slots", lang))
+        return
+    await query.edit_message_text(t("pick_time", lang), reply_markup=slots_keyboard(free))
+    ```
+
+    ## Ce se schimbă practic pentru Sorin
+
+    - **Luni și duminică**: `get_working_hours` returnează `None` → zero sloturi. Clientul care alege luni + Sorin vede direct „nu sunt locuri libere” — ideal ar fi ca butonul de luni nici să nu apară când e selectat Sorin, dar e optimizare de UX, nu corectitudine.
+    - **Ultimul slot**: cu închidere la 20:00 și sloturi de 30 min, ultimul start e **19:30** (condiția `slot + SLOT_DURATION <= closing`), nu 20:00.
+    - **Suprapuneri între frizeri**: la 11:00, Bărbosu poate fi liber și Sorin ocupat (sau invers) — fiecare are propria listă, iar indexul unic `(barber_id, slot)` garantează că nu se încurcă.
+
+    ## Observație despre `datetime.combine` cu valori din DB
+
+    asyncpg returnează `open_time`/`close_time` ca obiecte `datetime.time` native, deci `datetime.combine` merge direct — nu ai nevoie de parsare de stringuri ca în versiunea veche cu `WORKING_HOURS` hardcodat.
+
+    ## Pentru varianta „Oricare frizer”
+
+    Dacă păstrezi opțiunea din schema de ieri, calculezi sloturile pentru fiecare frizer activ și faci reuniunea:
+
+    ```python
+    async def get_free_slots_any(day: datetime) -> dict[datetime, list[int]]:
+        """Pentru fiecare oră cu cel puțin un frizer liber, lista frizerilor liberi."""
+        result: dict[datetime, list[int]] = {}
+        for barber_id in (1, 2):  # sau interogare pe barbers WHERE is_active
+            booked = await get_booked_slots(barber_id, day)
+            for s in await get_free_slots(barber_id, day, booked):
+                result.setdefault(s, []).append(barber_id)
+        return result
+    ```
+
+    La confirmare aloci `result[slot][0]` — iar dacă doi clienți apasă simultan pe același slot „Oricare”, indexul unic respinge al doilea INSERT și îi poți reoferi altă oră.
+
+    Vrei să scriem și pasul de selecție a frizerului din ConversationHandler, cu butoanele „Bărbosu / Sorin / Oricare”?
+- user: |
+    Clientul trebuie să aleagă întâi frizerul. Fă-mi rezervarea cu un ConversationHandler: frizer → zi → oră → confirmare.
+  assistant: |
+    Iată ConversationHandler-ul complet, în `handlers/booking.py`. Fluxul: butonul „Rezervă” din `/start` → alegere frizer → zi → oră → confirmare → salvare.
+
+    ## Stările fluxului
+
+    ```python
+    # handlers/booking.py
+    from datetime import datetime, timedelta
+
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+    from telegram.ext import (
+        CallbackQueryHandler, ConversationHandler, ContextTypes,
+    )
+
+    from db.database import (
+        add_booking, get_booked_slots, get_lang, get_barbers,
+    )
+    from services.scheduler import get_free_slots
+    from texts import t
+
+    # stări
+    BARBER, DAY, TIME, CONFIRM = range(4)
+
+    SLOT_DURATION = timedelta(minutes=30)
+
+
+    async def book_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Intrarea în flux: alegere frizer."""
+        query = update.callback_query
+        await query.answer()
+
+        lang = await get_lang(update.effective_user.id)
+        context.user_data["lang"] = lang
+
+        barbers = await get_barbers()
+        keyboard = [
+            [InlineKeyboardButton(b["name"], callback_data=f"barber:{b['id']}")]
+            for b in barbers
+        ]
+        await query.edit_message_text(
+            t("pick_barber", lang),
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+        return BARBER
+    ```
+
+    ## Pasul 1: frizer
+
+    ```python
+    async def choose_barber(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        query = update.callback_query
+        await query.answer()
+
+        barber_id = int(query.data.split(":")[1])
+        context.user_data["barber_id"] = barber_id
+        lang = context.user_data["lang"]
+
+        await query.edit_message_text(t("pick_day", lang), reply_markup=days_keyboard(lang))
+        return DAY
+
+
+    def days_keyboard(lang: str) -> InlineKeyboardMarkup:
+        """Următoarele 7 zile, cu numele zilei tradus."""
+        today = datetime.now()
+        rows = []
+        for i in range(7):
+            day = today + timedelta(days=i)
+            label = f"{t_day_name(day.weekday(), lang)} {day.strftime('%d.%m')}"
+            rows.append([InlineKeyboardButton(label, callback_data=f"day:{day.strftime('%Y-%m-%d')}")])
+        return InlineKeyboardMarkup(rows)
+    ```
+
+    ## Pasul 2: ziua
+
+    ```python
+    async def choose_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        query = update.callback_query
+        await query.answer()
+
+        day = datetime.strptime(query.data.split(":")[1], "%Y-%m-%d")
+        context.user_data["day"] = day
+        lang = context.user_data["lang"]
+        barber_id = context.user_data["barber_id"]
+
+        booked = await get_booked_slots(barber_id, day)
+        free = await get_free_slots(barber_id, day, booked)
+
+        if not free:
+            # frizer închis sau zi plină — oferim altă zi, fără să ieșim din flux
+            await query.edit_message_text(
+                t("no_slots", lang),
+                reply_markup=days_keyboard(lang),
+            )
+            return DAY
+
+        await query.edit_message_text(
+            t("pick_time", lang),
+            reply_markup=slots_keyboard(free),
+        )
+        return TIME
+    ```
+
+    ## Pasul 3: ora
+
+    ```python
+    async def choose_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        query = update.callback_query
+        await query.answer()
+
+        slot = datetime.fromisoformat(query.data.split(":")[1])
+        context.user_data["slot"] = slot
+        lang = context.user_data["lang"]
+
+        await query.edit_message_text(
+            t("confirm_prompt", lang,
+              zi=_format_slot(slot), ora=slot.strftime("%H:%M")),
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ " + t("yes", lang), callback_data="confirm:yes")],
+                [InlineKeyboardButton("❌ " + t("no", lang), callback_data="confirm:no")],
+            ]),
+        )
+        return CONFIRM
+    ```
+
+    ## Pasul 4: confirmarea
+
+    ```python
+    async def confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        query = update.callback_query
+        await query.answer()
+
+        lang = context.user_data["lang"]
+        user = update.effective_user
+
+        if query.data == "confirm:no":
+            await query.edit_message_text(t("booking_aborted", lang))
+            return ConversationHandler.END
+
+        booking_id = await add_booking(
+            user_id=user.id,
+            user_name=user.first_name,
+            slot=context.user_data["slot"],
+            service=context.user_data.get("service", "tăiere"),  # sau pasul de serviciu, dacă îl păstrezi
+            barber_id=context.user_data["barber_id"],
+        )
+
+        if booking_id is None:
+            # slotul a fost luat între afișare și confirmare — oferim altă oră
+            await query.edit_message_text(
+                t("slot_taken", lang),
+                reply_markup=days_keyboard(lang),
+            )
+            return DAY
+
+        await query.edit_message_text(
+            t("confirmed", lang,
+              zi=_format_slot(context.user_data["slot"]),
+              ora=context.user_data["slot"].strftime("%H:%M"))
+        )
+        return ConversationHandler.END
+
+
+    async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        await update.message.reply_text(t("booking_aborted", await get_lang(update.effective_user.id)))
+        return ConversationHandler.END
+    ```
+
+    ## Asamblarea
+
+    ```python
+    booking_conversation = ConversationHandler(
+        entry_points=[CallbackQueryHandler(book_start, pattern="^book$")],
+        states={
+            BARBER: [CallbackQueryHandler(choose_barber, pattern="^barber:\d+$")],
+            DAY: [CallbackQueryHandler(choose_day, pattern="^day:\d{4}-\d{2}-\d{2}$")],
+            TIME: [CallbackQueryHandler(choose_time, pattern="^slot:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$")],
+            CONFIRM: [CallbackQueryHandler(confirm, pattern="^confirm:(yes|no)$")],
+        },
+        fallbacks=[CallbackQueryHandler(cancel, pattern="^cancel_booking$")],
+        # dacă userul nu răspunde 30 de minute, fluxul se închide singur
+        conversation_timeout=1800,
+        per_message=False,
+    )
+    ```
+
+    În `bot.py` — **ordinea contează**: ConversationHandler-ul trebuie adăugat **înaintea** handler-ului generic de butoane (`button_handler` cu pattern-ul `^(book|my_bookings|contact)$`), altfel acela prinde `book` și fluxul nu pornește niciodată:
+
+    ```python
+    app.add_handler(booking_conversation)          # primul
+    app.add_handler(CallbackQueryHandler(booking.button_handler, pattern="^(my_bookings|contact)$"))
+    ```
+
+    (Am scos `book` din pattern-ul celui generic, că acum e gestionat de conversație.)
+
+    ## Texte noi în `texts.py`
+
+    ```python
+    # ro
+    "pick_barber": "La cine vrei să vii?",
+    "pick_time": "Alege ora:",
+    "confirm_prompt": "Rezervare: {zi}, ora {ora}. Confirmi?",
+    "yes": "Confirm", "no": "Anulează",
+    "booking_aborted": "Rezervare anulată. Te așteptăm altădată!",
+    "slot_taken": "Ups, ora a fost luată între timp. Alege altă zi sau oră.",
+
+    # en
+    "pick_barber": "Who would you like to book with?",
+    "pick_time": "Pick a time:",
+    "confirm_prompt": "Booking: {day} at {time}. Confirm?",
+    "yes": "Confirm", "no": "Cancel",
+    "booking_aborted": "Booking cancelled. See you next time!",
+    "slot_taken": "Oops, that slot was just taken. Pick another day or time.",
+    ```
+
+    ## Detalii de care să ții cont
+
+    - **`per_message=False`** — obligatoriu aici, pentru că toate stările folosesc `CallbackQueryHandler`. PTB va loga un warning despre asta; e benign, îl poți ignora.
+    - **`conversation_timeout`** — fără el, un client care abandonează la jumătate rămâne „blocat” în conversație pentru totdeauna și `/start` nu-i mai răspunde normal. Cu timeout, fluxul se închide singur. Adaugă și `CallbackQueryHandler(cancel, pattern="^cancel_booking$")` + un buton „❌ Renunță” pe fiecare ecran, dacă vrei ieșire explicită.
+    - **`slot_taken`** — e cazul de cursă pe care l-am discutat: indexul unic `(barber_id, slot)` respinge INSERT-ul, `add_booking` returnează `None`, iar clientul e trimis înapoi la alegerea zilei. Fără să crape, fără duble.
+    - **`get_barbers()`** — funcție nouă, trivială: `SELECT id, name FROM barbers WHERE is_active = TRUE ORDER BY id`.
+    - **Serviciul** — l-am scos din flux ca să nu-l complic; dacă îl păstrezi ca pas înainte de frizer, adaugi o stare în plus și salvezi în `user_data`, identic cu restul.
+    - **`user_data` vs. DB** — datele fluxului (frizer, zi, oră) stau în `user_data` pentru că sunt efemere; dacă botul se restartează în mijlocul rezervării, clientul reia fluxul de la început — acceptabil pentru 4 pași.
+
+    Testează fluxul cu două conturi simultan pe același slot ca să vezi `slot_taken` în acțiune — e cel mai satisfăcător moment al arhitecturii. Vrei și pasul de serviciu adăugat, sau notificarea către frizer la confirmare?
+- user: |
+    ```
+    telegram.error.BadRequest: Button_data_invalid
+    ```
+  assistant: |
+    `Button_data_invalid` înseamnă că Telegram a respins o tastatură pentru că un buton are `callback_data` invalid. Regula API-ului: **callback_data trebuie să fie un string de 1–64 bytes** — gol sau prea lung → exact această eroare. Nu e despre textul vizibil de pe buton (acela poate fi lung), ci despre datele ascunse din spate.
+
+    ## 1. Găsește butonul vinovat
+
+    Traceback-ul îți arată linia exactă — `reply_text`/`edit_message_text` din care handler a picat. Adaugă temporar un print înainte de trimitere:
+
+    ```python
+    for row in keyboard.inline_keyboard:
+        for btn in row:
+            print(btn.text, "->", repr(btn.callback_data), len((btn.callback_data or "").encode()))
+    ```
+
+    Butonul cu `None`, string gol sau peste 64 bytes e vinovatul.
+
+    ## 2. Suspecții din codul nostru
+
+    **a) `callback_data` gol sau `None`** — se întâmplă dacă ai construit butonul cu un f-string care a eșuat silențios sau ai trecut textul în loc de date:
+
+    ```python
+    # greșit (copy-paste frecvent):
+    InlineKeyboardButton(label, callback_data=label)   # dacă label e None → invalid
+    # corect:
+    InlineKeyboardButton(label, callback_data=f"slot:{s.strftime('%Y-%m-%dT%H:%M')}")
+    ```
+
+    **b) `callback_data` prea lung** — dacă undeva ai pus în `callback_data` text formatat, nume sau obiecte serializate în loc de ID-uri. Regula bună: `callback_data` conține **doar un tip + un ID** (`barber:2`, `day:2026-10-02`, `slot:...`, `cancel:17`), niciodată date afișate.
+
+    **c) datetime cu secunde/timezone în `slot:`** — dacă sloturile au devenit timezone-aware după migrarea pe Postgres, `s.isoformat()` produce `2026-10-02T18:30:00+03:00`. Nu depășește 64 bytes, dar **nu se mai potrivește cu pattern-ul din ConversationHandler** (`^slot:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$`), deci handler-ul de oră nu ar prinde niciodată click-ul. Normalizează la construire:
+
+    ```python
+    callback_data=f"slot:{s.strftime('%Y-%m-%dT%H:%M')}"
+    ```
+
+    ## 3. Un bug înrudit, pe care îl repar acum
+
+    În `choose_time` am scris `query.data.split(":")[1]` — dar `slot:2026-10-02T18:30` conține **două puncte și în timestamp**, deci `split(":")` taie greșit și `fromisoformat` primește `2026-10-02T18`. Corect:
+
+    ```python
+    slot = datetime.strptime(query.data.split(":", 1)[1], "%Y-%m-%dT%H:%M")
+    ```
+
+    `split(":", 1)` taie doar după prefixul `slot:`. Aceeași problemă latentă există și în pattern-urile regex cu `:` — acelea sunt OK (regex-ul se potrivește pe tot stringul), doar parsarea era greșită.
+
+    ## 4. Verificare rapidă a întregului lanț
+
+    După fix, parcurge mental fiecare buton pe care-l trimite botul:
+
+    | Buton | callback_data | Lungime |
+    |---|---|---|
+    | Frizer | `barber:2` | ok |
+    | Zi | `day:2026-10-02` | ok |
+    | Oră | `slot:2026-10-02T18:30` | ok |
+    | Confirm | `confirm:yes` | ok |
+    | Anulare | `cancel:17` | ok |
+
+    Dacă toate sunt sub 64 bytes și non-gol, eroarea dispare. Dacă după print rămâne neclar, lipește aici output-ul print-ului și linia din traceback — îți spun exact care buton e problema.
+- user: |
+    Cum fac callback_data mai scurt fără să pierd informația?
+  assistant: |
+    Callback_data are limita de 64 bytes, dar în proiectul tău ești departe de ea (`slot:2026-10-02T18:30` = 21 bytes). Totuși, tehnicile de comprimare sunt utile dacă adaugi mai târziu servicii, mai mulți frizeri sau date suplimentare. De la cea mai simplă la cea mai agresivă:
+
+    ## 1. Trimite doar ID-ul, nu datele complete
+
+    Regula de aur: baza de date are deja informația — callback_data trebuie doar să **identifice** rândul, nu să-l descrie.
+
+    ```python
+    # în loc de:
+    f"slot:2026-10-02T18:30"          # 21 bytes
+    # poți trimite:
+    f"s:17"                            # 4 bytes — ID-ul slotului/înregistrării
+    ```
+
+    Pentru anulare deja faci asta (`cancel:17`). Pentru sloturi e mai subtil: slotul nu există încă în DB, deci ai nevoie de altă strategie (vezi punctul 3).
+
+    ## 2. Scurtează prefixele și formatul
+
+    Prefixele de un caracter și formate compacte taie jumătate din bytes fără niciun cost:
+
+    ```python
+    f"barber:{bid}"   →  f"b{bid}"          # b2
+    f"day:{date}"     →  f"d{date:%y%m%d}"  # d261002 (anul pe 2 cifre)
+    f"slot:{iso}"     →  f"s{date:%y%m%d}t{hour}{minute}"  # s261002t1830
+    f"confirm:yes"    →  f"c1" / f"c0"
+    ```
+
+    Cât timp pattern-urile din ConversationHandler se actualizează corespunzător (`^s\d{6}t\d{4}$`), totul merge identic. Ține un mic dicționar de prefixe în cod ca documentație:
+
+    ```python
+    # prefixe callback_data: b=barber, d=day, s=slot, c=confirm, x=cancel
+    ```
+
+    ## 3. Pune contextul în `user_data`, nu în callback_data
+
+    Asta e cea mai puternică tehnică: fluxul de rezervare are deja `context.user_data["barber_id"]` și `user_data["day"]` — deci butoanele de oră **nu au nevoie** să repete ziua și frizerul:
+
+    ```python
+    # în choose_day, ai salvat deja ziua în user_data
+    context.user_data["free_slots"] = free   # lista completă, în memorie
+
+    # butoanele trimit doar indexul:
+    InlineKeyboardButton(s.strftime("%H:%M"), callback_data=f"i:{free.index(s)}")
+    # sau direct ora scurtă:
+    callback_data=f"t{s.strftime('%H%M')}"   # t1830
+    ```
+
+    În `choose_time` recuperezi slotul din `user_data["free_slots"][index]`. Callback_data scade la 3–6 bytes indiferent cât de complex e contextul.
+
+    **Atenție**: `user_data` se pierde la restartul botului — dacă cineva are tastatura veche deschisă și apasă după un deploy, indexul poate indica altceva. Pentru un flux de rezervare de câteva minute, riscul e neglijabil; pentru butoane long-lived (anulare, care poate fi apăsată săptămâni mai târziu), rămâi la ID-uri din DB (punctul 1).
+
+    ## 4. Encodare numerică / base36 pentru ID-uri mari
+
+    Dacă ID-urile cresc mult, base36 le comprimă:
+
+    ```python
+    def to_b36(n: int) -> str:
+        digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+        s = ""
+        while n:
+            s = digits[n % 36] + s
+            n //= 36
+        return s or "0"
+
+    # 123456789 → "21i3v9" (6 chars în loc de 9)
+    ```
+
+    La volumele tale, overkill — menționat doar pentru completitudine.
+
+    ## 5. Ce să NU faci
+
+    - **Nu comprima cu zlib/base64** — bytes câștigați sunt minimi la stringuri scurte, iar debugging-ul devine un coșmar (nu mai poți citi callback_data din loguri).
+    - **Nu pune JSON în callback_data** — `{"b":2,"d":"2026-10-02"}` e irositor și fragil.
+    - **Nu te baza pe poziția în tastatură fără să salvezi nimic** — e varianta punctului 3 fără `user_data`, care se rupe la orice restart.
+
+    ## Recomandarea pentru proiectul tău
+
+    Ești la 21 bytes max — **nu ai problemă reală**. Dacă totuși vrei să curăț, aplică punctul 2 (prefixe scurte + date compacte) pentru consistență, și punctul 3 pentru butoanele de oră, care sunt cele mai numeroase (16 sloturi × 21 bytes nu e problemă de bytes, dar `t1830` e mai curat decât `slot:2026-10-02T18:30`). Păstrează ID-uri din DB pentru orice buton care poate supraviețui sesiunii de rezervare (`cancel:17` rămâne cum e).
+
+    Dacă ai lovit eroarea `Button_data_invalid` din mesajul anterior, nu e de lungime — e aproape sigur un `callback_data` gol sau `None` (punctul 2 din diagnosticul de atunci). Verifică cu print-ul acela înainte să refactorizezi degeaba.
+- user: |
+    Vreau statistici: câte programări pe lună are fiecare frizer. Scrie-mi query-ul SQL.
+  assistant: |
+    Iată query-ul de bază — programări active pe luna curentă, per frizer:
+
+    ```sql
+    SELECT
+        b.name AS frizer,
+        COUNT(*) AS programari
+    FROM bookings bk
+    JOIN barbers b ON b.id = bk.barber_id
+    WHERE bk.status = 'active'
+      AND bk.slot >= date_trunc('month', now())
+      AND bk.slot <  date_trunc('month', now()) + interval '1 month'
+    GROUP BY b.name
+    ORDER BY programari DESC;
+    ```
+
+    Rezultat de forma:
+
+    ```
+     frizer  | programari
+    ---------+------------
+     Bărbosu |         42
+     Sorin   |         31
+    ```
+
+    ## Varianta utilă: ultimele 12 luni, lună cu lună
+
+    Pentru o imagine în timp, grupezi pe an+lună:
+
+    ```sql
+    SELECT
+        b.name AS frizer,
+        to_char(date_trunc('month', bk.slot), 'YYYY-MM') AS luna,
+        COUNT(*) AS programari
+    FROM bookings bk
+    JOIN barbers b ON b.id = bk.barber_id
+    WHERE bk.status = 'active'
+      AND bk.slot >= now() - interval '12 months'
+    GROUP BY b.name, date_trunc('month', bk.slot)
+    ORDER BY date_trunc('month', bk.slot), b.name;
+    ```
+
+    ## Varianta pivot: frizeri pe coloane, luni pe rânduri
+
+    Mai ușor de citit pentru frizer:
+
+    ```sql
+    SELECT
+        to_char(date_trunc('month', bk.slot), 'YYYY-MM') AS luna,
+        COUNT(*) FILTER (WHERE b.name = 'Bărbosu') AS barbosu,
+        COUNT(*) FILTER (WHERE b.name = 'Sorin')   AS sorin
+    FROM bookings bk
+    JOIN barbers b ON b.id = bk.barber_id
+    WHERE bk.status = 'active'
+      AND bk.slot >= now() - interval '12 months'
+    GROUP BY date_trunc('month', bk.slot)
+    ORDER BY date_trunc('month', bk.slot);
+    ```
+
+    ## Detalii de care să ții cont
+
+    - **`status = 'active'`** — anulate nu intră în statistici. Dacă vrei și rata de anulare (utilă!), scoate filtrul și adaugă `COUNT(*) FILTER (WHERE status = 'cancelled') AS anulate` — poți compara direct.
+    - **`date_trunc('month', ...)`** — mai robust decât `strftime` pe text: folosește indexul pe `slot` și nu se strică la schimbarea formatului.
+    - **Filtrul pe lună e semi-deschis** (`>= start AND < start + 1 month`) — include corect prima zi la miezul nopții și exclude prima zi a lunii următoare. Nu folosi `BETWEEN`, care ar include dublu granița.
+    - **Frizeri fără nicio programare** nu apar deloc în rezultat (JOIN-ul îi elimină). Dacă vrei să apară cu 0, schimbă în `LEFT JOIN` din `barbers`:
+
+      ```sql
+      SELECT b.name, COUNT(bk.id) AS programari
+      FROM barbers b
+      LEFT JOIN bookings bk
+          ON bk.barber_id = b.id
+          AND bk.status = 'active'
+          AND bk.slot >= date_trunc('month', now())
+      GROUP BY b.name
+      ORDER BY programari DESC;
+      ```
+
+      (Atenție: condițiile pe `bookings` trebuie în `ON`, nu în `WHERE`, altfel LEFT JOIN devine de fapt INNER JOIN.)
+
+    - **Anul trecut vs. anul curent** — dacă vrei comparație „luna asta vs. aceeași lună anul trecut", spune și îți scriu varianta cu `date_trunc` shiftat.
+
+    Dacă vrei să le vezi direct în Telegram, pot legăm query-ul de o comandă `/stats` doar pentru frizeri — spune și o facem.
+- user: |
+    Și rata de anulare pe frizer, în același format?
+  assistant: |
+    Iată, în același format pivot — rata de anulare per frizer, pe ultimele 12 luni:
+
+    ```sql
+    SELECT
+        to_char(date_trunc('month', bk.slot), 'YYYY-MM') AS luna,
+        ROUND(
+            100.0 * COUNT(*) FILTER (WHERE bk.status = 'cancelled')
+            / NULLIF(COUNT(*), 0)
+        , 1) AS rata_anulare_barbosu_pct
+    FROM bookings bk
+    JOIN barbers b ON b.id = bk.barber_id
+    WHERE b.name = 'Bărbosu'
+      AND bk.slot >= now() - interval '12 months'
+    GROUP BY date_trunc('month', bk.slot)
+    ORDER BY date_trunc('month', bk.slot);
+    ```
+
+    Dar mai util e totul într-un singur query, cu amândoi frizerii pe coloane — și cu totaluri, ca rata să aibă context:
+
+    ```sql
+    SELECT
+        to_char(date_trunc('month', bk.slot), 'YYYY-MM') AS luna,
+        COUNT(*) FILTER (WHERE b.name = 'Bărbosu')                          AS barbosu_total,
+        COUNT(*) FILTER (WHERE b.name = 'Bărbosu' AND bk.status = 'cancelled') AS barbosu_anulate,
+        ROUND(100.0 * COUNT(*) FILTER (WHERE b.name = 'Bărbosu' AND bk.status = 'cancelled')
+              / NULLIF(COUNT(*) FILTER (WHERE b.name = 'Bărbosu'), 0), 1)   AS barbosu_pct,
+        COUNT(*) FILTER (WHERE b.name = 'Sorin')                            AS sorin_total,
+        COUNT(*) FILTER (WHERE b.name = 'Sorin' AND bk.status = 'cancelled') AS sorin_anulate,
+        ROUND(100.0 * COUNT(*) FILTER (WHERE b.name = 'Sorin' AND bk.status = 'cancelled')
+              / NULLIF(COUNT(*) FILTER (WHERE b.name = 'Sorin'), 0), 1)     AS sorin_pct
+    FROM bookings bk
+    JOIN barbers b ON b.id = bk.barber_id
+    WHERE bk.slot >= now() - interval '12 months'
+    GROUP BY date_trunc('month', bk.slot)
+    ORDER BY date_trunc('month', bk.slot);
+    ```
+
+    Rezultat:
+
+    ```
+      luna   | barbosu_total | barbosu_anulate | barbosu_pct | sorin_total | sorin_anulate | sorin_pct
+    ---------+---------------+-----------------+-------------+-------------+---------------+-----------
+     2026-01 |            38 |               5 |        13.2 |          29 |             2 |       6.9
+     2026-02 |            41 |               3 |         7.3 |          33 |             4 |      12.1
+    ```
+
+    ## Detalii importante
+
+    - **`NULLIF(COUNT(*), 0)`** — fără ea, o lună fără nicio programare la un frizer dă `division by zero`. Cu ea, rata iese `NULL` (afișat gol), ceea ce e corect: 0 din 0 nu e 0%, e „fără date”.
+    - **`100.0`, nu `100`** — împărțire pe întregi în Postgres trunchează: `5/38*100` cu întregi dă `13`, nu `13.2`. `.0` forțează numeric.
+    - **Am scos filtrul `status` din `WHERE`** — aici ai nevoie și de anulate, deci numărul total include toate rezervările (active + anulate). Rata = anulate / total.
+    - **Denumirea coloanelor** — dacă adaugi al treilea frizer, query-ul pivot crește cu 3 coloane per frizer. La 3+ frizeri, formatul „long" (un rând per frizer per lună) devine mai practic:
+
+      ```sql
+      SELECT
+          b.name AS frizer,
+          to_char(date_trunc('month', bk.slot), 'YYYY-MM') AS luna,
+          COUNT(*) AS total,
+          COUNT(*) FILTER (WHERE bk.status = 'cancelled') AS anulate,
+          ROUND(100.0 * COUNT(*) FILTER (WHERE bk.status = 'cancelled') / NULLIF(COUNT(*), 0), 1) AS rata_pct
+      FROM bookings bk
+      JOIN barbers b ON b.id = bk.barber_id
+      WHERE bk.slot >= now() - interval '12 months'
+      GROUP BY b.name, date_trunc('month', bk.slot)
+      ORDER BY date_trunc('month', bk.slot), b.name;
+      ```
+
+    - **Nuanță de interpretare**: rata e calculată pe **luna slotului**, nu pe luna creării rezervării. O rezervare făcută în ianuarie pentru martie, anulată în februarie, apare la martie. Pentru frizer asta e de obicei perspectiva corectă („câți clienți mi-au spart programul în luna X”), dar dacă vrei „câte anulări s-au produs în luna X", grupezi pe `created_at` sau adaugi o coloană `cancelled_at` — spune-mi dacă vrei varianta asta.
+
+    - **Observație practică**: o rată mare de anulare poate însemna și clienți care anulează târziu (sub fereastra de 3 ore, deci prin telefon) — dacă frizerul vrea imaginea completă, merită și un `cancelled_at` în DB de acum încolo, chiar dacă datele istorice nu-l au.
+- user: |
+    Scrie-mi un mesaj scurt pe care frizeria să-l pună pe Instagram ca să anunțe că se pot face programări prin Telegram.
+  domain: text-rewrite
+  assistant: |
+    Iată o variantă:
+
+    ---
+
+    ✂️ **Vestea bună: acum ne poți programa direct pe Telegram!**
+
+    Fără telefoane, fără așteptare — deschizi botul, alegi frizerul, ziua și ora. Gata! 📲
+
+    🔗 **t.me/FrizeriaBarbosuBot**
+
+    Programări rapide, reminder automat înainte de vizită și anulare cu o simplă apăsare.
+
+    Te așteptăm! 💈
+
+    ---
+
+    Câteva variante de ton, dacă vrei altceva:
+
+    **Mai scurt, mai direct:**
+
+    ---
+
+    💈 Programări pe Telegram, de acum! ✂️
+    Alegi frizerul, ziua, ora — totul în 30 de secunde.
+    🔗 t.me/FrizeriaBarbosuBot
+
+    ---
+
+    **Mai jucăuș:**
+
+    ---
+
+    Telefonul e ocupat? Noi nu mai suntem. 😄
+    Acum te programezi singur, pe Telegram — 24/7, chiar și când suntem cu spuma pe fața clientului. 🪒
+    🔗 t.me/FrizeriaBarbosuBot
+
+    ---
+
+    Observații:
+
+    - Înlocuiește `FrizeriaBarbosuBot` cu username-ul real al botului — verifică în @BotFather că e exact acela.
+    - Linkul `t.me/...` e clickabil direct din Instagram dacă îl pui și în bio — recomand să-l adaugi acolo, pentru că Instagram nu permite linkuri clickabile în descrierea postărilor obișnuite.
+    - Dacă postezi ca **Story**, pune linkul cu stickerele „Link" sau „Menționează" — acolo da e clickabil.
+    - Emoji-urile 💈✂️ ajută vizual pe Instagram, dar nu abuza — 3–4 e suficient.
+
+    Vrei și o variantă în engleză pentru turiști, de pus în aceeași postare?
+- user: |
+    Mai scurt și mai prietenos, cu 2-3 emoji.
+  domain: text-rewrite
+  assistant: |
+    💈 De acum te programezi pe Telegram — rapid, fără telefoane! ✂️
+    Alegi frizerul, ziua și ora în 30 de secunde.
+    🔗 t.me/FrizeriaBarbosuBot
+
+    Ne vedem la muncă! 💈
+- user: |
+    Înapoi la bot: cineva a făcut 200 de rezervări false într-o seară. Cum pun o limită?
+  assistant: |
+    200 de rezervări false într-o seară = un user (sau un script) care a parcurs fluxul de rezervare în buclă. Ai nevoie de limitare pe **două niveluri**: câte rezervări active poate avea un client și cât de repede poate face rezervări noi. Plus o curățare a datelor false.
+
+    ## 1. Limita cea mai eficientă: max rezervări active per user
+
+    Un client real are nevoie de 1–2 rezervări active, nu de 200. Verificare în `add_booking`:
+
+    ```python
+    # db/database.py
+    MAX_ACTIVE_BOOKINGS = 2
+
+    async def add_booking(user_id: int, user_name: str, slot: datetime,
+                          service: str, barber_id: int) -> int | None:
+        async with _pool.acquire() as conn:
+            active = await conn.fetchval(
+                "SELECT COUNT(*) FROM bookings "
+                "WHERE user_id = $1 AND status = 'active' AND slot > now()",
+                user_id,
+            )
+            if active >= MAX_ACTIVE_BOOKINGS:
+                return -1  # cod special: limită atinsă
+
+            try:
+                return await conn.fetchval(
+                    "INSERT INTO bookings (user_id, user_name, slot, service, barber_id) "
+                    "VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                    user_id, user_name, slot, service, barber_id,
+                )
+            except asyncpg.UniqueViolationError:
+                return None
+    ```
+
+    Și în handler-ul de confirmare:
+
+    ```python
+    booking_id = await add_booking(...)
+    if booking_id == -1:
+        await query.edit_message_text(t("too_many_bookings", lang))
+        return
+    if booking_id is None:
+        # slot luat — cum aveai deja
+    ```
+
+    **Bonus — garanție la nivel de DB**, ca să nu depinzi doar de cod (aceeași filozofie ca la indexul unic de slot):
+
+    ```sql
+    CREATE UNIQUE INDEX idx_max_active_per_user
+        ON bookings (user_id) WHERE status = 'active' AND slot > now()
+        -- hmm, asta limitează la 1. Pentru 2, vezi observația de mai jos.
+    ```
+
+    Un index unic parțial limitează la **1** rezervare activă. Dacă 1 e acceptabil pentru frizeria ta (cel mai probabil da — nimeni nu-și face 2 programări simultane), folosește-l direct și simplifici codul. Pentru limita 2, rămâi la verificarea din cod.
+
+    ## 2. Cooldown între rezervări succesive
+
+    Împotriva scriptului care rezervă în buclă, un minim de timp între rezervările aceluiași user:
+
+    ```python
+    async def add_booking(...):
+        async with _pool.acquire() as conn:
+            last = await conn.fetchval(
+                "SELECT MAX(created_at) FROM bookings WHERE user_id = $1",
+                user_id,
+            )
+            if last and datetime.now() - last < timedelta(minutes=10):
+                return -2  # prea repede
+
+            # ... restul ca mai sus
+    ```
+
+    ## 3. Curăță rezervările false
+
+    ```sql
+    -- identifică vinovatul
+    SELECT user_id, user_name, COUNT(*) AS n, MIN(created_at), MAX(created_at)
+    FROM bookings
+    WHERE created_at > now() - interval '1 day'
+    GROUP BY user_id, user_name
+    ORDER BY n DESC;
+
+    -- anulează-le în masă (nu șterge — păstrezi evidența)
+    UPDATE bookings SET status = 'cancelled'
+    WHERE user_id = <id_vinovat> AND status = 'active';
+    ```
+
+    Sloturile se eliberează instant, iar clienții reali își pot reface programările.
+
+    ## 4. Notificare către frizer când se detectează abuz
+
+    Opțional, dar util — în handler, când `add_booking` returnează `-1` sau `-2`, trimite un mesaj la `ADMIN_CHAT_ID` cu user_id-ul și numele. Așa frizerul vede tentativa în timp real.
+
+    ## 5. Dacă atacul continuă: bann
+
+    Dacă persoana insistă (și-a refăcut contul etc.), adaugă un tabel de blocare:
+
+    ```sql
+    CREATE TABLE banned_users (
+        user_id BIGINT PRIMARY KEY,
+        reason TEXT,
+        banned_at TIMESTAMPTZ DEFAULT now()
+    );
+    ```
+
+    Și un filtru global, la începutul procesării — în PTB poți folosi un `TypeHandler` sau verifici direct în `book_start`:
+
+    ```python
+    async def is_banned(user_id: int) -> bool:
+        async with _pool.acquire() as conn:
+            return await conn.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM banned_users WHERE user_id = $1)", user_id
+            )
+    ```
+
+    Nu pune verificarea în fiecare handler individual — un `TypeHandler` pe `Update` care face `raise ApplicationHandlerStop` pentru bannați e curat:
+
+    ```python
+    from telegram.ext import TypeHandler, ApplicationHandlerStop
+
+    async def ban_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if await is_banned(update.effective_user.id):
+            raise ApplicationHandlerStop()
+
+    app_tg.add_handler(TypeHandler(Update, ban_filter), group=-1)  # rulează primul
+    ```
+
+    ## Pe scurt, ordinea de implementare
+
+    1. **Acum**: curăță cu UPDATE-ul din punctul 3 și identifică user_id-ul.
+    2. **Azi**: limita de rezervări active (punctul 1) — rezolvă 95% din problemă.
+    3. **Când apuci**: cooldown-ul (punctul 2) și notificarea de abuz (punctul 4).
+    4. **Doar dacă se repetă**: bann-ul (punctul 5).
+
+    Un detaliu: verifică și **cine** a fost — dacă `user_id`-ul e același, e un troll cu un cont. Dacă au fost 200 de user_id-uri diferite într-o seară, e un script cu conturi multiple, iar atunci limita per user nu e suficientă — ar trebui gândit și un limit global pe oră (de exemplu, max 30 rezervări/oră pentru toți clienții, alertă la frizer când se depășește). Spune-mi ce arată query-ul din punctul 3 și calibram.
+- user: |
+    Rescrie salvarea rezervării ca să verifice și limita: maximum 2 rezervări active per client. Păstrează constrângerea pe slot de mai devreme.
+  assistant: |
+    Iată `add_booking` rescris, cu ambele verificări — limita de 2 rezervări active și constrângerea de slot unic — într-o singură tranzacție:
+
+    ```python
+    # db/database.py
+    MAX_ACTIVE_BOOKINGS = 2
+
+    # coduri de retur:
+    #   >0  = id-ul rezervării create
+    #   None = slotul a fost luat între timp (UniqueViolationError)
+    #   -1  = limita de rezervări active atinsă
+
+    async def add_booking(user_id: int, user_name: str, slot: datetime,
+                          service: str, barber_id: int) -> int | None:
+        async with _pool.acquire() as conn:
+            async with conn.transaction():
+                # 1. limita de rezervări active per client
+                active = await conn.fetchval(
+                    "SELECT COUNT(*) FROM bookings "
+                    "WHERE user_id = $1 AND status = 'active' AND slot > now()",
+                    user_id,
+                )
+                if active >= MAX_ACTIVE_BOOKINGS:
+                    return -1
+
+                # 2. inserarea — indexul unic idx_barber_slot_active respinge sloturile duble
+                try:
+                    return await conn.fetchval(
+                        "INSERT INTO bookings (user_id, user_name, slot, service, barber_id) "
+                        "VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                        user_id, user_name, slot, service, barber_id,
+                    )
+                except asyncpg.UniqueViolationError:
+                    return None
+    ```
+
+    Indexul de slot rămâne neschimbat (el face treaba la nivel de DB):
+
+    ```sql
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_barber_slot_active
+        ON bookings (barber_id, slot) WHERE status = 'active';
+    ```
+
+    Și handler-ul de confirmare, actualizat cu noul cod de retur:
+
+    ```python
+    # handlers/booking.py, în confirm()
+    booking_id = await add_booking(
+        user_id=user.id,
+        user_name=user.first_name,
+        slot=context.user_data["slot"],
+        service=context.user_data.get("service", "tăiere"),
+        barber_id=context.user_data["barber_id"],
+    )
+
+    if booking_id == -1:
+        await query.edit_message_text(t("too_many_bookings", lang))
+        return ConversationHandler.END
+
+    if booking_id is None:
+        await query.edit_message_text(
+            t("slot_taken", lang),
+            reply_markup=days_keyboard(lang),
+        )
+        return DAY
+
+    # succes — mesajul de confirmare, ca înainte
+    ```
+
+    Textele noi:
+
+    ```python
+    # ro
+    "too_many_bookings": "Ai deja 2 rezervări active. Anulează una dacă vrei să faci alta. 🙏",
+    # en
+    "too_many_bookings": "You already have 2 active bookings. Cancel one if you'd like to book again. 🙏",
+    ```
+
+    ## De ce tranzacție
+
+    Fără `conn.transaction()`, verificarea limită și INSERT-ul sunt două operații separate — un user care confirmă două rezervări simultan (două telefoane, sau dublu-click rapid) ar putea trece ambele de verificarea `COUNT(*)` înainte ca vreun INSERT să se comită. Tranzacția serializează cele două operații pe aceeași conexiune, iar la nivelul de concurență al frizeriei, plus indexul unic pe slot ca plasă de siguranță, e suficient de solid.
+
+    **Notă de onestitate tehnică**: la nivel de DB, limita de 2 rămâne aplicată doar în cod — Postgres nu are constraint nativ de „max 2 rânduri per user". Dacă vrei garanție absolută ca la slotul unic, există trucul cu trigger sau cu un tabel contor, dar pentru cazul tău e exagerat: chiar dacă o cursă rară ar permite 3 rezervări, consecința e benignă (un client cu 3 programări), spre deosebire de slotul dublu care e o eroare vizibilă de business.
+
+    ## Un detaliu de UX
+
+    Când limita e atinsă, mesajul spune clientului ce să facă (anulează una). E bine ca butonul „Rezervările mele" să fie accesibil ușor — clientul e deja în mijlocul unui flux de conversație, iar `ConversationHandler.END` din handler îl scoate curat; de acolo poate da `/start` și apăsa „Rezervările mele". Dacă vrei mai fin, poți pune în mesajul de eroare un buton inline direct către `my_bookings` — dar ține cont că ești în conversație, deci butonul trebuie gestionat de fallback-uri sau scoate-l din flux înainte.
+- user: |
+    Ce ar trebui să mai verific înainte să-l las pe prietenul meu să-l folosească cu clienți reali?
+  assistant: |
+    Bună întrebare — diferența dintre „merge la mine în teste" și „merge cu clienți reali" e exact lista asta. O împart pe categorii, în ordinea importanței:
+
+    ## Siguranță și acces
+
+    - **Secret token pe webhook** — fără el, oricine descoperă URL-ul poate trimite update-uri false botului. `secret_token` în `run_webhook` + header check în nginx.
+    - **Comenzile de admin** (`/stats`, `/rezervari`) — verifică că filtrează pe `ADMIN_CHAT_ID`, nu doar că nu le-ai publicat. Oricine poate citi codul dacă e pe GitHub.
+    - **Tokenul și DSN-ul** — confirmă că `.env` e în `.gitignore` și că nu a ajuns vreodată într-un commit (dacă da, revocă tokenul).
+
+    ## Fiabilitate
+
+    - **systemd cu `Restart=always`** — ai deja; testează-l: `kill -9` pe proces și verifică că revine singur.
+    - **Backup funcțional, nu doar configurat** — rulează manual comanda din cron, restaurează fișierul într-o bază de test și verifică-l. Un backup netestat nu e backup.
+    - **Loguri** — adaugă logging cu `logging.basicConfig(level=logging.INFO)` și un `error_handler` în PTB (`app_tg.add_error_handler`) ca excepțiile din handler-e să apară în `journalctl`, nu să fie înghițite silențios.
+    - **Timezone-ul** — verifică `SELECT now()` în psql vs. ora României. Reminder-ele și digestul depind de asta; e capcana #1 la lansare.
+
+    ## Comportament cu date reale
+
+    - **Fluxul complet, end-to-end, cu cont real**: rezervare → reminder (fă una cu slot la 5 minute) → anulare → notificare frizer → digest de dimineață.
+    - **Două conturi simultan pe același slot** — verifică că al doilea primește `slot_taken`, nu o dublă rezervare.
+    - **Nume cu caractere speciale** — un client cu nume cu apostrof sau diacritice ciudate nu trebuie să crape nimic (cu query-uri parametrizate ești OK, dar testează).
+    - **Clientul care blochează botul** — dacă un user a blocat botul, `send_message` pentru reminder aruncă `Forbidden` și, fără try/except, job-ul de reminder moare pentru toți ceilalți din buclă. Învelește trimiterile în `try/except TelegramError`.
+
+    ## Limite și abuz
+
+    - Limita de 2 rezervări active — implementată, testează-o.
+    - Cooldown-ul între rezervări — dacă nu l-ai pus încă, acum e momentul, înainte de primul troll.
+
+    ## UX de lansare
+
+    - **Mesajul `/start`** — primul contact al clientului. Citește-l ca și cum ai fi client, nu dezvoltator.
+    - **Instrucțiuni pentru frizer** — cum anulează el o rezervare dacă cineva sună? Dacă nu are comandă pentru asta, fă una minimă (`/anuleaza <id>`) sau măcar documentează procedura.
+    - **Un canal de feedback** — spune-i prietenului tău să-ți raporteze problemele cu screenshot, nu din memorie.
+
+    ## Un test final
+
+    Pornește botul, deconectează-ți intenționat Postgres (`systemctl stop postgresql`), scrie botului și verifică că eroarea apare în loguri și serviciul se recuperează după repornirea DB-ului. Clienții reali găsesc moduri de a-l stresa pe bot pe care nu le-ai imaginat — vrei ca eșecurile să fie vizibile în loguri, nu invizibile pentru tine și frustrante pentru ei.
+
+    Dacă treci de lista asta, ești mai pregătit decât majoritatea bot-urilor de producție pe care le-am văzut. Spor la lansare! 💈
+questions:
+- id: q1
+  type: multi-hop
+  prompt: |
+    Ce cauza până la urmă eroarea de la webhook-ul Telegram?
+  gold:
+  - turn: 17
+    quote: Uvicornul rulează, dar pe portul default **8000**, iar nginx lovește în **8443**
+- id: q2
+  type: decision
+  prompt: |
+    Ce bază de date folosim pentru rezervări?
+  gold:
+  - turn: 8
+    quote: Cu **asyncpg** totul devine nativ async
+  - turn: 9
+    quote: Postgres respinge INSERT-ul cu eroare, indiferent de cod, proces sau aplicație — chiar și din psql sau din vii
+  outdated:
+  - turn: 5
+    quote: DB_PATH = "barbosu.db"
+- id: q3
+  type: decision
+  prompt: |
+    Cu cât timp înainte poate un client să-și anuleze programarea?
+  gold:
+  - turn: 21
+    quote: CANCEL_WINDOW = timedelta(hours=3)
+  outdated:
+  - turn: 10
+    quote: CANCEL_WINDOW = timedelta(hours=2)
+- id: q4
+  type: exact
+  prompt: |
+    Care e programul lui Sorin?
+  gold:
+  - turn: 24
+    quote: (2, 1, '12:00', '20:00'),  -- marți
+- id: q5
+  type: error-only
+  prompt: |
+    Traceback (most recent call last):
+      File "/opt/barbosu/handlers/booking.py", line 88, in confirm_booking
+        booking_id = await add_booking(user.id, user.first_name, slot, service, barber_id)
+      File "/opt/barbosu/db/database.py", line 61, in add_booking
+        if active >= MAX_ACTIVE_BOOKINGS:
+    TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+  gold:
+  - turn: 33
+    quote: 'if active >= MAX_ACTIVE_BOOKINGS:'
+  outdated:
+  - turn: 8
+    quote: 'async def add_booking(user_id: int, user_name: str, slot: datetime, service: str) -> int | None:'
+- id: q6
+  type: paraphrase
+  prompt: |
+    Cum află frizerul dimineața ce clienți are?
+  gold:
+  - turn: 19
+    quote: Un job zilnic cu `run_daily`, trimis la `ADMIN_CHAT_ID`
+- id: q7
+  type: exact
+  prompt: |
+    De ce primeam Button_data_invalid?
+  gold:
+  - turn: 26
+    quote: callback_data trebuie să fie un string de 1–64 bytes
+- id: q8
+  type: semantic
+  prompt: |
+    Ce butoane avea meniul de la /start?
+  gold:
+  - turn: 2
+    quote: InlineKeyboardButton("✂️ Rezervă", callback_data="book")
+  - turn: 13
+    quote: '[InlineKeyboardButton("📅 Rezervările mele / My bookings", callback_data="my_bookings")],'
+- id: q9
+  type: ambiguous
+  prompt: |
+    Mai dă-mi o dată query-ul ăla cu programările pe lună.
+  gold:
+  - turn: 28
+    quote: 'Iată query-ul de bază — programări active pe luna curentă, per frizer:'
+- id: q10
+  type: semantic
+  prompt: |
+    Cum ai tradus în engleză mesajul de confirmare a rezervării?
+  gold:
+  - turn: 11
+    quote: '„Your booking is confirmed: {day} at {time}. See you soon!”'
