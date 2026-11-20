@@ -15,6 +15,10 @@ rabbitmq:
 gateway:
   nodeSelector:
     kubernetes.io/hostname: k8s-route
+  # Traefik listens on 80/443 on every node; on the workstation: "192.168.56.103  llm-router" in /etc/hosts
+  # (Ingress hosts must be lowercase; DNS names are case-insensitive, so http://LLM-Router/ works too)
+  ingress:
+    host: llm-router
 
 router:
   hfToken:

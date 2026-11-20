@@ -5,7 +5,7 @@ Notat pe 2026-11-19. Ordinea propusă: ingress → observabilitate → autentifi
 ## 1. Ingress (fără port-forward)
 
 - Clusterul are deja Traefik (implicit în k3s), expus pe 80/443 pe toate nodurile (`192.168.56.101–104`); nodul `k8s-route` are rolul `ingress`.
-- De făcut: `charts/moe-router/templates/gateway/ingress.yaml` + `gateway.ingress.{enabled, host, className: traefik}` în values, activat în `values-virtualbox.yaml`; pe stație `192.168.56.103  moe.local` în `/etc/hosts`.
+- De făcut: `charts/moe-router/templates/gateway/ingress.yaml` + `gateway.ingress.{enabled, host, className: traefik}` în values, activat în `values-virtualbox.yaml`; pe stație `192.168.56.103  llm-router` în `/etc/hosts`.
 - De verificat: un răspuns lung (până la `rpcTimeoutSeconds: 300`) trece prin Traefik fără timeout.
 - Gateway-ul nu are autentificare: ok cât timp e doar pe rețeaua host-only. Înainte de orice expunere mai largă → secțiunea 3 (sau, provizoriu, un middleware `basicAuth` în Traefik).
 
@@ -57,7 +57,7 @@ Notat pe 2026-11-19. Ordinea propusă: ingress → observabilitate → autentifi
 - Servită de gateway ca fișiere statice pe `/` (același origin: fără CORS, un singur ingress); HTML/JS simplu sau React + Vite, fără server separat.
 - **Pagini:** login / cont nou; conversații (listă + chat); pentru admin: catalogul de modele și Grafana.
 - **Ce vede userul normal, la fiecare răspuns:** clasificarea (domeniul) și complexitatea, modelul care a răspuns, dacă decizia a fost moștenită din tura anterioară (`inherited`). Vin din răspunsul la `/generate` (`routing`) și, pentru istoric, din `turns` (`predicted_domain`, `predicted_complexity`, `effective_domain`, `effective_complexity`, `inherited`, `model_id` — deja salvate de worker). Fără Prometheus și fără grafice pentru user. Detaliile de RAG (fragmente, tokeni de context) rămân doar pentru admin.
-- **Ce vede adminul:** Grafana „ca la carte” — dashboard-urile complete din secțiunea 2, servite sub `moe.local/grafana` (același domeniu: `GF_SERVER_ROOT_URL`, `GF_SERVER_SERVE_FROM_SUB_PATH=true`), ca link din interfață sau încorporate (`GF_SECURITY_ALLOW_EMBEDDING=true`, `iframe` cu `d-solo/...`).
+- **Ce vede adminul:** Grafana „ca la carte” — dashboard-urile complete din secțiunea 2, servite sub `llm-router/grafana` (același domeniu: `GF_SERVER_ROOT_URL`, `GF_SERVER_SERVE_FROM_SUB_PATH=true`), ca link din interfață sau încorporate (`GF_SECURITY_ALLOW_EMBEDDING=true`, `iframe` cu `d-solo/...`).
 - **Protecția Grafana fără al doilea login:** Grafana cu acces anonim `Viewer`, dar în spatele unui middleware Traefik `forwardAuth` care întreabă gateway-ul (`GET /auth/verify?role=admin`) dacă JWT-ul din cookie e al unui admin; altfel 401/403 și cererea nu ajunge la Grafana. (Alternativă: `auth.jwt` nativ în Grafana, cu tokenuri semnate RS256.)
 - **Endpoint-uri noi în gateway:** `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`; `GET /conversations`, `GET /conversations/{id}` (turele), textele fragmentelor după id; eventual streaming la `/generate`.
 - Atașamentele separate de întrebare se fac odată cu interfața: `rag-planv2.md` §9.1.
