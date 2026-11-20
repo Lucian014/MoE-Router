@@ -114,6 +114,10 @@ router:
     # (multi-hop: "why did X fail?" answered in the turn after the one that names X); 0 = off
     neighborTurns: 1
     neighborFromTop: 3
+    # each fragment at least this similar to the request (bge-m3 cosine): a request unrelated to
+    # the history gets no fragments instead of noise; 0 = off. Tied to the embedding model: rerun
+    # scripts/rag_eval/threshold_eval.py if the memory service's embedding model changes
+    minSimilarity: 0.46
     # true: a request's `variant` field picks the preset (evaluation environments only)
     allowVariantOverride: false
   # read access to the classifier repos on Hugging Face: either put the token here
