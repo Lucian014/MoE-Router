@@ -123,6 +123,7 @@ class ModelRepository:
         is_default: bool = False,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
+        inference_host: str | None = None,
     ) -> ModelRegistryEntry:
         if await self.get_by_id(model_id) is not None:
             raise ModelAlreadyExistsError(model_id)
@@ -142,6 +143,7 @@ class ModelRepository:
             is_default=is_default,
             context_window=context_window,
             max_output_tokens=max_output_tokens,
+            inference_host=inference_host,
         )
         self._session.add(entry)
         await self._session.flush()
@@ -157,6 +159,7 @@ class ModelRepository:
         is_default: bool = False,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
+        inference_host: str | None = None,
     ) -> ModelRegistryEntry:
         """Create the model if it doesn't exist, otherwise update it in place
         (safe to re-run seed_models.py after editing models.yaml)."""
@@ -171,6 +174,7 @@ class ModelRepository:
                 is_default=is_default,
                 context_window=context_window,
                 max_output_tokens=max_output_tokens,
+                inference_host=inference_host,
             )
 
         _check_tier(complexity_tier)
@@ -187,6 +191,7 @@ class ModelRepository:
         entry.is_default = is_default
         entry.context_window = context_window
         entry.max_output_tokens = max_output_tokens
+        entry.inference_host = inference_host
         await self._session.flush()
         return entry
 
@@ -202,9 +207,11 @@ class ModelRepository:
         is_default: bool | None = None,
         context_window: int | None = None,
         max_output_tokens: int | None = None,
+        inference_host: str | None = None,
+        clear_inference_host: bool = False,
     ) -> ModelRegistryEntry:
         """Partial update. `category=None` means "leave unchanged"; use clear_category=True to set
-        it to NULL."""
+        it to NULL (the same for inference_host / clear_inference_host)."""
         entry = await self.get_by_id_or_raise(model_id)
 
         new_category = None if clear_category else (category if category is not None else entry.category)
@@ -224,6 +231,10 @@ class ModelRepository:
         entry.enabled = new_enabled
         entry.context_window = new_context
         entry.max_output_tokens = new_max_output
+        if clear_inference_host:
+            entry.inference_host = None
+        elif inference_host is not None:
+            entry.inference_host = inference_host
         if is_default is not None:
             if is_default:
                 await self._clear_other_defaults(exclude_model_id=model_id)

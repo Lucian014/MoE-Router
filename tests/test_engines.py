@@ -81,5 +81,5 @@ def test_vllm_health_checks_the_served_model():
 
 def test_get_engine_rejects_unknown_types():
     assert isinstance(get_engine("ollama", "http://o"), OllamaEngine)
-    with pytest.raises(ValueError, match="Unknown ENGINE_TYPE"):
+    with pytest.raises(ValueError, match="Unknown engine"):
         get_engine("tgi", "http://t")

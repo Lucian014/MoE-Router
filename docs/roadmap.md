@@ -41,7 +41,7 @@ Notat pe 2026-11-19. Ordinea propusă: ingress → observabilitate → autentifi
 - Orice citire pentru utilizator filtrează în SQL: `WHERE id = :sid AND user_id = :uid` (un singur helper `get_owned_session`), nu „citește, apoi compară” în mai multe locuri.
 - Teste: A nu vede / nu continuă conversația lui B (404), userul normal pe `/admin/*` → 403, token expirat → 401.
 
-**Admin vs user:** coloana `users.role` (`user` | `admin`), pusă în JWT; endpoint-urile `/admin/*` cer `admin` (dependency `require_admin`, care recitește rolul din DB la acțiuni de scriere). Adminul schimbă catalogul din `model_registry` (enabled, default, tier, categorie, context), iar router-ul preia singur schimbarea la refresh-ul catalogului. Un model *nou* are nevoie și de worker deployat (chart) — din interfață se pot alege doar modelele deja deployate. Primul admin: creat de jobul de setup din Secret; `register` creează mereu `user`.
+**Admin vs user:** coloana `users.role` (`user` | `admin`), pusă în JWT; endpoint-urile `/admin/*` cer `admin` (dependency `require_admin`, care recitește rolul din DB la acțiuni de scriere). Adminul schimbă catalogul din `model_registry` (enabled, default, tier, categorie, context), iar router-ul preia singur schimbarea la refresh-ul catalogului. Un model *nou* nu are nevoie de manifest: workerii generici servesc orice model activat din registru; pentru Ollama mai trebuie doar `ollama pull`, pentru vLLM adresa serverului (`inference_host`). Primul admin: creat de jobul de setup din Secret; `register` creează mereu `user`.
 
 **De decis:**
 
@@ -56,10 +56,10 @@ Notat pe 2026-11-19. Ordinea propusă: ingress → observabilitate → autentifi
 
 - Servită de gateway ca fișiere statice pe `/` (același origin: fără CORS, un singur ingress); HTML/JS simplu sau React + Vite, fără server separat.
 - **Pagini:** login / cont nou; conversații (listă + chat); pentru admin: catalogul de modele și Grafana.
-- **Ce vede userul normal, la fiecare răspuns:** clasificarea (domeniul) și complexitatea, modelul care a răspuns, dacă decizia a fost moștenită din tura anterioară (`inherited`). Vin din răspunsul la `/generate` (`routing`) și, pentru istoric, din `turns` (`predicted_domain`, `predicted_complexity`, `effective_domain`, `effective_complexity`, `inherited`, `model_id` — deja salvate de worker). Fără Prometheus și fără grafice pentru user. Detaliile de RAG (fragmente, tokeni de context) rămân doar pentru admin.
+- **Ce vede userul normal, la fiecare răspuns:** clasificarea (domeniul) și complexitatea, modelul care a răspuns, dacă decizia a fost moștenită din tura anterioară (`inherited`). Vin din răspunsul la `/api/generate` (`routing`) și, pentru istoric, din `turns` (`predicted_domain`, `predicted_complexity`, `effective_domain`, `effective_complexity`, `inherited`, `model_id` — deja salvate de worker). Fără Prometheus și fără grafice pentru user. Detaliile de RAG (fragmente, tokeni de context) rămân doar pentru admin.
 - **Ce vede adminul:** Grafana „ca la carte” — dashboard-urile complete din secțiunea 2, servite sub `llm-router/grafana` (același domeniu: `GF_SERVER_ROOT_URL`, `GF_SERVER_SERVE_FROM_SUB_PATH=true`), ca link din interfață sau încorporate (`GF_SECURITY_ALLOW_EMBEDDING=true`, `iframe` cu `d-solo/...`).
 - **Protecția Grafana fără al doilea login:** Grafana cu acces anonim `Viewer`, dar în spatele unui middleware Traefik `forwardAuth` care întreabă gateway-ul (`GET /auth/verify?role=admin`) dacă JWT-ul din cookie e al unui admin; altfel 401/403 și cererea nu ajunge la Grafana. (Alternativă: `auth.jwt` nativ în Grafana, cu tokenuri semnate RS256.)
-- **Endpoint-uri noi în gateway:** `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`; `GET /conversations`, `GET /conversations/{id}` (turele), textele fragmentelor după id; eventual streaming la `/generate`.
+- **Endpoint-uri noi în gateway:** toate sub `/api` (ca paginile interfeței să poată folosi orice altă adresă): `POST /api/auth/register`, `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout`; `GET /api/conversations`, `GET /api/conversations/{id}` (turele), textele fragmentelor după id; eventual streaming la `/api/generate`. `/health` și `/ready` rămân la rădăcină (probele Kubernetes).
 - Atașamentele separate de întrebare se fac odată cu interfața: `rag-planv2.md` §9.1.
 
 ## 5. Cereri în paralel
@@ -70,7 +70,7 @@ Starea de acum (2026-11-19), pe componente:
 |---|---|---|
 | gateway | async, RPC cu `correlation_id` → deja multe cereri simultane | nimic important |
 | router | `prefetch_count=1` fix în cod (`router.py`), un singur pod | o cerere la un moment dat; clasificatorul rulează în `asyncio.to_thread`, deci un prefetch mai mare ar lucra deja în paralel, dar PyTorch pe CPU concurează pentru aceleași nuclee; `replicas > 1` e blocat de PVC-ul de checkpoint `ReadWriteOnce` |
-| worker | `WORKER_PREFETCH=1` (configurabil per model în chart), 1 pod per model | o generare per model la un moment dat |
+| worker | generic (un Deployment pentru toate modelele), `WORKER_PREFETCH=1` per model și per pod | o generare per model și per pod la un moment dat |
 | Ollama | 1 pod, CPU (`gpu: 0`), fără `OLLAMA_NUM_PARALLEL` | pe CPU, generările paralele își împart nucleele: throughput-ul total crește puțin, latența fiecăreia crește; fiecare slot paralel ține propriul context în memorie |
 | memory | `prefetch_count=1` | indexarea e asincronă, deci întârzie doar retrieval-ul turelor foarte recente |
 

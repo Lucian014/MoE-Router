@@ -144,10 +144,11 @@ def pull_ollama_model(model_id: str) -> None:
 def provision_ollama(models: list[dict]) -> None:
     installed = get_installed_ollama_models()
 
+    # the chart's Ollama only: a model with its own inference_host lives on another server
     ollama_models = [
         model
         for model in models
-        if model.get("engine") == "ollama"
+        if model.get("engine") == "ollama" and not model.get("inference_host")
     ]
 
     print(
@@ -221,7 +222,7 @@ def prune_ollama(models: list[dict]) -> None:
     catalog_ids = {
         model["model_id"]
         for model in models
-        if model.get("engine") == "ollama"
+        if model.get("engine") == "ollama" and not model.get("inference_host")
     }
     keep = catalog_ids | set(EXTRA_MODELS)
     keep |= {with_latest_tag(m) for m in keep}

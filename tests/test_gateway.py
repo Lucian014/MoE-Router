@@ -1,4 +1,5 @@
-"""The gateway's /generate (src/gateway/main.py): session ids, with a fake RabbitMQ client."""
+"""The gateway's /api/generate (src/gateway/main.py): session ids, with a fake RabbitMQ client.
+Every test runs on /api/generate and on its pre-/api alias /generate."""
 import uuid
 
 import pytest
@@ -19,6 +20,11 @@ class FakeMQ:
         return {"response": "ok", "model": "gemma3:1b"}
 
 
+@pytest.fixture(params=["/api/generate", "/generate"])
+def generate_path(request):
+    return request.param
+
+
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.setenv("RABBITMQ_USER", "u")
@@ -30,27 +36,27 @@ def client(monkeypatch):
     main.get_rabbitmq_settings.cache_clear()
 
 
-def test_new_conversation_gets_a_session_id(client):
+def test_new_conversation_gets_a_session_id(client, generate_path):
     http, mq = client
-    body = http.post("/generate", json={"prompt": "salut"}).json()
+    body = http.post(generate_path, json={"prompt": "salut"}).json()
 
     session_id = uuid.UUID(body["session_id"])          # a valid uuid
     assert mq.calls == [{"prompt": "salut", "session_id": str(session_id)}]
     assert body["response"] == "ok"
 
 
-def test_given_session_id_is_passed_through(client):
+def test_given_session_id_is_passed_through(client, generate_path):
     http, mq = client
     sid = str(uuid.uuid4())
-    body = http.post("/generate", json={"prompt": "continua", "session_id": sid}).json()
+    body = http.post(generate_path, json={"prompt": "continua", "session_id": sid}).json()
     assert body["session_id"] == sid
     assert mq.calls[0]["session_id"] == sid
 
 
-def test_variant_is_passed_only_when_given(client):
+def test_variant_is_passed_only_when_given(client, generate_path):
     http, mq = client
-    http.post("/generate", json={"prompt": "x", "variant": "V1"})
-    http.post("/generate", json={"prompt": "y"})
+    http.post(generate_path, json={"prompt": "x", "variant": "V1"})
+    http.post(generate_path, json={"prompt": "y"})
     assert mq.calls[0]["variant"] == "V1"
     assert "variant" not in mq.calls[1]
 
@@ -61,7 +67,13 @@ def test_variant_is_passed_only_when_given(client):
     {"prompt": ""},
     {"session_id": str(uuid.uuid4())},
 ])
-def test_invalid_requests_are_rejected(client, payload):
+def test_invalid_requests_are_rejected(client, generate_path, payload):
     http, mq = client
-    assert http.post("/generate", json=payload).status_code == 422
+    assert http.post(generate_path, json=payload).status_code == 422
     assert mq.calls == []
+
+
+def test_probes_stay_at_the_root(client):
+    http, _ = client
+    assert http.get("/health").status_code == 200
+    assert http.get("/api/health").status_code == 404

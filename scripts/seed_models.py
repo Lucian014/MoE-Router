@@ -15,7 +15,8 @@ seed_models.py -- populate the `models` table.
    makes the YAML the complete catalog (the Helm setup Job uses it: a model removed from the
    chart's values has no worker any more, so the router must stop routing to it).
    Optional per model: context_window (the effective Ollama num_ctx / vLLM --max-model-len, input
-   + output) and max_output_tokens; they default to 4096 / 512.
+   + output) and max_output_tokens, defaulting to 4096 / 512; inference_host (where the model runs,
+   required for vLLM; omitted = the workers' default Ollama).
 
 2. Add / update a single model:
 
@@ -53,6 +54,13 @@ def check_context_limits(models: list[dict], source: str) -> None:
         raise SystemExit(f"[!] {source} has invalid context limits:\n  " + "\n  ".join(errors))
 
 
+def check_hosts(models: list[dict], source: str) -> None:
+    """A model the workers' default Ollama doesn't serve needs its server's address."""
+    missing = [m["model_id"] for m in models if m["engine"] != "ollama" and not m.get("inference_host")]
+    if missing:
+        raise SystemExit(f"[!] {source}: engine other than ollama needs an inference_host: {missing}")
+
+
 def check_catalog(models: list[dict], source: str) -> None:
     try:
         catalog = catalog_from_rows(models)
@@ -83,6 +91,7 @@ async def seed_from_yaml(yaml_path: Path, check_only: bool, disable_missing: boo
         m.setdefault("context_window", DEFAULT_CONTEXT_WINDOW)
         m.setdefault("max_output_tokens", DEFAULT_MAX_OUTPUT_TOKENS)
     check_context_limits(models, str(yaml_path))
+    check_hosts(models, str(yaml_path))
     check_catalog(models, str(yaml_path))
     if check_only:
         return
@@ -104,6 +113,7 @@ async def seed_from_yaml(yaml_path: Path, check_only: bool, disable_missing: boo
                 is_default=entry.get("is_default", False),
                 context_window=entry["context_window"],
                 max_output_tokens=entry["max_output_tokens"],
+                inference_host=entry.get("inference_host") or None,
             )
             print(f"[OK] upserted {entry['model_id']}")
         # 3. optionally: the YAML is the whole catalog, disable everything else
@@ -127,6 +137,7 @@ async def add_single(args) -> None:
             is_default=args.default,
             context_window=args.context_window,
             max_output_tokens=args.max_output_tokens,
+            inference_host=args.inference_host,
         )
         print(f"[OK] upserted: {entry!r}")
 
@@ -148,6 +159,8 @@ def main() -> None:
                         help="effective context at run time (Ollama num_ctx), input + output")
     parser.add_argument("--max-output-tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS,
                         help="tokens reserved for the answer")
+    parser.add_argument("--inference-host", default=None,
+                        help="where the model runs (a vLLM server); omit for the workers' default Ollama")
     parser.add_argument("--disabled", action="store_true")
     parser.add_argument("--default", action="store_true", help="make this the fallback model")
     args = parser.parse_args()

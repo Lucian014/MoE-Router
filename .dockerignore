@@ -11,3 +11,4 @@ tests/
 **/.env
 **/.env.*
 legacy/
+**/node_modules
