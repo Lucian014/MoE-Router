@@ -99,6 +99,8 @@ spec:
               value: {{ .Values.router.rag.neighborTurns | quote }}
             - name: RAG_NEIGHBOR_FROM_TOP
               value: {{ .Values.router.rag.neighborFromTop | quote }}
+            - name: RAG_MIN_SIMILARITY
+              value: {{ .Values.router.rag.minSimilarity | quote }}
             - name: ALLOW_VARIANT_OVERRIDE
               value: {{ .Values.router.rag.allowVariantOverride | quote }}
             - name: READY_FILE

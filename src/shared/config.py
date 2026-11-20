@@ -53,7 +53,8 @@ RAG_MAX_CHUNKS_PER_TURN                       0 (= no cap)
 RAG_NEIGHBOR_TURNS                            1 (0 = off; each top chunk brings the first answer chunk of its next N turns: multi-hop)
 RAG_NEIGHBOR_FROM_TOP                         3 (how many of the first chunks of the pool do)
 RAG_GATE_SIMILARITY                           0 (= off; no fragments at all when the best chunk's dense similarity is below it)
-RAG_MIN_SIMILARITY                            0 (= off; each fragment at least this dense similarity, next-turn neighbors exempt)
+RAG_MIN_SIMILARITY                            0.46 (0 = off; each fragment at least this dense similarity, next-turn
+                                              neighbors exempt; for bge-m3, from scripts/rag_eval/threshold_eval.py)
 RAG_DENSE_QUERY_MAX_TOKENS                    512 (prompts with no prose: their last N tokens)
 RAG_MAX_CONTEXT_TOKENS                        0 (= off; else a cap on the context, an experiment)
 RAG_BM25_STEMMERS        router, memory       romanian,english (Snowball stemmers, all applied; change = terms recomputed)
@@ -208,7 +209,7 @@ class RetrievalSettings(_Settings):
     neighbor_turns: int = Field(1, ge=0, validation_alias="RAG_NEIGHBOR_TURNS")
     neighbor_from_top: int = Field(3, ge=1, validation_alias="RAG_NEIGHBOR_FROM_TOP")
     gate_similarity: float = Field(0.0, ge=0, le=1, validation_alias="RAG_GATE_SIMILARITY")
-    min_similarity: float = Field(0.0, ge=0, le=1, validation_alias="RAG_MIN_SIMILARITY")
+    min_similarity: float = Field(0.46, ge=0, le=1, validation_alias="RAG_MIN_SIMILARITY")
     dense_query_max_tokens: int = Field(DENSE_QUERY_MAX_TOKENS, ge=16, validation_alias="RAG_DENSE_QUERY_MAX_TOKENS")
     max_context_tokens: int = Field(0, ge=0, validation_alias="RAG_MAX_CONTEXT_TOKENS")
     # Snowball stemmers for the BM25 terms (shared/memory/analyzer.py), comma-separated; every one
