@@ -83,6 +83,13 @@ gateway:
   service:
     type: ClusterIP
     port: 8000
+  # the gateway from outside the cluster without port-forward: everything under / goes to it
+  ingress:
+    enabled: true
+    className: traefik        # k3s ships Traefik as the default controller
+    host: ""                  # "" = any host (curl by a node's IP works); set it per environment
+    annotations: {}           # controller-specific settings (e.g. Traefik middlewares)
+    tls: []                   # e.g. [{ secretName: moe-tls, hosts: [moe.local] }]
   resources:
     requests: { cpu: 100m, memory: 128Mi }
     limits: { memory: 512Mi }

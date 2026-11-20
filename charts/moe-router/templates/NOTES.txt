@@ -13,6 +13,15 @@ Infrastructure:
 {{- end }}
 
 Gateway:
+{{- with .Values.gateway.ingress }}
+{{- if .enabled }}
+{{- $scheme := ternary "https" "http" (not (empty .tls)) }}
+{{- $host := .host | default "<node IP>" }}
+  through the ingress ({{ .className | default "default class" }}{{ if .host }}; the host must resolve to a node, e.g. /etc/hosts{{ end }}):
+  curl -X POST {{ $scheme }}://{{ $host }}/generate -H 'content-type: application/json' -d '{"prompt": "hi"}'
+  or, without the ingress:
+{{- end }}
+{{- end }}
   kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "moe.fullname" . }}-gateway {{ .Values.gateway.service.port }}
   curl -X POST localhost:{{ .Values.gateway.service.port }}/generate -H 'content-type: application/json' -d '{"prompt": "hi"}'
 
