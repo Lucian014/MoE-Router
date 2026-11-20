@@ -11,11 +11,11 @@ _ENGINES = {
 
 
 def get_engine(engine_type: str, host: str) -> InferenceEngine:
-    """Instantiate the adapter for a given ENGINE_TYPE env var value."""
+    """Instantiate the adapter for a model's engine (models.engine in the registry)."""
     try:
         engine_cls = _ENGINES[engine_type]
     except KeyError:
         raise ValueError(
-            f"Unknown ENGINE_TYPE '{engine_type}'. Supported engines: {sorted(_ENGINES)}"
+            f"Unknown engine '{engine_type}'. Supported engines: {sorted(_ENGINES)}"
         )
     return engine_cls(host)

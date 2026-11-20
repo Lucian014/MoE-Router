@@ -12,7 +12,7 @@ Real environment variables win over `.env`.
 
 The getters are lazy on purpose: nothing is validated at import time, so a module can be
 imported without any env (the router image runs `import router.router` at build time), and
-each service only validates the settings it actually uses (the gateway never needs MODEL_NAME).
+each service only validates the settings it actually uses (the gateway never needs POSTGRES_USER).
 
 Variable                 Used by              Default
 -----------------------  -------------------  ------------------------------------------
@@ -69,12 +69,9 @@ DOMAIN_REPO               checkpoints.py)     Lucian04/laya-domain-v4
 DOMAIN_REVISION                               main (pin a commit hash for reproducible pods)
 COMPLEXITY_REPO                               Lucian04/laya-complexity-v2
 COMPLEXITY_REVISION                           main
-MODEL_NAME               worker               (required)
-ENGINE_TYPE                                   ollama
-INFERENCE_HOST                                http://localhost:11434
-WORKER_PREFETCH                               1 (requests handled concurrently per pod)
-CONTEXT_WINDOW                                4096 (num_ctx when the payload has none; input + output)
-MAX_OUTPUT_TOKENS                             512 (answer length when the payload has none)
+OLLAMA_URL               worker               http://localhost:11434 (models with no inference_host in the registry)
+WORKER_PREFETCH                               1 (requests per model handled concurrently per pod)
+WORKER_SYNC_SECONDS                           15 (re-read the enabled models and check their engines)
 READY_FILE               router, worker       /tmp/ready (exists while the pod is ready)
 SHUTDOWN_GRACE_SECONDS                        25 (on SIGTERM: wait this long for in-flight work)
 """
@@ -89,8 +86,8 @@ if TYPE_CHECKING:
 
 # Defaults that code outside this file needs too (the DB schema, the memory library, the eval
 # scripts): defined once here and imported, never repeated.
-DEFAULT_CONTEXT_WINDOW = 4096           # models.context_window, the worker's CONTEXT_WINDOW
-DEFAULT_MAX_OUTPUT_TOKENS = 512         # models.max_output_tokens, the worker's MAX_OUTPUT_TOKENS
+DEFAULT_CONTEXT_WINDOW = 4096           # models.context_window
+DEFAULT_MAX_OUTPUT_TOKENS = 512         # models.max_output_tokens
 DEFAULT_EMBEDDING_MODEL = "bge-m3"
 EMBEDDING_DIM = 1024                    # of DEFAULT_EMBEDDING_MODEL: the chunks.embedding column
 DENSE_QUERY_MAX_TOKENS = 512            # the dense query of a prompt with no prose (header.py)
@@ -265,21 +262,12 @@ class CheckpointSettings(_Settings):
 
 
 class WorkerSettings(_Settings):
-    model_name: str = Field(validation_alias="MODEL_NAME")
-    engine_type: str = Field("ollama", validation_alias="ENGINE_TYPE")
-    inference_host: str = Field("http://localhost:11434", validation_alias="INFERENCE_HOST")
-    # >1 lets an engine that batches (vLLM) work on several requests at once
+    """The generic worker: it serves every enabled model of the registry; where each one runs comes
+    from models.inference_host, or this Ollama when that is empty."""
+    ollama_url: str = Field("http://localhost:11434", validation_alias="OLLAMA_URL")
+    # per model: >1 lets an engine that batches (vLLM) work on several requests at once
     prefetch: int = Field(1, ge=1, validation_alias="WORKER_PREFETCH")
-    # used when the payload doesn't carry them (until the router sends the model's own limits);
-    # the chart sets them from the catalog, the same values the registry holds
-    context_window: int = Field(DEFAULT_CONTEXT_WINDOW, gt=0, validation_alias="CONTEXT_WINDOW")
-    max_output_tokens: int = Field(DEFAULT_MAX_OUTPUT_TOKENS, gt=0, validation_alias="MAX_OUTPUT_TOKENS")
-
-    @model_validator(mode="after")
-    def _answer_leaves_room_for_the_prompt(self):
-        if self.max_output_tokens >= self.context_window:
-            raise ValueError("MAX_OUTPUT_TOKENS must be smaller than CONTEXT_WINDOW")
-        return self
+    sync_seconds: float = Field(15, gt=0, validation_alias="WORKER_SYNC_SECONDS")
 
 
 @lru_cache

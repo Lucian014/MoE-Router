@@ -18,7 +18,7 @@ ALL_VARS = [
     "RABBITMQ_HOST", "RABBITMQ_PORT", "RABBITMQ_USER", "RABBITMQ_PASS", "RABBITMQ_PASSWORD",
     "MIDDLEWARE_QUEUE", "RPC_TIMEOUT_SECONDS", "CATALOG_REFRESH_SECONDS",
     "DOMAIN_CHECKPOINT", "COMPLEXITY_CHECKPOINT", "CLASSIFIER_DEVICE", "COMPLEXITY_THRESHOLD",
-    "MODEL_NAME", "ENGINE_TYPE", "INFERENCE_HOST", "WORKER_PREFETCH", "CONTEXT_WINDOW", "MAX_OUTPUT_TOKENS",
+    "OLLAMA_URL", "WORKER_PREFETCH", "WORKER_SYNC_SECONDS",
     "RABBITMQ_CONNECT_RETRIES", "READY_FILE", "SHUTDOWN_GRACE_SECONDS",
     "HF_TOKEN", "CHECKPOINT_DIR", "DOMAIN_REPO", "DOMAIN_REVISION", "COMPLEXITY_REPO", "COMPLEXITY_REVISION",
 ]
@@ -142,29 +142,17 @@ def test_classifier_threshold_is_parsed_as_float(monkeypatch):
     assert ClassifierSettings().complexity_threshold == 0.3
 
 
-def test_worker_requires_model_name():
-    with pytest.raises(ValidationError, match="MODEL_NAME"):
-        WorkerSettings()
-
-
 def test_worker_settings(monkeypatch):
-    monkeypatch.setenv("MODEL_NAME", "gemma3:1b")
-    s = WorkerSettings()
-    assert (s.model_name, s.engine_type, s.inference_host, s.prefetch) == \
-        ("gemma3:1b", "ollama", "http://localhost:11434", 1)
-    assert (s.context_window, s.max_output_tokens) == (4096, 512)
+    s = WorkerSettings()                         # nothing required: the models come from the registry
+    assert (s.ollama_url, s.prefetch, s.sync_seconds) == ("http://localhost:11434", 1, 15)
     monkeypatch.setenv("WORKER_PREFETCH", "0")
     with pytest.raises(ValidationError):
         WorkerSettings()
 
 
-def test_worker_answer_must_leave_room_for_the_prompt(monkeypatch):
-    monkeypatch.setenv("MODEL_NAME", "gemma3:1b")
-    monkeypatch.setenv("CONTEXT_WINDOW", "8192")
-    monkeypatch.setenv("MAX_OUTPUT_TOKENS", "1024")
-    assert WorkerSettings().context_window == 8192
-    monkeypatch.setenv("MAX_OUTPUT_TOKENS", "8192")
-    with pytest.raises(ValidationError, match="smaller than CONTEXT_WINDOW"):
+def test_worker_sync_interval_must_be_positive(monkeypatch):
+    monkeypatch.setenv("WORKER_SYNC_SECONDS", "0")
+    with pytest.raises(ValidationError):
         WorkerSettings()
 
 
@@ -181,9 +169,9 @@ def test_real_env_wins_over_dotenv(monkeypatch, tmp_path):
 
 
 def test_getters_are_cached(monkeypatch):
-    monkeypatch.setenv("MODEL_NAME", "a")
+    monkeypatch.setenv("OLLAMA_URL", "http://a:11434")
     first = config.get_worker_settings()
-    monkeypatch.setenv("MODEL_NAME", "b")
+    monkeypatch.setenv("OLLAMA_URL", "http://b:11434")
     assert config.get_worker_settings() is first
 
 

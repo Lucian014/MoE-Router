@@ -172,16 +172,28 @@ class RabbitMQClient:
         return arguments
 
     # ------------------------------------------------------------------ consuming
+    async def open_channel(self):
+        """A channel of its own, e.g. a consumer whose prefetch must not limit the others."""
+        return await self.connection.channel()
+
+    async def declare_queue(self, queue_name: str, arguments: dict | None = None) -> None:
+        """Declare a durable queue without consuming it: messages published to it wait (until they
+        expire) instead of being dropped as unroutable."""
+        await self.channel.declare_queue(queue_name, durable=True, arguments=arguments)
+
     async def consume_messages(self, queue_name: str, callback, prefetch_count: int = 1,
-                               arguments: dict | None = None):
+                               arguments: dict | None = None, channel=None):
         """Consume raw messages from a durable queue; `callback(message)` acks them itself.
 
         Every consumer of this client goes through here, so drain() can stop them and wait
         for the messages they are still handling. `prefetch_count` messages are handled
-        concurrently (aio-pika runs each callback in its own task). `arguments` must match
-        the queue's existing declaration (see declare_with_dead_letters)."""
-        await self.channel.set_qos(prefetch_count=prefetch_count)
-        queue = await self.channel.declare_queue(queue_name, durable=True, arguments=arguments)
+        concurrently (aio-pika runs each callback in its own task); the limit belongs to the
+        channel, so consumers that need their own limit pass their own `channel` (open_channel()).
+        `arguments` must match the queue's existing declaration (see declare_with_dead_letters).
+        Returns (queue, consumer tag), for cancel_consumer()."""
+        channel = channel or self.channel
+        await channel.set_qos(prefetch_count=prefetch_count)
+        queue = await channel.declare_queue(queue_name, durable=True, arguments=arguments)
 
         async def _tracked(message: aio_pika.IncomingMessage):
             task = asyncio.current_task()
@@ -193,7 +205,18 @@ class RabbitMQClient:
 
         tag = await queue.consume(_tracked)
         self._consumers.append((queue, tag))
-        return queue
+        return queue, tag
+
+    async def cancel_consumer(self, queue, tag) -> None:
+        """Stop one consumer: no new deliveries; messages it is handling still finish and are acked."""
+        try:
+            self._consumers.remove((queue, tag))
+        except ValueError:
+            return                                      # already cancelled (e.g. by drain())
+        try:
+            await queue.cancel(tag)
+        except Exception as e:
+            print(f"[!] Could not cancel consumer on {queue.name}: {e}")
 
     async def drain(self, timeout: float) -> int:
         """Graceful shutdown, step 1: stop receiving new messages, then wait up to `timeout`
@@ -216,8 +239,8 @@ class RabbitMQClient:
             return len(pending)
         return 0
 
-    async def consume_rpc(self, queue_name: str, handler_func, prefetch_count: int = 1):
-        """Listens on a durable queue and auto-replies to the caller."""
+    async def consume_rpc(self, queue_name: str, handler_func, prefetch_count: int = 1, channel=None):
+        """Listens on a durable queue and auto-replies to the caller. Returns (queue, consumer tag)."""
 
         async def _wrapper(message: aio_pika.IncomingMessage):
             async with message.process():
@@ -239,7 +262,7 @@ class RabbitMQClient:
                     print(f"[!] {message.correlation_id}: could not send reply: {e}")
                     await self.reply_error(message, f"could not send reply: {e}")
 
-        await self.consume_messages(queue_name, _wrapper, prefetch_count=prefetch_count)
+        return await self.consume_messages(queue_name, _wrapper, prefetch_count=prefetch_count, channel=channel)
 
     async def forward(self, message: aio_pika.IncomingMessage, routing_key: str,
                       payload: dict | None = None) -> bool:

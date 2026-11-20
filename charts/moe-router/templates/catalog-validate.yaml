@@ -10,6 +10,12 @@
   {{- if not (has .engine (list "ollama" "vllm")) }}
     {{- fail (printf "catalog model %s: engine must be ollama or vllm, got %v" .model_id .engine) }}
   {{- end }}
+  {{- if and (ne .engine "ollama") (not .inference_host) }}
+    {{- fail (printf "catalog model %s (engine %s) needs an inference_host" .model_id .engine) }}
+  {{- end }}
+  {{- if and (eq .engine "ollama") (not .inference_host) (not $.Values.ollama.enabled) (not $.Values.worker.ollamaUrl) }}
+    {{- fail (printf "catalog model %s uses the chart's Ollama, but ollama.enabled=false: set its inference_host or worker.ollamaUrl" .model_id) }}
+  {{- end }}
   {{- if not (has .complexity_tier (list "low" "high")) }}
     {{- fail (printf "catalog model %s: complexity_tier must be low or high, got %v" .model_id .complexity_tier) }}
   {{- end }}

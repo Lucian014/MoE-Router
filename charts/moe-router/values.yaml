@@ -153,16 +153,15 @@ router:
   affinity: {}
 
 # --------------------------------------------------------------------------------- Catalog
-# The models the platform routes to. One worker Deployment per enabled model is rendered
-# from this list, and (from the seed Job) it fills the registry. Same fields as
-# src/catalog/models.yaml: exactly one enabled is_default model; at most one enabled model
-# per category + complexity_tier. Disable a model with `enabled: false` (don't delete it,
-# so the seed disables it in the registry too).
-#   engine: ollama -> served by the chart's Ollama
+# The models the platform routes to. The setup Job seeds the registry (Postgres `models`) with
+# this list; the generic workers serve every enabled model of the registry, so a model needs no
+# manifest of its own. Same fields as src/catalog/models.yaml: exactly one enabled is_default
+# model; at most one enabled model per category + complexity_tier. Disable a model with
+# `enabled: false` (don't delete it, so the seed disables it in the registry too).
+#   engine: ollama -> served by the chart's Ollama (or by inference_host, another Ollama)
 #   engine: vllm   -> set inference_host to that model's vLLM server (http://...:8000)
-# Optional per model: replicas (default 1), prefetch (default worker.prefetch),
-#   context_window (default 4096): the effective context at run time (Ollama num_ctx /
-#   vLLM --max-model-len), input + output; max_output_tokens (default 512).
+# Optional per model: context_window (default 4096): the effective context at run time (Ollama
+#   num_ctx / vLLM --max-model-len), input + output; max_output_tokens (default 512).
 catalog:
   models:
     - { model_id: "gemma3:1b",          engine: ollama, category: open-qa,          complexity_tier: low }
@@ -212,13 +211,19 @@ worker:
   image:
     repository: moe-worker
     tag: ""
-  # requests handled at once per pod (raise for vLLM, which batches)
+  # every pod serves every enabled model: more replicas = more requests handled at once
+  replicas: 1
+  # requests per model handled at once per pod (raise for vLLM, which batches)
   prefetch: 1
-  # a generation can take minutes: on shutdown, wait this long for the in-flight one
+  # how often the enabled models are re-read and their engines checked
+  syncSeconds: 15
+  # where models with no inference_host run; "" = the chart's Ollama
+  ollamaUrl: ""
+  # a generation can take minutes: on shutdown, wait this long for the in-flight ones
   shutdownGraceSeconds: 80
   resources:
-    requests: { cpu: 50m, memory: 64Mi }
-    limits: { memory: 256Mi }
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { memory: 512Mi }
   nodeSelector: {}
   tolerations: []
   affinity: {}

@@ -48,6 +48,8 @@ class ModelRegistryEntry(Base):
     max_output_tokens: Mapped[int] = mapped_column(
         Integer, nullable=False, default=DEFAULT_MAX_OUTPUT_TOKENS, server_default=str(DEFAULT_MAX_OUTPUT_TOKENS)
     )
+    # where the model runs; NULL = the workers' default Ollama (OLLAMA_URL). A vLLM server needs it.
+    inference_host: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -64,7 +66,7 @@ class ModelRegistryEntry(Base):
             f"<ModelRegistryEntry model_id={self.model_id!r} engine={self.engine!r} "
             f"category={self.category!r} tier={self.complexity_tier!r} enabled={self.enabled} "
             f"is_default={self.is_default} context_window={self.context_window} "
-            f"max_output_tokens={self.max_output_tokens}>"
+            f"max_output_tokens={self.max_output_tokens} inference_host={self.inference_host!r}>"
         )
 
     def to_dict(self) -> dict:
@@ -77,4 +79,5 @@ class ModelRegistryEntry(Base):
             "is_default": self.is_default,
             "context_window": self.context_window,
             "max_output_tokens": self.max_output_tokens,
+            "inference_host": self.inference_host,
         }

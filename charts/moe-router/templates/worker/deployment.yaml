@@ -1,0 +1,66 @@
+{{- /* The generic workers: one Deployment for every model. Each pod reads the enabled models from
+       the registry (seeded from catalog.models) and consumes worker.<model> for each one whose
+       engine answers; adding or disabling a model needs no new manifest. */ -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "moe.fullname" . }}-worker
+  labels:
+    {{- include "moe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector:
+    matchLabels:
+      {{- include "moe.selectorLabels" (dict "root" . "component" "worker") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "moe.labels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- include "moe.imagePullSecrets" . | nindent 6 }}
+      {{- with .Values.worker.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ add (int .Values.worker.shutdownGraceSeconds) 10 }}
+      containers:
+        - name: worker
+          image: {{ include "moe.image" (dict "root" . "image" .Values.worker.image) }}
+          imagePullPolicy: {{ include "moe.pullPolicy" (dict "root" . "image" .Values.worker.image) }}
+          envFrom:
+            {{- include "moe.serviceEnvFrom" (dict "root" . "postgres" true) | nindent 12 }}
+          env:
+            # models with no inference_host in the registry run here
+            - name: OLLAMA_URL
+              value: {{ .Values.worker.ollamaUrl | default (include "moe.ollama.url" .) | quote }}
+            - name: WORKER_PREFETCH
+              value: {{ .Values.worker.prefetch | quote }}
+            - name: WORKER_SYNC_SECONDS
+              value: {{ .Values.worker.syncSeconds | quote }}
+            - name: SHUTDOWN_GRACE_SECONDS
+              value: {{ .Values.worker.shutdownGraceSeconds | quote }}
+            - name: READY_FILE
+              value: {{ include "moe.readyFile" . | quote }}
+          # ready once connected to RabbitMQ and the enabled models were read; a model whose
+          # engine doesn't answer is only not consumed (the pod serves the others)
+          readinessProbe:
+            exec:
+              command: ["test", "-f", {{ include "moe.readyFile" . | quote }}]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- with .Values.worker.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

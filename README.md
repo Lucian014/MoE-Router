@@ -16,7 +16,7 @@ client -> gateway -> RabbitMQ -> router -> worker.<model> -> Ollama / vLLM -> re
 |---|---|
 | `src/gateway/` | HTTP API (`POST /api/generate`), the only public entry point |
 | `src/router/` | classifiers + model choice + context assembly |
-| `src/worker/` | one per model: calls the engine, stores the turn |
+| `src/worker/` | generic: serves every enabled model (calls its engine, stores the turn) |
 | `src/memory/` | indexes stored turns into chunks (embeddings + BM25 terms) |
 | `src/engine/` | adapters to the inference servers (Ollama, vLLM) |
 | `src/shared/` | settings, RabbitMQ client, lifecycle, the memory library (`shared/memory/`) |

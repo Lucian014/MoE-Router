@@ -41,7 +41,7 @@ Notat pe 2026-11-19. Ordinea propusă: ingress → observabilitate → autentifi
 - Orice citire pentru utilizator filtrează în SQL: `WHERE id = :sid AND user_id = :uid` (un singur helper `get_owned_session`), nu „citește, apoi compară” în mai multe locuri.
 - Teste: A nu vede / nu continuă conversația lui B (404), userul normal pe `/admin/*` → 403, token expirat → 401.
 
-**Admin vs user:** coloana `users.role` (`user` | `admin`), pusă în JWT; endpoint-urile `/admin/*` cer `admin` (dependency `require_admin`, care recitește rolul din DB la acțiuni de scriere). Adminul schimbă catalogul din `model_registry` (enabled, default, tier, categorie, context), iar router-ul preia singur schimbarea la refresh-ul catalogului. Un model *nou* are nevoie și de worker deployat (chart) — din interfață se pot alege doar modelele deja deployate. Primul admin: creat de jobul de setup din Secret; `register` creează mereu `user`.
+**Admin vs user:** coloana `users.role` (`user` | `admin`), pusă în JWT; endpoint-urile `/admin/*` cer `admin` (dependency `require_admin`, care recitește rolul din DB la acțiuni de scriere). Adminul schimbă catalogul din `model_registry` (enabled, default, tier, categorie, context), iar router-ul preia singur schimbarea la refresh-ul catalogului. Un model *nou* nu are nevoie de manifest: workerii generici servesc orice model activat din registru; pentru Ollama mai trebuie doar `ollama pull`, pentru vLLM adresa serverului (`inference_host`). Primul admin: creat de jobul de setup din Secret; `register` creează mereu `user`.
 
 **De decis:**
 
@@ -70,7 +70,7 @@ Starea de acum (2026-11-19), pe componente:
 |---|---|---|
 | gateway | async, RPC cu `correlation_id` → deja multe cereri simultane | nimic important |
 | router | `prefetch_count=1` fix în cod (`router.py`), un singur pod | o cerere la un moment dat; clasificatorul rulează în `asyncio.to_thread`, deci un prefetch mai mare ar lucra deja în paralel, dar PyTorch pe CPU concurează pentru aceleași nuclee; `replicas > 1` e blocat de PVC-ul de checkpoint `ReadWriteOnce` |
-| worker | `WORKER_PREFETCH=1` (configurabil per model în chart), 1 pod per model | o generare per model la un moment dat |
+| worker | generic (un Deployment pentru toate modelele), `WORKER_PREFETCH=1` per model și per pod | o generare per model și per pod la un moment dat |
 | Ollama | 1 pod, CPU (`gpu: 0`), fără `OLLAMA_NUM_PARALLEL` | pe CPU, generările paralele își împart nucleele: throughput-ul total crește puțin, latența fiecăreia crește; fiecare slot paralel ține propriul context în memorie |
 | memory | `prefetch_count=1` | indexarea e asincronă, deci întârzie doar retrieval-ul turelor foarte recente |
 

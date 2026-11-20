@@ -303,15 +303,14 @@ def test_worker_stores_numbered_turns_and_the_routing_state(sid, monkeypatch):
 
     for key, value in _env().items():
         monkeypatch.setenv(key, value)
-    monkeypatch.setattr(worker, "MODEL_NAME", "gemma3:1b")
     fresh_settings()
     payload = {"prompt": "q1", "session_id": str(sid), "task_type": "coding",
                "task_type_confidence": 0.91, "complexity_score": 0.2}
 
     async def go():
         try:
-            turn1, id1 = await worker.store_turn(payload, "q1", ChatResult("a1", 10, 2))
-            turn2, id2 = await worker.store_turn({**payload, "prompt": "q2"}, "q2", ChatResult("a2"))
+            turn1, id1 = await worker.store_turn(payload, "q1", ChatResult("a1", 10, 2), "gemma3:1b")
+            turn2, id2 = await worker.store_turn({**payload, "prompt": "q2"}, "q2", ChatResult("a2"), "gemma3:1b")
             assert (turn1, turn2) == (1, 2) and id2 > id1
         finally:
             await db_session.dispose_engine()
