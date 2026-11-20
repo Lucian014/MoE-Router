@@ -72,7 +72,7 @@ messaging:
   memoryQueue: memory.ingest
 
 # --------------------------------------------------------------------------------- Gateway
-# The HTTP entry point: POST /generate -> RabbitMQ -> router -> worker -> reply.
+# The HTTP entry point: POST /api/generate -> RabbitMQ -> router -> worker -> reply.
 gateway:
   image:
     repository: moe-gateway

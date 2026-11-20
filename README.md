@@ -14,7 +14,7 @@ client -> gateway -> RabbitMQ -> router -> worker.<model> -> Ollama / vLLM -> re
 
 | folder | what it is |
 |---|---|
-| `src/gateway/` | HTTP API (`POST /generate`), the only public entry point |
+| `src/gateway/` | HTTP API (`POST /api/generate`), the only public entry point |
 | `src/router/` | classifiers + model choice + context assembly |
 | `src/worker/` | one per model: calls the engine, stores the turn |
 | `src/memory/` | indexes stored turns into chunks (embeddings + BM25 terms) |

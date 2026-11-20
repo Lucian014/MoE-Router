@@ -2,7 +2,7 @@ import asyncio
 import sys
 import uuid
 
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -11,6 +11,7 @@ from shared.lifecycle import Stopped
 from shared.rabbitmq import RabbitMQClient, RpcError, RpcTimeout
 
 app = FastAPI(title="MoE-Router Gateway")
+api = APIRouter(prefix="/api")
 
 mq_client: RabbitMQClient | None = None
 _connect_task: asyncio.Task | None = None
@@ -62,7 +63,7 @@ class GenerateRequest(BaseModel):
     variant: str | None = Field(None, pattern=r"^V[0-9]$")
 
 
-@app.post("/generate")
+@api.post("/generate")
 async def generate(req: GenerateRequest):
     if not _rpc_ready():
         raise HTTPException(status_code=503, detail="not connected to RabbitMQ")
@@ -83,3 +84,7 @@ async def generate(req: GenerateRequest):
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+app.include_router(api)
+app.add_api_route("/generate", generate, methods=["POST"], deprecated=True)

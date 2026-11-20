@@ -18,12 +18,12 @@ Gateway:
 {{- $scheme := ternary "https" "http" (not (empty .tls)) }}
 {{- $host := .host | default "<node IP>" }}
   through the ingress ({{ .className | default "default class" }}{{ if .host }}; the host must resolve to a node, e.g. /etc/hosts{{ end }}):
-  curl -X POST {{ $scheme }}://{{ $host }}/generate -H 'content-type: application/json' -d '{"prompt": "hi"}'
+  curl -X POST {{ $scheme }}://{{ $host }}/api/generate -H 'content-type: application/json' -d '{"prompt": "hi"}'
   or, without the ingress:
 {{- end }}
 {{- end }}
   kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "moe.fullname" . }}-gateway {{ .Values.gateway.service.port }}
-  curl -X POST localhost:{{ .Values.gateway.service.port }}/generate -H 'content-type: application/json' -d '{"prompt": "hi"}'
+  curl -X POST localhost:{{ .Values.gateway.service.port }}/api/generate -H 'content-type: application/json' -d '{"prompt": "hi"}'
 
 Router: downloads the classifiers first (init container), then waits for a valid catalog:
   kubectl logs -n {{ .Release.Namespace }} deploy/{{ include "moe.fullname" . }}-router -c download-checkpoints

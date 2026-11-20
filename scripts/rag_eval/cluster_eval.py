@@ -9,7 +9,7 @@ quotes would no longer exist). Instead:
      indexed with memory/indexer.py -- the same code as the memory service
   2. per (question, variant): the seeded session is cloned in SQL (turns + chunks, no
      re-embedding), so every question starts from the same history, and the question goes to
-     POST /generate with that session id and `variant`
+     POST /api/generate with that session id and `variant`
   3. the question's stored turn says what reached the model: recent_turns (whole turns) and
      retrieved_chunk_ids (fragments); the reply carries the stage timings
   4. optionally an LLM judge scores each answer 1-5 against the gold quote
@@ -133,7 +133,7 @@ async def ask(http: httpx.AsyncClient, gateway: str, session: Session, q: Questi
     sid = await clone(template)
     gold = await gold_chunk_ids(sid, session, q)
     t0 = time.perf_counter()
-    r = await http.post(f"{gateway}/generate", json={"prompt": q.prompt, "session_id": str(sid),
+    r = await http.post(f"{gateway}/api/generate", json={"prompt": q.prompt, "session_id": str(sid),
                                                       "variant": variant})
     total_ms = round((time.perf_counter() - t0) * 1000, 1)
     row = {"session": session.id, "category": session.category, "question": q.id, "type": q.type,
