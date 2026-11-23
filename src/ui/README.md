@@ -4,7 +4,8 @@ The web interface: chat, conversation list and the router's decision for every a
 complexity, model, inherited, RAG fragments, timings). React + TypeScript + Vite.
 
 - Calls only `/api/...` with relative paths (`src/api.ts`): Vite proxies them to the cluster in
-  development; in production the gateway serves both the UI and the API.
+  development; in the cluster the gateway image builds the UI and serves it on `/`
+  (`http://llm-router/`), next to the API: no separate server, no CORS.
 - Conversations are kept in the browser (`localStorage`, `src/conversations.ts`) until the gateway
   has `GET /api/conversations`.
 - Colors match the Figma file (`src/index.css`, light and dark).

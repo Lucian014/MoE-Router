@@ -1,14 +1,20 @@
+FROM node:22-alpine AS ui
+WORKDIR /ui
+COPY src/ui/package.json src/ui/package-lock.json ./
+RUN npm ci
+COPY src/ui ./
+RUN npm run build
+
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies
 COPY src/gateway/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy shared code and service code
 COPY src/shared ./shared
 COPY src/gateway/main.py ./
+COPY --from=ui /ui/dist ./static
 
 EXPOSE 8000
 

@@ -77,3 +77,35 @@ def test_probes_stay_at_the_root(client):
     http, _ = client
     assert http.get("/health").status_code == 200
     assert http.get("/api/health").status_code == 404
+
+
+# ------------------------------------------------------------------ the interface on /
+@pytest.fixture
+def ui(client, tmp_path):
+    (tmp_path / "index.html").write_text("<h1>llm-router</h1>")
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "index-abc123.js").write_text("console.log(1)")
+    assert main.mount_ui(tmp_path)
+    yield client
+    main.app.router.routes.pop()          # the mount is the last route; leave main.app as it was
+
+
+def test_ui_is_served_on_the_root(ui):
+    http, _ = ui
+    page = http.get("/")
+    assert page.status_code == 200 and "llm-router" in page.text
+    assert page.headers["cache-control"] == "no-cache"
+    asset = http.get("/assets/index-abc123.js")
+    assert asset.status_code == 200
+    assert "immutable" in asset.headers["cache-control"]
+
+
+def test_routes_win_over_the_ui(ui, generate_path):
+    http, mq = ui
+    assert http.post(generate_path, json={"prompt": "salut"}).json()["response"] == "ok"
+    assert http.get("/health").json() == {"status": "ok"}
+    assert http.get("/missing.js").status_code == 404
+
+
+def test_no_build_no_ui(tmp_path):
+    assert main.mount_ui(tmp_path / "missing") is False

@@ -1,9 +1,11 @@
 import asyncio
 import sys
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from shared.config import get_gateway_settings, get_rabbitmq_settings
@@ -86,5 +88,22 @@ async def generate(req: GenerateRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class UIFiles(StaticFiles):
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        immutable = path.startswith("assets/") and response.status_code == 200
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable" if immutable else "no-cache"
+        return response
+
+
+def mount_ui(directory: Path) -> bool:
+    if not directory.is_dir():
+        return False
+    app.mount("/", UIFiles(directory=directory, html=True), name="ui")
+    return True
+
+
 app.include_router(api)
 app.add_api_route("/generate", generate, methods=["POST"], deprecated=True)
+mount_ui(Path(__file__).with_name("static"))            # last
