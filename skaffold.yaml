@@ -23,6 +23,11 @@ build:
           paths:
             - src/gateway/**/*
             - src/shared/**/*
+            - src/ui/**/*
+          ignore:
+            - src/ui/node_modules/**
+            - src/ui/dist/**
+            - "**/__pycache__/**"
     - image: moe-worker
       context: .
       custom:

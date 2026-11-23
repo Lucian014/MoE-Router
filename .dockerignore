@@ -12,3 +12,4 @@ tests/
 **/.env.*
 legacy/
 **/node_modules
+src/ui/dist

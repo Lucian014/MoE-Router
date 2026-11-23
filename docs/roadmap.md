@@ -107,3 +107,25 @@ Ce ajută: chart-ul e deja împărțit pe noduri prin `nodeSelector` într-un fi
 ## 7. Infrastructură
 
 - `k8s-infra` e fixat pe kernelul 7.0.0-38 (GRUB, după id): pe 7.0.0-42 `gosu` se blochează, iar Postgres și RabbitMQ nu mai pornesc. Soluția durabilă: `securityContext.runAsUser: 999` pe Postgres și RabbitMQ în chart (entrypoint-ul nu mai apelează `gosu`), apoi revenirea la kernelul curent. Și: `Automatic-Reboot "false"` în `unattended-upgrades` pe noduri.
+
+## 8. Clasificatorii (după măsurători)
+
+Notat pe 2026-11-20.
+
+**Prea siguri pe ei (overconfident).** Softmax-ul dă des ~0.92 pentru domeniul câștigător și ~0.01 pentru celelalte, chiar și când promptul e la limită. Pragurile de ambiguitate (`DOMAIN_MIN_CONFIDENCE`, `DOMAIN_MIN_MARGIN`) ajung atunci să se declanșeze rar.
+
+- Întâi se **măsoară calibrarea**: ECE (expected calibration error) și diagrama de fiabilitate pe setul de validare (încrederea prezisă vs. acuratețea reală, pe intervale).
+- **Temperature scaling**, fără reantrenare: un singur parametru `T`, ales pe validare, cu `softmax(logits / T)`. Argmax-ul nu se schimbă, deci nici acuratețea, dar probabilitățile devin realiste. `T` poate fi o setare în config, cu valori separate pentru cei doi clasificatori.
+- La o reantrenare viitoare: **label smoothing** (de exemplu 0.1) în loss.
+
+**Un singur clasificator în loc de doi.** Ambii folosesc același encoder (ModernBERT, aceeași configurație), deci se poate face un model **multi-task**: un encoder comun cu două capete, domeniu și complexitate.
+
+- Datele **nu** trebuie reetichetate: fiecare exemplu își păstrează eticheta pe care o are, iar loss-ul capului fără etichetă se maschează (sau batch-urile alternează între cele două seturi). Seturile de acum (`laya_data/data/domain`, `.../complexity`) se folosesc așa cum sunt.
+- Câștigul: o singură trecere prin encoder per cerere, deci jumătate din timpul clasificării și din memoria router-ului. Cele două decizii pot învăța una de la alta.
+- Risc: un cap îl poate strica pe celălalt. Se compară acuratețea fiecărui cap cu modelele separate actuale înainte de înlocuire.
+
+**Prompturi pe mai multe domenii** (de exemplu cod + matematică). Acum, pe prima tură, câștigă domeniul cu probabilitatea cea mai mare, chiar la limită. Ambiguitatea se tratează doar când există istoric (atunci se moștenește).
+
+1. Un set mic de prompturi mixte (30–50): cât de des sunt primele două domenii apropiate.
+2. Ambiguu pe prima tură → modelul generalist (`is_default`) sau nivelul `high`, folosind pragurile existente. Are sens după calibrare: abia atunci ambiguitatea se vede în probabilități.
+3. Ca extensie: rutare după calitatea așteptată, `scor(m) = Σ_d P(d | prompt) · calitate(m, d)`, cu matricea `calitate(model, domeniu)` din măsurători. Descompunerea promptului cu un LLM (subcereri + combinare) rămâne doar ca idee: e prea scumpă pentru scopul proiectului.
